@@ -35,6 +35,7 @@
             <span class="extra-settings-icons">
               <span ng-show="object.links[0].expires > 0" class="glyphicon glyphicon-time"></span> 
               <span ng-show="object.links[0].has_password" class="glyphicon glyphicon-lock"></span>
+              <span ng-show="object.links[0].require_login" class="glyphicon glyphicon-user"></span>
             </span>
           </a>
         </div>
@@ -86,7 +87,12 @@
     <div ng-repeat="link in object.links">
         <div class="link row">
             <div class="col-sm-3 the-link" ng-hide="link.copying">
-              <span class="glyphicon glyphicon-link"></span> <span class="extra-settings-icons"><span ng-show="link.expires" class="glyphicon glyphicon-time" title="Has expiration time"></span> <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span></span> 
+              <span class="glyphicon glyphicon-link"></span>
+              <span class="extra-settings-icons">
+                <span ng-show="link.expires" class="glyphicon glyphicon-time" title="Has expiration time"></span>
+                <span ng-show="link.has_password" class="glyphicon glyphicon-lock" title="Password protected"></span>
+                <span ng-show="link.require_login" class="glyphicon glyphicon-user" title="Require sign in"></span>
+              </span>
               Link to <span ng-if="object.type === 'folder'">folder</span><span ng-if="object.type === 'file'">file</span>:
             </div>
             <div class="col-sm-7 the-link" ng-hide="link.copying">

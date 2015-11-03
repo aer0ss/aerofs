@@ -22,13 +22,18 @@
     </h2>
     <div class="link-labels"
       ng-if="currentShare.token"
-      ng-show="currentShare.link.has_password || currentShare.link.expires > 0">
+      ng-show="currentShare.link.has_password || currentShare.link.expires > 0 || currentShare.link.require_login">
       <span class="label label-default"
         title="Password will only be required for users who are not already owners of this file or folder."
         ng-show="currentShare.link.has_password"><span class="glyphicon glyphicon-lock"></span> password-protected</span>
       <span class="label label-default"
         title="This link will stop working after the expiration time."
         ng-show="currentShare.link.expires > 0"><span class="glyphicon glyphicon-time"></span> expires {{currentShare.link.expires|humanDate}}</span>
+      <span class="label label-default"
+        title="This link requires user to be signed-in to view."
+        ng-show="currentShare.link.require_login">
+        <span class="glyphicon glyphicon-user"></span> require sign in</span>
+
     </div>
     <ul class="breadcrumb" ng-if="!currentShare.isSingleObject">
         <li class="active"

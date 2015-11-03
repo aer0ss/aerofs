@@ -8,15 +8,29 @@ module.exports = function(config) {
     // frameworks to use
     frameworks: ['jasmine'],
 
+    //directive preprocessors
+    preprocessors: {
+      '../../web/static/shelob/**/*.html': ['ng-html2js']
+    },
+
+    ngHtml2JsPreprocessor: {
+      stripPrefix: '.*/web',
+      moduleName: 'templates'
+    },
 
     // list of files / patterns to load in the browser
     files: [
+      '../../web/static/js/jquery.min.js',
+      '../../web/static/js/jquery.*.js',
       '../../web/static/js/angular-lib/angular/angular.min.js',
       '../../web/static/js/angular-lib/angular/angular-*.js',
+      '../../web/static/js/angular-lib/angular-ui/*.js',
       'lib/**/*.js',
+      '../../web/static-src/js/aerofs.js',
       '../../web/static-src/shelob/js/**/*.js',
       'unit/stubs.js',
       'unit/*Spec.js',
+        '../../web/static/shelob/**/*.html',
     ],
 
 
@@ -69,6 +83,7 @@ module.exports = function(config) {
     plugins : [
         'karma-phantomjs-launcher',
         'karma-jasmine',
+        'karma-ng-html2js-preprocessor',
     ],
   });
 };
