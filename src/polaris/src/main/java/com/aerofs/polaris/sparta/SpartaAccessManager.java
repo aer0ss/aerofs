@@ -1,11 +1,14 @@
 package com.aerofs.polaris.sparta;
 
 import com.aerofs.auth.client.shared.AeroService;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
+import com.aerofs.polaris.logical.DeviceResolver;
+import com.aerofs.polaris.logical.NotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
@@ -42,9 +45,9 @@ import static com.aerofs.baseline.Constants.SERVICE_NAME_INJECTION_KEY;
 import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
 @Singleton
-public final class SpartaAccessManager implements ManagedAccessManager {
+public final class SpartaAccessManager implements ManagedAccessManager, DeviceResolver {
 
-    private static final String SPARTA_API_VERSION = "v1.2";
+    private static final String SPARTA_API_VERSION = "v1.3";
     private static final long CONNECTION_ACQUIRE_TIMEOUT = TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpartaAccessManager.class);
@@ -107,6 +110,33 @@ public final class SpartaAccessManager implements ManagedAccessManager {
             client.close();
         } catch (IOException e) {
             LOGGER.warn("fail shutdown sparta HTTP client", e);
+        }
+    }
+
+    @Override
+    public UserID getDeviceOwner(DID device) throws NotFoundException
+    {
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/devices/%s", SPARTA_API_VERSION, device.toStringFormal()));
+        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
+
+        try (CloseableHttpResponse response = client.execute(get)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode == HttpStatus.SC_NOT_FOUND) {
+                LOGGER.warn("could not find owner of device ID {}", device);
+                throw new NotFoundException(device);
+            } else if (statusCode != HttpStatus.SC_OK) {
+                LOGGER.warn("fail retrieve owner of device {}, sc:{}", device, statusCode);
+                throw new NotFoundException(device);
+            }
+
+            try (InputStream content = response.getEntity().getContent()) {
+                Device d = mapper.readValue(content, Device.class);
+                return UserID.fromInternal(d.owner);
+            }
+        } catch (IOException e) {
+            LOGGER.warn("IO exception with sparta to find device {} owner", device, e);
+            throw new NotFoundException(device);
         }
     }
 

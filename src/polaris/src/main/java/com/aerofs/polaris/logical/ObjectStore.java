@@ -672,6 +672,7 @@ public final class ObjectStore {
         LogicalObject migrant = getExistingObject(dao, migrantOid);
         Preconditions.checkArgument(!Identifiers.isRootStore(migrantOid), "can't migrate root store");
         Preconditions.checkArgument(!isInSubtree(dao, migrantOid, parentOid));
+        // migrating a shared folder into another store converts it into a folder, so as not to cause nested sharing
         return insertChild(dao, device, parentOid, newOid, migrant.objectType == ObjectType.STORE ? ObjectType.FOLDER : migrant.objectType, name, migrantOid);
     }
 

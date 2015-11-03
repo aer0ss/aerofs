@@ -34,17 +34,19 @@ public class Migrator implements Managed {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObjectStore.class);
     private final DBI dbi;
     private final Notifier notifier;
+    private final DeviceResolver deviceResolver;
     private final ListeningExecutorService executor;
 
     @Inject
-    public Migrator(DBI dbi, Notifier notifier)
+    public Migrator(DBI dbi, Notifier notifier, DeviceResolver deviceResolver)
     {
-        this(dbi, notifier, MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()));
+        this(dbi, notifier, deviceResolver, MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()));
     }
 
-    public Migrator(DBI dbi, Notifier notifier, ListeningExecutorService executor)
+    public Migrator(DBI dbi, Notifier notifier, DeviceResolver deviceResolver, ListeningExecutorService executor)
     {
         this.dbi = dbi;
+        this.deviceResolver = deviceResolver;
         this.notifier = notifier;
         this.executor = executor;
     }
@@ -89,6 +91,7 @@ public class Migrator implements Managed {
         UniqueID jobID = UniqueID.generate();
         dao.migrations.addMigration(child, destination, jobID, originator, JobStatus.RUNNING);
         dao.migrations.addOidMapping(child, destination, jobID);
+        dao.objects.setLocked(destination, LockStatus.LOCKED);
         startFolderMigration(child, destination, jobID, originator);
         return jobID;
     }
@@ -246,19 +249,23 @@ public class Migrator implements Managed {
         });
     }
 
-    private void lockChildrenAndAddToQueue(DAO dao, Queue<ChildMigrationState> queue, UniqueID parent, boolean persistLocking) {
+    private int lockChildrenAndAddToQueue(DAO dao, Queue<ChildMigrationState> queue, UniqueID parent, boolean persistLocking) {
+        int children = 0;
         try (ResultIterator<DeletableChild> oldChildren = dao.children.getChildren(parent)) {
             while (oldChildren.hasNext()) {
+                children++;
                 DeletableChild child = oldChildren.next();
                 dao.objects.setLocked(child.oid, LockStatus.LOCKED);
                 queue.add(new ChildMigrationState(parent, child, persistLocking));
             }
         }
+        return children;
     }
 
     private Update moveCrossStore(UniqueID migrant, OID destination, UniqueID jobID, DID originator) {
         Queue<ChildMigrationState> queue = Queues.newArrayDeque();
         Map<UniqueID, Long> versionMap = Maps.newHashMap();
+        Map<UniqueID, Integer> parentReferences = Maps.newHashMap();
         Map<UniqueID, UniqueID> newOIDs = Maps.newHashMap();
 
         UniqueID newStore = dbi.inTransaction((conn, status) -> {
@@ -273,9 +280,11 @@ public class Migrator implements Managed {
 
             LogicalObject migrantRoot = getObject(dao, migrant);
             boolean persistLocking = migrantRoot.objectType != ObjectType.STORE;
-            lockChildrenAndAddToQueue(dao, queue, migrant, persistLocking);
-            if (!persistLocking) {
-                dao.objects.setLocked(migrant, LockStatus.UNLOCKED);
+            parentReferences.put(migrant, lockChildrenAndAddToQueue(dao, queue, migrant, persistLocking));
+            // may need to undo the locking done by initial acceptance of the MOVE_CHILD operation
+            dao.objects.setLocked(migrant, persistLocking ? LockStatus.MIGRATED : LockStatus.UNLOCKED);
+            if (parentReferences.get(migrant) == 0) {
+                dao.objects.setLocked(destination, LockStatus.UNLOCKED);
             }
 
             LogicalObject destinationRoot = getObject(dao, destination);
@@ -285,7 +294,7 @@ public class Migrator implements Managed {
 
         Update update = null;
         while (!queue.isEmpty()) {
-            Update result = dbi.inTransaction((conn, status) -> moveBatchCrossStore(new DAO(conn), originator, newStore, queue, versionMap, new IDMap(jobID, newOIDs)));
+            Update result = dbi.inTransaction((conn, status) -> moveBatchCrossStore(new DAO(conn), originator, newStore, queue, parentReferences, versionMap, new IDMap(jobID, newOIDs)));
             if (result != null) {
                 update = result;
             }
@@ -295,31 +304,44 @@ public class Migrator implements Managed {
 
     private Update removeMigratedFolder(UniqueID migrant, UniqueID destination, DID originator)
     {
-        return dbi.inTransaction((conn, status) -> {
-            DAO dao = new DAO(conn);
-            UniqueID originalParentID = dao.children.getParent(migrant);
-            Preconditions.checkState(originalParentID != null, "could not find original parent of migrating object");
-            LogicalObject originalParent = getObject(dao, originalParentID);
-            ObjectType migratingObjectType = dao.objectTypes.get(migrant);
-
-            if (migratingObjectType != ObjectType.STORE && dao.children.getActiveReferenceCount(migrant) == 1) {
-                dao.children.setDeleted(migrant, true);
-            } else {
-                dao.children.remove(originalParentID, migrant);
-            }
-
-            long logicalTimestamp = dao.transforms.add(originator, originalParent.store, originalParentID, TransformType.REMOVE_CHILD, originalParent.version + 1, migrant, null, destination, System.currentTimeMillis(), null);
-            dao.logicalTimestamps.updateLatest(originalParent.store, logicalTimestamp);
-            return new Update(originalParent.store, logicalTimestamp);
-        });
+        if (Identifiers.isSharedFolder(migrant)) {
+            // need the root store to find out the parent of the migrated shared folder
+            UserID owner = deviceResolver.getDeviceOwner(originator);
+            return dbi.inTransaction((conn, status) -> {
+                DAO dao = new DAO(conn);
+                UniqueID parent = dao.mountPoints.getMountPointParent(SID.rootSID(owner), migrant);
+                Preconditions.checkState(parent != null, "could not find parent of migrating anchor %s", migrant);
+                Update update = removeAnchor(dao, originator, parent, migrant, destination);
+                dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
+                return update;
+            });
+        } else {
+            return dbi.inTransaction((conn, status) -> {
+                DAO dao = new DAO(conn);
+                UniqueID parent = dao.children.getParent(migrant);
+                Preconditions.checkState(parent != null, "could not find parent of migrating object %s", migrant);
+                Update update = removeObject(dao, originator, parent, migrant, destination);
+                dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
+                return update;
+            });
+        }
     }
 
-    private void removeAnchor(DAO dao, DID originator, UniqueID parent, UniqueID anchor) {
+    private Update removeAnchor(DAO dao, DID originator, UniqueID parent, UniqueID anchor, @Nullable UniqueID migrant) {
+        dao.mountPoints.remove(dao.objects.getStore(parent), anchor);
+        return removeObject(dao, originator, parent, anchor, migrant);
+    }
+
+    private Update removeObject(DAO dao, DID originator, UniqueID parent, UniqueID child, @Nullable UniqueID migrant) {
         LogicalObject parentObject = getObject(dao, parent);
-        dao.transforms.add(originator, parentObject.store, parentObject.oid, TransformType.REMOVE_CHILD, parentObject.version + 1, anchor, null, null, System.currentTimeMillis(), null);
-        dao.mountPoints.remove(parentObject.store, anchor);
-        dao.children.remove(parent, anchor);
+        if (dao.objectTypes.get(child) != ObjectType.STORE && dao.children.getActiveReferenceCount(child) == 1) {
+            dao.children.setDeleted(child, true);
+        } else {
+            dao.children.remove(parent, child);
+        }
         dao.objects.update(parentObject.store, parent, parentObject.version + 1);
+        long timestamp = dao.transforms.add(originator, parentObject.store, parentObject.oid, TransformType.REMOVE_CHILD, parentObject.version + 1, child, null, migrant, System.currentTimeMillis(), null);
+        return new Update(parentObject.store, timestamp);
     }
 
     private void restoreObjectsUnder(UniqueID restored) {
@@ -397,7 +419,7 @@ public class Migrator implements Managed {
         }
     }
 
-    private @Nullable Update moveBatchCrossStore(DAO dao, DID originator, UniqueID newStore, Queue<ChildMigrationState> searchQueue, Map<UniqueID, Long> versionMap, IDMap newOIDs)
+    @Nullable Update moveBatchCrossStore(DAO dao, DID originator, UniqueID newStore, Queue<ChildMigrationState> searchQueue, Map<UniqueID, Integer> parentRefs, Map<UniqueID, Long> versionMap, IDMap newOIDs)
     {
         Preconditions.checkArgument(!searchQueue.isEmpty(), "tried to move an empty queue of objects");
         LOGGER.debug("performing batch cross store migration for job {}", newOIDs.jobID);
@@ -409,11 +431,13 @@ public class Migrator implements Managed {
             ChildMigrationState next = searchQueue.remove();
             LogicalObject migrating = getObject(dao, next.child.oid);
 
-            if (!newOIDs.containsKey(migrating.oid)) {
+            UniqueID newOID = newOIDs.get(migrating.oid);
+            UniqueID newParent = newOIDs.get(next.parent);
+            Preconditions.checkState(newParent != null, "migrating file %s before its parent %s", migrating.oid, next.parent);
+            if (newOID == null) {
                 LOGGER.trace("migrating object {}", migrating.oid);
-                UniqueID newParent = newOIDs.get(next.parent);
                 long newParentVersion = versionMap.get(newParent);
-                OID newOID = OID.generate();
+                newOID = OID.generate();
 
                 dao.objects.add(newStore, newOID, migrating.version);
                 // migrated anchors become normal folders when migrated
@@ -434,7 +458,7 @@ public class Migrator implements Managed {
 
                 if (migrating.objectType == ObjectType.STORE) {
                     // auto-leave shared folders upon them being migrated and converted to normal folders
-                    removeAnchor(dao, originator, next.parent, migrating.oid);
+                    removeAnchor(dao, originator, next.parent, migrating.oid, null);
                 }
 
                 dao.objects.update(newStore, newParent, newParentVersion);
@@ -443,15 +467,22 @@ public class Migrator implements Managed {
             }
 
             if (migrating.objectType == ObjectType.FOLDER || migrating.objectType == ObjectType.STORE) {
-                versionMap.put(newOIDs.get(migrating.oid), migrating.version);
+                versionMap.put(newOID, migrating.version);
                 boolean persistLocking = next.persistentLock && migrating.objectType != ObjectType.STORE;
-                lockChildrenAndAddToQueue(dao, searchQueue, migrating.oid, persistLocking);
+                int childrenLocked = lockChildrenAndAddToQueue(dao, searchQueue, migrating.oid, persistLocking);
+                if (childrenLocked > 0) {
+                    dao.objects.setLocked(newOID, LockStatus.LOCKED);
+                    parentRefs.put(migrating.oid, childrenLocked);
+                }
             }
 
-            if (!next.persistentLock || migrating.objectType == ObjectType.STORE) {
-                dao.objects.setLocked(migrating.oid, LockStatus.UNLOCKED);
-            } else {
-                dao.objects.setLocked(migrating.oid, LockStatus.MIGRATED);
+            LockStatus locked = (next.persistentLock && migrating.objectType != ObjectType.STORE) ? LockStatus.MIGRATED: LockStatus.UNLOCKED;
+            dao.objects.setLocked(migrating.oid, locked);
+
+            // unlock the migrated parent if all its children have been migrated
+            parentRefs.put(next.parent, parentRefs.get(next.parent) - 1);
+            if (parentRefs.get(next.parent) == 0) {
+                dao.objects.setLocked(newParent, LockStatus.UNLOCKED);
             }
             operationsDone++;
         }
@@ -558,7 +589,7 @@ public class Migrator implements Managed {
         }
     }
 
-    private static class IDMap
+    static class IDMap
     {
         final UniqueID jobID;
         final Map<UniqueID, UniqueID> map;
@@ -574,7 +605,7 @@ public class Migrator implements Managed {
             return map.get(oldID);
         }
 
-        void put(DAO dao, UniqueID oldID, OID newID)
+        void put(DAO dao, UniqueID oldID, UniqueID newID)
         {
             map.put(oldID, newID);
             dao.migrations.addOidMapping(oldID, newID, jobID);

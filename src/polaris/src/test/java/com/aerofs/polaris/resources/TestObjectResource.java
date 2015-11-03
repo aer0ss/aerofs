@@ -9,9 +9,6 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
-import com.aerofs.polaris.api.operation.InsertChild;
-import com.aerofs.polaris.api.operation.MoveChild;
-import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.api.operation.Restore;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +17,7 @@ import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -57,6 +55,12 @@ public final class TestObjectResource {
 
     @ClassRule
     public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
+
+    @Before
+    public void beforeTest() throws Exception
+    {
+        doReturn(USERID).when(polaris.getDeviceResolver()).getDeviceOwner(eq(DEVICE));
+    }
 
     @After
     public void afterTest() throws Exception {
@@ -283,14 +287,8 @@ public final class TestObjectResource {
         reset(polaris.getNotifier());
 
         // attempt to insert an object directly into the shared folder
-        OID folder = OID.generate();
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.newObject(AUTHENTICATED, store, OID.generate(), "A", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -313,14 +311,8 @@ public final class TestObjectResource {
 
         // try insert a new folder as a child of folder0
         // this should fail, because folder1 is a child of store
-        OID folder1 = OID.generate();
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder1, ObjectType.FOLDER, "folder1", null))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(folder0))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.newObject(AUTHENTICATED, folder0, OID.generate(), "foldwer1", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -334,14 +326,8 @@ public final class TestObjectResource {
         doThrow(new AccessException(USERID, store0, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store0)), anyVararg());
 
         // now, make a call to insert the folder directly into the denied shared folder
-        OID folder = OID.generate();
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new InsertChild(folder, ObjectType.FOLDER, "A", null))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store0))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.newObject(AUTHENTICATED, store0, OID.generate(), "A", ObjectType.FOLDER)
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // we should be able to access other shared folders though...
         SID store1 = SID.generate();
@@ -511,7 +497,7 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void shouldMoveObjectsBetweenStores()
+    public void shouldMoveObjectsCrossStore()
             throws Exception
     {
         byte[] hash = PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF");
@@ -531,17 +517,34 @@ public final class TestObjectResource {
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share2), any(Long.class));
 
         reset(polaris.getNotifier());
-        OperationResult result =  PolarisHelpers.moveObject(AUTHENTICATED, share1, share2, folder1, "dest_folder")
-                .assertThat().statusCode(SC_OK)
-                .and().extract().response().as(OperationResult.class);
-        // cross-store moves of folders cause an actual migration
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, result.jobID, 10);
+        UniqueID job = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, share1, share2, folder1, "dest_folder").jobID;
+        // cross-store moves of folders cause a long-running migration
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, job, 10);
 
         verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(share1), any(Long.class));
         // one notification for creating the migration destination, then another for finishing the migration
         verify(polaris.getNotifier(), times(2)).notifyStoreUpdated(eq(share2), any(Long.class));
         checkTreeState(share1, "tree/shouldMigrateCrossStore1.json");
         checkTreeState(share2, "tree/shouldMigrateCrossStore2.json");
+    }
+
+    @Test
+    public void shouldMoveAnchorsCrossStore()
+            throws Exception
+    {
+        SID rootSID = SID.rootSID(USERID), share1 = SID.generate(), share2= SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, rootSID, share1, "sf1", ObjectType.STORE).assertThat().statusCode(SC_OK);
+        PolarisHelpers.newObject(AUTHENTICATED, rootSID, share2, "sf2", ObjectType.STORE).assertThat().statusCode(SC_OK);
+        PolarisHelpers.newFolder(AUTHENTICATED, share1, "folder");
+
+        UniqueID job = PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootSID, share2, share1, "sf1").jobID;
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, job, 10);
+
+        checkTreeState(share2, "tree/shouldMigrateAnchor.json");
+
+        // should be able to reinsert folder
+        OID sfparent = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "newparent");
+        PolarisHelpers.newObject(AUTHENTICATED, sfparent, share1, "sf1", ObjectType.STORE).assertThat().statusCode(SC_OK);
     }
 
     @Test
@@ -689,47 +692,23 @@ public final class TestObjectResource {
         reset(polaris.getNotifier());
 
         // try to move folder1 from store1 to store2, which should fail because the user does not have access to store2
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body(new MoveChild(folder1, store2, "folder1"))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store1))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.moveObject(AUTHENTICATED, store1, store2, folder1, "folder1")
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // same thing in reverse
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body(new MoveChild(folder2, store1, "folder2"))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store2))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.moveObject(AUTHENTICATED, store2, store1, folder2, "folder2")
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // and definitely so if both stores are restricted
         doThrow(new AccessException(USERID, store1, Access.READ, Access.WRITE)).when(polaris.getAccessManager()).checkAccess(eq(USERID), argThat(new ContainingUniqueID(store1)), anyVararg());
 
         // try to move folder1 from store1 to store2, which should fail because the user does not have access to store2
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body(new MoveChild(folder1, store2, "folder1"))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store1))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.moveObject(AUTHENTICATED, store1, store2, folder1, "folder1")
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // same thing in reverse
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body(new MoveChild(folder2, store1, "folder2"))
-                .and()
-                .when().post(PolarisTestServer.getObjectURL(store2))
-                .then().assertThat().statusCode(SC_FORBIDDEN);
+        PolarisHelpers.moveObject(AUTHENTICATED, store2, store1, folder2, "folder2")
+                .assertThat().statusCode(SC_FORBIDDEN);
 
         // shouldn't get any updates
         verify(polaris.getNotifier(), times(0)).notifyStoreUpdated(any(SID.class), any(Long.class));
@@ -742,8 +721,7 @@ public final class TestObjectResource {
         OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
 
         // rename op to "file" will be logical no-op, but there won't be a matching RENAME transform
-        PolarisHelpers.moveObject(AUTHENTICATED, store, store, file, "file")
-            .assertThat().statusCode(SC_OK);
+        PolarisHelpers.moveFileOrFolder(AUTHENTICATED, store, store, file, "file");
     }
 
     @Test
@@ -766,7 +744,7 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void migrationShouldLockObjects() throws Exception
+    public void crossStoreMoveShouldLockObjects() throws Exception
     {
         SID store1 = SID.generate(), store2 = SID.generate();
         byte[] hash = new byte[32];
@@ -798,7 +776,7 @@ public final class TestObjectResource {
     }
 
     @Test
-    public void migrationDoesNotLockObjectsUnderAnchor() throws Exception
+    public void crossStoreMoveDoesNotLockObjectsUnderAnchor() throws Exception
     {
         byte[] hash = new byte[32];
         Random random = new Random();

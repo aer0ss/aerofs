@@ -10,6 +10,7 @@ import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.JobStatus;
 import com.aerofs.polaris.api.types.ObjectType;
+import com.aerofs.polaris.logical.Migrator;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -320,6 +321,23 @@ public abstract class PolarisHelpers {
     {
         Operation op = new MoveChild(child, newParent, childName);
         return objects.performTransform(user, device, parent, op);
+    }
+
+    public static JobStatus waitForJobCompletion(Migrator migrator, UniqueID job, int tries)
+            throws Exception
+    {
+        JobStatus status = JobStatus.RUNNING;
+        int count = 0;
+        while(status.equals(JobStatus.RUNNING) && count < tries) {
+            status = migrator.getJobStatus(job);
+            Thread.sleep(100);
+            count++;
+        }
+
+        if (status.equals(JobStatus.RUNNING) && count == tries) {
+            throw new Exception(String.format("job did not complete within %d tries", tries));
+        }
+        return status;
     }
 
     private PolarisHelpers() {

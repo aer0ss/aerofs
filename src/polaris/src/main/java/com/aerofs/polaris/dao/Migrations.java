@@ -36,7 +36,7 @@ public interface Migrations {
     ResultIterator<MigrationJob> activeMigrations();
 
     @SqlUpdate("insert into migrating_object_oids(old_oid, new_oid, job_id) values (:old_oid, :new_oid, :job_id)")
-    int addOidMapping(@Bind("old_oid") UniqueID oldOID, @Bind("new_oid") OID newOID, @Bind("job_id") UniqueID jobID);
+    int addOidMapping(@Bind("old_oid") UniqueID oldOID, @Bind("new_oid") UniqueID newOID, @Bind("job_id") UniqueID jobID);
 
     @RegisterMapper(IDPairMapper.class)
     @SqlQuery("select old_oid, new_oid from migrating_object_oids where job_id = :job_id")

@@ -5,6 +5,7 @@ import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
+import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.Polaris;
 import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
@@ -29,6 +30,7 @@ import org.skife.jdbi.v2.exceptions.CallbackFailedException;
 import java.sql.SQLException;
 import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.polaris.PolarisHelpers.*;
@@ -53,6 +55,7 @@ public class TestMigrator
     private Migrator migrator;
     private ListeningExecutorService migratorExecutor;
     private ObjectStore objects;
+    private DeviceResolver deviceResolver;
 
     @ClassRule
     public static MySQLDatabase database = new MySQLDatabase("test");
@@ -96,10 +99,12 @@ public class TestMigrator
     {
         // spy on it
         this.dbi = spy(realdbi);
+        this.deviceResolver = mock(DeviceResolver.class);
+        doReturn(USERID).when(this.deviceResolver).getDeviceOwner(eq(DEVICE));
 
         this.notifier = mock(Notifier.class);
         this.migratorExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
-        this.migrator = spy(new Migrator(this.dbi, notifier, migratorExecutor));
+        this.migrator = spy(new Migrator(this.dbi, notifier, deviceResolver, migratorExecutor));
         this.objects = new ObjectStore(mock(AccessManager.class), dbi, migrator);
         migrator.start();
     }
@@ -126,13 +131,13 @@ public class TestMigrator
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        shareFolder(sharedFolder, USERID, DEVICE, objects);
+        UniqueID job1 = shareFolder(sharedFolder, USERID, DEVICE, objects);
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
-        moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes(), USERID, DEVICE, objects);
+        UniqueID job2 = moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes(), USERID, DEVICE, objects).jobID;
 
         migrator.start();
-        migratorExecutor.shutdown();
-        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        waitForJobCompletion(migrator, job1, 10);
+        waitForJobCompletion(migrator, job2, 10);
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
@@ -169,9 +174,7 @@ public class TestMigrator
             unnestedFile = newFile(sharedFolder, String.format("file-%d", i), USERID, DEVICE, objects);
         }
 
-        shareFolder(sharedFolder, USERID, DEVICE, objects);
-        migratorExecutor.shutdown();
-        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        waitForJobCompletion(migrator, shareFolder(sharedFolder, USERID, DEVICE, objects), 100);
 
         // at least 550 * 2 notifications. 1 for the creation, and the 1 operations for cross-store move
         verify(notifier).notifyStoreUpdated(eq(newStore), gt(1100L));
@@ -308,20 +311,19 @@ public class TestMigrator
         insertAnchor(folder, share1, "share", USERID, DEVICE, objects);
 
         migrator.start();
-        dbi.inTransaction((conn, handle) -> {
+        // this is emulating as if folder was moved to be under share2, and its migrant equivalent were destFolder
+        UniqueID job = dbi.inTransaction((conn, handle) -> {
             DAO dao = new DAO(conn);
-            migrator.moveCrossStore(dao, folder, destFolder, DEVICE);
-            return null;
+            return migrator.moveCrossStore(dao, folder, destFolder, DEVICE);
         });
-        migratorExecutor.shutdown();
-        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        waitForJobCompletion(migrator, job, 10);
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
             ResultIterator<DeletableChild> migrants = dao.children.getChildren(destFolder);
             assertTrue("did not migrate any children under destination", migrants.hasNext());
             DeletableChild child = migrants.next();
-            assertThat("did not migrate share name", child.name, equalTo("share".getBytes()));
+            assertThat("did not migrate share name", new String(child.name), equalTo("share"));
             assertThat("did not convert anchor to folder", dao.objects.get(child.oid).objectType, equalTo(ObjectType.FOLDER));
             migrants = dao.children.getChildren(child.oid);
             assertTrue("did not migrate any children under anchor", migrants.hasNext());
@@ -350,7 +352,7 @@ public class TestMigrator
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        shareFolder(sharedFolder, USERID, DEVICE, objects);
+        UniqueID job = shareFolder(sharedFolder, USERID, DEVICE, objects);
 
         // fake some work being done before crash
         dbi.inTransaction(((conn, status) -> {
@@ -362,8 +364,7 @@ public class TestMigrator
         }));
 
         migrator.start();
-        migratorExecutor.shutdown();
-        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        waitForJobCompletion(migrator, job, 10);
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
@@ -411,8 +412,7 @@ public class TestMigrator
         });
 
         migrator.start();
-        migratorExecutor.shutdown();
-        assertTrue("failed to complete migration within 10 seconds", migratorExecutor.awaitTermination(10, TimeUnit.SECONDS));
+        waitForJobCompletion(migrator, jobID, 10);
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
@@ -448,6 +448,36 @@ public class TestMigrator
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
         }
+    }
+
+    @Test
+    public void shouldLockFoldersUntilAllChildrenAreMigrated()
+            throws Exception
+    {
+        SID store1 = SID.generate(), store2 = SID.generate();
+        OID migrationRoot = newFolder(store1, "folder", USERID, DEVICE, objects);
+        for (int i = 0; i < 2 * Constants.MIGRATION_OPERATION_BATCH_SIZE; i++) {
+            newFile(migrationRoot, "file" + Integer.toString(i), USERID, DEVICE, objects);
+        }
+
+        final Semaphore sem = new Semaphore(0);
+        doCallRealMethod().doAnswer(invocation -> {
+            sem.release();
+            return null;
+        }).when(this.migrator).moveBatchCrossStore(any(DAO.class), any(DID.class), any(UniqueID.class), any(), any(), any(), any());
+        moveObject(store1, store2, migrationRoot, "folder".getBytes(), USERID, DEVICE, objects);
+        // wait until the first batch is migrated
+        sem.acquire();
+
+        dbi.inTransaction((conn, status) -> {
+            DAO dao = new DAO(conn);
+            ResultIterator<DeletableChild> migrants = dao.children.getChildren(store2);
+            assertTrue("did not migrate any children under destination", migrants.hasNext());
+            DeletableChild child = migrants.next();
+            LockableLogicalObject logicalObject = dao.objects.get(child.oid);
+            assertThat("did not lock folder until all children were migrated", logicalObject.locked, equalTo(LockStatus.LOCKED));
+            return null;
+        });
     }
 
 }

@@ -13,6 +13,7 @@ import com.aerofs.oauth.TokenVerificationClient;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
+import com.aerofs.polaris.logical.DeviceResolver;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
@@ -28,6 +29,7 @@ import org.mockito.Spy;
 import java.io.IOException;
 import java.net.URI;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -105,6 +107,7 @@ public final class PolarisTestServer extends ExternalResource {
         private final ManagedUpdatePublisher publisher = Mockito.mock(ManagedUpdatePublisher.class);
         private final ManagedAccessManager accessManager = Mockito.mock(ManagedAccessManager.class);
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
+        private final DeviceResolver deviceResolver = Mockito.mock(DeviceResolver.class);
 
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
@@ -116,6 +119,7 @@ public final class PolarisTestServer extends ExternalResource {
                     bind(notifier).to(ManagedNotifier.class).to(Notifier.class).ranked(1);
                     bind(publisher).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).ranked(1);
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
+                    bind(deviceResolver).to(DeviceResolver.class).ranked(1);
                 }
             });
         }
@@ -149,6 +153,11 @@ public final class PolarisTestServer extends ExternalResource {
     }
 
     public TokenVerifier getTokenVerifier() { return tokenVerifier;}
+
+    public DeviceResolver getDeviceResolver()
+    {
+        return server.deviceResolver;
+    }
 
     @Override
     protected void before() throws Throwable {
