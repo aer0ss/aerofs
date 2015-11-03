@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
@@ -644,5 +646,22 @@ public class MetadataBuilder
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
         throwIfInSufficientTokenScope(principal, oid, Scope.READ_FILES, parentFolders);
         return Response.ok().entity(parentPath(parentFolders.values())).build();
+    }
+
+    public static final class ApiOperationResult
+    {
+        @NotNull
+        @Valid
+        public final List<Updated> updated;
+
+        @NotNull
+        public final Response response;
+
+
+        public ApiOperationResult(List<Updated> updated, Response response)
+        {
+            this.updated = updated;
+            this.response = response;
+        }
     }
 }
