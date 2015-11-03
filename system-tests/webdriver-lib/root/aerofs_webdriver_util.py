@@ -41,3 +41,10 @@ def get_signup_code(hostname, user_id):
     r = requests.get(url)
     r.raise_for_status()
     return r.json()['signup_code']
+
+def invite_user(driver, wait, selector, host, user):
+    login_as_admin_at_syncfs_dot_com(driver, wait, selector, host)
+    wait.until(EC.title_contains('My Files'))
+    selector.get_and_clear('#invite-coworker-email').send_keys(user)
+    selector.get('#invite-coworker-submit').click()
+    wait.until_display('#flash-msg-success', timeout=5 * 60)

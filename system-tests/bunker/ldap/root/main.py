@@ -1,7 +1,7 @@
 from sys import argv, stderr
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_util import init, wait_and_get
-from aerofs_webdriver_util import upload_license, login
+from aerofs_webdriver_util import upload_license, login, invite_user
 
 
 def enable_ldap(w, e, ldap_address):
@@ -49,7 +49,7 @@ def main():
         print >>stderr, "Usage: {} <hostname> <ldap-server-address>".format(argv[0])
         exit(11)
     driver, waiter, selector = init()
-
+    invite_user(driver, waiter, selector, argv[1], USER)
     url = "http://{}:8484/identity".format(argv[1])
     wait_and_get(driver, url)
     upload_license(driver, selector, waiter)
