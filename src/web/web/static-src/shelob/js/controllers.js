@@ -686,10 +686,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }).success(function(response) {
             var newLink = {
                 key: response.key,
-                require_login: false,
-                has_password: false,
+                require_login: response.require_login,
+                has_password: response.has_password,
                 // all new links have no expiration, can be added later
-                expires: 0
+                expires: response.expires
             };
             object.links.push(newLink);
         }).error(function(response, status) {

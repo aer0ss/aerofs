@@ -2,7 +2,7 @@ import unittest
 
 def test_suite():
     # import all test submodules
-    import apps_view_test, license_test, monitoring_test, mdm_test
+    import apps_view_test, license_test, monitoring_test, mdm_test, link_settings_test
 
     suite = unittest.TestSuite()
 
@@ -11,5 +11,6 @@ def test_suite():
     suite.addTest(monitoring_test.test_suite())
     suite.addTest(license_test.test_suite())
     suite.addTest(mdm_test.test_suite())
+    suite.addTest(link_settings_test.test_suite())
 
     return suite

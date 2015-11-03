@@ -32,6 +32,7 @@ internal_email_pattern={{ internal_email_pattern }}
 identity_service_identifier={{ identity_service_identifier }}
 
 url_sharing.enabled={{ url_sharing_enabled }}
+links_require_login.enabled={{ links_require_login_enabled }}
 
 openid.service.url={{ openid_service_url }}
 openid.service.timeout={{ openid_service_timeout }}

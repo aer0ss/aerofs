@@ -11,38 +11,34 @@
     <ul class="nav nav-list left-nav">
         <li class="nav-header">Settings</li>
         <%
-            non_maintenance_links = [
-                ('status', _("Service status")),
-                ('registered_apps', _("Registered apps")),
-            ]
+            non_maintenance_links = ['status','registered_apps']
 
+            #Please make alphabetical by display name
             links = [
                 ('auditing', _("Auditing")),
-                ('identity', _("Identity")),
-                ('device_restriction', _("Device restriction")),
-                ('password_restriction', _("Password restriction")),
-                ('timekeeping', _("Timekeeping")),
-                ('collect_logs', _("Collect logs")),
                 ('backup_and_upgrade', _("Backup and upgrade")),
-                ('setup', _("Setup")),
-                ('toggle_maintenance_mode', _("System maintenance")),
+                ('collect_logs', _("Collect logs")),
                 ('customization', _("Customization")),
-                ('sync_settings', _("Sync settings")),
+                ('device_restriction', _("Device restriction")),
+                ('identity', _("Identity")),
+                ('link_settings', _("Link Sharing")),
+                ('password_restriction', _("Password restriction")),
+                ('registered_apps', _("Registered apps")),
+                ('status', _("Service status")),
                 ('session_management', _("Session management")),
+                ('setup', _("Setup")),
+                ('sync_settings', _("Sync settings")),
+                ('toggle_maintenance_mode', _("System maintenance")),
+                ('timekeeping', _("Timekeeping")),
             ]
-
-            if not is_maintenance_mode(None):
-                links = non_maintenance_links + links
         %>
         <ul>
-            %if is_maintenance_mode(None):
-                %for link in non_maintenance_links:
-                    <li class="text-muted">${link[1]}</li>
-                %endfor
-            %endif
-
             %for link in links:
-                ${navigation.link(link)}
+                %if ( is_maintenance_mode(None) and link[0] in non_maintenance_links):
+                    <li class="text-muted">${link[1]}</li>
+                %else:
+                    ${navigation.link(link)}
+                %endif
             %endfor
         </ul>
 

@@ -50,6 +50,7 @@ public class UrlShare
 
         // Whether URL sharing is enabled
         private final boolean ENABLED = getBooleanProperty("url_sharing.enabled", true);
+        private final boolean REQUIRE_LOGIN = getBooleanProperty("links_require_login.enabled", false);
 
         @Inject
         public Factory(UrlSharingDatabase db)
@@ -83,8 +84,8 @@ public class UrlShare
             while (true) {
                 String key = generateKey();
                 try {
-                    _db.insertRow(key, restObject.getSID(), restObject.getOID(), token, null, false,
-                            createdBy);
+                    _db.insertRow(key, restObject.getSID(), restObject.getOID(), token, null,
+                            REQUIRE_LOGIN, createdBy);
                     return create(key);
                 } catch (ExAlreadyExist ignored) {
                     // try again

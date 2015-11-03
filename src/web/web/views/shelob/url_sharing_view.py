@@ -98,7 +98,12 @@ def create_url(request):
         'soid': {'sid': reply.url_info.soid[:32], 'oid': reply.url_info.soid[32:]},
     })
 
-    return {"key": key}
+    return {
+        "key": key,
+        "require_login": reply.url_info.require_login,
+        "has_password": reply.url_info.has_password,
+        "expires": reply.url_info.expires
+    }
 
 
 @view_config(

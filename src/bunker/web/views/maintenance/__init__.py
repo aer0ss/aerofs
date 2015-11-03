@@ -64,6 +64,8 @@ routes = [
     'json_upload_additional_users',
     'customization',
     'session_management',
+    'link_settings',
+    'json_set_require_login',
 
     'maintenance_mode',
     'license_expired',
