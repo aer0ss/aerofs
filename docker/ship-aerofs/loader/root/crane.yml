@@ -54,6 +54,16 @@ containers:
         - config:config.service
         - ca-server:ca.service
 
+  sloth:
+    image: aeroim/sloth
+    run:
+      detach: true
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+        - mysql:mysql.service
+
   nginx:
     image: aerofs/nginx
     run:
@@ -66,6 +76,7 @@ containers:
       volumes-from:
         - data
       link:
+        - aeroimweb:aeroimweb.service
         - auditor:auditor.service
         - bunker:bunker.service
         - ca-server:ca.service
@@ -75,9 +86,11 @@ containers:
         - openid:openid.service
         - polaris:polaris.service
         - repackaging:repackaging.service
+        - sloth:sloth.service
         - sp:sp.service
         - status:status.service
         - sparta:sparta.service
+        - trifrost:trifrost.service
         - web:web.service
 
   bunker:
@@ -243,6 +256,21 @@ containers:
         - auditor:auditor.service
         - config:config.service
         - sparta:sparta.service
+
+  trifrost:
+    image: aerofs/trifrost
+    run:
+      detach: true
+      volumes-from:
+        - data
+      link:
+        - config:config.service
+        - mysql:mysql.service
+
+  aeroimweb:
+    image: aeroim/nginx
+    run:
+      detach: true
 
   verification:
     image: aerofs/verification
