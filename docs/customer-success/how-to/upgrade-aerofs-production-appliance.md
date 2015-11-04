@@ -6,7 +6,7 @@
 2. Click on **EC2**.
 3. Click **Launch Instance**.
 4. Click **Community AMIs** and search for the latest stable
-   [CoreOS release](https://coreos.com/releases/).
+    [CoreOS release](https://coreos.com/releases/).
 5. Click **Select** next to the "paravirtual (PV)" AMI.
 6. Select "m3.medium" as the instance type.
 7. Click **Next: Configure Instance Details**.
@@ -28,30 +28,52 @@ Public IP" select "Enable".
     and save it to `~/repos`. Select the appropriate key pair and hit **Launch Instance**.
 19. Your instance should now appear in the EC2 Dashboard as a running instance.
 
-## Part 2: Backup and Restore
-
+## Part 2: Backup, Restore, and Enable Polaris
 1. Go to `phoenix.aerofs.com:8484`, upload license file, click **Backup and upgrade** and hit
-   **Download backup file and put appliance in Maintenance Mode**.
+  **Download backup file and put appliance in Maintenance Mode**.
 2. Save the backup file in a safe place and shut down the old running instance of the appliance.
 3. Point browser to the private IP address of the instance launched in Part 1.
-4. [Restore the appliance](https://support.aerofs.com/hc/en-us/articles/204631424-How-Do-I-Upgrade-My-AeroFS-Appliance-)
+4. [Restore the appliance](https://support.aerofs.com/hc/en-us/articles/204631424-How-Do-I-Upgrade-My-AeroFS-Appliance)
    using the backup file downloaded in Part 1.
+5. SSH into the new appliance ```ssh -i <key name> core@<IP of new appliance>```
+6. Enter the nginx container ```docker exec -it nginx-<version> bash```.
+7. Enable polaris ```mv /etc/nginx/sites-disabled/polaris  /etc/nginx/sites/```.
+8. Enable API requests to Polaris by completing the following:
+
+        apt-get update && apt-get install vim
+        cd /etc/nginx
+        vim polaris.conf
+
+    Copy the contents of **docker/nginx/root/etc/nginx/polaris.conf** from
+    [https://gerrit.arrowfs.org/#/c/4925/](https://gerrit.arrowfs.org/#/c/4925/)
+    into **polaris.conf** in the new appliance. Save and close.
+
+        vim sites/polaris
+
+    Replace its content with content from **docker/nginx/root/etc/nginx/sites-disabled/polaris** in
+    [https://gerrit.arrowfs.org/#/c/4925/](https://gerrit.arrowfs.org/#/c/4925/). Save and close.
+
+        vim sites/havre
+
+    Replace `location/api` with
+    `location ~\* /api/v[0-9]+\.[0-9]+/files/[A-Za-z0-9]+/content`.
+
+9. Reload the nginx container ```/etc/init.d/nginx reload```
 
 ## Part 3: Update DNS Records and Populate Public Keys
 
 ### Update External DNS Record
-
 1. Click on **Route 53** form the AWS Console Home (Cube button in top left corner).
 2. Click **Hosted Zones** > **aerofs.com**.
 3. Select "phoenix.aerofs.com" and update the IP value to the public IP of the new instance.
-4. Hit **Save Record Set** (Note that it takes about 30 mins for this change to take effect).
+4. Hit **Save Record Set** (note that it takes about 10 mins for this change to take effect).
 
 ### Update Internal DNS Record
-
-1. cd into the *aerofs-infra* repo and do a `git pull`. If you don't have this repo, you can get
-   it [here](https://github.com/aerofs/aerofs-infra).
+1. cd into the *aerofs-infra* repo and do a `git pull`. If you don't have this repo, you can get it
+   [on github](https://github.com/aerofs/aerofs-infra).
 2. Run the following commands and replace the IP address for "phoenix.aerofs.com" with the new
-   private IP address.
+   private IP address. Make sure your docker-dev is running (dk-start), and your private key is
+  copied into `/.ssh` (`cp id_rsa* ~/.ssh`)
 
         opshell/run
         vi roles/aerofs.vpn/files/vpn.hosts
@@ -63,7 +85,8 @@ Public IP" select "Enable".
 
     ansible-playbook --private-key /repos/<key_name> -l phoenix.aerofs.com base.yml keys.yml
 
-where <key_name> is the name of the key file you selected in part 1, step 18.
+where <key_name> is the name of the key file you selected in part 1, step 18. You will probably
+need to delete the conflicting host key for phoenix.aerofs.com.
 
 **Important:** You may need to install azavea.virtualbox and defunctzombie.coreos-bootstrap inside
 opshell if it's missing. You can install by running the following command while in opshell:
@@ -74,6 +97,6 @@ opshell if it's missing. You can install by running the following command while 
  (CTRL+D) and do the following:
 
     unset SSH_AUTH_SOCK
-    opshell\run
-    ansible-playbook --private-key /repos/<key_name> -l share.aerofs.com keys.yml
+    opshell/run
+    ansible-playbook --private-key /repos/<key_name> -l phoenix.aerofs.com keys.yml
 
