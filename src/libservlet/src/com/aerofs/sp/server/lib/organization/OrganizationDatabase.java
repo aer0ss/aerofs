@@ -423,12 +423,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private static String andNotUserRoot(String sidColumn)
-    {
-        // check the version nibble: 0 for regular store, 3 for root store, see SID.java
-        return " and substr(hex(" + sidColumn + "),13,1)='0' ";
-    }
-
     /**
      * @param orgId the organization being queried for shared folders
      * @param maxResults the maximum length of the returned list (for paging)
@@ -448,12 +442,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         // Return results that are sorted:
         // 1. Alphabetical order
         // 2. Uppercase before lowercase after 1 is applied.
-        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF +
-                 " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID)
-                + andOriginalNameLikePrefix(searchPrefix), C_AC_STORE_ID)
-                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
-                + C_SF_ORIGINAL_NAME + ") ASC limit ? offset ?")) {
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
+                V_SFV,
+                C_SFV_USER_ID + " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_SID)
+                + "order by " + C_SFV_NAME + ", binary(" + C_SFV_NAME + ") ASC limit ? offset ?")) {
 
             int index = 1;
             ps.setString(index++, orgId.toTeamServerUserID().getString());
@@ -483,9 +476,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countSharedFolders(OrganizationID orgId)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID),
-                "count(distinct " + C_AC_STORE_ID + ")"))) {
+        try (PreparedStatement ps = prepareStatement(selectWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? ",
+                "count(*)"))) {
 
             ps.setString(1, orgId.toTeamServerUserID().getString());
 
@@ -498,9 +492,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public int countSharedFoldersWithPrefix(OrganizationID orgId, String searchPrefix)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC + " join " + T_SF + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix),
-                "count(distinct " + C_AC_STORE_ID + ")"))) {
+        try (PreparedStatement ps = prepareStatement(selectWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                "count(*)"))) {
 
             ps.setString(1, orgId.toTeamServerUserID().getString());
 
@@ -514,12 +509,12 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private String andOriginalNameLikePrefix(String searchPrefix)
+    private String andNameLikePrefix(String searchPrefix)
     {
         if (searchPrefix == null) {
             return "";
         } else {
-            return " and " + C_SF_ORIGINAL_NAME + " like ? ";
+            return " and " + C_SFV_NAME + " like ?";
         }
     }
 

@@ -41,6 +41,10 @@ import static com.aerofs.sp.server.lib.SPSchema.T_OI;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
 import static com.aerofs.sp.server.lib.SPSchema.T_SIGNUP_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
+import static com.aerofs.sp.server.lib.SPSchema.V_SFV;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFV_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFV_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFV_SID;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -512,11 +516,13 @@ public class UserDatabase extends AbstractSQLDatabase
     public int countSharedFolders(UserID userId)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_USER_ID+ "=?" + andNotUserRoot(C_AC_STORE_ID),
-                "count(distinct " + C_AC_STORE_ID + ")"))) {
+        try (PreparedStatement ps = prepareStatement(selectWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? ",
+                "count(*)"))) {
 
             ps.setString(1, userId.getString());
+
             try (ResultSet rs = ps.executeQuery()) {
                 return DBUtil.count(rs);
             }
@@ -526,10 +532,10 @@ public class UserDatabase extends AbstractSQLDatabase
     public int countSharedFoldersWithPrefix(UserID userId, String searchPrefix)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectWhere(T_AC + " join " + T_SF
-                + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix),
-                "count(distinct " + C_AC_STORE_ID + ")"))) {
+        try (PreparedStatement ps = prepareStatement(selectWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                "count(*)"))) {
 
             ps.setString(1, userId.getString());
 
@@ -551,12 +557,11 @@ public class UserDatabase extends AbstractSQLDatabase
             Integer offset, String searchPrefix)
             throws SQLException
     {
-        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(T_AC + " join " + T_SF
-                        + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
-                C_AC_USER_ID + "=?" + andNotUserRoot(C_AC_STORE_ID) + andOriginalNameLikePrefix(searchPrefix)
-                , C_AC_STORE_ID)
-                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
-                + C_SF_ORIGINAL_NAME + ") ASC" + limitAndOffset(maxResults, offset))) {
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_SID)
+                + "order by " + C_SFV_NAME +", binary(" + C_SFV_NAME + ") asc" + limitAndOffset(maxResults, offset))) {
 
             int index = 1;
             ps.setString(index++, userId.getString());
@@ -596,18 +601,12 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    private static String andNotUserRoot(String sidColumn)
-    {
-        // check the version nibble: 0 for regular store, 3 for root store, see SID.java
-        return " and substr(hex(" + sidColumn + "),13,1)='0' ";
-    }
-
-    private String andOriginalNameLikePrefix(String searchPrefix)
+    private String andNameLikePrefix(String searchPrefix)
     {
         if (searchPrefix == null) {
             return "";
         } else {
-            return " and " + C_SF_ORIGINAL_NAME + " like ? ";
+            return " and " + C_SFV_NAME + " like ?";
         }
     }
 

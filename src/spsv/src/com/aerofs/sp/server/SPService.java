@@ -619,8 +619,7 @@ public class SPService implements ISPService
 
         int sharedFolderCount = searchPrefix != null ? org.countSharedFoldersWithPrefix(searchPrefix): org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset, searchPrefix), org,
-                user);
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset, searchPrefix), org, org.getTeamServerUser());
 
         _sqlTrans.commit();
 

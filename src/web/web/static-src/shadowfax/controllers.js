@@ -42,7 +42,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 showErrorMessageWith(data, status);
             });
         };
-        
+
         $scope.initialLoad = {};
         $scope.paginationInfo = {
             active: hasPagination,

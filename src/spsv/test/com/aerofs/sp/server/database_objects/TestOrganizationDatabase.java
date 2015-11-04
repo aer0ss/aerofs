@@ -196,9 +196,11 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     {
         int firstMatchCount = odb.countSharedFoldersWithPrefix(orgID, "tes");
         int secondMatchCount = odb.countSharedFoldersWithPrefix(orgID, "x");
+        int thirdMatchCount = odb.countSharedFoldersWithPrefix(orgID, "xp");
 
         assertEquals(1, firstMatchCount);
         assertEquals(1, secondMatchCount);
+        assertEquals(0, thirdMatchCount);
     }
 
     @Test

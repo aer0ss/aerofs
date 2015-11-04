@@ -90,6 +90,11 @@ public final class SPSchema
             C_SFN_USER_ID                   = "sn_user_id",
             C_SFN_NAME                      = "sn_name",
 
+            V_SFV                           = "sp_shared_folders_view",
+            C_SFV_SID                       = "sfv_sid",
+            C_SFV_USER_ID                   = "sfv_user_id",
+            C_SFV_NAME                      = "sfv_name",
+
             T_ES                            = "sp_email_subscriptions",
             C_ES_EMAIL                      = "es_email",
             C_ES_TOKEN_ID                   = "es_token_id",
