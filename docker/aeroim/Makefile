@@ -1,7 +1,9 @@
 #
+# Pull AeroIM required images in from the aerofs registry.
+#
 # This makefile is a placeholder. As we move aeroim content into this project, they can
 # be built directly here. For now, we will assume that "I don't care about this detail"
-# means "I can accept the last version taged and pushed to registry.aerofs.com"
+# means "I can accept the last version tagged and pushed to registry.aerofs.com".
 #
 image: pull_images
 	$(NOP)

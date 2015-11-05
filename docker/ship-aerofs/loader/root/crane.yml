@@ -54,6 +54,11 @@ containers:
         - config:config.service
         - ca-server:ca.service
 
+  blurber:
+    image: aeroim/blurber
+    run:
+      detach: true
+
   sloth:
     image: aeroim/sloth
     run:

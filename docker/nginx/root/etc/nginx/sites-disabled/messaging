@@ -11,10 +11,10 @@ location /messaging/sloth/ {
   proxy_pass http://sloth.service:8001;
 }
 
-# location /messaging/blurb/ {
-    # rewrite /blurb/(.+) /$1 break;
-    # proxy_pass http://blurber.service:8080;
-# }
+location /messaging/blurb/ {
+    rewrite /messaging/blurb/(.+) /$1 break;
+    proxy_pass http://blurber.service:8080;
+}
 
 # Static aeroim web resources
 location /aeroim/ {
