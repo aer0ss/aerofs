@@ -194,7 +194,7 @@ public class CfgDatabase extends ICfgStore
             if (hasSet) _psSet.executeBatch();
             if (hasRemove) _psRemove.executeBatch();
 
-            for (CfgKey key : map.keySet()) notifyValueChanged_(key);
+            map.keySet().forEach(this::notifyValueChanged_);
 
         } catch (SQLException e) {
             DBUtil.close(_psSet);
@@ -205,15 +205,5 @@ public class CfgDatabase extends ICfgStore
         }
     }
 
-    /**
-     * @return the boolean value for key {@paramref key} if the boolean value is set,
-     *   returns {@paramref defaultValue} otherwise.
-     *
-     * N.B. this method disregards the default value declared in the Key enum.
-     * N.B. frequently calling this method is inefficient. COnsider caching the result
-     */
-    public boolean getBoolean(CfgKey key, boolean defaultValue)
-    {
-        return getNullable(key) == null ? defaultValue : getBoolean(key);
-    }
+
 }

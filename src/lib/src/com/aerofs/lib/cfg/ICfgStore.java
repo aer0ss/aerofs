@@ -55,7 +55,7 @@ public abstract class ICfgStore {
 
     // connecting to the REST API gateway to enable API access
     // DO NOT use this directly, use CfgRestService instead
-    public static final CfgKey REST_SERVICE = new CfgKey("rest_service", null);
+    public static final CfgKey REST_SERVICE = new CfgKey("rest_service", true);
 
     // This field stores scrypt of the password provided by the user, salted by user id.
     // i.e. value = base64(scrypt(password|user))
@@ -116,4 +116,3 @@ public abstract class ICfgStore {
         return Long.parseLong(get(key));
     }
 }
-

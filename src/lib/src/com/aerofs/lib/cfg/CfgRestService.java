@@ -22,9 +22,4 @@ public class CfgRestService
     {
         return _cfgStore.getBoolean(REST_SERVICE);
     }
-
-    public boolean getDefaultValue()
-    {
-        return true;
-    }
 }

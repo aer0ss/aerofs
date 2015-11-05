@@ -7,13 +7,13 @@ package com.aerofs.controller;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgRestService;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.base.Preconditions;
 import org.javaswift.joss.model.Container;
 
 import java.util.Collection;
+
+import static com.aerofs.lib.cfg.ICfgStore.REST_SERVICE;
 
 /**
  * This class collects various pieces of information necessary to run setup and delegate to other
@@ -45,7 +45,7 @@ public class SetupModel
         _sp = null;
         // The default value is controlled by CfgRestService and provided here. For both clients
         // and Team Servers, this value should be used to initialize the UI state.
-        _apiAccess = new CfgRestService(Cfg.db()).getDefaultValue();
+        _apiAccess = Boolean.parseBoolean(REST_SERVICE.defaultValue());
     }
 
     /**
