@@ -28,10 +28,7 @@ import com.aerofs.polaris.external_api.version.VersionFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionProvider;
 import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.*;
-import com.aerofs.polaris.resources.BatchResource;
-import com.aerofs.polaris.resources.JobsResource;
-import com.aerofs.polaris.resources.ObjectsResource;
-import com.aerofs.polaris.resources.TransformsResource;
+import com.aerofs.polaris.resources.*;
 import com.aerofs.polaris.resources.external_api.ChildrenResource;
 import com.aerofs.polaris.resources.external_api.FilesResource;
 import com.aerofs.polaris.resources.external_api.FoldersResource;
@@ -157,6 +154,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addResource(ObjectsResource.class);
         environment.addResource(TransformsResource.class);
         environment.addResource(JobsResource.class);
+        environment.addResource(ConversionResource.class);
         // register public facing resources.
         environment.addResource(FoldersResource.class);
         environment.addResource(FilesResource.class);

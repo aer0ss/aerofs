@@ -131,7 +131,7 @@ public abstract class PolarisHelpers {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new UpdateContent(localVersion, hash, size, mtime))
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new UpdateContent(localVersion, hash, size, mtime, null))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(file))
                 .then();

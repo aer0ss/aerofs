@@ -1,5 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
+import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.types.AeroTypes;
@@ -14,6 +15,8 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public final class InsertChild extends Operation {
 
@@ -30,12 +33,25 @@ public final class InsertChild extends Operation {
     @Size(min = 1)
     public final byte[] childName;
 
-    // only set from client-side for insert childs resulting from a cross-store move, references the OID this object was originally
+    // only set from client-side for insert child operations resulting from a cross-store move, references the OID this object was originally
     @Nullable
     public final UniqueID migrant;
 
-    public InsertChild(UniqueID child, @Nullable ObjectType childObjectType, String childName, @Nullable UniqueID migrant) {
-        this(child, childObjectType, PolarisUtilities.stringToUTF8Bytes(childName), migrant);
+    // used for conversion only, set client-side
+    @Nullable
+    public final Map<DID, Long> versions;
+
+    // used for conversion only, set client-side
+    @Nullable
+    public final List<UniqueID> aliases;
+
+    public InsertChild(
+            UniqueID child,
+            @Nullable ObjectType childObjectType,
+            String childName,
+            @Nullable UniqueID migrant)
+    {
+        this(child, childObjectType, PolarisUtilities.stringToUTF8Bytes(childName), migrant, null, null);
     }
 
     @JsonCreator
@@ -43,12 +59,17 @@ public final class InsertChild extends Operation {
             @JsonProperty("child") UniqueID child,
             @JsonProperty("child_object_type") @Nullable ObjectType childObjectType,
             @JsonProperty("child_name") byte[] childName,
-            @JsonProperty("migrant") UniqueID migrant) {
+            @JsonProperty("migrant") @Nullable UniqueID migrant,
+            @JsonProperty("version") @Nullable Map<DID, Long> versions,
+            @JsonProperty("aliases") @Nullable List<UniqueID> aliases)
+    {
         super(OperationType.INSERT_CHILD);
         this.child = child;
         this.childObjectType = childObjectType;
         this.childName = childName;
         this.migrant = migrant;
+        this.versions = versions;
+        this.aliases = aliases;
     }
 
     @Override
@@ -61,12 +82,14 @@ public final class InsertChild extends Operation {
                 && Objects.equal(child, other.child)
                 && Objects.equal(childObjectType, other.childObjectType)
                 && Arrays.equals(childName, other.childName)
-                && Objects.equal(migrant, other.migrant);
+                && Objects.equal(migrant, other.migrant)
+                && Objects.equal(versions, other.versions)
+                && Objects.equal(aliases, other.aliases);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(type, child, childObjectType, childName, migrant);
+        return Objects.hashCode(type, child, childObjectType, childName, migrant, versions, aliases);
     }
 
     @Override
@@ -78,6 +101,8 @@ public final class InsertChild extends Operation {
                 .add("childObjectType", childObjectType)
                 .add("childName", childName)
                 .add("migrant", migrant)
+                .add("versions", versions)
+                .add("aliases", aliases)
                 .toString();
     }
 }

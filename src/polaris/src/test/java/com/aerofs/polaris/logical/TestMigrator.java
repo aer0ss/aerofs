@@ -31,7 +31,6 @@ import java.sql.SQLException;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.polaris.PolarisHelpers.*;
 import static org.hamcrest.Matchers.equalTo;
@@ -251,7 +250,7 @@ public class TestMigrator
             byte[] hash = new byte[32];
             Random random = new Random();
             random.nextBytes(hash);
-            objects.performTransform(USERID, DEVICE, lockedFile, new UpdateContent(0, hash, 100, 1024));
+            objects.performTransform(USERID, DEVICE, lockedFile, new UpdateContent(0, hash, 100, 1024, null));
             fail();
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause().getClass().equals(ObjectLockedException.class));

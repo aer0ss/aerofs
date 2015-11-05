@@ -19,11 +19,8 @@ import com.aerofs.daemon.core.polaris.api.BatchResult.BatchOpResult;
 import com.aerofs.daemon.core.polaris.api.BatchResult.PolarisError;
 import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.DaemonPolarisStore;
@@ -70,22 +67,33 @@ public class MetaChangeSubmitter implements Submitter
     private final RemoteLinkDatabase _rpdb;
     private final IMapSIndex2SID _sidx2sid;
     private final CentralVersionDatabase _cvdb;
+    private final ChangeEpochDatabase _cedb;
     private final PauseSync _pauseSync;
     private final DirectoryService _ds;
     private final TransManager _tm;
     private final MapSIndex2Store _sidx2s;
 
     @Inject
-    public MetaChangeSubmitter(PolarisClient client, MetaChangesDatabase mcdb,
-            MetaBufferDatabase mbdb, RemoteLinkDatabase rpdb, CentralVersionDatabase cvdb,
-            IMapSIndex2SID sidx2sid, MapAlias2Target a2t, PauseSync pauseSync,
-            DirectoryService ds, TransManager tm, MapSIndex2Store sidx2s)
+    public MetaChangeSubmitter(
+            PolarisClient client,
+            MetaChangesDatabase mcdb,
+            MetaBufferDatabase mbdb,
+            RemoteLinkDatabase rpdb,
+            CentralVersionDatabase cvdb,
+            ChangeEpochDatabase cedb,
+            IMapSIndex2SID sidx2sid,
+            MapAlias2Target a2t,
+            PauseSync pauseSync,
+            DirectoryService ds,
+            TransManager tm,
+            MapSIndex2Store sidx2s)
     {
         _client = client;
         _mcdb = mcdb;
         _mbdb = mbdb;
         _rpdb = rpdb;
         _cvdb = cvdb;
+        _cedb = cedb;
         _sidx2sid = sidx2sid;
         _a2t = a2t;
         _pauseSync = pauseSync;
@@ -150,6 +158,15 @@ public class MetaChangeSubmitter implements Submitter
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
             cb.onFailure_(new ExRetryLater("paused"));
+            return;
+        }
+
+        long highest = _cedb.getHighestChangeEpoch_(sidx);
+        Long current = _cedb.getChangeEpoch_(sidx);
+        // current will only be set if we've migrated to polaris, if not migrated to polaris we should ignore this check
+        if (current != null && highest > current) {
+            l.info("delay submit: current {} < highest {}", current, highest);
+            cb.onSuccess_(false);
             return;
         }
 

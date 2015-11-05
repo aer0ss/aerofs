@@ -117,4 +117,6 @@ public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listen
     public void deletePersistentData_(Trans t) throws SQLException {
         _isDeleted = true;
     }
+
+    public void startSubmissions() {}
 }

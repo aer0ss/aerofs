@@ -69,4 +69,10 @@ public class DaemonPolarisStore extends PolarisStore
         _mcss.stop_();
         super.preDelete_();
     }
+
+    @Override
+    public void startSubmissions() {
+        super.startSubmissions();
+        _mcss.start_();
+    }
 }

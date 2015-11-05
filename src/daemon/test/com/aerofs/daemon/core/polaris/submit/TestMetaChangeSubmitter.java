@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.polaris.submit;
 
+import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -13,11 +14,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
-import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -54,6 +51,7 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
     private final RemoteLinkDatabase rldb = mock(RemoteLinkDatabase.class);
     private final IMapSIndex2SID sidx2sid = mock(IMapSIndex2SID.class);
     private final CentralVersionDatabase cvdb = mock(CentralVersionDatabase.class);
+    private final ChangeEpochDatabase cedb= mock(ChangeEpochDatabase.class);
     private final DirectoryService ds = mock(DirectoryService.class);
     private final MapAlias2Target a2t = mock(MapAlias2Target.class);
     private final TransManager tm = mock(TransManager.class);
@@ -75,7 +73,7 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
         when(a2t.dereferenceAliasedOID_(any(SOID.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
 
-        mcs = new MetaChangeSubmitter(client, mcdb, mbdb, rldb, cvdb, sidx2sid, a2t, pause, ds, tm,
+        mcs = new MetaChangeSubmitter(client, mcdb, mbdb, rldb, cvdb, cedb, sidx2sid, a2t, pause, ds, tm,
                 mock(MapSIndex2Store.class));
     }
 

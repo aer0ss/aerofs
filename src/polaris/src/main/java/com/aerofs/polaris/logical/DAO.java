@@ -14,7 +14,7 @@ public final class DAO {
     public final LogicalObjects objects;
     public final ObjectProperties objectProperties;
     public final ObjectTypes objectTypes;
-    final Transforms transforms;
+    public final Transforms transforms;
     final LogicalTimestamps logicalTimestamps;
     final Migrations migrations;
     public final MountPoints mountPoints;

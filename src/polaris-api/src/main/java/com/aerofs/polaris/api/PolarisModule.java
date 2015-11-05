@@ -12,6 +12,8 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.module.SimpleDeserializers;
+import com.fasterxml.jackson.databind.module.SimpleKeyDeserializers;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 
@@ -44,6 +46,10 @@ public final class PolarisModule extends Module {
                 new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")));
         context.addSerializers(serializers);
 
+        serializers = new SimpleSerializers();
+        serializers.addSerializer(new AeroTypes.DIDKeySerializer());
+        context.addKeySerializers(serializers);
+
 
         SimpleDeserializers deserializers = new SimpleDeserializers();
         deserializers.addDeserializer(byte[].class, new AeroTypes.Base16Deserializer());
@@ -57,5 +63,9 @@ public final class PolarisModule extends Module {
         deserializers.addDeserializer(Folder.class, new FolderDeserializer());
         deserializers.addDeserializer(File.class, new FileDeserializer());
         context.addDeserializers(deserializers);
+
+        SimpleKeyDeserializers keyDeserializers = new SimpleKeyDeserializers();
+        keyDeserializers.addDeserializer(DID.class, new AeroTypes.DIDKeyDeserializer());
+        context.addKeyDeserializers(keyDeserializers);
     }
 }

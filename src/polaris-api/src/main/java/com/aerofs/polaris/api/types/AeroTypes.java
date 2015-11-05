@@ -1,15 +1,13 @@
 package com.aerofs.polaris.api.types;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.api.PolarisUtilities;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
@@ -146,6 +144,30 @@ public abstract class AeroTypes {
         public DID deserialize(JsonParser parser, DeserializationContext context) throws IOException {
             return AeroTypes.deserialize(parser, context, DID.class, p -> new DID(p.getText().trim()));
         }
+    }
+
+    public static final class DIDKeySerializer extends StdSerializer<DID> {
+
+        public DIDKeySerializer() {
+            super(DID.class);
+        }
+
+        @Override
+        public void serialize(DID value, JsonGenerator generator, SerializerProvider provider) throws IOException {
+            generator.writeFieldName(value.toStringFormal());
+        }
+    }
+
+    public static final class DIDKeyDeserializer extends KeyDeserializer {
+        @Override
+        public Object deserializeKey(String key, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+            try {
+                return new DID(key);
+            } catch (ExInvalidID exInvalidID) {
+                throw new IOException("invalid DID as key", exInvalidID);
+            }
+        }
+
     }
 
 

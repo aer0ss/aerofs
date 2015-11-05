@@ -369,7 +369,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
      * Because fetching hashes from the db is expensive, we don't make the hash part of the CA
      * class. Instead, we fetch hashes only when needed.
      */
-    public abstract ContentHash getCAHash_(SOKID sokid) throws SQLException;
+    @Nullable public abstract ContentHash getCAHash_(SOKID sokid) throws SQLException;
 
     public abstract void setCAHash_(SOKID sokid, @Nonnull ContentHash h, Trans t) throws SQLException;
 

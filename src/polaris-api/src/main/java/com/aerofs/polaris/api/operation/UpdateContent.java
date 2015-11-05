@@ -1,5 +1,6 @@
 package com.aerofs.polaris.api.operation;
 
+import com.aerofs.ids.DID;
 import com.aerofs.polaris.api.types.AeroTypes;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +13,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.Arrays;
+import java.util.Map;
 
 public final class UpdateContent extends Operation {
 
@@ -30,17 +32,23 @@ public final class UpdateContent extends Operation {
     @Min(0)
     public final long mtime;
 
+    // used for conversion only, set client-side
+    @Nullable
+    public final Map<DID, Long> versions;
+
     @JsonCreator
     public UpdateContent(
             @JsonProperty("local_version") long localVersion,
             @JsonProperty("hash") byte[] hash,
             @JsonProperty("size") long size,
-            @JsonProperty("mtime") long mtime) {
+            @JsonProperty("mtime") long mtime,
+            @JsonProperty("version") @Nullable Map<DID, Long> versions) {
         super(OperationType.UPDATE_CONTENT);
         this.localVersion = localVersion;
         this.hash = hash;
         this.size = size;
         this.mtime = mtime;
+        this.versions = versions;
     }
 
     @Override

@@ -24,6 +24,7 @@ public class SyncSchema implements ISchema
             C_STORE_COLLECTING_CONTENT = "s_c", // boolean
             C_STORE_LTS_LOCAL   = "s_lts",      // long: polaris logical timestamp
             C_STORE_LTS_CONTENT = "s_rts",      // long: polaris logical timestamp
+            C_STORE_LTS_HIGHEST = "s_hts",      // long: polaris logical timestamp
             // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
             // C_STORE_DIDS    = "s_d",     // concatenated DIDs
             C_STORE_USAGE   = "s_u",        // sum of content size, in bytes

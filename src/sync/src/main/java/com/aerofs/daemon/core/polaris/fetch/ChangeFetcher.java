@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.DID;
@@ -50,6 +51,7 @@ public class ChangeFetcher
     private final ApplyChange _at;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
+    private final MapSIndex2Store _sidx2store;
     private final ChangeEpochDatabase _cedb;
     private final TransManager _tm;
 
@@ -63,7 +65,8 @@ public class ChangeFetcher
 
     @Inject
     public ChangeFetcher(PolarisClient client, PauseSync pauseSync, ChangeEpochDatabase cedb,
-            ApplyChange at, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, TransManager tm)
+            ApplyChange at, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, TransManager tm,
+            MapSIndex2Store sidx2store)
     {
         _client = client;
         _pauseSync = pauseSync;
@@ -72,6 +75,7 @@ public class ChangeFetcher
         _tm = tm;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
+        _sidx2store = sidx2store;
     }
 
     public void addListener_(Listener l) {
@@ -111,10 +115,10 @@ public class ChangeFetcher
                 encoder.toString());
         req.headers().set(HttpHeaders.Names.CONTENT_LENGTH, "0");
 
-        _client.send(req, cb, r -> handle_(sid, r));
+        _client.send(req, cb, r -> handle_(sid, lastLocalEpoch, r));
     }
 
-    private boolean handle_(SID sid, HttpResponse r) throws Exception
+    private boolean handle_(SID sid, long lastLocalEpoch, HttpResponse r) throws Exception
     {
         // TODO: streaming response processing
         String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
@@ -131,6 +135,7 @@ public class ChangeFetcher
             l.info("ignoring response for absent store {}", sid.toStringFormal());
             return false;
         }
+        long epochBoundary = _cedb.getHighestChangeEpoch_(sidx);
 
         Transforms c = GsonUtil.GSON.fromJson(content, Transforms.class);
 
@@ -142,6 +147,13 @@ public class ChangeFetcher
             // otherwise we risk holding on buffered changes until a new changes is made in this
             // store.
             applyBufferedChanges_(sidx, c.maxTransformCount);
+            if (epochBoundary > lastLocalEpoch) {
+                try (Trans t = _tm.begin_()) {
+                    _cedb.setHighestChangeEpoch_(sidx, lastLocalEpoch, t);
+                    t.commit_();
+                }
+                _sidx2store.get_(sidx).startSubmissions();
+            }
             return false;
         }
 
@@ -171,6 +183,9 @@ public class ChangeFetcher
             lastLogicalTimestamp = rc.logicalTimestamp;
         }
         applyBufferedChanges_(sidx, lastLogicalTimestamp);
+        if (epochBoundary > lastLocalEpoch && lastLogicalTimestamp >= epochBoundary) {
+            _sidx2store.get_(sidx).startSubmissions();
+        }
         return true;
     }
 

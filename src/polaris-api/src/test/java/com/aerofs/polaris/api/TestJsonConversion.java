@@ -81,7 +81,7 @@ public final class TestJsonConversion {
                 new TransformBatchOperation(SID.generate(), new RemoveChild(OID.generate())),
                 new TransformBatchOperation(OID.generate(), new MoveChild(OID.generate(), SID.generate(), "new")),
                 new TransformBatchOperation(OID.generate(), new MoveChild(OID.generate(), OID.generate(), "new again")),
-                new TransformBatchOperation(OID.generate(), new UpdateContent(1, "HASH".getBytes(Charsets.US_ASCII), 300, 11))
+                new TransformBatchOperation(OID.generate(), new UpdateContent(1, "HASH".getBytes(Charsets.US_ASCII), 300, 11, null))
         );
         TransformBatch batch = new TransformBatch(operations);
 
@@ -264,7 +264,7 @@ public final class TestJsonConversion {
 
     @Test
     public void shouldSerializeAndDeserializeUpdateContent() throws IOException {
-        UpdateContent updateContent = new UpdateContent(1, "HASH".getBytes(Charsets.US_ASCII), 100, System.currentTimeMillis());
+        UpdateContent updateContent = new UpdateContent(1, "HASH".getBytes(Charsets.US_ASCII), 100, System.currentTimeMillis(), null);
 
         String serialized = mapper.writeValueAsString(updateContent);
         LOGGER.info("update_content:{}", serialized);

@@ -34,7 +34,6 @@ public class ChangeEpochDatabase extends AbstractDatabase
             DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_LOCAL));
     public @Nullable Long getChangeEpoch_(SIndex sidx) throws SQLException
     {
-        if (!_dbcw.columnExists(T_STORE, C_STORE_LTS_LOCAL)) return null;
         try (ResultSet rs = query(_pswGetEpoch, sidx.getInt())) {
             checkState(rs.next());
             long epoch = rs.getLong(1);
@@ -71,7 +70,6 @@ public class ChangeEpochDatabase extends AbstractDatabase
             DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_CONTENT));
     public @Nullable Long getContentChangeEpoch_(SIndex sidx) throws SQLException
     {
-        if (!_dbcw.columnExists(T_STORE, C_STORE_LTS_CONTENT)) return null;
         try (ResultSet rs = query(_pswGetContentEpoch, sidx.getInt())) {
             checkState(rs.next());
             long epoch = rs.getLong(1);
@@ -84,5 +82,23 @@ public class ChangeEpochDatabase extends AbstractDatabase
     public void setContentChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
     {
         checkState(1 == update(_pswSetContentEpoch, epoch, sidx.getInt()));
+    }
+
+    private final PreparedStatementWrapper _pswGetHighestEpoch = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_HIGHEST));
+    public Long getHighestChangeEpoch_(SIndex sidx) throws SQLException
+    {
+        try (ResultSet rs = query(_pswGetHighestEpoch, sidx.getInt())) {
+            checkState(rs.next());
+            long epoch = rs.getLong(1);
+            return rs.wasNull() ? -1L : epoch;
+        }
+    }
+
+    private final PreparedStatementWrapper _pswSetHighestEpoch = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_HIGHEST));
+    public void setHighestChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
+    {
+        checkState(1 == update(_pswSetHighestEpoch, epoch, sidx.getInt()));
     }
 }

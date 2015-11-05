@@ -10,7 +10,11 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 public class SubmissionScheduler<T extends Submitter>
 {

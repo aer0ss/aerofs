@@ -78,6 +78,10 @@ public final class PolarisTestServer extends ExternalResource {
         return String.format("%s/jobs/%s", getServiceURL(), id.toStringFormal());
     }
 
+    public static String getConversionURL(UniqueID store) {
+        return String.format("%s/conversion/store/%s", getServiceURL(), store.toStringFormal());
+    }
+
     public static String getLocationBatchURL() {
         return String.format("%s/batch/locations/", getServiceURL());
     }

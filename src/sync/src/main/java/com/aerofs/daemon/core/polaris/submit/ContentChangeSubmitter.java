@@ -108,6 +108,15 @@ public class ContentChangeSubmitter implements Submitter
             return;
         }
 
+        long highest = _cedb.getHighestChangeEpoch_(sidx);
+        Long current = _cedb.getChangeEpoch_(sidx);
+        // current will only be set if we've migrated to polaris, if not migrated to polaris we should ignore this check
+        if (current != null && highest > current) {
+            l.info("delay submit: current {} < highest {}", current, highest);
+            cb.onSuccess_(false);
+            return;
+        }
+
         boolean retry = false;
         Counters cnt = new Counters();
         List<ContentChange> cc = Lists.newArrayList();

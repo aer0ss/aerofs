@@ -1,7 +1,17 @@
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.store.StoreHierarchy;
+import com.aerofs.daemon.lib.db.IAliasDatabase;
+import com.aerofs.daemon.lib.db.ISIDDatabase;
+import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgUsePolaris;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
@@ -35,6 +45,21 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
             binder.bind(CfgLocalDID.class).toInstance(mock(CfgLocalDID.class));
             binder.bind(IOSUtil.class).toInstance(mock(IOSUtil.class));
             binder.bind(InjectableDriver.class).toInstance(mock(InjectableDriver.class));
+            // conversion is a monster of a dput, and needs all these dependencies
+            binder.bind(DirectoryService.class).toInstance(mock(DirectoryService.class));
+            binder.bind(StoreHierarchy.class).toInstance(mock(StoreHierarchy.class));
+            binder.bind(ISIDDatabase.class).toInstance(mock(ISIDDatabase.class));
+            binder.bind(CfgLocalUser.class).toInstance(mock(CfgLocalUser.class));
+            binder.bind(LocalACL.class).toInstance(mock(LocalACL.class));
+            binder.bind(TransManager.class).toInstance(mock(TransManager.class));
+            binder.bind(NativeVersionDatabase.class).toInstance(mock(NativeVersionDatabase.class));
+            binder.bind(MetaChangesDatabase.class).toInstance(mock(MetaChangesDatabase.class));
+            binder.bind(RemoteContentDatabase.class).toInstance(mock(RemoteContentDatabase.class));
+            binder.bind(ContentFetchQueueDatabase.class).toInstance(mock(ContentFetchQueueDatabase.class));
+            binder.bind(ContentChangesDatabase.class).toInstance(mock(ContentChangesDatabase.class));
+            binder.bind(ChangeEpochDatabase.class).toInstance(mock(ChangeEpochDatabase.class));
+            binder.bind(IAliasDatabase.class).toInstance(mock(IAliasDatabase.class));
+            binder.bind(PolarisClient.class).toInstance(mock(PolarisClient.class));
         });
         dput = inj.getInstance(DaemonPostUpdateTasks.class);
     }

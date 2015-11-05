@@ -185,4 +185,10 @@ public class PolarisStore extends Store
         // This Store object is effectively unusable now.
         _isDeleted = true;
     }
+
+    @Override
+    public void startSubmissions() {
+        super.startSubmissions();
+        _ccss.start_();
+    }
 }
