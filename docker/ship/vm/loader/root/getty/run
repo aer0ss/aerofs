@@ -44,9 +44,11 @@ cecho() {
     echo -e "${CYAN}$1${NORM}"
 }
 
+IFACES=($(available_ifaces))
+
 function is_valid_iface() {
 local selected_interface=$1
-for iface in $(available_ifaces)
+for iface in ${IFACES[@]}
 do
     if [ "${selected_interface}" = "${iface}" ]; then
         return 0
@@ -68,13 +70,16 @@ function is_override_selected() {
 
 function validated_read_iface() {
     local PROMPT=$1
-    local IFACES=$(available_ifaces)
-
+   
     while true; do
-        echo -n "${PROMPT} (Available Interfaces: ${IFACES}): " >&2
+        echo -n "${PROMPT} (Available Interfaces: [${IFACES[0]}] ${IFACES[@]:1}): " >&2
         local input_iface && read input_iface
 
-	if is_valid_iface "${input_iface}" || is_override_selected "${input_iface}"; then
+	if [ "${input_iface}" = "" ]; then 
+	    echo "${IFACES[0]}"
+	    break
+	
+	elif is_valid_iface "${input_iface}" || is_override_selected "${input_iface}"; then
 	    echo "${input_iface}"
             break
         fi
