@@ -144,6 +144,7 @@ public class CoreModule extends AbstractModule
             bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
         } else {
             bind(Store.Factory.class).to(LegacyStore.Factory.class);
+            bind(NewUpdates.Impl.class).to(LegacyNewUpdates.class);
             bind(IContentVersionControl.class).to(LegacyContentVersionControl.class);
         }
 
@@ -162,6 +163,7 @@ public class CoreModule extends AbstractModule
         multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, RPC.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instantiation. However we don't want to leak the specific classes outside the package

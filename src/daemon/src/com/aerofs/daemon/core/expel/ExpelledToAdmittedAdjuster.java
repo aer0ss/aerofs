@@ -10,8 +10,8 @@ import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.polaris.fetch.ContentFetcher;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
@@ -41,17 +41,18 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final MapSIndex2Store _sidx2s;
     private final CfgUsePolaris _usePolaris;
     private final CentralVersionDatabase _cvdb;
-    private final RemoteContentDatabase _rcdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
     private final LogicalStagingAreaDatabase _sadb;
+    private final RemoteContentDatabase _rcdb;
+    private final ContentFetchQueueDatabase _cfqdb;
 
     @Inject
     public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
             NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
-            CfgUsePolaris usePolaris, CentralVersionDatabase cvdb, RemoteContentDatabase rcdb,
-            LogicalStagingAreaDatabase sadb)
+            CfgUsePolaris usePolaris, CentralVersionDatabase cvdb, LogicalStagingAreaDatabase sadb,
+            RemoteContentDatabase rcdb, ContentFetchQueueDatabase cfqdb)
     {
         _sc = sc;
         _imd = imd;
@@ -62,8 +63,9 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _csdb = csdb;
         _sidx2s = sidx2s;
         _usePolaris = usePolaris;
-        _rcdb = rcdb;
         _cvdb = cvdb;
+        _rcdb = rcdb;
+        _cfqdb = cfqdb;
         _sadb = sadb;
     }
 
@@ -145,10 +147,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         public void committing_(Trans t) throws SQLException
         {
             for (SIndex sidx : _sidxs) {
-                Store s = _sidx2s.get_(sidx);
-                if (s instanceof LegacyStore) {
-                    ((LegacyStore)s).resetCollectorFiltersForAllDevices_(t);
-                }
+                _sidx2s.get_(sidx).resetCollectorFiltersForAllDevices_(t);
             }
         }
     }
@@ -174,10 +173,8 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         if (_usePolaris.get()) {
             // see PolarisContentVersionControl#fileExpelled_
             _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
-            if (_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) {
-                // TODO(phoenix): BF adjustment (when BF brought back)
-                _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);
-            }
+            if (!_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) return;
+            _cfqdb.insert_(soid.sidx(), soid.oid(), t);
         } else {
             SOCID socid = new SOCID(soid, CID.CONTENT);
 
@@ -186,7 +183,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
             if (_nvc.getKMLVersion_(socid).isZero_()) return;
 
             _csdb.insertCS_(socid, t);
-            _tlaf.get(t).add_(soid.sidx());
         }
+        _tlaf.get(t).add_(soid.sidx());
     }
 }

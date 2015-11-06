@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -41,16 +42,19 @@ public class PolarisCausality implements Causality {
     private final CentralVersionDatabase _cvdb;
     private final ContentChangesDatabase _ccdb;
     private final RemoteContentDatabase _rcdb;
+    private final PolarisContentVersionControl _cvc;
 
     @Inject
     public PolarisCausality(DirectoryService ds, IPhysicalStorage ps, CentralVersionDatabase cvdb,
-                            ContentChangesDatabase ccdb, RemoteContentDatabase rcdb)
+                            ContentChangesDatabase ccdb, RemoteContentDatabase rcdb,
+                            PolarisContentVersionControl cvc)
     {
         _ds = ds;
         _ps = ps;
         _cvdb = cvdb;
         _ccdb = ccdb;
         _rcdb = rcdb;
+        _cvc = cvc;
     }
 
     /**
@@ -114,7 +118,7 @@ public class PolarisCausality implements Causality {
         if (lcv != null && rcv < lcv) throw new ExAborted(k + " version changed");
 
         l.debug("{} version {} -> {}", k, lcv, rcv);
-        _cvdb.setVersion_(k.sidx(), k.oid(), rcv, t);
+        _cvc.setContentVersion_(k.sidx(), k.oid(), rcv, content.lts, t);
 
         _rcdb.deleteUpToVersion_(k.sidx(), k.oid(), rcv, t);
         if (!_rcdb.hasRemoteChange_(k.sidx(), k.oid(), rcv)) {

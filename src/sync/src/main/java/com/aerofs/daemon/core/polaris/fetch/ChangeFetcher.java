@@ -130,11 +130,6 @@ public class ChangeFetcher
             return false;
         }
 
-        try (Trans t = _tm.begin_()) {
-            _cedb.setRemoteChangeEpoch_(sidx, c.maxTransformCount, t);
-            t.commit_();
-        }
-
         long lastLogicalTimestamp = Objects.firstNonNull(_cedb.getChangeEpoch_(sidx), 0L);
         for (RemoteChange rc : c.transforms) {
             if (rc.logicalTimestamp <= lastLogicalTimestamp) {

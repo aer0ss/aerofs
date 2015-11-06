@@ -8,9 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.protocol.class_under_test.NewUpdatesWithMocks;
-import com.aerofs.lib.Tick;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Sets;
 import org.junit.Before;
@@ -57,8 +55,6 @@ public class TestACLEnforcement_NewUpdates extends AbstractTest
     public void setup()
             throws SQLException
     {
-        // Minimum wiring to get things working
-        when(sender._nvc.getLocalTickNullable_(any(SOCKID.class))).thenReturn(Tick.ZERO);
     }
 
     @Test
@@ -114,11 +110,11 @@ public class TestACLEnforcement_NewUpdates extends AbstractTest
 
 
     private void verifyResult()
-            throws SQLException
+            throws Exception
     {
         // Capture the values
         // 2 is the number of read-write stores in _sidxs
-        verify(receiver._ae, times(2)).request_(captor.capture(), any(DID.class));
+        verify(receiver._nui, times(2)).handle_(captor.capture(), any(DID.class), any());
 
         // Verify the caller gets all the components of read-write stores from the replier
         Set<SIndex> set = Sets.newHashSet(_sidxs);

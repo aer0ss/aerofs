@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
@@ -84,7 +85,7 @@ public class ContentFetcherIterator
             _filter = filter;
         }
 
-        ContentFetcherIterator create_(SIndex sidx)
+        public ContentFetcherIterator create_(SIndex sidx)
         {
             return new ContentFetcherIterator(this, sidx);
         }
@@ -99,7 +100,7 @@ public class ContentFetcherIterator
     /**
      * @return whether the iteration has been started
      */
-    boolean started_()
+    public boolean started_()
     {
         return _current != null;
     }
@@ -109,7 +110,7 @@ public class ContentFetcherIterator
      *
      * {@link #started_} will return false after calling this method until {@link #next_} is called
      */
-    void reset_()
+    public void reset_()
     {
         // if we had to discard some cached values we need to force a re-fetch...
         if (_clearOnReset) _seq.clear();
@@ -121,17 +122,25 @@ public class ContentFetcherIterator
     /**
      * @return the current item, null if the iterator was not started
      */
-    @Nullable OID currentNullable_()
-    {
-        return _current;
-    }
+//    @Nullable OID currentNullable_()
+//    {
+//        return _current;
+//    }
 
     /**
      * @return the current item
      */
-    @Nonnull OID current_()
+    public @Nonnull OIDAndFetchIdx current_()
     {
         return checkNotNull(currentNullable_());
+    }
+
+    public @Nullable CollectorSeq cs_() {
+        return _current != null ? new CollectorSeq(_current.idx) : null;
+    }
+
+    public @Nullable OIDAndFetchIdx currentNullable_() {
+        return _current;
     }
 
     /**
@@ -139,7 +148,7 @@ public class ContentFetcherIterator
      *
      * @return false if the end of the queue was reached
      */
-    boolean next_(Trans t) throws SQLException
+    public boolean next_(Trans t) throws SQLException
     {
         _discardable = 0;
 

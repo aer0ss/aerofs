@@ -49,10 +49,40 @@ public class ChangeEpochDatabase extends AbstractDatabase
         checkState(1 == update(_pswSetLocalEpoch, epoch, sidx.getInt()));
     }
 
-    private final PreparedStatementWrapper _pswSetRemoteEpoch = new PreparedStatementWrapper(
-            DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_REMOTE));
-    public void setRemoteChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
+    /**
+     * The "content change" epoch is a polaris logical timestamp used to tag Bloom Filter updates
+     *
+     * The collector will discard bloom filters as soon as it goes through a full iteration without
+     * any transient errors. This means that bloom filters MUST not be accepted before the changes
+     * they refer to have been fetched from polaris and added to the rmeote content / content fetch
+     * queue.
+     *
+     * This epoch reflects the maximum logical timestamp for UPDATE_CONTENT transforms in the store.
+     * It is updated when receiving an UPDATE_CONTENT from polaris and when a local content change
+     * is successfully submitted.
+     *
+     * It is conceptually simple however it becomes tricky to maintain when migration is involved
+     * since local changes are preserved but there is no way to infer what values will be assigned
+     * to the corresponding transforms by polaris.
+     *
+     * See in particular the comment in ApplyChangeImpl#applyContentChange_ wrt "obsolete" changes
+     */
+    private final PreparedStatementWrapper _pswGetContentEpoch = new PreparedStatementWrapper(
+            DBUtil.selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_CONTENT));
+    public @Nullable Long getContentChangeEpoch_(SIndex sidx) throws SQLException
     {
-        checkState(1 == update(_pswSetRemoteEpoch, epoch, sidx.getInt()));
+        if (!_dbcw.columnExists(T_STORE, C_STORE_LTS_CONTENT)) return null;
+        try (ResultSet rs = query(_pswGetContentEpoch, sidx.getInt())) {
+            checkState(rs.next());
+            long epoch = rs.getLong(1);
+            return rs.wasNull() ? null : epoch;
+        }
+    }
+
+    private final PreparedStatementWrapper _pswSetContentEpoch = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_LTS_CONTENT));
+    public void setContentChangeEpoch_(SIndex sidx, long epoch, Trans t) throws SQLException
+    {
+        checkState(1 == update(_pswSetContentEpoch, epoch, sidx.getInt()));
     }
 }

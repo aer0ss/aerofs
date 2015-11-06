@@ -131,7 +131,7 @@ public class LibParam extends BaseParam
     }
 
     // This number increments every time the protocol is updated
-    public static final int CORE_PROTOCOL_VERSION       = 0x637265CC;
+    public static final int CORE_PROTOCOL_VERSION       = 0x637265CD;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
     public static final String LOG_FILE_EXT             = ".log";
@@ -187,7 +187,7 @@ public class LibParam extends BaseParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 60;
+        public static final int DAEMON_POST_UPDATE_TASKS = 61;
         public static final int UI_POST_UPDATE_TASKS = 2;
     }
 

@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
@@ -31,6 +32,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -75,8 +77,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final ExpulsionDatabase _exdb;
     private final StoreHierarchy _stores;
     private final LogicalStagingArea _sa;
-    private final MapSIndex2Store _sidx2s;
     private final VersionUpdater _vu;
+    private final ChangeEpochDatabase _cedb;
+    private final ContentFetchQueueDatabase _cfqdb;
+    private final PolarisContentVersionControl _cvc;
 
     @Inject
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
@@ -86,7 +90,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                            RemoteContentDatabase rcdb, MetaChangeSubmitter submitter,
                            StoreHierarchy stores, StoreCreator sc, IMapSID2SIndex sid2sidx,
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
-                           LogicalStagingArea sa, MapSIndex2Store sidx2s, VersionUpdater vu)
+                           LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
+                           PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb)
     {
         _ds = ds;
         _ps = ps;
@@ -99,6 +104,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _mcdb = mcdb;
         _ccdb = ccdb;
         _rcdb = rcdb;
+        _cedb = cedb;
         _submitter = submitter;
         _sc = sc;
         _sd = sd;
@@ -108,7 +114,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _stores = stores;
         _sa = sa;
         _vu = vu;
-        _sidx2s = sidx2s;
+        _cvc = cvc;
+        _cfqdb = cfqdb;
     }
 
     @Override
@@ -132,7 +139,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     }
 
     @Override
-    public boolean newContent_(SOID soid, RemoteChange c, Trans t)
+    public boolean hasMatchingLocalContent_(SOID soid, RemoteChange c, Trans t)
             throws SQLException, IOException {
         OA oa = _ds.getOANullable_(soid);
         if (oa == null) return false;
@@ -248,7 +255,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (oaFrom.type() != oa.type()) throw new ExProtocolError();
 
         if (oa.isFile()) {
-            l.info("migrate content {}{} {}{}", sidxFrom, emigrant, sidxTo, immigrant);
+            boolean hasChanges = _rcdb.hasRemoteChanges_(sidxTo, immigrant, 0L);
+            l.info("migrate content {}{} {}{} {}", sidxFrom, emigrant, sidxTo, immigrant, hasChanges);
+            // FIXME: if buffered, may have received some remote content for the immigrant already
+            // this might overwrite them, which would be unfortunate
             try (IDBIterator<RemoteContent> it = _rcdb.list_(sidxFrom, emigrant)) {
                 while (it.next_()) {
                     RemoteContent rc = it.get_();
@@ -275,8 +285,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 }
             }
             Long v = _cvdb.getVersion_(sidxTo, immigrant);
+            if (v != null && hasChanges) {
+                // NB: only update BF if the immigrant already had some remote content entries
+                // before being migrated, otherwise wait for either content submit or "obsolete"
+                // UPDATE_CONTENT
+                _cvc.setContentVersion_(sidxTo, immigrant, v, _cedb.getChangeEpoch_(sidxTo), t);
+            }
             if (_rcdb.hasRemoteChanges_(sidxTo, immigrant, v != null ? v : 0)) {
-                _sidx2s.get_(sidxTo).iface(ContentFetcher.class).schedule_(immigrant, t);
+                _cfqdb.insert_(sidxTo, immigrant, t);
             }
         } else if (oa.isDir()) {
             l.info("migrate children {}{} {}{}", sidxFrom, emigrant, sidxTo, immigrant);
@@ -307,13 +323,21 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         OID oid = from.soid().oid();
         RemoteLink lnk;
         List<String> p = new ArrayList<>();
+        // for local-only objects, first need to go up to first remote parent
+        while (_rpdb.getParent_(sidx, oid) == null) {
+            OA oa = _ds.getOA_(new SOID(sidx, oid));
+            if (oa.parent().isTrash()) break;
+            oid = oa.parent();
+            p.add(oa.name());
+        }
+        // walk remote tree up to deleted subtree boundary
         while ((lnk = _rpdb.getParent_(sidx, oid)) != null) {
             oid = lnk.parent;
             p.add(lnk.name);
         }
 
-        if (!_ps.restore_(from.soid(), oid, p, pf, t)) {
-            l.warn("failed to restore content");
+        if (!_ps.restore_(from.soid(), oid, Lists.reverse(p), pf, t)) {
+            l.warn("failed to restore content {}", from.soid());
         } else {
             // TODO: store content hash of history files to avoid recomputing
             ContentHash h = contentHash(pf);
@@ -917,6 +941,15 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
             CA ca = oaConflict.caMasterNullable();
             boolean match = ca != null && matchContent_(sidx, oid, ca.length(), t);
+
+            if (match) {
+                // when aliases are resolved after buffering the local content may match a
+                // remote content that was received before buffered changes were resolved
+                // when that happens we need to update Bloom Filters and content change epoch
+                // since ApplyChange won't have taken care of it...
+                _cvc.setContentVersion_(sidx, oid, _cvdb.getVersion_(sidx, oid),
+                        _cedb.getChangeEpoch_(sidx), t);
+            }
 
             if (_ccdb.deleteChange_(sidx, oaConflict.soid().oid(), t) && !match) {
                 _ccdb.insertChange_(sidx, oid, t);

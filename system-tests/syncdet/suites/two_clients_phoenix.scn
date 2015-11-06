@@ -26,6 +26,7 @@
         multiroot_group()
         meta_conflict_group()
         sharing_group()
+        migration_group()
         acl_group()
         aliasing_group()
         relocate_group()

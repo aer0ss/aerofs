@@ -438,19 +438,28 @@ public class ImmigrantCreator
         Long v = _cvdb.getVersion_(sidxFrom, oidFrom);
         if (v != null) {
             _cvdb.deleteVersion_(sidxFrom, oidFrom, t);
-            if (type == Type.FILE) _cvdb.setVersion_(sidxTo, oidFrom, v, t);
+            if (type == Type.FILE) {
+                // NB: this does NOT go through PolarisContentVersionControl
+                // because at this point we have no idea what the logical timestamp for the polaris
+                // transform will end up being so we cannot safely update bloom filters
+                // instead, ApplyChangeImpl will be responsible for updating BF and content change
+                // epoch when it receives the "obsolete" UPDATE_CONTENT transform
+                _cvdb.setVersion_(sidxTo, oidFrom, v, t);
+            }
         }
 
         // preserve remote content info when preserving OID
-        boolean shouldCollect = false;
+        boolean shouldCollect = v == null;
         try (IDBIterator<RemoteContent> it = _rcdb.list_(sidxFrom, oidFrom)) {
             while (it.next_()) {
                 RemoteContent rc = it.get_();
-                shouldCollect = v == null || v < rc.version;
+                shouldCollect = shouldCollect || v < rc.version;
                 _rcdb.insert_(sidxTo, oidFrom, rc.version, rc.originator, rc.hash, rc.length, t);
             }
         }
         _rcdb.deleteUpToVersion_(sidxFrom, oidFrom, Long.MAX_VALUE, t);
+
+        l.debug("preserved version {} {} -> {} {} {}", oidFrom, sidxFrom, sidxTo, v, shouldCollect);
         return shouldCollect;
     }
 

@@ -31,7 +31,7 @@ public class ContentFetchQueueDatabase extends AbstractDatabase
     implements IStoreCreationOperator, IStoreDeletionOperator
 {
     @Inject
-    protected ContentFetchQueueDatabase(IDBCW dbcw, StoreCreationOperators sco,
+    public ContentFetchQueueDatabase(IDBCW dbcw, StoreCreationOperators sco,
             StoreDeletionOperators sdo)
     {
         super(dbcw);

@@ -186,6 +186,7 @@ public class LegacyStore extends Store
      * N.B. This method resets the collector to use base filters and thus may it may worsen the
      * impact of ghost KMLs. Use with extreme caution. TODO (WW) fix this problem.
      */
+    @Override
     public void resetCollectorFiltersForAllDevices_(Trans t)
             throws SQLException
     {

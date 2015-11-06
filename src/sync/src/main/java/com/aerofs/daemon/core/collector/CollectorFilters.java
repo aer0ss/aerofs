@@ -8,9 +8,10 @@ import java.util.SortedMap;
 import java.util.Map.Entry;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;
@@ -200,7 +200,7 @@ public class CollectorFilters
     void unloadAllFilters_(DID did)
     {
         DeviceEntry en = _did2dev.remove(did);
-        assert en != null;
+        if (en == null) return;
         for (CollectorSeq cs : en._css) {
             Map<DID, BFOID> d2f = _cs2did2bf.get(cs);
             assert d2f.containsKey(did); // although the value may be null
@@ -347,9 +347,9 @@ public class CollectorFilters
     /**
      * @return the set of devices whose filters contain the component
      */
-    Set<DID> getDevicesHavingComponent_(OCID ocid)
+    Set<DID> getDevicesHavingComponent_(OID oid)
     {
-        int[] indics = BFOID.HASH.hash(ocid.oid());
+        int[] indics = BFOID.HASH.hash(oid);
         Set<DID> ret = Sets.newTreeSet();
 
         // iterating over _did2dev instead of _cs2didbf has a few advantages:

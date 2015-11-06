@@ -2,26 +2,25 @@ package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExWrapped;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase.OIDAndFetchIdx;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.daemon.core.transfers.download.Downloads;
-import com.aerofs.daemon.core.transfers.download.ExUnsatisfiedDependency;
+import com.aerofs.daemon.core.transfers.download.IContentDownloads;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -41,13 +40,13 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class Collector implements IDumpStatMisc
+public class Collector2 implements IDumpStatMisc
 {
-    private static final Logger l = Loggers.getLogger(Collector.class);
+    private static final Logger l = Loggers.getLogger(Collector2.class);
 
     private final SIndex _sidx;
     private final CollectorFilters _cfs;
-    private final CollectorIterator _it;
+    private final ContentFetcherIterator _it;
     private int _startSeq;
     private int _downloads;     // # current downloads initiated by the collector
     private long _backoffInterval;
@@ -56,39 +55,35 @@ public class Collector implements IDumpStatMisc
     public static class Factory
     {
         private final CoreScheduler _sched;
-        private final ICollectorSequenceDatabase _csdb;
         private final ICollectorFilterDatabase _cfdb;
-        private final CollectorSkipRule _csr;
         private final TransManager _tm;
         private final ExponentialRetry _er;
-        private final Downloads _dls;
-        private final CollectorIterator.Factory _factIter;
+        private final IContentDownloads _dls;
+        private final ContentFetcherIterator.Factory _factIter;
 
         @Inject
-        public Factory(CoreScheduler sched, ICollectorSequenceDatabase csdb, CollectorSkipRule csr,
-                Downloads dls, TransManager tm, CoreExponentialRetry cer,
-                ICollectorFilterDatabase cfdb, CollectorIterator.Factory factIter)
+        public Factory(CoreScheduler sched, IContentDownloads dls, TransManager tm,
+                       CoreExponentialRetry cer, ICollectorFilterDatabase cfdb,
+                       ContentFetcherIterator.Factory factIter)
         {
             _sched = sched;
-            _csdb = csdb;
             _cfdb = cfdb;
-            _csr = csr;
             _tm = tm;
             _er = cer;
             _dls = dls;
             _factIter = factIter;
         }
 
-        public Collector create_(SIndex sidx)
+        public Collector2 create_(SIndex sidx)
                 throws SQLException
         {
-            return new Collector(this, sidx);
+            return new Collector2(this, sidx);
         }
     }
 
     private final Factory _f;
 
-    private Collector(Factory f, SIndex sidx)
+    private Collector2(Factory f, SIndex sidx)
             throws SQLException
     {
         _f = f;
@@ -145,24 +140,6 @@ public class Collector implements IDumpStatMisc
         // if no more device is left online, and the collection is on going, the next iteration of
         // the collector will find no filters are available, and therefore stop collecting.
         _cfs.unloadAllFilters_(did);
-    }
-
-    /**
-     * A facade method to hide implementation detail from the caller
-     */
-    public boolean includeContent_(Trans t)
-            throws SQLException
-    {
-        return _it.includeContent_(t);
-    }
-
-    /**
-     * A facade method to hide implementation detail from the caller
-     */
-    public boolean excludeContent_(Trans t)
-            throws SQLException
-    {
-        return _it.excludeContent_(t);
     }
 
     /**
@@ -246,17 +223,17 @@ public class Collector implements IDumpStatMisc
         if (_it.started_()) {
             // in case of continuation we need to check again whether the component should be
             // skipped since its state might have changed since the last iteration
-            OCID ocid = _it.current_()._ocid;
-            SOCID socid = new SOCID(_sidx, ocid);
-            l.debug("cont {}", socid);
-            if (!_f._csr.shouldSkip_(socid) && !collectOne_(ocid)) {
+            OID oid = _it.current_();
+            SOID soid = new SOID(_sidx, oid);
+            l.debug("cont {}", soid);
+            if (!collectOne_(oid)) {
                 // wait for continuation
                 return;
             }
         }
 
         while (rotate_(t)) {
-            if (!collectOne_(_it.current_()._ocid)) {
+            if (!collectOne_(_it.current_())) {
                 // wait for continuation
                 return;
             }
@@ -272,18 +249,18 @@ public class Collector implements IDumpStatMisc
      */
     private boolean rotate_(Trans t) throws SQLException
     {
-        OCIDAndCS prevOccs = _it.currentNullable_();
+        OIDAndFetchIdx prevOccs = _it.currentNullable_();
 
         if (_it.next_(t)) {
-            OCIDAndCS occs = _it.current_();
+            OIDAndFetchIdx occs = _it.current_();
             if (prevOccs == null) {
                 // at this point the collection just started. it's noteworthy that there may be
                 // ongoing downloads initiated by the last iteration.
                 l.debug("start from {}", occs);
-                _cfs.setAllCSFiltersFromDB_(occs._cs);
+                _cfs.setAllCSFiltersFromDB_(new CollectorSeq(occs.idx));
             } else {
-                checkState(prevOccs._cs.compareTo(occs._cs) < 0);
-                if (!_cfs.deleteCSFilters_(prevOccs._cs.plusOne(), occs._cs)) {
+                checkState(prevOccs.idx < occs.idx);
+                if (!_cfs.deleteCSFilters_(new CollectorSeq(prevOccs.idx + 1), new CollectorSeq(occs.idx))) {
                     l.debug("no filter left. stop");
                     return false;
                 }
@@ -296,15 +273,15 @@ public class Collector implements IDumpStatMisc
             l.debug("reached end at {}", prevOccs);
             _it.reset_();
             if (_it.next_(t)) {
-                OCIDAndCS occs = _it.current_();
+                OIDAndFetchIdx occs = _it.current_();
                 l.debug("start over from {}", occs);
                 // the two can be equal if there's only one component in the list
-                checkState(prevOccs._cs.compareTo(occs._cs) >= 0);
+                checkState(prevOccs.idx >= occs.idx);
                 // If the collector queue only contains one item we should make sure we do not
                 // remove any freshly added filter before we collect that item
                 // CollectorSeq.min(occs._cs, prevOccs._cs.minusOne())
-                if (!_cfs.deleteCSFilters_(null, occs._cs) ||
-                        !_cfs.deleteCSFilters_(prevOccs._cs.plusOne(), null)) {
+                if (!_cfs.deleteCSFilters_(null, new CollectorSeq(occs.idx)) ||
+                        !_cfs.deleteCSFilters_(new CollectorSeq(prevOccs.idx + 1), null)) {
                     l.debug("no filter left. stop");
                     return false;
                 }
@@ -345,20 +322,20 @@ public class Collector implements IDumpStatMisc
      * Attempt to collect a component
      * @return false if collection failed due to lack of token, thus requiring a continuation
      */
-    private boolean collectOne_(OCID ocid)
+    private boolean collectOne_(OID oid)
     {
         checkState(_it.started_());
 
-        SOCID socid = new SOCID(_sidx, ocid);
-        final Set<DID> dids = _cfs.getDevicesHavingComponent_(ocid.oid());
+        SOID soid = new SOID(_sidx, oid);
+        final Set<DID> dids = _cfs.getDevicesHavingComponent_(oid);
         if (dids.isEmpty()) {
-            l.debug("nodev {}", socid);
+            l.debug("nodev {}", soid);
             return true;
         }
 
-        l.debug("clct {} {}", socid, dids);
+        l.debug("clct {} {}", soid, dids);
 
-        boolean ok = _f._dls.downloadAsync_(socid, dids, new ContinuationTrigger(),
+        boolean ok = _f._dls.downloadAsync_(soid, dids, new ContinuationTrigger(),
                 new DownloadListener(dids));
 
         if (ok) {
@@ -499,10 +476,7 @@ public class Collector implements IDumpStatMisc
     // TODO: distinguish between "perm error" and "perm dep errror" to inhibit backoff
     private static boolean isPermanentError(SOID soid, Exception e)
     {
-        if (e instanceof ExUnsatisfiedDependency) {
-            SOID dep = ((ExUnsatisfiedDependency)e)._socid.soid();
-            return soid.equals(dep) && isPermanentError(dep, ((ExUnsatisfiedDependency)e).unwrap());
-        } else if (e instanceof ExWrapped) {
+        if (e instanceof ExWrapped) {
             return isPermanentError(soid, ((ExWrapped)e).unwrap());
         }
         return e instanceof IExPermanentError;
@@ -532,10 +506,6 @@ public class Collector implements IDumpStatMisc
         // the store has been deleted, and the file/folder discarded.
         // If a collection was running, when that thread context switches back in, all of the
         // collector sequences will have been deleted, so the collector will soon wrap up and stop
-
-        // TODO (MJ) this is the only place Collector touches the csdb. Thus it seems hacky that the
-        // Collector is responsible for "owning" the CSDB.
-        _f._csdb.deleteCSsForStore_(_sidx, t);
         _cfs.deletePersistentData_(t);
     }
 }

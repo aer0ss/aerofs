@@ -21,7 +21,6 @@ public class CoreSchema extends SyncSchema
             C_SC_SIDX       = "sc_s",
             C_SC_DID        = "sc_d",
 
-
             // Distributed Versions
             T_VER           = "v",
             C_VER_SIDX      = "v_i",        // SIndex
@@ -95,12 +94,6 @@ public class CoreSchema extends SyncSchema
             C_MAXTICK_DID      = "t_d",     // DID
             C_MAXTICK_MAX_TICK = "t_m",     // Tick
 
-            // Collector Filter
-            T_CF             = "cf",
-            C_CF_SIDX        = "cf_s",      // SIndex
-            C_CF_DID         = "cf_d",      // DID
-            C_CF_FILTER      = "cf_f",      // BFOID
-
             // Collector Sequence
             T_CS             = "cs",
             C_CS_CS          = "cs_cs",     // long
@@ -108,35 +101,16 @@ public class CoreSchema extends SyncSchema
             C_CS_OID         = "cs_o",      // OID
             C_CS_CID         = "cs_c",      // CID
 
-            // Sender Filter
-            T_SF             = "sf",
-            C_SF_SIDX        = "sf_s",      // SIndex
-            C_SF_SFIDX       = "sf_i",      // SenderFilterIndex
-            C_SF_FILTER      = "sf_f",      // BFOID
-
-            // Sender Device
-            T_SD             = "sd",
-            C_SD_SIDX        = "sd_s",      // SIndex
-            C_SD_DID         = "sd_d",      // DID
-            C_SD_SFIDX       = "sd_i",      // SenderFilterIndex
-
             // Greatest Ticks. this table has only one row. it's designed to maintain
             // the greatest ticks that the local peers has ever used
             T_GT             = "gt",
             C_GT_NATIVE      = "gt_n",      // Tick
             C_GT_IMMIGRANT   = "gt_i",      // Tick
 
-            // Pulled Devices Table
-            T_PD             = "pd",
-            C_PD_SIDX        = "pd_s",      // SIndex
-            C_PD_DID         = "pd_d",      // DID
-
             // Expulsion Table
             T_EX             = "e",
             C_EX_SIDX        = "e_s",       // SIndex
             C_EX_OID         = "e_o",       // OID
-
-
 
             // Activity Log Table. See IActivityLogDatabase.ActivityRow for field details.
             T_AL             = "ao",
@@ -171,23 +145,22 @@ public class CoreSchema extends SyncSchema
     }
 
     @Override
-    public void create_(Statement s, IDBCW dbcw) throws SQLException
-    {
+    public void create_(Statement s, IDBCW dbcw) throws SQLException {
         super.create_(s, dbcw);
 
         // NB. adding "unique (C_VER_DID, C_VER_TICK)" may change the behavior
         // of "replace" statements
         s.executeUpdate(
                 "create table " + T_VER + "(" +
-                    C_VER_SIDX + " integer not null," +
-                    C_VER_OID + dbcw.uniqueIdType() + " not null,"+
-                    C_VER_CID + " integer not null," +
-                    C_VER_KIDX + " integer not null," +
-                    C_VER_DID + dbcw.uniqueIdType() + "not null, "+
-                    C_VER_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_VER_SIDX + "," + C_VER_OID + "," +
+                        C_VER_SIDX + " integer not null," +
+                        C_VER_OID + dbcw.uniqueIdType() + " not null," +
+                        C_VER_CID + " integer not null," +
+                        C_VER_KIDX + " integer not null," +
+                        C_VER_DID + dbcw.uniqueIdType() + "not null, " +
+                        C_VER_TICK + dbcw.longType() + " not null," +
+                        "primary key (" + C_VER_SIDX + "," + C_VER_OID + "," +
                         C_VER_CID + "," + C_VER_DID + "," + C_VER_KIDX + ")" +
-                ")" + dbcw.charSet());
+                        ")" + dbcw.charSet());
 
         /*
          * used by:
@@ -201,30 +174,30 @@ public class CoreSchema extends SyncSchema
          */
         s.executeUpdate(
                 "create index " + T_VER + "0 on " + T_VER +
-                    "(" + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID +
-                          "," +  C_VER_DID + "," + C_VER_TICK + ")"
-                    );
+                        "(" + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID +
+                        "," + C_VER_DID + "," + C_VER_TICK + ")"
+        );
 
         s.executeUpdate(
                 "create table " + T_KWLG + "(" +
-                    C_KWLG_SIDX + " integer not null," +
-                    C_KWLG_DID + dbcw.uniqueIdType() + " not null," +
-                    C_KWLG_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_KWLG_SIDX + "," + C_KWLG_DID + ")" +
-                ")" + dbcw.charSet());
+                        C_KWLG_SIDX + " integer not null," +
+                        C_KWLG_DID + dbcw.uniqueIdType() + " not null," +
+                        C_KWLG_TICK + dbcw.longType() + " not null," +
+                        "primary key (" + C_KWLG_SIDX + "," + C_KWLG_DID + ")" +
+                        ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_IV + "(" +
-                    C_IV_SIDX + " integer not null," +
-                    C_IV_OID + dbcw.uniqueIdType() + " not null," +
-                    C_IV_CID + " integer not null," +
-                    C_IV_DID + dbcw.uniqueIdType() + "not null, " +
-                    C_IV_TICK + dbcw.longType() + " not null," +
-                    C_IV_IMM_DID + dbcw.uniqueIdType() + " not null, " +
-                    C_IV_IMM_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_IV_SIDX + "," + C_IV_OID + "," +
+                        C_IV_SIDX + " integer not null," +
+                        C_IV_OID + dbcw.uniqueIdType() + " not null," +
+                        C_IV_CID + " integer not null," +
+                        C_IV_DID + dbcw.uniqueIdType() + "not null, " +
+                        C_IV_TICK + dbcw.longType() + " not null," +
+                        C_IV_IMM_DID + dbcw.uniqueIdType() + " not null, " +
+                        C_IV_IMM_TICK + dbcw.longType() + " not null," +
+                        "primary key (" + C_IV_SIDX + "," + C_IV_OID + "," +
                         C_IV_CID + "," + C_IV_DID + ")" +
-                ")" + dbcw.charSet());
+                        ")" + dbcw.charSet());
 
         /* used by:
          * 1. getImmigrantTicks_()
@@ -232,16 +205,16 @@ public class CoreSchema extends SyncSchema
          */
         s.executeUpdate(
                 "create unique index " + T_IV + "0 on " + T_IV +
-                    "(" + C_IV_SIDX + "," + C_IV_IMM_DID + "," + C_IV_IMM_TICK +
-                ")");
+                        "(" + C_IV_SIDX + "," + C_IV_IMM_DID + "," + C_IV_IMM_TICK +
+                        ")");
 
         s.executeUpdate(
                 "create table " + T_IK + "(" +
-                    C_IK_SIDX + " integer not null," +
-                    C_IK_IMM_DID + dbcw.uniqueIdType() + " not null,"+
-                    C_IK_IMM_TICK + dbcw.longType() + " not null," +
-                    "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
-                ")" + dbcw.charSet());
+                        C_IK_SIDX + " integer not null," +
+                        C_IK_IMM_DID + dbcw.uniqueIdType() + " not null," +
+                        C_IK_IMM_TICK + dbcw.longType() + " not null," +
+                        "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
+                        ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_OA + "(" +
@@ -266,15 +239,15 @@ public class CoreSchema extends SyncSchema
 
         s.executeUpdate(
                 "create table " + T_CA + "(" +
-                    C_CA_SIDX + " integer not null," +
-                    C_CA_OID + dbcw.uniqueIdType() + " not null," +
-                    C_CA_KIDX + " integer not null," +
-                    C_CA_LENGTH + dbcw.longType() + " not null," +
-                    C_CA_HASH +  " blob,  " +
-                    C_CA_MTIME + dbcw.longType() + ", " +
-                    "primary key (" + C_CA_SIDX + "," + C_CA_OID + "," +
-                    C_CA_KIDX + ")" +
-                ")" + dbcw.charSet());
+                        C_CA_SIDX + " integer not null," +
+                        C_CA_OID + dbcw.uniqueIdType() + " not null," +
+                        C_CA_KIDX + " integer not null," +
+                        C_CA_LENGTH + dbcw.longType() + " not null," +
+                        C_CA_HASH + " blob,  " +
+                        C_CA_MTIME + dbcw.longType() + ", " +
+                        "primary key (" + C_CA_SIDX + "," + C_CA_OID + "," +
+                        C_CA_KIDX + ")" +
+                        ")" + dbcw.charSet());
 
         // for getAllNonMasterBranches_()
         s.executeUpdate("create index if not exists "
@@ -297,30 +270,30 @@ public class CoreSchema extends SyncSchema
          */
         s.executeUpdate(
                 "create table " + T_MAXTICK + "(" +
-                    C_MAXTICK_SIDX + " integer not null, " +
-                    C_MAXTICK_OID + dbcw.uniqueIdType() + " not null, " +
-                    C_MAXTICK_CID + " integer not null, " +
-                    C_MAXTICK_DID + dbcw.uniqueIdType() + " not null, " +
-                    C_MAXTICK_MAX_TICK + dbcw.longType() + " not null, " +
-                    "primary key (" + C_MAXTICK_SIDX + ", " + C_MAXTICK_OID +
-                    ", " + C_MAXTICK_CID + ", " + C_MAXTICK_DID + ")" +
-                    ")" + dbcw.charSet());
+                        C_MAXTICK_SIDX + " integer not null, " +
+                        C_MAXTICK_OID + dbcw.uniqueIdType() + " not null, " +
+                        C_MAXTICK_CID + " integer not null, " +
+                        C_MAXTICK_DID + dbcw.uniqueIdType() + " not null, " +
+                        C_MAXTICK_MAX_TICK + dbcw.longType() + " not null, " +
+                        "primary key (" + C_MAXTICK_SIDX + ", " + C_MAXTICK_OID +
+                        ", " + C_MAXTICK_CID + ", " + C_MAXTICK_DID + ")" +
+                        ")" + dbcw.charSet());
 
         // for getTicks_()
         s.executeUpdate(
                 "create index " + T_MAXTICK + "0 on "
-                    + T_MAXTICK +
-                    "(" + C_MAXTICK_SIDX + "," + C_MAXTICK_DID + ", " +
-                    C_MAXTICK_MAX_TICK + ")");
+                        + T_MAXTICK +
+                        "(" + C_MAXTICK_SIDX + "," + C_MAXTICK_DID + ", " +
+                        C_MAXTICK_MAX_TICK + ")");
 
         s.executeUpdate(
                 "create table " + T_CS + "(" +
-                C_CS_CS + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                C_CS_SIDX + " integer not null," +
-                C_CS_OID + dbcw.uniqueIdType() + "not null," +
-                C_CS_CID + " integer not null," +
-                "unique (" + C_CS_SIDX + "," + C_CS_OID + "," + C_CS_CID + ")" +
-                ")" + dbcw.charSet());
+                        C_CS_CS + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
+                        C_CS_SIDX + " integer not null," +
+                        C_CS_OID + dbcw.uniqueIdType() + "not null," +
+                        C_CS_CID + " integer not null," +
+                        "unique (" + C_CS_SIDX + "," + C_CS_OID + "," + C_CS_CID + ")" +
+                        ")" + dbcw.charSet());
 
         // for getAllCS_()
         s.executeUpdate(
@@ -330,36 +303,6 @@ public class CoreSchema extends SyncSchema
                 "create index " + T_CS + "0 on "
                         + T_CS + "(" + C_CS_SIDX + "," + C_CS_CS + "," + C_CS_OID + ","
                         + C_CS_CID + ")");
-
-        s.executeUpdate(
-                "create table " + T_CF + " (" +
-                C_CF_SIDX + " integer not null," +
-                C_CF_DID + dbcw.uniqueIdType() + "not null," +
-                C_CF_FILTER + dbcw.bloomFilterType() + " not null," +
-                "primary key (" + C_CF_SIDX + "," + C_CF_DID + ")" +
-                ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table " + T_SF + " (" +
-                C_SF_SIDX + " integer not null," +
-                C_SF_SFIDX + dbcw.longType() + "not null," +
-                C_SF_FILTER + dbcw.bloomFilterType() + " not null," +
-                "primary key (" + C_SF_SIDX + "," + C_SF_SFIDX + ")" +
-                ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table " + T_SD + " (" +
-                C_SD_SIDX + " integer not null," +
-                C_SD_DID + dbcw.uniqueIdType() + " not null," +
-                C_SD_SFIDX + dbcw.longType() + " not null," +
-                "primary key (" + C_SD_SIDX + "," + C_SD_DID + ")" +
-                ")" + dbcw.charSet());
-
-        // for getSenderDeviceIndexCount()
-        s.executeUpdate(
-                "create index " + T_SD + "0 on "
-                    + T_SD +
-                    "(" + C_SD_SIDX + "," + C_SD_SFIDX + ")");
 
         s.executeUpdate(
                 "create table " + T_ALIAS + " (" +
@@ -381,13 +324,6 @@ public class CoreSchema extends SyncSchema
         s.executeUpdate(
                 "insert into " + T_GT + " (" + C_GT_NATIVE + "," +
                         C_GT_IMMIGRANT + ") values (0,0)");
-
-        s.executeUpdate(
-                "create table " + T_PD + " (" +
-                C_PD_SIDX + " integer not null, " +
-                C_PD_DID + dbcw.uniqueIdType() + " not null, " +
-                "primary key (" + C_PD_SIDX + "," + C_PD_DID + ")" +
-                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table " + T_EX + " (" +
@@ -433,5 +369,4 @@ public class CoreSchema extends SyncSchema
     {
         new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
     }
-
 }

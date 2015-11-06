@@ -14,10 +14,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.T_PD;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_PD_SIDX;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_PD_DID;
-
 public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDeviceDatabase,
         IStoreDeletionOperator
 {
@@ -35,9 +31,9 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         try {
             if (_psPDContains == null) {
                 _psPDContains = c().prepareStatement("select count(*) from "
-                                  + T_PD + " where "
-                                  + C_PD_SIDX + "=? and "
-                                  + C_PD_DID + "=?");
+                                  + SyncSchema.T_PD + " where "
+                                  + SyncSchema.C_PD_SIDX + "=? and "
+                                  + SyncSchema.C_PD_DID + "=?");
             }
             _psPDContains.setInt(1, sidx.getInt());
             _psPDContains.setBytes(2, did.getBytes());
@@ -62,8 +58,8 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
     {
         try {
             if (_psAddToPD == null) {
-                _psAddToPD = c().prepareStatement("replace into " + T_PD + "("
-                              + C_PD_SIDX + "," + C_PD_DID + ") values (?,?)");
+                _psAddToPD = c().prepareStatement("replace into " + SyncSchema.T_PD + "("
+                              + SyncSchema.C_PD_SIDX + "," + SyncSchema.C_PD_DID + ") values (?,?)");
             }
 
             _psAddToPD.setInt(1, sidx.getInt());
@@ -84,7 +80,7 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
     @Override
     public void discardAllDevices_(SIndex sidx, Trans t) throws SQLException
     {
-        StoreDatabase.deleteRowsInTableForStore_(T_PD, C_PD_SIDX, sidx, c(), t);
+        StoreDatabase.deleteRowsInTableForStore_(SyncSchema.T_PD, SyncSchema.C_PD_SIDX, sidx, c(), t);
     }
 
     @Override

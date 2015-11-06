@@ -231,6 +231,9 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(IActivityLogDatabase.class).to(ActivityLogDatabase.class);
                 bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
                 bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
+                bind(ICollectorFilterDatabase.class).to(CollectorFilterDatabase.class);
+                bind(ISenderFilterDatabase.class).to(SenderFilterDatabase.class);
+                bind(IPulledDeviceDatabase.class).to(PulledDeviceDatabase.class);
 
                 bind(StoreHierarchy.class).to(SingleuserStoreHierarchy.class);
                 bind(AbstractPathResolver.Factory.class).to(SingleuserPathResolver.Factory.class);

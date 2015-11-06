@@ -32,6 +32,7 @@ message PBCore {
         RESOLVE_USER_ID_REQUEST = 7;
         RESOLVE_USER_ID_RESPONSE = 8;
         GET_CONTENT_REQUEST = 9;
+        GET_FILTER_REQUEST = 10;
     }
 
     required Type type = 1;
@@ -47,6 +48,8 @@ message PBCore {
     optional PBException exception_response = 10;
     optional PBGetContentRequest get_content_request = 11;
     optional PBGetContentResponse get_content_response = 12;
+    optional PBGetFilterRequest get_filter_request = 13;
+    optional PBGetFilterResponse get_filter_response = 14;
 }
 
 message PBUpdateSenderFilter {
@@ -58,6 +61,22 @@ message PBUpdateSenderFilter {
 message PBNewUpdates {
     required bytes store_id = 1;
     optional uint64 change_epoch = 2;
+}
+
+message PBGetFilterRequest {
+    required bytes store_id = 1;
+
+    // the requester would like all filters from BASE
+    optional bool from_base = 2 [default = false];
+}
+
+message PBGetFilterResponse {
+    // all fields absent if the filter is empty
+    optional bytes sender_filter = 1;
+    optional uint64 sender_filter_index = 2;
+    optional uint64 sender_filter_update_seq = 3;
+    optional uint64 sender_filter_epoch = 4;
+    optional bool from_base = 5;
 }
 
 // IMPORTANT:
@@ -199,6 +218,7 @@ message PBGetContentResponse {
     required uint64 mtime = 3;
     required bytes hash = 4;
     optional uint64 prefix_length = 5 [default = 0];
+    required uint64 lts = 6;
 }
 
 //////////////////////////////////////

@@ -24,10 +24,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -57,6 +54,12 @@ public class Devices implements IDiagnosable
     private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
 
+    public interface DeviceAvailabilityListener {
+        void offline_(DID did);
+    }
+
+    private final List<DeviceAvailabilityListener> _listeners = new ArrayList<>();
+
     @Inject
     public Devices(
             Transports tps,
@@ -66,6 +69,10 @@ public class Devices implements IDiagnosable
         _tps = tps;
         _sidx2s = sidx2s;
         _sidx2sid = sidx2sid;
+    }
+
+    public void addListener_(DeviceAvailabilityListener l) {
+        _listeners.add(l);
     }
 
     public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
@@ -108,6 +115,7 @@ public class Devices implements IDiagnosable
     {
         if (!isNowAvailable && wasFormerlyAvailable) {
             l.info("{} -DPE", did);
+            _listeners.forEach(l -> l.offline_(did));
         }
     }
 

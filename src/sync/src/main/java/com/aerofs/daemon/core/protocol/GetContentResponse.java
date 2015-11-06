@@ -62,7 +62,7 @@ public class GetContentResponse
         PBGetContentResponse response = msg.pb().getGetContentResponse();
         ReceivedContent content = new ReceivedContent(response.getMtime(), response.getLength(),
                 response.getPrefixLength(), Version.wrapCentral(response.getVersion()),
-                new ContentHash(response.getHash()));
+                new ContentHash(response.getHash()), response.getLts());
         CausalityResult cr = _causality.computeCausality_(soid, content);
 
         if (cr == null) return;

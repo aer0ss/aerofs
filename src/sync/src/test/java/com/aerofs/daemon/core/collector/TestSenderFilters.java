@@ -1,7 +1,8 @@
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.daemon.lib.db.SyncSchema;
 import com.aerofs.ids.DID;
-import com.aerofs.lib.db.InMemoryCoreDBCW;
+import com.aerofs.testlib.InMemorySQLiteDBCW;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,9 +25,11 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
+import java.sql.Statement;
+
 public class TestSenderFilters extends AbstractTest
 {
-    private final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW();
+    private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
 
     @Spy  ISenderFilterDatabase sfdb = new SenderFilterDatabase(dbcw);
     @Mock TransManager tm;
@@ -43,6 +46,9 @@ public class TestSenderFilters extends AbstractTest
     {
         when(tm.begin_()).thenReturn(t);
         dbcw.init_();
+        try (Statement s = dbcw.getConnection().createStatement()) {
+            new SyncSchema().create_(s, dbcw);
+        }
 
         // Because the SenderFilters constructor uses the db, sf must be
         // instantiated *after* the db is initialized

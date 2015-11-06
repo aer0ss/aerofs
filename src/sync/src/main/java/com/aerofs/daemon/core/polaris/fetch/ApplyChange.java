@@ -6,20 +6,19 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -56,7 +55,7 @@ public class ApplyChange
         /**
          * @return true if matching content was already present locally
          */
-        boolean newContent_(SOID soid, RemoteChange c, Trans t)
+        boolean hasMatchingLocalContent_(SOID soid, RemoteChange c, Trans t)
                 throws SQLException, IOException;
 
         void delete_(SOID parent, OID oidChild, @Nullable OID migrant, Trans t) throws Exception;
@@ -73,22 +72,27 @@ public class ApplyChange
     }
 
     private final Impl _impl;
+    private final ChangeEpochDatabase _cedb;
     private final CentralVersionDatabase _cvdb;
     private final RemoteLinkDatabase _rpdb;
     private final RemoteContentDatabase _rcdb;
-    private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
+    private final PolarisContentVersionControl _cvc;
+    private final ContentFetchQueueDatabase _cfqdb;
 
     @Inject
     public ApplyChange(Impl impl,  CentralVersionDatabase cvdb, RemoteLinkDatabase rpdb,
-            RemoteContentDatabase rcdb, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
+            RemoteContentDatabase rcdb, IMapSIndex2SID sidx2sid, ChangeEpochDatabase cedb,
+            PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb)
     {
         _impl = impl;
         _cvdb = cvdb;
         _rpdb = rpdb;
         _rcdb = rcdb;
-        _sidx2s = sidx2s;
+        _cedb = cedb;
         _sidx2sid = sidx2sid;
+        _cvc = cvc;
+        _cfqdb = cfqdb;
     }
 
     public void apply_(SIndex sidx, RemoteChange c, long mergeBoundary, Trans t) throws Exception
@@ -181,17 +185,38 @@ public class ApplyChange
 
         Long version = _rcdb.getMaxVersion_(sidx, soid.oid());
         if (version != null && version >= c.newVersion) {
+            // If the local version is an exact match, we need to update Bloom Filters and
+            // the content change epoch used to tag them to make sure remote peers become aware
+            // that we have this content
+            // We do this for "obsolete" changes because of the peculiar way migration interferes
+            // with the normal version lifecycle (specifically by preserving versions from the
+            // source store in the destination store to preserve happens-before relationship
+            // and avoid false conflicts from arising as a result of cross-store moves).
+            // These migrated contents cannot be placed in the bloom filter at migration time for
+            // two reason:
+            //  1. even if the OID doesn't change (sharing) the daemon doesn't and cannot know what
+            //     logical timestamp will be assigned to the UPDATE_CONTENT transform by polaris
+            //     and thus cannot correctly tag the BF, which would risk causing premature BF
+            //     disposal and in turn no-sync
+            //  2. if the OID changes the daemon must wait for aliasing to be resolved before it can
+            //     add the correct OID to the BF
+            Long lv = _cvdb.getVersion_(sidx, soid.oid());
+            if (lv != null && lv == c.newVersion) {
+                _cvc.setContentVersion_(sidx, soid.oid(), c.newVersion, c.logicalTimestamp, t);
+            }
             l.info("ignoring obsolete content change {}:{} {}", soid, version, c.newVersion);
             return;
         }
 
-        if (_impl.newContent_(soid, c, t)) {
+        long ep = Objects.firstNonNull(_cedb.getContentChangeEpoch_(sidx), 0L);
+        _cedb.setContentChangeEpoch_(sidx, Math.max(ep, c.logicalTimestamp), t);
+
+        if (_impl.hasMatchingLocalContent_(soid, c, t)) {
             l.info("match local content {} {}", soid, c.newVersion);
-            _cvdb.setVersion_(sidx, soid.oid(), c.newVersion, t);
+            _cvc.setContentVersion_(sidx, soid.oid(), c.newVersion, c.logicalTimestamp, t);
             _rcdb.deleteUpToVersion_(sidx, soid.oid(), c.newVersion, t);
         } else {
-            // FIXME: delay schedule if meta buffered
-            _sidx2s.get_(soid.sidx()).iface(ContentFetcher.class).schedule_(soid.oid(), t);
+            _cfqdb.insert_(sidx, soid.oid(), t);
         }
 
         _rcdb.insert_(sidx, soid.oid(), c.newVersion, new DID(c.originator), c.contentHash,

@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris.submit;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.Batch;
@@ -18,13 +19,9 @@ import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.api.LocalChange.Type;
 import com.aerofs.daemon.core.polaris.api.UpdatedObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
-import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase.ContentChange;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.protocol.ContentProvider;
-import com.aerofs.daemon.core.protocol.NewUpdatesSender;
 import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -44,8 +41,6 @@ import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -63,21 +58,22 @@ public class ContentChangeSubmitter implements Submitter
     private final static Logger l = Loggers.getLogger(ContentChangeSubmitter.class);
 
     private final PolarisClient _client;
+    private final ChangeEpochDatabase _cedb;
     private final ContentChangesDatabase _ccdb;
     private final CentralVersionDatabase _cvdb;
     protected final RemoteLinkDatabase _rldb;
     private final RemoteContentDatabase _rcdb;
     private final PauseSync _pauseSync;
     private final TransManager _tm;
-    private final NewUpdatesSender _nus;
     private final ContentProvider _provider;
     private final CfgLocalDID _did;
+    private final PolarisContentVersionControl _cvc;
 
     @Inject
     public ContentChangeSubmitter(PolarisClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
-            PauseSync pauseSync, TransManager tm, NewUpdatesSender nus,
-            ContentProvider provider, CfgLocalDID did)
+            PauseSync pauseSync, TransManager tm, ContentProvider provider, CfgLocalDID did,
+            PolarisContentVersionControl cvc, ChangeEpochDatabase cedb)
     {
         _client = client;
         _rldb = rldb;
@@ -87,8 +83,9 @@ public class ContentChangeSubmitter implements Submitter
         _pauseSync = pauseSync;
         _tm = tm;
         _provider = provider;
-        _nus = nus;
         _did = did;
+        _cvc = cvc;
+        _cedb = cedb;
     }
 
     @Override
@@ -100,9 +97,7 @@ public class ContentChangeSubmitter implements Submitter
     private final int MAX_BATCH_SIZE = 100;
 
     /**
-     * Asynchronously submit the next queued local metadata change to Polaris.
-     *
-     * TODO(phoenix): batch multiple changes in a single request
+     * Asynchronously submit the next queued local content changes to Polaris.
      */
     @Override
     public void submit_(SIndex sidx, AsyncTaskCallback cb) throws Exception
@@ -231,40 +226,33 @@ public class ContentChangeSubmitter implements Submitter
             int failed = 0;
             SIndex sidx = null;
 
-            // TODO: optimistic transaction merging
-            try {
-                for (int i = 0; i < r.results.size(); ++i) {
-                    BatchOpResult or = r.results.get(i);
-                    LocalChange lc = batch.operations.get(i).operation;
-                    if (or.successful) {
-                        if (or.updated.size() != 1) throw new ExProtocolError();
-                        try (Trans t = _tm.begin_()) {
-                            ackSubmission_(c.get(i), lc, or.updated.get(0), t);
-                            t.commit_();
-                        }
-                        if (or.updated.size() > 0) {
-                            if (sidx == null) {
-                                sidx = c.get(i).sidx;
-                            } else {
-                                // we segregate update submission by store
-                                checkState(sidx == c.get(i).sidx);
-                            }
-                            ack = Math.max(ack, or.updated.get(0).transformTimestamp);
-                        }
-                    } else if (or.errorCode == PolarisError.VERSION_CONFLICT) {
-                        if (onConflict_(c.get(i), lc, "")) {
-                            ++failed;
-                        }
-                    } else {
-                        // TODO(phoenix): figure out which errors need special handling
-                        ++failed;
-                        l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
-                                GsonUtil.GSON.toJson(batch.operations.get(i)));
+            for (int i = 0; i < r.results.size(); ++i) {
+                BatchOpResult or = r.results.get(i);
+                LocalChange lc = batch.operations.get(i).operation;
+                if (or.successful) {
+                    if (or.updated.size() != 1) throw new ExProtocolError();
+                    try (Trans t = _tm.begin_()) {
+                        ackSubmission_(c.get(i), lc, or.updated.get(0), t);
+                        t.commit_();
                     }
-                }
-            } finally {
-                if (sidx != null && ack > 0) {
-                    _nus.sendForStore_(sidx, ack);
+                    if (or.updated.size() > 0) {
+                        if (sidx == null) {
+                            sidx = c.get(i).sidx;
+                        } else {
+                            // we segregate update submission by store
+                            checkState(sidx == c.get(i).sidx);
+                        }
+                        ack = Math.max(ack, or.updated.get(0).transformTimestamp);
+                    }
+                } else if (or.errorCode == PolarisError.VERSION_CONFLICT) {
+                    if (onConflict_(c.get(i), lc, "")) {
+                        ++failed;
+                    }
+                } else {
+                    // TODO(phoenix): figure out which errors need special handling
+                    ++failed;
+                    l.warn("batch op failed {} {} {}", or.errorCode, or.errorMessage,
+                            GsonUtil.GSON.toJson(batch.operations.get(i)));
                 }
             }
             if (failed > 0) throw new ExRetryLater("batch not complete");
@@ -292,17 +280,18 @@ public class ContentChangeSubmitter implements Submitter
         l.info("content advertised {}{} {}", c.sidx, c.oid, updated.object.version);
         Long v = _cvdb.getVersion_(c.sidx, c.oid);
         if (v == null || v < updated.object.version) {
-            _cvdb.setVersion_(c.sidx, c.oid, updated.object.version, t);
+            _cvc.setContentVersion_(c.sidx, c.oid, updated.object.version, updated.transformTimestamp, t);
             _rcdb.deleteUpToVersion_(c.sidx, c.oid, updated.object.version, t);
             // add "remote" content entry for latest version (in case of expulsion)
             _rcdb.insert_(c.sidx, c.oid, updated.object.version, _did.get(),
                     new ContentHash(BaseUtil.hexDecode(change.hash)), change.size, t);
+
+            long ep = Objects.firstNonNull(_cedb.getContentChangeEpoch_(c.sidx), 0L);
+            _cedb.setContentChangeEpoch_(c.sidx, Math.max(ep, updated.transformTimestamp), t);
         }
 
         if (!_ccdb.deleteChange_(c.sidx, c.idx, t)) {
             l.info("submitted change now obsolete {}{}: {}", c.sidx, c.oid, c.idx);
         }
-
-        // TODO: ?
     }
 }

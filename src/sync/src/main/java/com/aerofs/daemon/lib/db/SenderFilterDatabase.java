@@ -1,7 +1,5 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,8 +34,8 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psSSF == null) _psSSF = c()
-                    .prepareStatement("replace into " + T_SF + "(" +
-                            C_SF_SIDX + "," + C_SF_SFIDX + "," + C_SF_FILTER +
+                    .prepareStatement("replace into " + SyncSchema.T_SF + "(" +
+                            SyncSchema.C_SF_SIDX + "," + SyncSchema.C_SF_SFIDX + "," + SyncSchema.C_SF_FILTER +
                             ") values (?,?,?)");
             _psSSF.setInt(1, sidx.getInt());
             _psSSF.setLong(2, sfidx.getLong());
@@ -57,8 +55,8 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psDSF == null) _psDSF = c()
-                    .prepareStatement("delete from " + T_SF + " where " +
-                            C_SF_SIDX + "=? and " + C_SF_SFIDX + "=?");
+                    .prepareStatement("delete from " + SyncSchema.T_SF + " where " +
+                            SyncSchema.C_SF_SIDX + "=? and " + SyncSchema.C_SF_SFIDX + "=?");
             _psDSF.setInt(1, sidx.getInt());
             _psDSF.setLong(2, sfidx.getLong());
             _psDSF.executeUpdate();
@@ -76,9 +74,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psGSF == null) _psGSF = c()
-                    .prepareStatement("select " + C_SF_FILTER + " from "
-                            + T_SF + " where " + C_SF_SIDX + "=? and " +
-                            C_SF_SFIDX + "=?");
+                    .prepareStatement("select " + SyncSchema.C_SF_FILTER + " from "
+                            + SyncSchema.T_SF + " where " + SyncSchema.C_SF_SIDX + "=? and " +
+                            SyncSchema.C_SF_SFIDX + "=?");
             _psGSF.setInt(1, sidx.getInt());
             _psGSF.setLong(2, sfidx.getLong());
             try (ResultSet rs = _psGSF.executeQuery()) {
@@ -119,9 +117,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psGSFS == null) _psGSFS = c()
-                    .prepareStatement("select " + C_SF_FILTER + " from "
-                            + T_SF + " where " + C_SF_SIDX + "=? and " +
-                            C_SF_SFIDX + ">=? and " + C_SF_SFIDX + "<?");
+                    .prepareStatement("select " + SyncSchema.C_SF_FILTER + " from "
+                            + SyncSchema.T_SF + " where " + SyncSchema.C_SF_SIDX + "=? and " +
+                            SyncSchema.C_SF_SFIDX + ">=? and " + SyncSchema.C_SF_SFIDX + "<?");
             _psGSFS.setInt(1, sidx.getInt());
             _psGSFS.setLong(2, from.getLong());
             _psGSFS.setLong(3, to.getLong());
@@ -140,9 +138,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psGSFPI == null) _psGSFPI = c()
-                    .prepareStatement("select max(" + C_SF_SFIDX + ") from "
-                            + T_SF + " where " + C_SF_SIDX + "=? and "
-                            + C_SF_SFIDX + "<?");
+                    .prepareStatement("select max(" + SyncSchema.C_SF_SFIDX + ") from "
+                            + SyncSchema.T_SF + " where " + SyncSchema.C_SF_SIDX + "=? and "
+                            + SyncSchema.C_SF_SFIDX + "<?");
             _psGSFPI.setInt(1, sidx.getInt());
             _psGSFPI.setLong(2, sfidx.getLong());
             try (ResultSet rs = _psGSFPI.executeQuery()) {
@@ -163,8 +161,8 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psGSFGI == null) _psGSFGI = c()
-                    .prepareStatement("select max(" + C_SF_SFIDX + ") from "
-                            + T_SF + " where " + C_SF_SIDX + "=?");
+                    .prepareStatement("select max(" + SyncSchema.C_SF_SFIDX + ") from "
+                            + SyncSchema.T_SF + " where " + SyncSchema.C_SF_SIDX + "=?");
             _psGSFGI.setInt(1, sidx.getInt());
             try (ResultSet rs = _psGSFGI.executeQuery()) {
                 if (rs.next()) {
@@ -188,9 +186,9 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psGSDI == null) _psGSDI = c()
-                    .prepareStatement("select " + C_SD_SFIDX + " from "
-                            + T_SD + " where " + C_SD_SIDX + "=? and " +
-                            C_SD_DID + "=?");
+                    .prepareStatement("select " + SyncSchema.C_SD_SFIDX + " from "
+                            + SyncSchema.T_SD + " where " + SyncSchema.C_SD_SIDX + "=? and " +
+                            SyncSchema.C_SD_DID + "=?");
             _psGSDI.setInt(1, sidx.getInt());
             _psGSDI.setBytes(2, did.getBytes());
             try (ResultSet rs = _psGSDI.executeQuery()) {
@@ -216,8 +214,8 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
         try {
             if (_psGSDIC == null) _psGSDIC = c()
                     .prepareStatement("select count(*) from "
-                            + T_SD + " where " + C_SD_SIDX + "=? and " +
-                            C_SD_SFIDX + "=?");
+                            + SyncSchema.T_SD + " where " + SyncSchema.C_SD_SIDX + "=? and " +
+                            SyncSchema.C_SD_SFIDX + "=?");
             _psGSDIC.setInt(1, sidx.getInt());
             _psGSDIC.setLong(2, sfidx.getLong());
             try (ResultSet rs = _psGSDIC.executeQuery()) {
@@ -239,8 +237,8 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
     {
         try {
             if (_psSSDI == null) _psSSDI = c()
-                    .prepareStatement("replace into " + T_SD + "(" +
-                            C_SD_SIDX + "," + C_SD_DID + "," + C_SD_SFIDX +
+                    .prepareStatement("replace into " + SyncSchema.T_SD + "(" +
+                            SyncSchema.C_SD_SIDX + "," + SyncSchema.C_SD_DID + "," + SyncSchema.C_SD_SFIDX +
                             ") values (?,?,?)");
             _psSSDI.setInt(1, sidx.getInt());
             _psSSDI.setBytes(2, did.getBytes());
@@ -258,6 +256,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             throws SQLException
     {
         StoreDatabase.deleteRowsInTablesForStore_(
-                ImmutableMap.of(T_SF, C_SF_SIDX, T_SD, C_SD_SIDX), sidx, c(), t);
+                ImmutableMap.of(SyncSchema.T_SF, SyncSchema.C_SF_SIDX, SyncSchema.T_SD, SyncSchema.C_SD_SIDX), sidx, c(), t);
     }
 }

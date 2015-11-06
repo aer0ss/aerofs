@@ -27,7 +27,6 @@ public class UpdateSenderFilter implements CoreProtocolReactor.Handler
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
 
-
     @Inject
     public UpdateSenderFilter(TransportRoutingLayer trl, MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid,
             IMapSID2SIndex sid2sidx)
@@ -58,15 +57,11 @@ public class UpdateSenderFilter implements CoreProtocolReactor.Handler
     public void handle_(DigestedMessage msg)
             throws ExProtocolError, ExNotFound, SQLException
     {
-        Util.checkPB(msg.pb().hasUpdateSenderFilter(),
-                PBUpdateSenderFilter.class);
+        Util.checkPB(msg.pb().hasUpdateSenderFilter(), PBUpdateSenderFilter.class);
 
         PBUpdateSenderFilter sf = msg.pb().getUpdateSenderFilter();
         SIndex sidx = _sid2sidx.getThrows_(new SID(BaseUtil.fromPB(sf.getStoreId())));
-        Store s = _sidx2s.getThrows_(sidx);
-        if (s instanceof LegacyStore) {
-            s.iface(SenderFilters.class).update_(msg.did(),
-                    new SenderFilterIndex(sf.getSenderFilterIndex()), sf.getSenderFilterUpdateSeq());
-        }
+        _sidx2s.getThrows_(sidx).iface(SenderFilters.class).update_(msg.did(),
+                new SenderFilterIndex(sf.getSenderFilterIndex()), sf.getSenderFilterUpdateSeq());
     }
 }

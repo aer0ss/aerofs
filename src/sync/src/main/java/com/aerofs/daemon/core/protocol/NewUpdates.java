@@ -3,25 +3,21 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.net.CoreProtocolReactor;
-import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
-import com.aerofs.ids.SID;
-import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBNewUpdates;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
-
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * This class is responsible for reacting to NEW_UPDATE messages
@@ -32,19 +28,32 @@ public class NewUpdates implements CoreProtocolReactor.Handler
 
     private final IMapSID2SIndex _sid2sidx;
     private final LocalACL _lacl;
-    private final AntiEntropy _ae;
-    private final ChangeEpochDatabase _cedb;
-    private final MapSIndex2Store _sidx2s;
+    private final Impl _impl;
+
+    public static class Impl {
+        @Inject private ChangeEpochDatabase _cedb;
+        @Inject private MapSIndex2Store _sidx2s;
+        @Inject private FilterFetcher _ff;
+
+        public void handle_(SIndex sidx, DID did, PBNewUpdates pb) throws Exception {
+            if (!pb.hasChangeEpoch()) throw new ExProtocolError("recv pre-phoenix notif");
+
+            Long epoch = _cedb.getChangeEpoch_(sidx);
+            if (epoch == null || pb.getChangeEpoch() > epoch) {
+                l.debug("{}: {} > {} -> fetch from polaris", sidx, pb.getChangeEpoch(), epoch);
+                _sidx2s.get_(sidx).iface(ChangeFetchScheduler.class).schedule_();
+            }
+
+            _ff.scheduleFetch_(did, sidx);
+        }
+    }
 
     @Inject
-    public NewUpdates(IMapSID2SIndex sid2sidx, LocalACL lacl, AntiEntropy ae,
-            ChangeEpochDatabase cedb, MapSIndex2Store sidx2s)
+    public NewUpdates(IMapSID2SIndex sid2sidx, LocalACL lacl, Impl impl)
     {
         _sid2sidx = sid2sidx;
         _lacl = lacl;
-        _ae = ae;
-        _cedb = cedb;
-        _sidx2s = sidx2s;
+        _impl = impl;
     }
 
     @Override
@@ -53,8 +62,7 @@ public class NewUpdates implements CoreProtocolReactor.Handler
     }
 
     @Override
-    public void handle_(DigestedMessage msg)
-            throws ExNotFound, SQLException, IOException, ExProtocolError
+    public void handle_(DigestedMessage msg) throws Exception
     {
         l.debug("{} process incoming nu over {}", msg.did(), msg.tp());
 
@@ -70,20 +78,6 @@ public class NewUpdates implements CoreProtocolReactor.Handler
             return;
         }
 
-        Long epoch = _cedb.getChangeEpoch_(sidx);
-        if (epoch == null) {
-            if (pb.hasChangeEpoch()) throw new ExProtocolError("recv phoenix notif");
-
-            // TODO: epidemic propagation
-            // TODO: impact AE scheduling
-            _ae.request_(sidx, msg.did());
-        } else {
-            if (!pb.hasChangeEpoch()) throw new ExProtocolError("recv pre-phoenix notif");
-
-            if (pb.getChangeEpoch() > epoch) {
-                l.debug("{}: {} > {} -> fetch from polaris", sidx, pb.getChangeEpoch(), epoch);
-                _sidx2s.get_(sidx).iface(ChangeFetchScheduler.class).schedule_();
-            }
-        }
+        _impl.handle_(sidx, msg.did(), pb);
     }
 }

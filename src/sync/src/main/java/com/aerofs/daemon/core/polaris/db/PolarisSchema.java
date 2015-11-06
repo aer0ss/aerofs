@@ -10,7 +10,7 @@ import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.SyncSchema.T_STORE;
 import static com.aerofs.daemon.lib.db.SyncSchema.C_STORE_LTS_LOCAL;
-import static com.aerofs.daemon.lib.db.SyncSchema.C_STORE_LTS_REMOTE;
+import static com.aerofs.daemon.lib.db.SyncSchema.C_STORE_LTS_CONTENT;
 
 public class PolarisSchema implements ISchema {
     public static String
@@ -80,8 +80,7 @@ public class PolarisSchema implements ISchema {
         s.executeUpdate("alter table " + T_STORE
                 + " add column " + C_STORE_LTS_LOCAL + dbcw.longType());
         s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_REMOTE + dbcw.longType()
-                + " not null default -1");
+                + " add column " + C_STORE_LTS_CONTENT + dbcw.longType());
 
         s.executeUpdate("create table " + T_VERSION + "("
                 + C_VERSION_SIDX + " integer not null,"

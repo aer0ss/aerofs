@@ -128,7 +128,7 @@ public class GetComponentResponse
         PBGetComponentResponse response = msg.pb().getGetComponentResponse();
         ReceivedContent content = new ReceivedContent(response.getMtime(), response.getFileTotalLength(),
                 response.getPrefixLength(), Version.fromPB(response.getVersion()),
-                response.hasHash() ? new ContentHash(response.getHash()) : null);
+                response.hasHash() ? new ContentHash(response.getHash()) : null, 0);
         CausalityResult cr;
         try {
             if (response.hasIsContentSame() && response.getIsContentSame()) {

@@ -129,7 +129,9 @@ public class TokenManager implements IDumpStatMisc
     public final Token acquireThrows_(Cat cat, String reason) throws ExNoResource
     {
         Token tk = acquire_(cat, reason);
-        if (tk == null) throw new ExNoResource(cat + " full");
+        if (tk == null) {
+            throw new ExNoResource(cat + " full");
+        }
         return tk;
     }
 
@@ -207,7 +209,7 @@ public class TokenManager implements IDumpStatMisc
         }
     }
 
-    private String dumpCatInfo(CatInfo catInfo, String indent)
+    private static String dumpCatInfo(CatInfo catInfo, String indent)
     {
         StringBuilder sb = new StringBuilder();
 

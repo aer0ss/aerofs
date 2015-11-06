@@ -7,6 +7,11 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.core.net.CoreProtocolReactor.Handler;
+import com.aerofs.daemon.core.net.device.Devices;
+import com.aerofs.daemon.core.net.device.Devices.DeviceAvailabilityListener;
+import com.aerofs.daemon.core.status.PauseSync;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.protocol.CoreProtocolUtil;
@@ -22,22 +27,25 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * RPC: Remote Procedure Calls
  */
-public class RPC implements CoreProtocolReactor.Handler
-{
+public class RPC implements Handler, DeviceAvailabilityListener {
     private static final Logger l = Loggers.getLogger(RPC.class);
     private final CfgTimeout _cfgTimeout;
+    private final PauseSync _pause;
 
     @Override
     public PBCore.Type message() {
         return PBCore.Type.REPLY;
     }
 
-    private static class ExLinkDown extends Exception
+    public static class ExLinkDown extends Exception
     {
         private static final long serialVersionUID = 1L;
     }
@@ -51,12 +59,31 @@ public class RPC implements CoreProtocolReactor.Handler
     private final TransportRoutingLayer _trl;
 
     private final Map<Integer, ResponseWaiter> _waiters = Maps.newTreeMap();
+    private final Map<DID, Set<Integer>> _bydid = new HashMap<>();
+
+    void add_(DID did, int id) {
+        Set<Integer> s = _bydid.get(did);
+        if (s == null) {
+            s = new HashSet<>();
+            _bydid.put(did, s);
+        }
+        s.add(id);
+    }
+
+    void remove_(DID did, int id) {
+        Set<Integer> s = _bydid.get(did);
+        if (s == null) return;
+        s.remove(id);
+        if (s.isEmpty()) _bydid.remove(did);
+    }
 
     @Inject
     public RPC(TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss,
-               CfgTimeout cfgTimeout)
+               CfgTimeout cfgTimeout, Devices devices, PauseSync pause)
     {
         _trl = trl;
+        _pause = pause;
+        devices.addListener_(this);
         lss.addListener((previous, current, added, removed) -> {
             if (current.isEmpty()) {
                 linkDown_();
@@ -91,9 +118,12 @@ public class RPC implements CoreProtocolReactor.Handler
     public DigestedMessage issueRequest_(DID did, PBCore request, Token tk, String reason)
         throws Exception
     {
+        if (_pause.isPaused()) throw new ExLinkDown();
+
         Endpoint ep = null;
         try {
             ep = _trl.sendUnicast_(did, request);
+            add_(did, request.getRpcid());
             return receiveResponse_(request.getRpcid(), tk, reason);
         } catch (ExTimeout e) {
            l.warn("timeout rid:{} t:{} ep:{}", request.getRpcid(), CoreProtocolUtil.typeString(request), ep);
@@ -121,6 +151,7 @@ public class RPC implements CoreProtocolReactor.Handler
         // Remove the entry to prevent further notification on it after this method
         // returns and before the waiting thread acquires the core lock and proceeds execution.
         int rpcid = msg.pb().getRpcid();
+        remove_(msg.did(), rpcid);
         ResponseWaiter waiter = _waiters.remove(rpcid);
 
         if (waiter != null) {
@@ -129,6 +160,17 @@ public class RPC implements CoreProtocolReactor.Handler
         } else {
             l.warn("spurious response rid:{} ep:{}", rpcid, msg.ep());
             return false;
+        }
+    }
+
+    @Override
+    public void offline_(DID did) {
+        Set<Integer> rpcs = _bydid.remove(did);
+        if (rpcs == null) return;
+        for (Integer rpcid : rpcs) {
+            ResponseWaiter w = _waiters.remove(rpcid);
+            if (w == null) break;
+            w._tcb.abort_(new ExDeviceUnavailable(did.toString()));
         }
     }
 

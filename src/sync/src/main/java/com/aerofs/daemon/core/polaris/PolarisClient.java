@@ -147,7 +147,12 @@ public class PolarisClient
                         ev.getFuture().setFailure(new ClosedChannelException());
                         return;
                     }
+                    // NB: it's important that the request be added to the queue and sent
+                    // downstream atomically, otherwise responses may be mapped to the wrong
+                    // callback, which might cause crash or corrupted state.
                     _requests.add(r.f);
+                    ctx.sendDownstream(new DownstreamMessageEvent(ev.getChannel(), ev.getFuture(),
+                            r.http, ev.getRemoteAddress()));
                 }
                 if (r.http.getContent() != null) {
                     l.info("write {}\n{}", r.http,
@@ -155,8 +160,6 @@ public class PolarisClient
                 } else {
                     l.info("write {}", r.http);
                 }
-                ctx.sendDownstream(new DownstreamMessageEvent(ev.getChannel(), ev.getFuture(),
-                        r.http, ev.getRemoteAddress()));
             } else {
                 ctx.sendDownstream(ev);
             }

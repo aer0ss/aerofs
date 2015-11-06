@@ -55,14 +55,16 @@ public class ContentUpdater {
         final long prefixLength;
         final Version vRemote;
         final @Nullable ContentHash hash;
+        final long lts;
 
         ReceivedContent(long mtime, long length, long prefixLength, Version vRemote,
-                        @Nullable ContentHash hash) {
+                        @Nullable ContentHash hash, long lts) {
             this.mtime = mtime;
             this.length = length;
             this.prefixLength = prefixLength;
             this.vRemote = vRemote;
             this.hash = hash;
+            this.lts = lts;
         }
     }
 

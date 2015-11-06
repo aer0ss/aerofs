@@ -111,6 +111,9 @@ public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listen
      */
     void preDelete_() {}
 
+    public void resetCollectorFiltersForAllDevices_(Trans t)
+            throws SQLException {}
+
     public void deletePersistentData_(Trans t) throws SQLException {
         _isDeleted = true;
     }

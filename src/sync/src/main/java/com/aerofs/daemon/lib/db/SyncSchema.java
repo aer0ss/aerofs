@@ -22,8 +22,8 @@ public class SyncSchema implements ISchema
             C_STORE_SIDX    = "s_i",        // SIndex
             C_STORE_NAME    = "s_n",        // String
             C_STORE_COLLECTING_CONTENT = "s_c", // boolean
-            C_STORE_LTS_LOCAL = "s_lts",        // long: polaris logical timestamp
-            C_STORE_LTS_REMOTE = "s_rts",       // long: polaris logical timestamp
+            C_STORE_LTS_LOCAL   = "s_lts",      // long: polaris logical timestamp
+            C_STORE_LTS_CONTENT = "s_rts",      // long: polaris logical timestamp
             // This deprecated field is still in old databases. See DPUTClearSyncStatusColumns
             // C_STORE_DIDS    = "s_d",     // concatenated DIDs
             C_STORE_USAGE   = "s_u",        // sum of content size, in bytes
@@ -62,6 +62,29 @@ public class SyncSchema implements ISchema
             // This deprecated fields are still in old databases. See DPUTClearSyncStatusColumns
             // C_EPOCH_SYNC_PULL   = "ep_s",   // sync status pull epoch (server-issued)
             // C_EPOCH_SYNC_PUSH   = "ep_a",   // index of last local activity pushed to server
+
+            // Collector Filter
+            T_CF             = "cf",
+            C_CF_SIDX        = "cf_s",      // SIndex
+            C_CF_DID         = "cf_d",      // DID
+            C_CF_FILTER      = "cf_f",      // BFOID
+
+            // Sender Filter
+            T_SF             = "sf",
+            C_SF_SIDX        = "sf_s",      // SIndex
+            C_SF_SFIDX       = "sf_i",      // SenderFilterIndex
+            C_SF_FILTER      = "sf_f",      // BFOID
+
+            // Sender Device
+            T_SD             = "sd",
+            C_SD_SIDX        = "sd_s",      // SIndex
+            C_SD_DID         = "sd_d",      // DID
+            C_SD_SFIDX       = "sd_i",      // SenderFilterIndex
+
+            // Pulled Devices Table
+            T_PD             = "pd",
+            C_PD_SIDX        = "pd_s",      // SIndex
+            C_PD_DID         = "pd_d",      // DID
 
             // DID-to-User mapping
             T_D2U            = "d",
@@ -191,8 +214,47 @@ public class SyncSchema implements ISchema
                         C_DN_TIME + dbcw.longType() + " not null" +
                         ")" + dbcw.charSet());
 
-
+        createCollectorTables_(s, dbcw);
         createLogicalStagingArea(s, dbcw);
+    }
+
+    public static void createCollectorTables_(Statement s, IDBCW dbcw) throws SQLException {
+        s.executeUpdate(
+                "create table " + T_CF + " (" +
+                        C_CF_SIDX + " integer not null," +
+                        C_CF_DID + dbcw.uniqueIdType() + "not null," +
+                        C_CF_FILTER + dbcw.bloomFilterType() + " not null," +
+                        "primary key (" + C_CF_SIDX + "," + C_CF_DID + ")" +
+                        ")" + dbcw.charSet());
+
+        s.executeUpdate(
+                "create table " + T_PD + " (" +
+                        C_PD_SIDX + " integer not null, " +
+                        C_PD_DID + dbcw.uniqueIdType() + " not null, " +
+                        "primary key (" + C_PD_SIDX + "," + C_PD_DID + ")" +
+                        ")" + dbcw.charSet());
+
+        s.executeUpdate(
+                "create table " + T_SF + " (" +
+                        C_SF_SIDX + " integer not null," +
+                        C_SF_SFIDX + dbcw.longType() + "not null," +
+                        C_SF_FILTER + dbcw.bloomFilterType() + " not null," +
+                        "primary key (" + C_SF_SIDX + "," + C_SF_SFIDX + ")" +
+                        ")" + dbcw.charSet());
+
+        s.executeUpdate(
+                "create table " + T_SD + " (" +
+                        C_SD_SIDX + " integer not null," +
+                        C_SD_DID + dbcw.uniqueIdType() + " not null," +
+                        C_SD_SFIDX + dbcw.longType() + " not null," +
+                        "primary key (" + C_SD_SIDX + "," + C_SD_DID + ")" +
+                        ")" + dbcw.charSet());
+
+        // for getSenderDeviceIndexCount()
+        s.executeUpdate(
+                "create index " + T_SD + "0 on "
+                        + T_SD +
+                        "(" + C_SD_SIDX + "," + C_SD_SFIDX + ")");
     }
 
     public static void createLogicalStagingArea(Statement s, IDBCW dbcw) throws SQLException

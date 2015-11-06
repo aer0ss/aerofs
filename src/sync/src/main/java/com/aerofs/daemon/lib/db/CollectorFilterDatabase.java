@@ -1,7 +1,5 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,8 +29,8 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
     {
         try {
             if (_psSCF == null) _psSCF = c()
-                    .prepareStatement("replace into " + T_CF + "("
-                            + C_CF_SIDX + "," + C_CF_DID + "," + C_CF_FILTER +
+                    .prepareStatement("replace into " + SyncSchema.T_CF + "("
+                            + SyncSchema.C_CF_SIDX + "," + SyncSchema.C_CF_DID + "," + SyncSchema.C_CF_FILTER +
                             ") values (?,?,?)");
 
             _psSCF.setInt(1, sidx.getInt());
@@ -53,9 +51,9 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
     {
         try {
             if (_psGCF == null) _psGCF = c()
-                    .prepareStatement("select " + C_CF_FILTER + " from "
-                            + T_CF + " where " + C_CF_SIDX + "=? and "
-                            + C_CF_DID + "=?");
+                    .prepareStatement("select " + SyncSchema.C_CF_FILTER + " from "
+                            + SyncSchema.T_CF + " where " + SyncSchema.C_CF_SIDX + "=? and "
+                            + SyncSchema.C_CF_DID + "=?");
             _psGCF.setInt(1, sidx.getInt());
             _psGCF.setBytes(2, did.getBytes());
             ResultSet rs = _psGCF.executeQuery();
@@ -82,9 +80,9 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
     {
         try {
             if (_psDCF == null) _psDCF = c()
-                    .prepareStatement("delete from " + T_CF +
-                            " where " + C_CF_SIDX + "=? and "
-                            + C_CF_DID + "=?");
+                    .prepareStatement("delete from " + SyncSchema.T_CF +
+                            " where " + SyncSchema.C_CF_SIDX + "=? and "
+                            + SyncSchema.C_CF_DID + "=?");
 
             _psDCF.setInt(1, sidx.getInt());
             _psDCF.setBytes(2, did.getBytes());
@@ -101,6 +99,6 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
     public void deleteCollectorFiltersForStore_(SIndex sidx, Trans t)
             throws SQLException
     {
-        StoreDatabase.deleteRowsInTableForStore_(T_CF, C_CF_SIDX, sidx, c(), t);
+        StoreDatabase.deleteRowsInTableForStore_(SyncSchema.T_CF, SyncSchema.C_CF_SIDX, sidx, c(), t);
     }
 }
