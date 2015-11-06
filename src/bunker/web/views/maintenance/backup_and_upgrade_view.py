@@ -1,5 +1,6 @@
 import logging
 
+from pyramid.response import Response
 from pyramid.view import view_config
 from subprocess import Popen
 from web.version import get_private_version
@@ -14,6 +15,8 @@ log = logging.getLogger(__name__)
 
 # The path is documented in db-backup.tasks
 BACKUP_FILE_PATH = '/opt/bootstrap/public/aerofs-db-backup.tar.gz'
+BACKUP_SCRIPT_PATH = '/backup_script.sh'
+_DOWNLOAD_SCRIPT_FILENAME = 'aerofs-backup-script.sh'
 
 _DOWNLOAD_FILE_PREFIX = 'aerofs-backup_'
 
@@ -128,3 +131,21 @@ def example_backup_download_file_name():
     Return an example backup download file name
     """
     return get_download_file_name(_DOWNLOAD_FILE_PREFIX, _DOWNLOAD_FILE_SUFFIX)
+
+    route_name='download_backup_file',
+    permission='maintain',
+    request_method='GET'
+
+@view_config(
+    route_name='download_backup_script',
+    permission='maintain',
+    request_method='GET'
+)
+def download_backup_script(request):
+    """
+    Return the backup script as the response.
+    """
+
+    f = open(BACKUP_SCRIPT_PATH)
+    return Response(content_type='application/octet-stream', app_iter=f,
+                    content_disposition='attachment; filename={}'.format(_DOWNLOAD_SCRIPT_FILENAME))

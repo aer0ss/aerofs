@@ -70,6 +70,12 @@
     </p>
 </div>
 
+<div class="page-block">
+    <p>
+        Alternatively, you can download the <a onclick="downloadBackupScript(); return false;">backup script</a> to download the backup file at your convenience.
+    </p>
+</div>
+
 <hr/>
 
 <%modal:modal>
@@ -155,6 +161,16 @@
             ## start downloading without navigating away from the current page.
             ## Don't use "location.href =". It's not supported by old Firefox.
             window.location.assign('${request.route_path('download_backup_file')}');
+        }
+
+        ## Direct the browser to download the script
+        function downloadBackupScript() {
+            console.log("download ready");
+            hideProgressModal();
+            ## Since the link serves non-HTML content, the brower will
+            ## start downloading without navigating away from the current page.
+            ## Don't use "location.href =". It's not supported by old Firefox.
+            window.location.assign('${request.route_path('download_backup_script')}');
         }
 
         function failed(xhr) {

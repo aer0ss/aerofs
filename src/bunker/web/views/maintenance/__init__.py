@@ -53,6 +53,7 @@ routes = [
     'register_app',
     'json_delete_app',
     'download_backup_file',
+    'download_backup_script',
     'status',
     'toggle_maintenance_mode',
     'timekeeping',
