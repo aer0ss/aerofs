@@ -284,7 +284,7 @@ public class LinkedStorage implements IPhysicalStorage
             rev = _sa.stageDeletion_(absPath, _tlUseHistory.get(t) ? path : Path.root(path.sid()),
                     null, t);
 
-            if (rev != null && _tlUseHistory.get(t)) {
+            if (rev != null && !path.isEmpty() && _tlUseHistory.get(t)) {
                 l.info("record folder deletion {} {}:{}", path.soid(), rev, path);
                 long id = _hdb.createHistoryPath_(path, t);
                 _hdb.insertDeletedFile_(path.soid(), id, rev, t);
