@@ -77,7 +77,7 @@ public class AbstractRestTest {
     public void afterTest()
     {
         database.clear();
-        reset(polaris.getAccessManager(), polaris.getNotifier(), polaris.getTokenVerifier());
+        reset(polaris.getAccessManager(), polaris.getNotifier(), polaris.getTokenVerifier(), polaris.getDeviceResolver());
     }
 
     private static Injector bifrostInjector() throws Exception {

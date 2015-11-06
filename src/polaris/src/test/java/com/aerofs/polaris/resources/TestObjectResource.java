@@ -64,6 +64,7 @@ public final class TestObjectResource {
 
     @After
     public void afterTest() throws Exception {
+        reset(polaris.getNotifier(), polaris.getTokenVerifier(), polaris.getAccessManager(), polaris.getDeviceResolver());
         database.clear();
     }
 
@@ -841,6 +842,28 @@ public final class TestObjectResource {
         PolarisHelpers.newFolder(AUTHENTICATED, folder, "new_folder");
         PolarisHelpers.newFolder(AUTHENTICATED, nestedFolder, "new_folder");
         PolarisHelpers.newFileContent(AUTHENTICATED, nestedFile, 0, hash, 100, 1024);
+    }
+
+    @Test
+    public void mtimeOnlyChangesToFilesAreIgnored() throws Exception
+    {
+        SID store = SID.generate();
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
+        PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, hash, 1024, 100);
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), eq(1L));
+        verify(polaris.getNotifier(), times(1)).notifyStoreUpdated(eq(store), eq(2L));
+        verifyNoMoreInteractions(polaris.getNotifier());
+
+        // no more notifications from another file content update with the same hash and content size
+        PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, hash, 1024, 200);
+        verify(polaris.getNotifier(), never()).notifyStoreUpdated(eq(store), eq(3L));
+
+        // even if it's supposedly a new version
+        PolarisHelpers.newFileContent(AUTHENTICATED, file, 1, hash, 1024, 200);
+        verify(polaris.getNotifier(), never()).notifyStoreUpdated(eq(store), eq(3L));
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

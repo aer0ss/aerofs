@@ -683,9 +683,9 @@ public final class ObjectStore {
         // check that we're trying to add content for a file
         Preconditions.checkArgument(isFile(object.objectType), "cannot add content for %s type", object.objectType);
 
-        // check if the new content matches the object's latest content (disregarding version)
+        // check if the new content matches the object's latest content (disregarding version and mtime)
         Content currentObjectContent = dao.objectProperties.getLatest(oid);
-        if (currentObjectContent != null && currentObjectContent.equals(new Content(oid, object.version, contentHash, contentSize, contentTime))) {
+        if (currentObjectContent != null && currentObjectContent.equals(new Content(oid, object.version, contentHash, contentSize, currentObjectContent.mtime))) {
             long matchingTransform = dao.transforms.getLatestMatchingTransformTimestamp(object.store, oid);
             if (matchingTransform != 0L) {
                 LOGGER.info("no-op for makeContent operation on {}", oid);
