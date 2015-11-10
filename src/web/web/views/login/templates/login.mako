@@ -4,6 +4,13 @@
 <div class="row">
     <div class="col-sm-6 col-sm-offset-3 login">
         <h1>Sign In to AeroFS</h1>
+        %if external_login_enabled:
+            <h6>If you have company credentials, please use them to sign in
+                <span data-toggle="tooltip" title="You can use the same email and password that you use for other services at your company.">
+                    <img src="${request.static_path('web:static/img/question.png')}" class="tooltip-img">
+                </span>
+            </h6>
+        %endif
         %if openid_enabled:
             <div class="openid-login">
                 <div class="col-sm-12">
@@ -70,6 +77,11 @@
 <%block name="scripts">
     <script type="text/javascript">
         $(document).ready(function() {
+            $('[data-toggle="tooltip"]').tooltip({
+                placement: 'right',
+                container : 'body'
+            });
+
             %if login:
                 ## focus on the password field if the email is already filled
                 $('#input_passwd').focus();

@@ -83,6 +83,7 @@ def json_set_identity_options(request):
     # All is well - set the external properties.
     conf = get_conf_client(request)
     conf.set_external_property('authenticator', auth)
+    conf.set_external_property('ldap_invitation_required_for_signup', request.params['ldap_invitation_required_for_signup'])
     if ldap:
         _write_ldap_options(conf, request.params)
 

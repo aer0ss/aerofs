@@ -2931,14 +2931,23 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userId);
         Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
         OrganizationInvitation invite = _factOrgInvite.create(user, org);
+
+        //AD/LDAP users may require invitation before signing in
+        boolean externalUserRequireInvitation = Identity.AUTHENTICATOR == Identity.Authenticator.EXTERNAL_CREDENTIAL &&
+                getBooleanProperty("ldap.invitation.required_for_signup", false);
+
         _sqlTrans.begin();
 
         //externally-managed account will need to have an account in user database or
         //a pending invitation to log in
-        boolean canExternalUserAuthenticate = (user.exists() || invite.exists());
+        boolean userExistsOrInviteExists = (user.exists() || invite.exists());
         _sqlTrans.commit();
 
-        if (!_authenticator.isLocallyManaged(user.id()) && !canExternalUserAuthenticate) throw new ExNotInvited();
+
+        //Check whether AD/LDAP users are required to be invited before logging in.
+        if (externalUserRequireInvitation) {
+            if (!_authenticator.isLocallyManaged(user.id()) && !userExistsOrInviteExists) throw new ExNotInvited();
+        }
 
         IAuthority authority = _authenticator.authenticateUser(
                 user, cred.toByteArray(), _sqlTrans, CredentialFormat.TEXT);

@@ -53,6 +53,8 @@ ldap.server.schema.group.member.unique={{ ldap_server_schema_group_member_unique
 ldap.groupsyncing.enabled={{ ldap_groupsyncing_enabled }}
 ldap.groupsyncing.time={{ ldap_groupsyncing_time }}
 
+ldap.invitation.required_for_signup={{ ldap_invitation_required_for_signup }}
+
 openid.idp.endpoint.url={{ openid_idp_endpoint_url }}
 openid.idp.endpoint.stateful={{ openid_idp_endpoint_stateful }}
 openid.idp.user.uid.attribute={{ openid_idp_user_uid_attribute }}

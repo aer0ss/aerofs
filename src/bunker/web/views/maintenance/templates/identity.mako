@@ -1,7 +1,10 @@
 <%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Identity" %>
 
-<%! from web.views.maintenance.maintenance_util import unformat_pem %>
+<%!
+    from web.views.maintenance.maintenance_util import unformat_pem
+    from web.util import str2bool
+%>
 
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="loader" file="loader.mako"/>
@@ -149,6 +152,29 @@
                         checked
                     %endif
                 > SSL
+            </label>
+        </div>
+    </div>
+    <%
+        invitation_required = str2bool(conf['ldap.invitation.required_for_signup'])
+        if not invitation_required: invitation_required = False
+    %>
+    <div class="row">
+        <div class="col-sm-12">
+            <label>Externally managed users must be invited to use AeroFS: &nbsp;</label>
+            <label class="radio-inline">
+                <input type="radio" name="ldap_invitation_required_for_signup" value="true"
+                       %if invitation_required:
+                           checked
+                       %endif
+                > Yes
+            </label>
+            <label class="radio-inline">
+                <input type="radio" name="ldap_invitation_required_for_signup" value="false"
+                       %if not invitation_required:
+                           checked
+                       %endif
+                > No
             </label>
         </div>
     </div>

@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNotInvited;
 import com.aerofs.base.id.OrganizationID;
@@ -20,6 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -66,7 +68,6 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test
     public void testShouldSimpleSignIn() throws Exception
     {
-        createMockInvite(createUser("ldap1@example.com"), true);
         service.credentialSignIn(createTestUser("ldap1@example.com", "ldap1"),
                 ByteString.copyFrom("ldap1".getBytes()));
     }
@@ -75,7 +76,6 @@ public class TestSP_LDAP extends AbstractSPTest
     public void testCheckUserRecord() throws Exception
     {
         User u = createUser("test9@users.example.org");
-        createMockInvite(u, true);
 
         service.credentialSignIn(createTestUser("test9@users.example.org", "cred9"),
                 ByteString.copyFrom("cred9".getBytes()));
@@ -91,8 +91,6 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExBadCredential.class)
     public void testShouldDisallowBadCred() throws Exception
     {
-        createMockInvite(createUser("badcred1@example.org"), true);
-
         service.credentialSignIn(createTestUser("badcred1@example.org", "never gonna give you up"),
                 ByteString.copyFrom("badpw".getBytes()));
     }
@@ -100,8 +98,6 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExBadCredential.class)
     public void testShouldDisallowEmptyPw() throws Exception
     {
-        createMockInvite(createUser("badcred2@example.org"), true);
-
         service.credentialSignIn(createTestUser("badcred2@example.org", "never gonna let you down"),
                 ByteString.copyFrom(new byte[0]));
     }
@@ -111,7 +107,10 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test(expected = ExNotInvited.class)
     public void testShouldDisallowUserNotInvited() throws Exception
     {
-        createMockInvite(createUser("ldap1@example.com"), false);
+        Properties props = new Properties();
+        props.put("ldap.invitation.required_for_signup", "true");
+        ConfigurationProperties.setProperties(props);
+
         service.credentialSignIn(createTestUser("ldap2@example.com", "ldap1"),
                 ByteString.copyFrom("ldap1".getBytes()));
     }
@@ -128,6 +127,23 @@ public class TestSP_LDAP extends AbstractSPTest
 
         service.credentialSignIn(createTestUser("ldap3@example.com", "ldap1"),
                 ByteString.copyFrom("ldap1".getBytes()));
+    }
+
+    //User who is invited to join AeroFS are able to sign in
+    //with external credentials.
+    @Test
+    public void testShouldAllowInvitedUserToSignIn() throws Exception
+    {
+        Properties props = new Properties();
+        props.put("ldap.invitation.required_for_signup", "true");
+        ConfigurationProperties.setProperties(props);
+
+        User u = createUser("ldap4@example.com");
+        createMockInvite(u, true);
+
+        service.credentialSignIn(createTestUser("ldap4@example.com", "ldap1"),
+                ByteString.copyFrom("ldap1".getBytes()));
+
     }
 
     @Test(expected = ExLdapConfigurationError.class)
