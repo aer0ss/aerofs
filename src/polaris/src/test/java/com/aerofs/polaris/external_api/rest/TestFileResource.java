@@ -12,7 +12,6 @@ import com.aerofs.rest.api.CommonMetadata;
 import com.jayway.restassured.http.ContentType;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
@@ -360,7 +359,6 @@ public class TestFileResource extends AbstractRestTest
         .when().put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
-    @Ignore("https://aerofs.atlassian.net/browse/ENG-3104")
     @Test
     public void shouldMoveFileUnderAnchor() throws Exception
     {
