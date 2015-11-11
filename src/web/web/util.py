@@ -2,12 +2,13 @@
 Helper functions for AeroFS website
 """
 from HTMLParser import HTMLParser
+import os
 import re
 import logging
 import markupsafe
 import smtplib
 from email.mime.text import MIMEText
-from aerofs_common.constants import DEFAULT_MIN_PASSWORD_LENGTH, DEFAULT_IS_NUMBERS_LETTERS_REQUIRED
+from aerofs_common.constants import DEFAULT_MIN_PASSWORD_LENGTH, DEFAULT_IS_NUMBERS_LETTERS_REQUIRED, CONFIG_COMPLETED_FLAG_FILE
 
 from error import expected_error
 from aerofs_sp.connection import SyncConnectionService
@@ -18,6 +19,9 @@ log = logging.getLogger(__name__)
 
 # TODO (RD) consolidate this with the string in SubjectPermissions.java
 GROUP_PREFIX = "g:"
+
+def is_configuration_completed():
+    return os.path.exists(CONFIG_COMPLETED_FLAG_FILE)
 
 def show_welcome_image_and_set_cookie(request):
     """Checks if the user has seen the splash welcome image before.

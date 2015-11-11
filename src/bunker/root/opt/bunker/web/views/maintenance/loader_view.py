@@ -9,13 +9,13 @@ LOADER_URL = 'http://loader.service/v1'
 
 
 @view_config(
-    route_name='json-set-configuration-initialized',
+    route_name='json-set-configuration-completed',
     permission='maintain',
     renderer='json',
     request_method='POST'
 )
-def set_configuration_initialized(request):
-    maintenance_util.set_configuration_initialized()
+def set_configuration_completed(request):
+    maintenance_util.set_configuration_completed()
     return {}
 
 

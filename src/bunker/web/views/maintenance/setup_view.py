@@ -16,7 +16,7 @@ from backup_and_upgrade_view import BACKUP_FILE_PATH, example_backup_download_fi
 from maintenance_util import write_pem_to_file, \
     format_pem, is_certificate_formatted_correctly, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
-    is_configuration_initialized, is_key_formatted_correctly, \
+    is_configuration_completed, is_configuration_started, set_configuration_started, is_key_formatted_correctly, \
     get_conf_client, get_conf, is_ipv4_address, is_ipv6_address, \
     is_hostname_resolvable, is_hostname_xmpp_compatible, save_file_to_path
 from pyramid.httpexceptions import HTTPNotFound
@@ -59,7 +59,8 @@ def setup(request):
     return {
             'page': page,
             'current_config': conf,
-            'is_configuration_initialized': is_configuration_initialized(request.registry.settings),
+            'is_configuration_completed': is_configuration_completed(),
+            'is_configuration_started': is_configuration_started(),
             'enable_data_collection': _is_data_collection_enabled(conf),
             'restored_from_backup': _is_restored_from_backup(conf),
             # The following parameter is used by license_page.mako
@@ -70,7 +71,8 @@ def setup(request):
             'default_support_email': _get_default_support_email(conf['base.host.unified']),
             # The following parameter is used by already_restored_page.mako.
             # TODO (WW) This really smells. Refactor setup.mako.
-            'get_already_restored_html_message': _get_already_restored_html_message(request)
+            'get_already_restored_html_message': _get_already_restored_html_message(request),
+            'get_setup_incomplete_html_message': _get_setup_incomplete_html_message(request)
             }
 
 
@@ -100,6 +102,13 @@ def _get_default_support_email(hostname):
         match = re.search(r'^[^\.]+\.(.+)', hostname)
         domain = match.group(1) if match else hostname
         return 'support@{}'.format(domain)
+
+
+def _get_setup_incomplete_html_message(request):
+    return 'Your previous setup attempt was unsuccessful. Please' \
+           ' <a href="{}">click here</a> to finish the setup, or discard this appliance' \
+           ' and launch a new one to start over.'.format(
+        _get_hostname_page_route_path(request))
 
 
 # ------------------------------------------------------------------------
@@ -144,6 +153,7 @@ def json_set_license(request):
 def setup_submit_data_collection_form(request):
     enable = request.params.get('data-collection', False)
     _set_data_collection(request, enable)
+    set_configuration_started()
     return HTTPFound(location=_get_hostname_page_route_path(request))
 
 
@@ -426,5 +436,5 @@ def _get_already_restored_html_message(request):
 def json_setup_finalize(request):
     log.warn("finalizing configuration...")
     bootstrap_client = BootstrapClient(request.registry.settings["deployment.bootstrap_server_uri"])
-    bootstrap_client.enqueue_task_set("set-configuration-initialized")
+    bootstrap_client.enqueue_task_set("set-configuration-completed")
     return {}

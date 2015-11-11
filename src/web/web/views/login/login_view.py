@@ -1,4 +1,5 @@
 import logging
+import os
 
 from pyramid import url
 from pyramid.httpexceptions import HTTPFound
@@ -8,7 +9,7 @@ from aerofs_common.exception import ExceptionReply
 
 from aerofs_sp.gen.common_pb2 import PBException
 import requests
-from web.util import flash_error, get_rpc_stub, str2bool
+from web.util import flash_error, get_rpc_stub, str2bool, is_configuration_completed
 
 from web.login_util import get_next_url, URL_PARAM_NEXT, redirect_to_next_page, \
         log_in_user, resolve_next_url
@@ -94,6 +95,8 @@ def _do_login(request):
 )
 def login_view(request):
     settings = request.registry.settings
+    mng_url = 'https://' + str(settings['base.host.unified']) + '/admin'
+    _ = request.translate
 
     if request.method == "POST":
         ret = _do_login(request)
@@ -103,9 +106,11 @@ def login_view(request):
     disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
     external_login_enabled = settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
-    if not openid_enabled and not _has_users(settings):
+    if not openid_enabled and not _has_users(settings) and is_configuration_completed():
         log.info('no users yet. ask to create the first user')
         return HTTPFound(location=request.route_path('create_first_user'))
+    else:
+        return HTTPFound(location=mng_url)
 
     # if openid_enabled is false we don't need to do any of the following. :(
     next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
@@ -135,6 +140,9 @@ def login_view(request):
         'disable_remember_me': disable_remember_me,
         'external_login_enabled': external_login_enabled,
     }
+
+def _is_restored_from_backup(conf):
+    return str2bool(conf['restored_from_backup'])
 
 
 def _has_users(settings):

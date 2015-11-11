@@ -7,17 +7,22 @@ import tempfile
 import requests
 
 from aerofs_common.configuration import Configuration
+from aerofs_common.constants import CONFIG_COMPLETED_FLAG_FILE
 
-_CONFIG_FLAG_FILE = '/data/bunker/configuration-initialized-flag'
 _EXTERNAL_DB_FLAG_FILE = '/data/bunker/external-db-flag'
+_CONFIG_STARTED_FLAG_FILE='/data/bunker/configuration-started-flag'
 
+def is_configuration_completed():
+    return os.path.exists(CONFIG_COMPLETED_FLAG_FILE)
 
-def is_configuration_initialized(settings):
-    return os.path.exists(_CONFIG_FLAG_FILE)
+def is_configuration_started():
+    return os.path.exists(_CONFIG_STARTED_FLAG_FILE)
 
+def set_configuration_completed():
+    open(CONFIG_COMPLETED_FLAG_FILE, 'w').close()
 
-def set_configuration_initialized():
-    open(_CONFIG_FLAG_FILE, 'w').close()
+def set_configuration_started():
+    open(_CONFIG_STARTED_FLAG_FILE, 'w').close()
 
 
 def has_external_db(settings):
@@ -34,7 +39,7 @@ def is_maintenance_mode(settings):
     """
     global _maintenance_mode_cache
     if _maintenance_mode_cache is None:
-        if is_configuration_initialized(settings):
+        if is_configuration_completed():
             r = requests.get('http://loader.service/v1/boot')
             r.raise_for_status()
             _maintenance_mode_cache = r.json()['target'] == 'maintenance'

@@ -7,7 +7,7 @@
 <h4>Repackage installers</h4>
 
 <p>Custom desktop installer packages specific to your installation will be
-   generated. This might take a short while.</p>
+   generated. This might take a short while. Please do not close this browser window.</p>
 
 <form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${common.render_finish_prev_buttons()}
@@ -25,7 +25,7 @@
                 <h4 class="text-success">The system is ready!</h4>
             </div>
             <div class="modal-body">
-                <% first_user_created = is_configuration_initialized or restored_from_backup %>
+                <% first_user_created = is_configuration_completed or restored_from_backup %>
 
                 %if first_user_created:
                     <p>System configuration is complete.</p>
@@ -167,7 +167,7 @@
 
         function conclude() {
             console.log('create conf-initialized flag');
-            $.post("${request.route_path('json-set-configuration-initialized')}")
+            $.post("${request.route_path('json-set-configuration-completed')}")
             .done(function() {
                 ## TODO: wait for web to fully launch before prompting the user to navigate
                 ## to there.
@@ -186,7 +186,7 @@
 
         function trackSuccessAndDisableDataCollection() {
             ## Report the last event and then disable data collection. You may
-            ## ask, why not use is_configuration_initialized() to disable data
+            ## ask, why not use is_configuration_completed() to disable data
             ## collection? It's because before this page reloads itself the
             ## system may mark configuration as initialized, and thus disable
             ## tracking too early.

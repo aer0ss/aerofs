@@ -7,7 +7,7 @@
 <h4>Reboot system</h4>
 
 <p>Your changes will be applied to various AeroFS system components.
-   This might take a short while.</p>
+   This might take a short while. Please do not close this browser window.</p>
 
 <form method="POST" role="form" onsubmit="submitForm(); return false;">
     ${common.render_next_prev_buttons()}

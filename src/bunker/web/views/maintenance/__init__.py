@@ -16,7 +16,7 @@ routes = [
 
     'json-get-boot',
     'json-repackaging',
-    'json-set-configuration-initialized',
+    'json-set-configuration-completed',
     'json-backup',
     'json-restore',
     'json-archive-container-logs',

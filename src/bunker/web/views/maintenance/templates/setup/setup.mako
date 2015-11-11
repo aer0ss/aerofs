@@ -25,7 +25,7 @@
     <%maintenance_alert:html/>
 
     %if page == 0:
-        %if is_configuration_initialized:
+        %if is_configuration_completed:
             <%namespace name="license_page" file="license_page.mako"/>
             <%license_page:body/>
             <% local.page_scripts = license_page.scripts %>
@@ -33,6 +33,10 @@
             <%namespace name="already_restored_page" file="already_restored_page.mako"/>
             <%already_restored_page:body/>
             <% local.page_scripts = already_restored_page.scripts %>
+        %elif is_configuration_started:
+            <%namespace name="setup_incomplete_page" file="setup_incomplete_page.mako"/>
+            <%setup_incomplete_page:body/>
+            <% local.page_scripts = setup_incomplete_page.scripts %>
         %else:
             <%namespace name="create_or_restore_page" file="create_or_restore_page.mako"/>
             <%create_or_restore_page:body/>

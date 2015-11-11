@@ -4,7 +4,7 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid, remember
 from pyramid.view import view_config
 
-from maintenance_util import is_maintenance_mode, is_configuration_initialized
+from maintenance_util import is_maintenance_mode, is_configuration_completed
 from web.license import set_license_file_and_attach_shasum_to_session
 from web.login_util import URL_PARAM_NEXT, get_next_url, \
     redirect_to_next_page
@@ -26,7 +26,7 @@ _DEFAULT_NEXT = 'status'
 )
 def login(request):
     return {
-        'is_initialized': is_configuration_initialized(request.registry.settings),
+        'is_completed': is_configuration_completed(),
         'url_param_license': URL_PARAM_LICENSE,
         'url_param_next': URL_PARAM_NEXT,
         'next': get_next_url(request, _DEFAULT_NEXT)
@@ -86,7 +86,7 @@ def maintenance_home(request):
     """
     The default page of the maintenance site http://host.name:8484
     """
-    if not is_configuration_initialized(request.registry.settings):
+    if not is_configuration_completed():
         redirect = 'setup'
     elif is_maintenance_mode(request.registry.settings):
         # The status page is inaccessible during maintenance
@@ -105,7 +105,7 @@ def maintenance_redirect(request):
     Nginx redirects the user to this route when they access the appliance's main URL http{,s}://host.name.
     Depending on the system's state, this route redirects to an appropriate page.
     """
-    if not is_configuration_initialized(request.registry.settings):
+    if not is_configuration_completed():
         redirect = 'setup'
     else:
         r = requests.get('http://config.service:5434/is_license_valid')

@@ -132,7 +132,7 @@
         function confirmHostnameChange() {
             var newVal = $('#base-host-unified').val();
             ## Show a warning if the user changes the hostname.
-            if (${1 if is_configuration_initialized else 0} &&
+            if (${1 if is_configuration_completed else 0} &&
                     newVal != "${current_config['base.host.unified']}") {
                 $('#confirm-change-modal').modal('show');
             } else {
