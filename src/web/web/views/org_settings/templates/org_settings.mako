@@ -7,13 +7,6 @@
     ${self.csrf.token_input()}
 
     <div class="form-group">
-        <label for="organization_name" class="col-sm-3 control-label">Organization name:</label>
-        <div class="col-sm-6">
-            <input type="text" id="organization_name" class="form-control" name="organization_name"
-                value="${organization_name}">
-        </div>
-    </div>
-    <div class="form-group">
         <label for="tfa-setting" class="col-sm-3 control-label">Two-factor authentication:</label>
         <div class="col-sm-9">
             <div class="radio">
@@ -95,8 +88,6 @@
 <%block name="scripts">
     <script>
         $(document).ready(function() {
-            $('#organization_name').focus();
-
             updateQuotaUI();
             $('#enable_quota').click(updateQuotaUI);
 

@@ -29,9 +29,7 @@ class OrgSettingsViewTest(TestBase):
     def test_set(self):
         from web.views.org_settings.org_settings_view import org_settings_post
 
-        org_name = u'test'
         request = self._create_request({
-            "organization_name": org_name,
             'quota': 0,
             'tfa-setting': '1',
         })
@@ -39,7 +37,7 @@ class OrgSettingsViewTest(TestBase):
 
         org_settings_post(request)
 
-        self.sp_rpc_stub.set_org_preferences.assert_called_once_with(org_name, None)
+        self.assertEqual(self.sp_rpc_stub.set_org_preferences.call_count, 0)
 
     def test_get(self):
         from web.views.org_settings.org_settings_view import org_settings

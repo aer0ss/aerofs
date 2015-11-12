@@ -150,12 +150,15 @@ public class Organization
         return _f._odb.exists(_id);
     }
 
+
+   // OBSOLETE - Organization names are not supported in the PC UI
     public String getName()
             throws ExNotFound, SQLException
     {
         return _f._odb.getName(_id);
     }
 
+    // OBSOLETE - Organization names are not supported in the PC UI
     public void setName(String name)
             throws SQLException
     {

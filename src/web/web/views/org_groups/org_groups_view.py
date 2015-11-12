@@ -19,7 +19,6 @@ def org_groups(request):
     settings = request.registry.settings
 
     return {
-        'organization_name': reply.organization_name,
         'pagination_limit': PAGE_LIMIT,
         'member_limit': int(settings.get('sp.max.membership.group', '50')),
         'groupsyncing_enabled': settings.get('ldap.groupsyncing.enabled', False) and

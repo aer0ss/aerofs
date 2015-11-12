@@ -43,7 +43,6 @@ def org_settings(request):
     quota = _bytes2gb(quota_reply.quota) if quota_enabled else None
 
     return {
-        'organization_name': reply.organization_name,
         'tfa_level': reply.level,
         'show_quota_options': show_quota,
         'quota_enabled': quota_enabled,
@@ -62,7 +61,6 @@ def org_settings_post(request):
 
 
 def _update_org_settings(request, sp):
-    sp.set_org_preferences(request.params['organization_name'].strip(), None)
     sp.set_two_factor_setup_enforcement(int(request.params['tfa-setting']))
 
     if str2bool(request.registry.settings.get('show_quota_options', False)):

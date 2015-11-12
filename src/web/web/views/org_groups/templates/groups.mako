@@ -14,7 +14,7 @@
 
 <div xmlns:ng="http://angularjs.org" id="ngApp" class="row" ng-app="fellowshipApp">
     <div class="col-sm-12">
-        <h2>${organization_name} Groups</h2>
+        <h2>Groups in my organization</h2>
 
         <div ng-controller="GroupsController">
             <div ng-if="isAdmin">
