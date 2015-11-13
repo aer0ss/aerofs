@@ -22,6 +22,7 @@ import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -285,6 +286,9 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             try {
                 op.run_();
             } catch (IOException e) {
+                // we don't want to mistakenly create NROs if the parent was moved and we haven't
+                // propagated that to the virtual fs yet...
+                if (!dest._f.getParentFile().exists()) throw new ExFileIO("missing parent");
                 l.info("make cnro lazily: {}", dest, e);
                 markNonRepresentable_(dest, t);
                 op.run_();
