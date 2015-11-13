@@ -58,7 +58,8 @@
                     total="paginationInfo.total"
                     offset="paginationInfo.offset"
                     pagelimit="paginationInfo.limit"
-                    callback="paginationInfo.callback(offset, substring)"></div>
+                    callback="paginationInfo.callback(offset, substring)">
+                </div>
             </div>
             <br>
         %if is_admin(request):

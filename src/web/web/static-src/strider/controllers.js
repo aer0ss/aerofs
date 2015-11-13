@@ -74,6 +74,7 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
             $scope.users = matches;
             $scope.substring = substring;
             $scope.paginationInfo.total = total;
+            $scope.paginationInfo.offset = 0;
             updateUserCountMessage();
         };
 

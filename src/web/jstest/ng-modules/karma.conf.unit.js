@@ -24,6 +24,7 @@ module.exports = function(config) {
       '../../web/static/js/jquery.*.js',
       '../../web/static/js/angular-lib/angular/angular.min.js',
       '../../web/static/js/angular-lib/angular/angular-*.js',
+      '../../web/static/js/angular-lib/angular-ui/*.js',
       '../lib/**/*.js',
       '../../web/static/js/spin.min.js',
       '../../web/static/js/compiled/spinner.js',
