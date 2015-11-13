@@ -16,7 +16,7 @@ function DieUsage {
     echo "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]" >&2
     echo "       [--build-all]" >&2
     echo " " >&2
-    echo "<build_product>: CLIENT|TEAM_SERVER|STORAGE_AGENT" >&2
+    echo "<build_product>: CLIENT|TEAM_SERVER" >&2
     echo "<release_version>: release version (for example: 0.1.0)" >&2
     echo "<sign_mode>: SIGNED|UNSIGNED" >&2
     echo "[--build-linux-tgz]: build the Linux installer .tgz" >&2
@@ -36,7 +36,7 @@ function DieUsage {
 # Parse positional args
 ##
 case ${1:-} in
-    CLIENT|TEAM_SERVER|STORAGE_AGENT) BUILD_PRODUCT=$1;;
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$1;;
     *) DieUsage;;
 esac
 case ${2:-} in
@@ -109,11 +109,9 @@ function make_linux_installer_tgz() {
     cp -av "${LOCAL_RELEASE_DIR}/aerofs"/* "${TGZ_EXPANDED_DIR}/aerofs/shared/"
     pushd "${TGZ_EXPANDED_DIR}/aerofs/"
         ln -s shared/copier ${AEROFS_PRODUCT_UNIX}
-        if ! is_storage_agent ; then
-            for suffix in cli gui sh ; do
-                ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
-            done
-        fi
+        for suffix in cli gui sh ; do
+            ln -s ${AEROFS_PRODUCT_UNIX} ${AEROFS_PRODUCT_UNIX}-$suffix
+        done
     popd
     mkdir -p ${PACKAGE_DIR}
     tar -C "$TGZ_EXPANDED_DIR" -zcf "${PACKAGE_DIR}/${local_LINUX_INSTALLER_TGZ_FILENAME}" aerofs

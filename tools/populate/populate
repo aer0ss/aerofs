@@ -11,7 +11,7 @@ function print_usage() {
     echo "    [mode]              Specifies which mode the properties are for" >&2
     echo "                        Can be PUBLIC|PRIVATE|CI." >&2
     echo "    [product]           Specifies which product the properties are for" >&2
-    echo "                        Can be TEAM_SERVER|CLIENT|STORAGE_AGENT." >&2
+    echo "                        Can be TEAM_SERVER|CLIENT." >&2
     echo "    [os]                OS to populate for. Can be osx, win, linux/i386 or" >&2
     echo "                        linux/amd64. If not set, we will use the output from the ./os script." >&2
     echo "    [resource_root_dir] Directory where all non-server-specific resources are stored" >&2
@@ -58,12 +58,7 @@ function copy_os_specific_resources() {
 
     # symlink lib/ dir to gradle dist output
     rm -rf "$APPROOT/lib"
-    compile_dir="desktop"
-    if [[ "$LABELING" == "STORAGE_AGENT" ]]
-    then
-        compile_dir="storage-agent"
-    fi
-    ln -s ../out.gradle/$compile_dir/dist $APPROOT/lib
+    ln -s ../out.gradle/desktop/dist $APPROOT/lib
 
     if [[ "$LABELING" == "CLIENT" ]] && [[ "$OS" == "win" || "$OS" == "osx" ]]
     then
@@ -127,7 +122,7 @@ readonly LABELING_RESOURCES_DIR="$CLIENT_RESOURCES_DIR/all/labeling"
 readonly APPROOT="$5"
 
 # product
-if [[ "$LABELING" != "CLIENT" && "$LABELING" != "TEAM_SERVER" && "$LABELING" != "STORAGE_AGENT" ]]
+if [[ "$LABELING" != "CLIENT" && "$LABELING" != "TEAM_SERVER" ]]
 then
     print_usage
     exit $ERRBADPRODUCT
