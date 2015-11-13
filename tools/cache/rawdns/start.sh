@@ -12,6 +12,15 @@ echoerr() { echo "$@" 1>&2; }
 
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
+VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
+
+# detect docker bridge IP
+if docker-machine ls "$VM" &>/dev/null ; then
+    BRIDGE=$(docker-machine ssh "$VM" ifconfig docker0 | grep 'inet addr:' | cut -d':' -f 2 | cut -d' ' -f 1)
+else
+    BRIDGE=$(ifconfig docker0 | grep 'inet addr:' | cut -d':' -f 2 | cut -d' ' -f 1)
+fi
+
 if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] ; then
     echo "rawdns already running"
 else
@@ -28,7 +37,7 @@ else
 
     echo "starting rawdns"
     docker run -d --restart=always --name rawdns \
-            -p 172.17.42.1:53:53/udp -p 172.17.42.1:53:53/tcp \
+            -p $BRIDGE:53:53/udp -p $BRIDGE:53:53/tcp \
             -v /var/run/docker.sock:/var/run/docker.sock \
             rawdns
 fi
@@ -37,8 +46,6 @@ if docker run --rm debian:sid ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns already configured"
     exit 0
 fi
-
-VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 
 if docker-machine ls "$VM" &>/dev/null ; then
     echo "updating docker dameon dns config"
@@ -56,7 +63,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
 
     if [[ "$os" == "b2d" ]] ; then
         # configure docker daemon to use rawdns resolver
-        docker-machine ssh $VM "echo 'EXTRA_ARGS=\"--dns 172.17.42.1 \$EXTRA_ARGS\"' | sudo tee -a $profile"
+        docker-machine ssh $VM "echo 'EXTRA_ARGS=\"--userland-proxy=false --dns $BRIDGE \$EXTRA_ARGS\"' | sudo tee -a $profile"
 
         echo "restarting docker daemon"
         # shitty old init scripts are so goddamn borked that a reboot is the only reliable way to restart
@@ -64,7 +71,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
         docker-machine restart $VM; sleep 5
     elif [[ "$os" == "b2d-ng" ]] ; then
         # update EXTRA_ARGS to use rawdns resolver [idempotent]
-        extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns 172.17.42.1\""
+        extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns $BRIDGE\""
 
         docker-machine ssh $VM "if [ \$(grep -s -F '$extra' ${service}.d/dns.conf | wc -l) -eq 0 ] ; then \
             sudo mkdir -p ${service}.d ; \
@@ -84,7 +91,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
     fi
 else
     # TODO: automatically adjust dns setting for raw docker env
-    echoerr 'Manually add "--dns 172.17.42.1" to the options of your docker daemon and restart it'
+    echoerr 'Manually add "--dns $BRIDGE" to the options of your docker daemon and restart it'
     exit 1
 fi
 

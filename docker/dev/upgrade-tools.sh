@@ -27,16 +27,18 @@ if [ $(uname -s) = "Darwin" ] ; then
     mv crane /usr/local/bin/crane
 
     # Install docker-machine
-    wget https://github.com/docker/machine/releases/download/v0.4.0-rc1/docker-machine_darwin-amd64 \
-        -O /usr/local/bin/docker-machine
-    chmod +x /usr/local/bin/docker-machine
+    curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip \
+        > docker-machine.zip
+    unzip docker-machine.zip
+    rm docker-machine.zip
+    mv -f docker-machine* /usr/local/bin/
 fi
 
 # Linux.
 if [ $(uname -s) = "Linux" ] ; then
     # Experimental!
     if [ -z "$(which docker)" ] ; then
-        # Note: as of today, the docker package in the repositories is not up to date (1.2 but we need at least 1.3)
+        # Note: as of today, the docker package in the repositories is not up to date (1.2 but we need at least 1.7)
         # sudo apt-get install docker.io
         # So we're going to install it from the PPA
         sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
@@ -57,10 +59,9 @@ if [ $(uname -s) = "Linux" ] ; then
         bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/master/download.sh)" && sudo mv crane /usr/local/bin/crane
     fi
     if [ -z "$(which docker-machine)" ] ; then
-        wget https://github.com/docker/machine/releases/download/v0.4.0-rc1/docker-machine_linux-amd64 \
-            -O docker-machine && sudo mv docker-machine /usr/local/bin/docker-machine
-        sudo chmod +x /usr/local/bin/docker-machine
-
+        curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip \
+            > docker-machine.zip && unzip docker-machine.zip && rm docker-machine.zip && \
+            sudo mv docker-machine* /usr/local/bin/
     fi
     if [ -n "$(make -v | grep 'GNU Make 4.')" ] ; then
         yellow_print "WARNING : Make 4.00 is the default version for new Ubuntu installations, but we only support Make 3.8.
