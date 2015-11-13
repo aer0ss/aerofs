@@ -19,27 +19,24 @@
 package com.aerofs.bifrost.oaaas.resource;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.ids.UniqueID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.bifrost.oaaas.auth.MobileDeviceManagement;
 import com.aerofs.bifrost.oaaas.auth.OAuth2Validator;
+import com.aerofs.bifrost.oaaas.auth.PrincipalFactory;
 import com.aerofs.bifrost.oaaas.auth.ValidationResponseException;
 import com.aerofs.bifrost.oaaas.auth.principal.UserPassCredentials;
-import com.aerofs.bifrost.oaaas.model.AccessToken;
-import com.aerofs.bifrost.oaaas.model.AccessTokenRequest;
-import com.aerofs.bifrost.oaaas.model.AccessTokenResponse;
-import com.aerofs.bifrost.oaaas.model.AuthorizationRequest;
-import com.aerofs.bifrost.oaaas.model.Client;
-import com.aerofs.bifrost.oaaas.model.ErrorResponse;
-import com.aerofs.bifrost.oaaas.model.TokenListReponse;
-import com.aerofs.bifrost.oaaas.model.TokenResponseObject;
+import com.aerofs.bifrost.oaaas.model.*;
 import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.AuthorizationRequestRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.server.Transactional;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
-import com.aerofs.bifrost.oaaas.auth.PrincipalFactory;
+import com.aerofs.rest.auth.DelegatedUserToken;
+import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
 import com.google.common.base.Objects;
@@ -48,6 +45,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
@@ -57,10 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.BEARER;
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_AUTHORIZATION_CODE;
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.GRANT_TYPE_REFRESH_TOKEN;
-import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse;
+import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.*;
 import static com.aerofs.bifrost.oaaas.auth.OAuth2Validator.ValidationResponse.UNKNOWN_CLIENT_ID;
 
 /**
@@ -173,8 +168,7 @@ public class TokenResource
     public Response token(@HeaderParam("Authorization") String authorization,
             final MultivaluedMap<String, String> formParameters, @Context HttpHeaders headers)
     {
-        AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(
-                formParameters);
+        AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(formParameters);
         UserPassCredentials credentials = getClientCredentials(authorization, accessTokenRequest);
         String grantType = accessTokenRequest.getGrantType();
 
@@ -233,6 +227,52 @@ public class TokenResource
     }
 
     /**
+     * An authenticated service wants to generate a token for a user that has already been authenticated.
+     *
+     * 'grant_type' must be 'delegated'
+     */
+    @POST
+    @Path("/delegate/token")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes("application/x-www-form-urlencoded")
+    public Response delegateToken(@Auth IAuthToken authToken,
+                                  final MultivaluedMap<String, String> formParameters)
+    {
+        AccessTokenRequest accessTokenRequest = AccessTokenRequest.fromMultiValuedFormParameters(formParameters);
+        AuthorizationRequest request;
+
+        UserID userID = userFromAuthToken(authToken);
+        if (userID == null) {
+            l.warn("Missing userId from IAuthToken");
+            return Response.status(Status.FORBIDDEN).build();
+        }
+
+        ValidationResponse vr = oAuth2Validator.validate(accessTokenRequest);
+        if (!vr.valid()) {
+            l.warn("validation error in create token request: {}", vr.getValue());
+            return sendErrorResponse(vr);
+        }
+        if (!GRANT_TYPE_DELEGATED.equals(accessTokenRequest.getGrantType())) {
+            return sendErrorResponse(ValidationResponse.UNSUPPORTED_GRANT_TYPE);
+        }
+
+        request = authRequestFromClient(accessTokenRequest);
+        request.setPrincipal(new AuthenticatedPrincipal(userID.getString(), userID, OrganizationID.PRIVATE_ORGANIZATION));
+
+        AccessToken token = createAccessToken(request, false);
+        l.info("created token {} for {}", token.getToken(), token.getClientId());
+
+        AccessTokenResponse response = new AccessTokenResponse(
+                token.getToken(),
+                BEARER,
+                Objects.firstNonNull(request.expiresInSeconds, request.getClient().getExpireDuration()),
+                token.getRefreshToken(),
+                StringUtils.join(token.getScopes(), ','));
+
+        return Response.ok().entity(response).build();
+    }
+
+    /**
      * Delete a token.  No auth is needed, as possession of the token is proof of authorization.
      */
     @DELETE
@@ -264,12 +304,11 @@ public class TokenResource
      * We support both options. Clients can use the Basic Authentication or
      * include the secret and id in the request body
      */
-    private UserPassCredentials getClientCredentials(String authorization,
-            AccessTokenRequest accessTokenRequest)
+    private UserPassCredentials getClientCredentials(String authorization, AccessTokenRequest accessTokenRequest)
     {
-        return StringUtils.isBlank(authorization) ? new UserPassCredentials(
-                accessTokenRequest.getClientId(),
-                accessTokenRequest.getClientSecret()) : new UserPassCredentials(authorization);
+        return StringUtils.isBlank(authorization)
+                ? new UserPassCredentials(accessTokenRequest.getClientId(), accessTokenRequest.getClientSecret())
+                : new UserPassCredentials(authorization);
     }
 
     private AuthorizationRequest authRequestFromRefreshToken(AccessTokenRequest accessTokenRequest)
@@ -295,23 +334,26 @@ public class TokenResource
      */
     private AuthorizationRequest authRequestFromCode(AccessTokenRequest accessTokenRequest)
     {
-        return (accessTokenRequest.hasDeviceAuthorizationNonce()) ?
-                authRequestFromNonce(accessTokenRequest)
+        return (accessTokenRequest.hasDeviceAuthorizationNonce())
+                ? authRequestFromNonce(accessTokenRequest)
                 : authRequestFromAuthCode(accessTokenRequest);
     }
 
     /**
-     * Authorize a token request that arrives with a device authorization nonce.
-     * In this case, we don't have an access code record to look up, therefore we have to
-     * get the principal information (it comes from SP via getDeviceAuthorization).
+     * Create and populate the AuthorizationRequest by combining the token request with information for the
+     * associated client.
+     *
+     * This does NOT set the principal or validate any grant types.
      */
-    private AuthorizationRequest authRequestFromNonce(AccessTokenRequest accessTokenRequest)
+    private AuthorizationRequest authRequestFromClient(AccessTokenRequest accessTokenRequest)
     {
-        AuthenticatedPrincipal principal;
-        Client client = getClientForRequest(accessTokenRequest);
+        AuthorizationRequest authReq;
+        Client client;
+
+        client = getClientForRequest(accessTokenRequest);
 
         Set<String> scopes = accessTokenRequest.getScope() == null ?
-            client.getScopes() : Sets.newHashSet(accessTokenRequest.getScope().split(","));
+                client.getScopes() : Sets.newHashSet(accessTokenRequest.getScope().split(","));
 
         try {
             OAuthScopeParsingUtil.validateScopes(scopes);
@@ -320,18 +362,7 @@ public class TokenResource
             throw new ValidationResponseException(ValidationResponse.SCOPE_NOT_VALID);
         }
 
-        try {
-            principal = _principalFactory.authenticate(
-                    accessTokenRequest.getDeviceAuthorizationNonce(), "todo", scopes);
-        } catch (Exception e) {
-            l.info("Error handling device authorization nonce {}.",
-                    accessTokenRequest.getDeviceAuthorizationNonce(), LogUtil.suppress(e));
-            throw new ValidationResponseException(
-                    ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
-        }
-
-        AuthorizationRequest authReq = new AuthorizationRequest();
-        authReq.setPrincipal(principal);
+        authReq = new AuthorizationRequest();
         authReq.setClient(client);
         authReq.setGrantedScopes(scopes);
 
@@ -359,14 +390,36 @@ public class TokenResource
     }
 
     /**
+     * Authorize a token request that arrives with a device authorization nonce.
+     * In this case, we don't have an access code record to look up, therefore we have to
+     * get the principal information (it comes from SP via getDeviceAuthorization).
+     */
+    private AuthorizationRequest authRequestFromNonce(AccessTokenRequest accessTokenRequest)
+    {
+        AuthorizationRequest authReq = authRequestFromClient(accessTokenRequest);
+
+        try {
+            AuthenticatedPrincipal principal = _principalFactory.authenticate(
+                    accessTokenRequest.getDeviceAuthorizationNonce(), "todo", authReq.getGrantedScopes());
+            authReq.setPrincipal(principal);
+        } catch (Exception e) {
+            l.info("Error handling device authorization nonce {}.",
+                    accessTokenRequest.getDeviceAuthorizationNonce(), LogUtil.suppress(e));
+            throw new ValidationResponseException(
+                    ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
+        }
+
+        return authReq;
+    }
+
+    /**
      * Authorize a request that arrives with an OAuth access code. In this case, the principal
      * information comes from the original authorization request (stored in the db when
      * the access code was granted)
      */
     private AuthorizationRequest authRequestFromAuthCode(AccessTokenRequest accessTokenRequest)
     {
-        AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(
-                accessTokenRequest.getCode());
+        AuthorizationRequest authReq = authorizationRequestRepository.findByAuthorizationCode(accessTokenRequest.getCode());
         if (authReq == null) {
             l.info("Error handling access code {}.", accessTokenRequest.getCode());
             throw new ValidationResponseException(ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
@@ -431,5 +484,14 @@ public class TokenResource
     private Response sendErrorResponse(ValidationResponse response)
     {
         return sendErrorResponse(response.getValue(), response.getDescription());
+    }
+
+    private @Nullable UserID userFromAuthToken(IAuthToken token)
+    {
+        if (token instanceof DelegatedUserToken) {
+            return ((DelegatedUserToken) token).getUser();
+        } else {
+            return null;
+        }
     }
 }

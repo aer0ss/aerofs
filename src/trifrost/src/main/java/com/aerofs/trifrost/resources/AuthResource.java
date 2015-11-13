@@ -1,6 +1,7 @@
 package com.aerofs.trifrost.resources;
 
 import com.aerofs.servlets.lib.AbstractEmailSender;
+import com.aerofs.trifrost.ISpartaClient;
 import com.aerofs.trifrost.api.*;
 import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.InvalidCodeException;
@@ -21,7 +22,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.Date;
 
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -36,18 +36,20 @@ public final class AuthResource {
     private static final Device DEFAULT_DEVICE = new Device("", "");
     private final DBI dbi;
     private final AbstractEmailSender mailSender;
-
     private UniqueIDGenerator uniq;
+    private ISpartaClient sparta;
 
     private final String MAIL_FROM_NAME = getStringProperty("labeling.brand", "AeroFS");
     private final String MAIL_FROM_ADDR = getStringProperty("base.www.support_email_address", "");
 
     public AuthResource(@Context DBI dbi,
                         @Context AbstractEmailSender mailSender,
-                        @Context UniqueIDGenerator uniqueID) throws IOException {
+                        @Context UniqueIDGenerator uniqueID,
+                        @Context ISpartaClient sparta) {
         this.dbi = dbi;
         this.mailSender = mailSender;
         this.uniq = uniqueID;
+        this.sparta = sparta;
     }
 
     @POST
@@ -152,7 +154,6 @@ public final class AuthResource {
                 throw new ForbiddenException("Found a problem with your refresh token");
             }
         });
-
     }
 
     private VerifiedDevice handleAuthCode(final DeviceAuthentication auth) {
@@ -164,26 +165,24 @@ public final class AuthResource {
                 throw new InvalidCodeException();
             }
 
-            // save refresh token
-            String refreshToken = new String(UniqueID.generateUUID());
-
+            // FIXME: why are we generating userId's? Just for devices. Can we remove it all??
             String userId = Users.get(conn, auth.email);
             if (userId == null) {
                 userId = Users.allocate(conn, auth.email);
             }
-            conn.attach(RefreshTokens.class).add(refreshToken, userId, UniqueID.getDefaultRefreshExpiry());
-
-            // save auth token
-            String authToken = new String(UniqueID.generateUUID());
-            long authExpiry = new Date().getTime() + 30L * 86400 * 1000;
-            conn.attach(AuthTokens.class).add(authToken, refreshToken, UniqueID.getDefaultTokenExpiry());
 
             // save device, if provided
+            // FIXME: remove this chunk?
             Device device = auth.device == null ? DEFAULT_DEVICE : auth.device;
             String deviceId = new String(uniq.generateDeviceString());
             conn.attach(Devices.class).add(deviceId, userId, device);
 
-            return new VerifiedDevice(userId, Constants.AERO_IM, deviceId, authToken, authExpiry, refreshToken);
+
+            // Get a bearer token from bifrost, now that we have authenticated the request.
+            VerifiedDevice retVal = sparta.getTokenForUser(auth.email);
+            retVal.domain = Constants.AERO_IM;
+            retVal.deviceId = deviceId;
+            return retVal;
         });
     }
 }

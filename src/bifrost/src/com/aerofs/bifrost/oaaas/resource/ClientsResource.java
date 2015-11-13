@@ -1,29 +1,17 @@
 package com.aerofs.bifrost.oaaas.resource;
 
-import com.aerofs.bifrost.oaaas.model.Client;
-import com.aerofs.bifrost.oaaas.model.ClientResponseObject;
-import com.aerofs.bifrost.oaaas.model.ListClientsResponse;
-import com.aerofs.bifrost.oaaas.model.NewClientRequest;
-import com.aerofs.bifrost.oaaas.model.NewClientResponse;
-import com.aerofs.bifrost.oaaas.model.ResourceServer;
+import com.aerofs.bifrost.oaaas.model.*;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
-import com.google.common.collect.Sets;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -98,7 +86,7 @@ public class ClientsResource
             client.setClientId(clientID);
             client.setExpireDuration(expires);
             client.setSecret(secret);
-            client.setScopes(Sets.newHashSet("files.read", "files.write")); // NB: do we actually use this?
+            client.setScopes(ncr.getScopes());
             client.setAllowedClientCredentials(false);
             client.setAllowedImplicitGrant(false);
             client.getRedirectUris().add(ncr.getRedirectUri());

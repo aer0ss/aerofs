@@ -28,6 +28,10 @@ public interface OAuth2Validator {
 
   String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
 
+  // The requesting service has already validated, and is trustworthy. Don't allow this on a route that can be reached
+  // by an outside client type.
+  String GRANT_TYPE_DELEGATED = "delegated";
+
   String IMPLICIT_GRANT_RESPONSE_TYPE = "token";
 
   String AUTHORIZATION_CODE_GRANT_RESPONSE_TYPE = "code";

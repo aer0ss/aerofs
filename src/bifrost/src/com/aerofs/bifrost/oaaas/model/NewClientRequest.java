@@ -1,6 +1,9 @@
 package com.aerofs.bifrost.oaaas.model;
 
+import com.google.common.collect.Sets;
+
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.Set;
 
 /**
  * Representation of the client registration request as defined in bifrost_api.md
@@ -15,7 +18,10 @@ public class NewClientRequest
     private String redirectUri;
     private String clientId;
     private String expires;
+    private Set<String> scopes;
 
+    public NewClientRequest() {
+    }
     public static NewClientRequest fromMultiValuedFormParameters(MultivaluedMap<String, String> formParameters)
     {
         NewClientRequest ncr = new NewClientRequest();
@@ -27,6 +33,13 @@ public class NewClientRequest
         ncr.setRedirectUri(formParameters.getFirst("redirect_uri"));
         ncr.setClientId(formParameters.getFirst("client_id"));
         ncr.setExpires(formParameters.getFirst("expires"));
+
+        if (formParameters.containsKey("scopes")) {
+            ncr.setScopes(Sets.newHashSet(formParameters.get("scopes")));
+        } else {
+            ncr.setScopes(Sets.newHashSet("files.read", "files.write"));
+        }
+
         return ncr;
     }
 
@@ -108,5 +121,15 @@ public class NewClientRequest
     public void setExpires(String expires)
     {
         this.expires = expires;
+    }
+
+    public void setScopes(Set<String> scopes)
+    {
+        this.scopes = scopes;
+    }
+
+    public Set<String> getScopes()
+    {
+        return this.scopes;
     }
 }

@@ -59,6 +59,7 @@ public class Trifrost extends Service<TrifrostConfiguration> {
 
                 bind(AsyncEmailSender.create()).to(AbstractEmailSender.class);
                 bind(UniqueIDGenerator.create()).to(UniqueIDGenerator.class);
+                bind(SpartaClient.class).to(ISpartaClient.class);
                 bind(dbi).to(DBI.class);
             }
         });

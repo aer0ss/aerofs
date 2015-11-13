@@ -7,15 +7,16 @@ package com.aerofs.bifrost.server;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.bifrost.oaaas.auth.NonceChecker.AuthorizedClient;
-import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
-import com.aerofs.ids.UserID;
+import com.aerofs.bifrost.oaaas.auth.NonceChecker.AuthorizedClient;
 import com.aerofs.bifrost.oaaas.model.AccessToken;
+import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.UserID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.collect.Sets;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
+import org.hamcrest.Matchers;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,11 +28,7 @@ import java.util.Map;
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.from;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
@@ -70,7 +67,7 @@ public class TestTokenResource extends BifrostTest
     }
 
     @Test
-    public void shouldRejectBadClientPassword() throws Exception
+    public void shouldRejectBadClientPassword2() throws Exception
     {
         expect()
                 .statusCode(401)
@@ -453,6 +450,53 @@ public class TestTokenResource extends BifrostTest
                 .delete(USERS_URL + "/" + USERNAME + "/delegates");
 
         assertEquals("1 tokens", 1, _accessTokenRepository.findByOwner(USERNAME).size());
+    }
+
+    @Test
+    public void shouldAcceptRequest() throws Exception {
+        expect()
+                .statusCode(200)
+                .given()
+                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .formParam("client_id", CLIENTID)
+                .formParam("client_secret", CLIENTSECRET)
+                .formParam("grant_type", "delegated")
+                .post(DELEGATETOKEN_URL);
+
+    }
+
+    @Test
+    public void shouldProvideDelegatedPrincipal() throws Exception {
+        String token = given()
+                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .formParam("client_id", CLIENTID)
+                .formParam("client_secret", CLIENTSECRET)
+                .formParam("grant_type", "delegated")
+                .post(DELEGATETOKEN_URL)
+                .thenReturn()
+                .path("access_token");
+
+        given()
+                .header(HttpHeaders.Names.AUTHORIZATION, buildBasicAuthHeader(RESOURCEKEY, RESOURCESECRET))
+                .queryParam("access_token", token)
+                .get(TOKENINFO_URL)
+                .then()
+                .body("principal.name", Matchers.equalTo("jon@aerofs.com"))
+                .body("principal.attributes.orgid", Matchers.equalTo("2"));
+    }
+
+    @Test
+    public void shouldNotAllowDelegateOnPublicRoute() throws Exception
+    {
+        expect()
+                .statusCode(400)
+            .given()
+                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .formParam("client_id", CLIENTID)
+                .formParam("client_secret", CLIENTSECRET)
+                .formParam("grant_type", "delegated")
+            .post(TOKEN_URL);
+
     }
 
     private String createTokenForUser(boolean isAdmin) throws ExInvalidID

@@ -86,14 +86,4 @@ public class UserPassCredentials {
   public String toString() {
     return "UserPassCredentials [username=" + username + "]";
   }
-
-  public String getAuthorizationHeaderValue() {
-    String result = null;
-    if (!StringUtils.isBlank(username) && !StringUtils.isBlank(password)) {
-      String value = username + ":" + password;
-      result = "Basic " + new String(Base64.encodeBase64(value.getBytes())) ;
-    }
-    return result;
-  }
-
 }

@@ -53,6 +53,7 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
     
     GRANT_TYPES.add(GRANT_TYPE_AUTHORIZATION_CODE);
     GRANT_TYPES.add(GRANT_TYPE_REFRESH_TOKEN);
+    GRANT_TYPES.add(GRANT_TYPE_DELEGATED);
   }
 
   @Override
@@ -168,6 +169,8 @@ public class OAuth2ValidatorImpl implements OAuth2Validator {
     }
   }
 
+  // if grant_type == auth_code, then make sure an auth code is included.
+  // if grant_type == refresh_token, make sure a refresh token is included.
   protected void validateAttributes(AccessTokenRequest request) {
     String grantType = request.getGrantType();
     if (GRANT_TYPE_AUTHORIZATION_CODE.equals(grantType)) {

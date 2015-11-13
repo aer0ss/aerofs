@@ -40,8 +40,7 @@ public class DelegatedUserExtractor implements AuthTokenExtractor<IAuthToken> {
         if (headers == null || headers.size() != 1) return null;
 
         Matcher m = DELEGATED_PATTERN.matcher(headers.get(0));
-
-        if (!BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
+        if (!m.matches() || !BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
             throw AuthTokenExtractor.unauthorized("invalid secret", challenge());
         }
 

@@ -14,6 +14,8 @@ public class VerifiedDevice {
         this.refreshToken = refreshToken;
     }
 
+    public VerifiedDevice() { }
+
     @ApiModelProperty(value = "unique user identifier")
     public String userId;
     @ApiModelProperty(value = "domain string for xmpp connections")
@@ -27,6 +29,4 @@ public class VerifiedDevice {
     @ApiModelProperty(value = "single-use refresh token")
     public String refreshToken;
 
-    @SuppressWarnings("unused")
-    private VerifiedDevice() { } // Jackson-compat
 }

@@ -8,4 +8,6 @@ public class Constants {
 
     public static final String DEPLOYMENT_SECRET_INJECTION_KEY = "DEPLOYMENT_SECRET";
     public static final String DEPLOYMENT_SECRET_ABSOLUTE_PATH = "/data/deployment_secret";
+    public static final String OAUTH_CLIENT_ID = "OAUTH_CLIENT_ID";
+    public static final String OAUTH_CLIENT_SECRET = "OAUTH_CLIENT_SECRET";
 }

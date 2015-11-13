@@ -7,6 +7,7 @@ import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.proto.Common;
 import com.aerofs.servlets.lib.AbstractEmailSender;
+import com.aerofs.trifrost.api.VerifiedDevice;
 import com.aerofs.trifrost.base.UniqueIDGenerator;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
@@ -36,6 +37,7 @@ public final class TrifrostTestResource extends ExternalResource {
                 protected void configure() {
                     bind(new MockMailSender()).to(AbstractEmailSender.class).ranked(1);
                     bind(new MockUniqueID()).to(UniqueIDGenerator.class).ranked(1);
+                    bind(new MockSparta()).to(ISpartaClient.class).ranked(1);
                 }
             });
         }
@@ -52,6 +54,16 @@ public final class TrifrostTestResource extends ExternalResource {
         @Override
         protected String getDeploymentSecret(TrifrostConfiguration configuration) throws IOException {
             return "aa23e7fb907fa7f839f6f418820159ab";
+        }
+    }
+
+    private class MockSparta implements ISpartaClient {
+        @Override
+        public VerifiedDevice getTokenForUser(String principal) throws IOException {
+            VerifiedDevice result = new VerifiedDevice();
+            result.accessTokenExpiration = 0;
+            result.accessToken = "aa23e7fb907fa7f839f6f418820159ab";
+            return result;
         }
     }
 

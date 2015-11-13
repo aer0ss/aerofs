@@ -126,137 +126,75 @@ public class AuthorizationRequest extends AbstractEntity
     }
   }
 
-  /**
-   * @return the responseType
-   */
   public String getResponseType() {
     return responseType;
   }
 
-  /**
-   * @param responseType
-   *          the responseType to set
-   */
   public void setResponseType(String responseType) {
     this.responseType = responseType;
   }
 
-  /**
-   * @return the redirectUri
-   */
   public String getRedirectUri() {
     return redirectUri;
   }
 
-  /**
-   * @param redirectUri
-   *          the redirectUri to set
-   */
   public void setRedirectUri(String redirectUri) {
     this.redirectUri = redirectUri;
   }
 
-  /**
-   * @return the requested scopes
-   */
   public Set<String> getRequestedScopes() {
     return requestedScopes;
   }
 
-  /**
-   * @param requestedScopes
-   *          the requestedScopes to set
-   */
   public void setRequestedScopes(Set<String> requestedScopes) {
     this.requestedScopes = ImmutableSet.copyOf(requestedScopes);
   }
 
-  /**
-   * @return the granted scopes
-   */
   public Set<String> getGrantedScopes() {
     return grantedScopes;
   }
 
-  /**
-   * @param grantedScopes
-   *          the grantedScopes to set
-   */
   public void setGrantedScopes(Set<String> grantedScopes) {
     this.grantedScopes = ImmutableSet.copyOf(grantedScopes);
   }
 
-  /**
-   * @return the state
-   */
   public String getState() {
     return state;
   }
 
-  /**
-   * @param state
-   *          the state to set
-   */
   public void setState(String state) {
     this.state = state;
   }
 
-  /**
-   * @return the client
-   */
   public Client getClient() {
     return client;
   }
 
-  /**
-   * @param client
-   *          the client to set
-   */
   public void setClient(Client client) {
     this.client = client;
   }
 
-  /**
-   * @return the authorizationCode
-   */
   public String getAuthorizationCode() {
     return authorizationCode;
   }
 
-  /**
-   * @param authorizationCode
-   *          the authorizationCode to set
-   */
   public void setAuthorizationCode(String authorizationCode) {
     this.authorizationCode = authorizationCode;
   }
 
-  /**
-   * @return the principal
-   */
   public AuthenticatedPrincipal getPrincipal() {
     return principal;
   }
 
-  /**
-   * @param principal
-   *          the principal to set
-   */
   public void setPrincipal(AuthenticatedPrincipal principal) {
     this.principal = principal;
     this.encodePrincipal();
   }
 
-  /**
-   * @return the encodedPrincipal
-   */
   public String getEncodedPrincipal() {
     return encodedPrincipal;
   }
 
-  /* (non-Javadoc)
-   * @see com.aerofs.bifrost.oaaas.model.AbstractEntity#validate()
-   */
   @Override
   public boolean validate(ConstraintValidatorContext context) {
     if (StringUtils.isNotBlank(redirectUri)) {
