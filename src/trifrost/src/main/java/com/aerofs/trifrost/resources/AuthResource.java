@@ -2,13 +2,12 @@ package com.aerofs.trifrost.resources;
 
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.trifrost.ISpartaClient;
-import com.aerofs.trifrost.api.*;
-import com.aerofs.trifrost.base.Constants;
+import com.aerofs.trifrost.api.DeviceAuthentication;
+import com.aerofs.trifrost.api.EmailAddress;
+import com.aerofs.trifrost.api.VerifiedDevice;
 import com.aerofs.trifrost.base.InvalidCodeException;
-import com.aerofs.trifrost.base.UniqueID;
 import com.aerofs.trifrost.base.UniqueIDGenerator;
-import com.aerofs.trifrost.db.*;
-import com.google.common.base.Preconditions;
+import com.aerofs.trifrost.db.VerificationCodes;
 import com.google.common.base.Strings;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -33,7 +32,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
         consumes = "application/json")
 public final class AuthResource {
     private static final Logger logger = LoggerFactory.getLogger(AuthResource.class);
-    private static final Device DEFAULT_DEVICE = new Device("", "");
     private final DBI dbi;
     private final AbstractEmailSender mailSender;
     private UniqueIDGenerator uniq;
@@ -99,61 +97,17 @@ public final class AuthResource {
             throw new BadRequestException("grant type must be specified");
         }
 
-        if (auth.grantType == DeviceAuthentication.GrantType.RefreshToken) {
-            if (Strings.isNullOrEmpty(auth.refreshToken) || Strings.isNullOrEmpty(auth.userId)) {
-                throw new BadRequestException("error processing refresh token request");
-            }
-            return handleRefreshToken(auth);
+        if (auth.grantType != DeviceAuthentication.GrantType.AuthCode) {
+            throw new BadRequestException("error processing refresh token request");
         }
 
-        assert auth.grantType == DeviceAuthentication.GrantType.AuthCode;
         if (Strings.isNullOrEmpty(auth.email)) {
             throw new BadRequestException("missing required field \"email\"");
         } else if (Strings.isNullOrEmpty(auth.authCode)) {
             throw new BadRequestException("missing required field \"auth_code\"");
         }
+
         return handleAuthCode(auth);
-    }
-
-    @DELETE
-    @Produces(MediaType.TEXT_PLAIN)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/refresh")
-    @ApiOperation(value = "clear all auth tokens",
-            notes = "Invalidate the given refresh tokens as well as any access tokens that were issued with it."
-    )
-    public Response invalidateTokens(
-            @Context AuthorizedUser authorizedUser,
-            RefreshToken provided) {
-        Preconditions.checkNotNull(authorizedUser);
-
-        return dbi.inTransaction((conn, status) -> {
-            int rows = conn.attach(RefreshTokens.class).invalidate(provided.refreshToken, authorizedUser.id);
-
-            if (rows > 0) {
-                return Response.noContent().build();
-            } else {
-                throw new ForbiddenException("Error invalidating refresh token");
-            }
-        });
-    }
-
-    private VerifiedDevice handleRefreshToken(final DeviceAuthentication auth) {
-        return dbi.inTransaction((conn, status) -> {
-            boolean isValid = conn.attach(RefreshTokens.class).invalidate(auth.refreshToken, auth.userId) > 0;
-            if (isValid) {
-
-                String refreshToken = new String(UniqueID.generateUUID());
-                String authToken = new String(UniqueID.generateUUID());
-                long authExpiry = UniqueID.getDefaultTokenExpiry();
-                conn.attach(RefreshTokens.class).add(refreshToken, auth.userId, UniqueID.getDefaultRefreshExpiry());
-                conn.attach(AuthTokens.class).add(authToken, refreshToken, UniqueID.getDefaultTokenExpiry());
-
-                return new VerifiedDevice(auth.userId, Constants.AERO_IM, "", authToken, authExpiry, refreshToken);
-            } else {
-                throw new ForbiddenException("Found a problem with your refresh token");
-            }
-        });
     }
 
     private VerifiedDevice handleAuthCode(final DeviceAuthentication auth) {
@@ -165,24 +119,7 @@ public final class AuthResource {
                 throw new InvalidCodeException();
             }
 
-            // FIXME: why are we generating userId's? Just for devices. Can we remove it all??
-            String userId = Users.get(conn, auth.email);
-            if (userId == null) {
-                userId = Users.allocate(conn, auth.email);
-            }
-
-            // save device, if provided
-            // FIXME: remove this chunk?
-            Device device = auth.device == null ? DEFAULT_DEVICE : auth.device;
-            String deviceId = new String(uniq.generateDeviceString());
-            conn.attach(Devices.class).add(deviceId, userId, device);
-
-
-            // Get a bearer token from bifrost, now that we have authenticated the request.
-            VerifiedDevice retVal = sparta.getTokenForUser(auth.email);
-            retVal.domain = Constants.AERO_IM;
-            retVal.deviceId = deviceId;
-            return retVal;
+            return sparta.getTokenForUser(auth.email);
         });
     }
 }

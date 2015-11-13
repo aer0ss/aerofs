@@ -3,7 +3,6 @@ package com.aerofs.trifrost.resources;
 import com.aerofs.trifrost.ServerConfiguration;
 import com.aerofs.trifrost.TrifrostTestResource;
 import com.aerofs.trifrost.Utilities;
-import com.aerofs.trifrost.api.Device;
 import com.aerofs.trifrost.api.DeviceAuthentication;
 import com.jayway.restassured.RestAssured;
 import org.hamcrest.Matchers;
@@ -26,7 +25,6 @@ public final class TestUserVerify {
         ProfileUtils.createVerificationCode(em);
         ProfileUtils.verifyEmail(em).then()
                 .body("access_token", Matchers.notNullValue())
-                .body("device_id", Matchers.notNullValue())
                 .body("domain", Matchers.notNullValue())
                 .statusCode(Response.Status.OK.getStatusCode());
     }
@@ -34,7 +32,7 @@ public final class TestUserVerify {
     // POST /auth/token
     @Test
     public void shouldFailBadVerify() throws Exception {
-        DeviceAuthentication auth = DeviceAuthentication.createForAuthCode("a@b.c", "bad_code", null);
+        DeviceAuthentication auth = DeviceAuthentication.createForAuthCode("a@b.c", "bad_code");
 
         given().header("Content-Type", MediaType.APPLICATION_JSON)
                 .body(auth)
@@ -50,11 +48,10 @@ public final class TestUserVerify {
         ProfileUtils.createVerificationCode(em);
         given()
                 .header("Content-Type", MediaType.APPLICATION_JSON)
-                .body(DeviceAuthentication.createForAuthCode(em, "123456", new Device("dn1", "df1")))
+                .body(DeviceAuthentication.createForAuthCode(em, "123456"))
                 .post(ServerConfiguration.authTokenUrl())
                 .then()
                 .body("access_token", Matchers.notNullValue())
-                .body("device_id", Matchers.notNullValue())
                 .body("domain", Matchers.notNullValue())
                 .statusCode(Response.Status.OK.getStatusCode());
     }

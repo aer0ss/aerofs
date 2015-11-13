@@ -8,6 +8,7 @@ import com.aerofs.baseline.metrics.MetricRegistries;
 import com.aerofs.proto.Common;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.trifrost.api.VerifiedDevice;
+import com.aerofs.trifrost.base.Constants;
 import com.aerofs.trifrost.base.UniqueIDGenerator;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
@@ -63,6 +64,7 @@ public final class TrifrostTestResource extends ExternalResource {
             VerifiedDevice result = new VerifiedDevice();
             result.accessTokenExpiration = 0;
             result.accessToken = "aa23e7fb907fa7f839f6f418820159ab";
+            result.domain = Constants.AERO_IM;
             return result;
         }
     }

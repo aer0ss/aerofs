@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.ws.rs.core.SecurityContext;
 
+// FIXME: remove??
 public final class UserBinder extends AbstractBinder {
     static final Logger l = LoggerFactory.getLogger(UserBinder.class);
 

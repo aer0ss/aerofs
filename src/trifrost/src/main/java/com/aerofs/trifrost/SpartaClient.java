@@ -94,6 +94,7 @@ public class SpartaClient implements ISpartaClient {
         result.accessToken = oauthToken.access_token;
         result.accessTokenExpiration = oauthToken.expires_in;
         result.refreshToken = oauthToken.refresh_token;
+        result.domain = Constants.AERO_IM;
         return result;
     }
 }

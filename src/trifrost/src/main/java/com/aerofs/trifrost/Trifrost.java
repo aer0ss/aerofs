@@ -64,22 +64,12 @@ public class Trifrost extends Service<TrifrostConfiguration> {
             }
         });
 
-
-        // setup authentication
-        environment.addAuthenticator(new HttpBasicAuthenticator(dbi));
-
         environment.addServiceProvider(DBIExceptionMapper.class);
         environment.addServiceProvider(new UserBinder());
-        environment.addServiceProvider(new DeviceNotFoundException.Mapper());
         environment.addServiceProvider(new InvalidCodeException.Mapper());
-        environment.addServiceProvider(new UserNotFoundException.Mapper());
-        environment.addServiceProvider(new UserNotAuthorizedException.Mapper());
 
         // register root resources
         environment.addResource(AuthResource.class);
-        environment.addResource(DeviceResource.class);
-        environment.addResource(InviteResource.class);
-        environment.addResource(NotificationResource.class);
 
         if (configuration.isSwaggerEnabled()) {
             BeanConfig beanConfig = new BeanConfig();

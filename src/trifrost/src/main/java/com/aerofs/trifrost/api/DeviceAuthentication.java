@@ -12,29 +12,16 @@ import java.util.Map;
  * Input type for /users/verify route
  */
 public class DeviceAuthentication {
-    private static final Device DEFAULT_DEVICE = new Device("", "");
-
-    public static DeviceAuthentication createForAuthCode(String email, String authCode, Device device) {
+    public static DeviceAuthentication createForAuthCode(String email, String authCode) {
         DeviceAuthentication auth = new DeviceAuthentication();
         auth.grantType = GrantType.AuthCode;
         auth.email = email;
         auth.authCode = authCode;
-        auth.device = device == null? DEFAULT_DEVICE : device;
-        return auth;
-    }
-
-    public static DeviceAuthentication createForRefreshCode(String refreshToken, String userId, Device device) {
-        DeviceAuthentication auth = new DeviceAuthentication();
-        auth.grantType = GrantType.RefreshToken;
-        auth.refreshToken = refreshToken;
-        auth.userId= userId;
-        auth.device = device == null? DEFAULT_DEVICE : device;
         return auth;
     }
 
     public enum GrantType {
-        AuthCode,
-        RefreshToken;
+        AuthCode;
 
         @JsonCreator
         public static GrantType forValue(String value) { return namesMap.get(StringUtils.lowerCase(value)); }
@@ -49,7 +36,6 @@ public class DeviceAuthentication {
 
         private static Map<String, GrantType> namesMap = ImmutableMap.<String, GrantType>builder()
                 .put("auth_code", AuthCode)
-                .put("refresh_token", RefreshToken)
                 .build();
     }
 
@@ -64,14 +50,4 @@ public class DeviceAuthentication {
     public String authCode;
     @ApiModelProperty("required if grant_type = 'auth_code'")
     public String email;
-
-    // these two required for grantType == RefreshToken
-    @ApiModelProperty("valid refresh token")
-    public String refreshToken;
-    @ApiModelProperty("required if grant_type = 'refresh_token'")
-    public String userId;
-
-    // optional
-    @ApiModelProperty("optional device information")
-    public Device device;
 }

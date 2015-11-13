@@ -1,7 +1,6 @@
 package com.aerofs.trifrost.resources;
 
 import com.aerofs.trifrost.ServerConfiguration;
-import com.aerofs.trifrost.api.Device;
 import com.aerofs.trifrost.api.DeviceAuthentication;
 import com.aerofs.trifrost.api.EmailAddress;
 import com.aerofs.trifrost.api.VerifiedDevice;
@@ -33,7 +32,7 @@ public class ProfileUtils {
     static com.jayway.restassured.response.Response verifyEmail(String emailAddr) {
         return given()
                 .header("Content-Type", MediaType.APPLICATION_JSON)
-                .body(DeviceAuthentication.createForAuthCode(emailAddr, "123456", new Device("dn", "df")))
+                .body(DeviceAuthentication.createForAuthCode(emailAddr, "123456"))
                 .post(ServerConfiguration.authTokenUrl());
     }
 

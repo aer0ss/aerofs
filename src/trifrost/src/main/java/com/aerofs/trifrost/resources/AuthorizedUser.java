@@ -1,6 +1,7 @@
 package com.aerofs.trifrost.resources;
 
 /**
+ * FIXME: remove??
  */
 public class AuthorizedUser {
     public String id;
