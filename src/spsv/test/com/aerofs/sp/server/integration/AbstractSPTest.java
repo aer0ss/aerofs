@@ -326,7 +326,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 factOrg,
                 factOrgInvite,
                 factDevice,
-                certdb,
                 esdb,
                 factSharedFolder,
                 factEmailer,

@@ -323,7 +323,7 @@ public class LibParam extends BaseParam
                 convertProperty(                        "lib.authenticator", "local_credential");
 
         // A quick converter to an enum that falls back to a default rather than throw IllegalArg
-        static private Authenticator convertProperty(String paramName, String paramDefault)
+        static public Authenticator convertProperty(String paramName, String paramDefault)
         {
             // Maintain this code carefully! The valid configuration names are maintained separately
             // from the actual enum - one is public-visible and the other is developers only.

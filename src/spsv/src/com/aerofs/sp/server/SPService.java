@@ -138,7 +138,6 @@ public class SPService implements ISPService
 
     // TODO (WW) remove dependency to these database objects
     private final SPDatabase _db;
-    private final CertificateDatabase _certdb;
     private final EmailSubscriptionDatabase _esdb;
 
     private final SQLThreadLocalTransaction _sqlTrans;
@@ -217,7 +216,6 @@ public class SPService implements ISPService
             Organization.Factory factOrg,
             OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice,
-            CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb,
             Factory factSharedFolder,
             InvitationEmailer.Factory factInvitationEmailer,
@@ -245,7 +243,6 @@ public class SPService implements ISPService
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
         _db = db;
-        _certdb = certdb;
 
         _sqlTrans = sqlTrans;
         _jedisTrans = jedisTrans;
@@ -2932,10 +2929,6 @@ public class SPService implements ISPService
         Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
         OrganizationInvitation invite = _factOrgInvite.create(user, org);
 
-        //AD/LDAP users may require invitation before signing in
-        boolean externalUserRequireInvitation = Identity.AUTHENTICATOR == Identity.Authenticator.EXTERNAL_CREDENTIAL &&
-                getBooleanProperty("ldap.invitation.required_for_signup", false);
-
         _sqlTrans.begin();
 
         //externally-managed account will need to have an account in user database or
@@ -2943,10 +2936,10 @@ public class SPService implements ISPService
         boolean userExistsOrInviteExists = (user.exists() || invite.exists());
         _sqlTrans.commit();
 
-
-        //Check whether AD/LDAP users are required to be invited before logging in.
-        if (externalUserRequireInvitation) {
-            if (!_authenticator.isLocallyManaged(user.id()) && !userExistsOrInviteExists) throw new ExNotInvited();
+        // Check whether AD/LDAP users are required to be invited before logging in.
+        if (!userExistsOrInviteExists && externalUserRequireInvitation() &&
+                !_authenticator.isLocallyManaged(user.id())) {
+            throw new ExNotInvited();
         }
 
         IAuthority authority = _authenticator.authenticateUser(
@@ -2959,6 +2952,12 @@ public class SPService implements ISPService
                 .publish();
 
         return user;
+    }
+
+    private boolean externalUserRequireInvitation() {
+        return Identity.convertProperty("lib.authenticator", "local_credential")
+                == Identity.Authenticator.EXTERNAL_CREDENTIAL
+                && getBooleanProperty("ldap.invitation.required_for_signup", false);
     }
 
     /**

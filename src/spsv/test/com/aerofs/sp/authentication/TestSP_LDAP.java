@@ -31,10 +31,13 @@ public class TestSP_LDAP extends AbstractSPTest
 {
     private static InMemoryServer _server;
     private static AtomicInteger _idx = new AtomicInteger(1);
-    LdapConfiguration _cfg = new LdapConfiguration();
+    private LdapConfiguration _cfg = new LdapConfiguration();
+    private final Properties props = new Properties();
 
     @BeforeClass
-    public static void beforeClass() throws Exception { _server = new LdapSchema(false, false); }
+    public static void beforeClass() throws Exception {
+        _server = new LdapSchema(false, false);
+    }
 
     @AfterClass
     public static void tearDown() throws Exception { _server.stop(); }
@@ -42,6 +45,9 @@ public class TestSP_LDAP extends AbstractSPTest
     @Before
     public void updateConfigs()
     {
+        props.put("lib.authenticator", "EXTERNAL_CREDENTIAL");
+        ConfigurationProperties.setProperties(props);
+
         _server.resetConfig(_cfg);
         authenticator = spy(
                 new Authenticator(new IAuthority[] { new LdapAuthority(_cfg, aclNotificationPublisher, auditClient) })
@@ -104,15 +110,17 @@ public class TestSP_LDAP extends AbstractSPTest
 
     // User does not exist in user database or invited to join.
     // Will throw ExNotInvited Exception.
-    @Test(expected = ExNotInvited.class)
+    @Test
     public void testShouldDisallowUserNotInvited() throws Exception
     {
-        Properties props = new Properties();
         props.put("ldap.invitation.required_for_signup", "true");
         ConfigurationProperties.setProperties(props);
 
-        service.credentialSignIn(createTestUser("ldap2@example.com", "ldap1"),
-                ByteString.copyFrom("ldap1".getBytes()));
+        try {
+            service.credentialSignIn(createTestUser("ldap2@example.com", "ldap1"),
+                    ByteString.copyFrom("ldap1".getBytes()));
+            fail();
+        } catch (ExNotInvited e) {}
     }
 
     // User that is in User database should be allow to sign in
@@ -134,7 +142,6 @@ public class TestSP_LDAP extends AbstractSPTest
     @Test
     public void testShouldAllowInvitedUserToSignIn() throws Exception
     {
-        Properties props = new Properties();
         props.put("ldap.invitation.required_for_signup", "true");
         ConfigurationProperties.setProperties(props);
 

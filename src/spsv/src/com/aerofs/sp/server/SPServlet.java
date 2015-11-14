@@ -260,7 +260,6 @@ public class SPServlet extends AeroServlet
                 _factOrg,
                 _factOrgInvite,
                 _factDevice,
-                _certdb,
                 _esdb,
                 _factSharedFolder,
                 _factEmailer,
