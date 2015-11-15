@@ -106,11 +106,13 @@ def login_view(request):
     disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
     external_login_enabled = settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
-    if not openid_enabled and not _has_users(settings) and is_configuration_completed():
+    if not is_configuration_completed():
+        return HTTPFound(location=mng_url)
+
+    if not openid_enabled and not _has_users(settings):
         log.info('no users yet. ask to create the first user')
         return HTTPFound(location=request.route_path('create_first_user'))
-    else:
-        return HTTPFound(location=mng_url)
+
 
     # if openid_enabled is false we don't need to do any of the following. :(
     next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
