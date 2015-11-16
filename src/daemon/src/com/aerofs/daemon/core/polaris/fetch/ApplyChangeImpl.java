@@ -218,15 +218,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         oa = _ds.getOA_(new SOID(sidx, oidChild));
         if (!oa.isExpelled()) {
             IPhysicalFolder pf = _ps.newFolder_(_ds.resolve_(oa));
-            if (migrant != null) {
-                SIndex sidxFrom = locate_(migrant, sidx);
-                if (sidxFrom != null) {
-                    migrate_(sidxFrom, migrant, sidx, oidChild, t);
-                } else {
-                    l.info("unable to locate migrant {} {}", oidChild, migrant);
-                }
-            } else if (oa.isDirOrAnchor()) {
-                pf.create_(APPLY, t);
+            SIndex sidxFrom = migrant != null ? locate_(migrant, sidx) : null;
+            if (sidxFrom != null) {
+                migrate_(sidxFrom, migrant, sidx, oidChild, t);
+            } else {
+                if (migrant != null) l.info("unable to locate migrant {} {}", oidChild, migrant);
+                if (oa.isDirOrAnchor()) pf.create_(APPLY, t);
             }
             if (oa.isAnchor()) {
                 SID sid = SID.anchorOID2storeSID(oa.soid().oid());
