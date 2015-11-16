@@ -18,6 +18,7 @@ public class Main
     private static final String FSCK_PROGRAM_NAME = "fsck";
     private static final String UMDC_PROGRAM_NAME = "umdc";
     private static final String PUMP_PROGRAM_NAME = "pump";
+    private static final String SA_PROGRAM_NAME = "storage_agent";
 
     private final static Logger l = Loggers.getLogger(Main.class);
 
@@ -139,6 +140,7 @@ public class Main
         else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
         else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
         else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.debug.Pump.class;
+        else if (prog.equals(SA_PROGRAM_NAME)) throw new IllegalArgumentException("Cannot launch storage agent.");
         else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // launch the program
