@@ -72,7 +72,7 @@
 
 <div class="page-block">
     <p>
-        Alternatively, you can download the <a onclick="downloadBackupScript(); return false;">backup script</a> to download the backup file at your convenience.
+        Alternatively, you can download this <a onclick="downloadBackupScript(); return false;">backup script</a> to download the backup file at your convenience.
     </p>
 </div>
 
