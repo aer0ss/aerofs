@@ -248,7 +248,7 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public boolean isDiscardingRevForTrans_(Trans t)
     {
-        return _tlUseHistory.get(t);
+        return !_tlUseHistory.get(t);
     }
 
     @Override
@@ -357,7 +357,6 @@ public class LinkedStorage implements IPhysicalStorage
     public void scrub_(SOID soid,  @Nonnull Path historyPath, @Nullable String rev, Trans t)
             throws SQLException, IOException
     {
-        //l.info("scrub {} {}", soid, historyPath);
         SID sid = historyPath.sid();
         String auxRoot = _lrm.auxRoot_(sid);
         String prefix = LinkedPath.makeAuxFileName(soid);
@@ -366,6 +365,7 @@ public class LinkedStorage implements IPhysicalStorage
         String nro = Util.join(auxRoot, AuxFolder.NON_REPRESENTABLE._name, prefix);
         InjectableFile f = _factFile.create(nro);
         if (f.exists()) {
+            l.info("scrub {} {}", soid, historyPath);
             if (f.isDirectory()) {
                 _sa.stageDeletion_(nro, historyPath, rev, t);
             } else if (!historyPath.isEmpty()) {
