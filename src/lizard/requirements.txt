@@ -1,12 +1,13 @@
 # When changing this file, update requirements-exact.txt as well:
 # virtualenv env
 # env/bin/pip install -r requirements.txt
-# env/bin/pip freeze > requirements-exact.txt
+# env/bin/pip freeze | sort -f > requirements-exact.txt
 # rm -rf env
 # Our explicit dependencies:
 CherryPy
 Flask
 Flask-Login
+Flask-KVSession
 Flask-SQLAlchemy
 Flask-Scrypt
 Flask-WTF
@@ -15,6 +16,7 @@ WTForms
 analytics-python
 itsdangerous
 oursql
+redis
 requests
 scrypt
 sqlalchemy-migrate

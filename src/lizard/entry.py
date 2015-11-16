@@ -8,12 +8,18 @@ from cherrypy import wsgiserver
 from werkzeug.contrib.fixers import ProxyFix
 from flask import request
 
+import redis
+from flask_kvsession import KVSessionExtension
+from simplekv.memory.redisstore import RedisStore
+
 from lizard import create_app, migrate_database
 
 internal = len(sys.argv) > 1 and sys.argv[1] == "internal"
 port = 5001 if internal else 8588
 
+store = RedisStore(redis.StrictRedis())
 app = create_app(internal)
+KVSessionExtension(store, app)
 
 # Set up logging.
 LOG_FILE = '/var/log/lizard/{}.log'.format("lizard-admin" if internal else "lizard")
@@ -39,7 +45,6 @@ def log_request(resp):
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
-# TODO: make this localhost if not testing
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', port), d)
 server.shutdown_timeout = .1
 

@@ -6,13 +6,14 @@ import json
 import urllib
 import requests
 
-from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, url_for, Response, session
+from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, \
+    url_for, Response, session
 from flask.ext import scrypt, login
 import itsdangerous
 from itsdangerous import TimestampSigner
 import markupsafe
 
-from lizard import analytics_client, db, login_manager, csrf, stripe, filters
+from lizard import analytics_client, db, login_manager, csrf, stripe, filters, login_helper
 from . import appliance, notifications, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
@@ -50,15 +51,12 @@ def login_page():
             flash(u"Email or password is incorrect", 'error')
         else:
             # Successful login.
-            login_success = login.login_user(admin, remember=False)
+            login_success = login_helper.login_user(admin)
             # TODO: handle inactive users more clearly?  not sure what UX to expose in that case.
             if login_success:
-                #flash(u"Login completed for {}:{}".format(form.email.data, form.password.data), 'success')
-
                 analytics_client.track(admin.customer_id, "Logged In", {
                     'email': markupsafe.escape(admin.email)
-                });
-
+                })
             else:
                 flash(u"Login failed for {}: probably marked inactive?".format(admin.email), 'error')
             next_url = request.args.get('next') or url_for(".index")
@@ -76,7 +74,7 @@ def login_page():
 
 @blueprint.route("/logout", methods=["POST"])
 def logout():
-    login.logout_user()
+    login_helper.logout_user_this_session()
     flash(u"You have logged out successfully", 'success')
     return redirect(url_for(".index"))
 
@@ -225,7 +223,7 @@ def signup_completion_page():
             });
 
         # Log user in.
-        login_success = login.login_user(admin, remember=True)
+        login_success = login_helper.login_user(admin)
         if not login_success:
             flash(u"Login failed for {}: probably marked inactive?", "error")
 
@@ -333,7 +331,7 @@ def accept_organization_invite():
         db.session.commit()
 
         # Log user in.
-        login_success = login.login_user(admin, remember=True)
+        login_success = login_helper.login_user(admin)
         if not login_success:
             flash(u"Login failed for {}: probably marked inactive?", 'error')
 
@@ -818,13 +816,16 @@ def complete_password_reset():
         admin = models.Admin.query.filter_by(email=token_email).first_or_404()
         # Reset the password
         admin.set_password(form.password.data)
-        # save to DB
+        # Save to DB
         db.session.add(admin)
         db.session.commit()
-        # log in the user
-        login.login_user(admin, remember=False)
+        # Destroy all other sessions for this user to prevent replay attack.
+        login_helper.logout_user_all_sessions(admin)
+        # Log in for this session.
+        login_helper.login_user(admin)
         flash(u"Password reset successfully.", 'success')
         return redirect(url_for(".dashboard"))
+
     return render_template("complete_password_reset.html", email=token_email, form=form)
 
 @blueprint.route("/contact", methods=["GET", "POST"])
