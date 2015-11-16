@@ -17,6 +17,7 @@ import com.aerofs.lib.configuration.ClientConfigurationLoader.RenderConfigExcept
 import com.aerofs.lib.configuration.ClientConfigurationLoader.SiteConfigException;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.log.LogUtil.Level;
+import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -47,6 +48,8 @@ public class MainUtil
                             : Level.INFO;
 
             LogUtil.setLevel(logLevel);
+            // way too much noise at DEBUG level when connection is closed abruptly
+            LogUtil.setLevel(SslHandler.class, Level.INFO);
             LogUtil.enableFileLogging(rtRoot + "/" + prog + ".log");
 
             final Date start = new Date();
