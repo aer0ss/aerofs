@@ -458,21 +458,38 @@ def clean(args):
 def build_docker_images(args):
     subprocess.check_call(["docker/build-images.sh"], cwd=GIT_ROOT)
 
+def build_docker_sa_images(args):
+    subprocess.check_call(["docker/build-sa-images.sh"], cwd=GIT_ROOT)
+
 def push_docker_images(args):
-    subprocess.check_call(["docker/ship-aerofs/push-images.sh"], cwd=GIT_ROOT)
+    subprocess.check_call(["docker/ship-aerofs/push-images.sh", "aerofs/loader"], cwd=GIT_ROOT)
+
+def push_docker_sa_images(args):
+    subprocess.check_call(["docker/ship-aerofs/push-images.sh", "aerofs/sa-loader"], cwd=GIT_ROOT)
 
 def build_vm(args):
-    subprocess.check_call(["docker/ship-aerofs/build-vm.sh"], cwd=GIT_ROOT)
+    subprocess.check_call(["docker/ship-aerofs/build-vm.sh", "aerofs/loader"], cwd=GIT_ROOT)
+
+def build_sa_vm(args):
+    subprocess.check_call(["docker/ship-aerofs/build-vm.sh", "aerofs/sa-loader"], cwd=GIT_ROOT)
 
 def build_cloud_config(args):
     subprocess.check_call(["docker/ship-aerofs/build-cloud-config.sh"], cwd=GIT_ROOT)
 
 def push_vm(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm' ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm', 'aerofs/loader' ]
+    subprocess.check_call(cmdline, cwd=GIT_ROOT)
+
+def push_sa_vm(args):
+    cmdline = [ BOOTSTRAP_ENTRY, 'push_vm', 'aerofs/sa-loader' ]
     subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def tag_release(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release' ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release', 'aerofs/loader']
+    subprocess.check_call(cmdline, cwd=GIT_ROOT)
+
+def tag_sa_release(args):
+    cmdline = [ BOOTSTRAP_ENTRY, 'tag_release', 'aerofs/sa-loader']
     subprocess.check_call(cmdline, cwd=GIT_ROOT)
 
 def _markdown(watch):
@@ -576,22 +593,29 @@ def build_sa(args):
     print colored("Client built.", Colors.GREEN)
 
 
-def compute_next_version(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version' ]
+def compute_next_version(args, loader="loader"):
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', loader ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 
-def write_version(args):
-    version = args.release_version or compute_next_version(args)
+def _write_version(version):
     if not os.path.exists(PACKAGE_DIR):
         os.makedirs(PACKAGE_DIR)
     with open(os.path.join(PACKAGE_DIR, "current.ver"), "w") as f:
         f.write("Version={}".format(version))
         f.flush()
 
-def _package(args, products, should_clean=True):
-    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
+def write_version(args):
     version = args.release_version or compute_next_version(args)
+    _write_version(version)
+
+def write_sa_version(args):
+    version = args.release_version or compute_next_version(args, "sa-loader")
+    _write_version(version)
+
+def _package(args, products, should_clean=True, loader="loader"):
+    signed_arg = "SIGNED" if args.signed else "UNSIGNED"
+    version = args.release_version or compute_next_version(args, loader)
     # clean packaging dir
     if os.path.exists(PACKAGE_DIR) and should_clean:
         for package in os.listdir(PACKAGE_DIR):
@@ -617,7 +641,7 @@ def package_sa(args):
     products = [ args.product ] if args.product else [ "STORAGE_AGENT" ]
     assert "STORAGE_AGENT" in products and len(products) == 1, "Looks like you are trying to package desktop-client/TS. Please use package_clients."
     should_clean = "package_clients" not in args.commands or (args.commands.index("package_clients") > args.commands.index("package_sa"))
-    _package(args, products, should_clean)
+    _package(args, products, should_clean, "sa-loader")
 
 def _syncdet(args, case=None, scenario=None, extra_args=None):
     # extract args
@@ -680,11 +704,16 @@ commands = {
     "build_sa": build_sa,
     "build_protoc_plugins": build_protoc_plugins,
     "build_docker_images": build_docker_images,
+    "build_docker_sa_images": build_docker_sa_images,
     "build_vm": build_vm,
+    "build_sa_vm": build_sa_vm,
     "build_cloud_config": build_cloud_config,
     "push_docker_images": push_docker_images,
+    "push_docker_sa_images": push_docker_sa_images,
     "push_vm": push_vm,
+    "push_sa_vm": push_sa_vm,
     "tag_release": tag_release,
+    "tag_sa_release": tag_sa_release,
     "clean": clean,
     "markdown": markdown,
     "markdown_watch": markdown_watch,
@@ -700,6 +729,7 @@ commands = {
     "test_system": test_system,
     "test_system_archive": test_system_archive,
     "write_version": write_version,
+    "write_sa_version": write_sa_version,
 }
 
 def reconstitute_command_line(executable, args, incomplete_commands):

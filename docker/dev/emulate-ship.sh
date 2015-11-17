@@ -3,7 +3,7 @@ set -e
 
 THIS_DIR="$(dirname $0)"
 
-SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh")"
+SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh" aerofs/loader)"
 
 abspath() {
     (cd "$1" && pwd)

@@ -6,11 +6,17 @@ set -e -u
 
 include common
 
-VERSION=$(docker run --rm aerofs/loader tag)
+VERSION=$(docker run --rm $1 tag)
+
+if [ "$1" == "aerofs/loader" ]; then
+    APPLIANCE="aerofs-appliance"
+else
+    APPLIANCE="aerofs-sa-appliance"
+fi
 
 upload_artifact() {
     local EXT=$1
-    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/aerofs-appliance-${VERSION}.${EXT}"
+    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/${APPLIANCE}-${VERSION}.${EXT}"
     test -r "${FILE}" || {
         echo "${FILE} does not exist." >&2
         exit $ERRBADARGS
@@ -23,7 +29,7 @@ notify_slack() {
 
     for room in "#success"
     do
-        echo "Release notification: Appliance VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
+        echo "Release notification: ${APPLIANCE} VM ${VERSION} pushed to S3 (by $(whoami)). This version is not yet available to the public." |
             $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
                 -r "$room" \
                 -c good \

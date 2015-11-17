@@ -5,7 +5,7 @@ target: maintenance
 hostname: aerofs
 swap-size: 4096
 
-vm-image-name: aerofs-appliance-{{ tag }}
-vm-disk-size: 51200
-vm-ram-size: 4096
+vm-image-name: {{ appliance }}-{{ tag }}
+vm-disk-size: {{ disk-size }}
+vm-ram-size: {{ ram-size }}
 vm-cpus: 2

@@ -12,7 +12,7 @@ set -e -u
 #  ...
 # }
 
-TAGS="$(curl -sS https://registry.aerofs.com/v1/repositories/aerofs/loader/tags | jq .)"
+TAGS="$(curl -sS https://registry.aerofs.com/v1/repositories/aerofs/$1/tags | jq .)"
 [[ -n "${TAGS}" ]] || {
     echo "ERROR: couldn't get loader tag list"
     exit 11
@@ -22,7 +22,7 @@ LATEST_ID=$(echo "${TAGS}" | jq -r .latest)
 CUR_VER_LINE="$(echo "${TAGS}" | grep "${LATEST_ID}" | grep -v latest)"
 CUR_VER=$(echo "{${CUR_VER_LINE}}" | tr ',' ' ' | jq -r keys[])
 [[ -n "${CUR_VER}" ]] || {
-    echo "ERROR: couldn't get current version. Please check aerofs/loader tags at registry.aerofs.com:"
+    echo "ERROR: couldn't get current version. Please check aerofs/$1 tags at registry.aerofs.com:"
     echo "${TAGS}"
     exit 22
 }

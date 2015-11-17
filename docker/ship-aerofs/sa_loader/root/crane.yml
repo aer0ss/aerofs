@@ -1,0 +1,28 @@
+containers:
+  loader:
+    image: aerofs/sa-loader
+
+  storage-agent-setup:
+    image: aerofs/storage-agent-setup
+    run:
+      detach: true
+      volume:
+        - /aerofs:/aerofs
+      link:
+        - loader:loader.service
+
+  storage-agent:
+    image: aerofs/storage-agent
+    run:
+      detach: true
+      volume:
+        - /aerofs:/aerofs
+      link:
+        - loader:loader.service
+
+groups:
+  default:
+    - storage-agent
+  maintenance:
+    - storage-agent-setup
+
