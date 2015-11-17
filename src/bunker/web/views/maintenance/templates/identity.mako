@@ -561,7 +561,8 @@
             %endif
 
             ## Listen to any changes to LDAP options.
-            $('.form-control').change(function () {
+            ## LDAP options start with 'ldap_' per identity_view.py
+            $('input[name^="ldap_"]').change(function () {
                 ldapOptionChanged = true;
             })
 
