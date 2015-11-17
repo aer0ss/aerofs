@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
+import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -43,11 +44,12 @@ public class PolarisCausality implements Causality {
     private final ContentChangesDatabase _ccdb;
     private final RemoteContentDatabase _rcdb;
     private final PolarisContentVersionControl _cvc;
+    private final ActivityLog _al;
 
     @Inject
     public PolarisCausality(DirectoryService ds, IPhysicalStorage ps, CentralVersionDatabase cvdb,
                             ContentChangesDatabase ccdb, RemoteContentDatabase rcdb,
-                            PolarisContentVersionControl cvc)
+                            PolarisContentVersionControl cvc, ActivityLog al)
     {
         _ds = ds;
         _ps = ps;
@@ -55,6 +57,7 @@ public class PolarisCausality implements Causality {
         _ccdb = ccdb;
         _rcdb = rcdb;
         _cvc = cvc;
+        _al = al;
     }
 
     /**
@@ -124,6 +127,8 @@ public class PolarisCausality implements Causality {
         if (!_rcdb.hasRemoteChange_(k.sidx(), k.oid(), rcv)) {
             // add "remote" content entry for latest version (in case of expulsion)
             _rcdb.insert_(k.sidx(), k.oid(), rcv, new DID(UniqueID.ZERO), res._hash, content.length, t);
+        } else {
+            _al.updated_(k.soid(), _rcdb.getOriginator_(k.soid()), t);
         }
 
         // following is daemon-only

@@ -1,8 +1,10 @@
 package com.aerofs.daemon.core.activity;
 
+import com.aerofs.daemon.core.IVersionUpdater;
+import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.polaris.fetch.ChangeFetcher;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
@@ -14,6 +16,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
@@ -21,6 +25,7 @@ import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -56,7 +61,8 @@ import static com.google.common.base.Preconditions.checkState;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog implements IDirectoryServiceListener, IVersionControlListener
+public class ActivityLog implements IDirectoryServiceListener, IVersionControlListener,
+        IVersionUpdater.IListener, ChangeFetcher.Listener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry
@@ -93,14 +99,23 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
                 }
             };
 
-    private IActivityLogDatabase _aldb;
+    private final CfgLocalDID _localDID;
+    private final IActivityLogDatabase _aldb;
 
     @Inject
-    public ActivityLog(DirectoryService ds, NativeVersionControl nvc, IActivityLogDatabase aldb)
+    public ActivityLog(DirectoryService ds, IActivityLogDatabase aldb, CfgLocalDID localDID,
+                       CfgUsePolaris usePolaris, Injector inj)
     {
         ds.addListener_(this);
-        nvc.addListener_(this);
         _aldb = aldb;
+        _localDID = localDID;
+
+        if (usePolaris.get()) {
+            inj.getInstance(IVersionUpdater.class).addListener_(this);
+            inj.getInstance(ChangeFetcher.class).addListener_(this);
+        } else {
+            inj.getInstance(NativeVersionControl.class).addListener_(this);
+        }
     }
 
     public static boolean isOutbound(ActivityRow ar)
@@ -173,7 +188,9 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
     @Override
     public void objectDeleted_(SOID soid, OID parent, Path path, Trans t) throws SQLException
     {
-        setEntryFields_(soid, DELETION_VALUE, path, t);
+        ActivityEntry en = setEntryFields_(soid, DELETION_VALUE, path, t);
+        en._type &= ~MOVEMENT_VALUE;
+        en._pathTo = null;
     }
 
     @Override
@@ -214,6 +231,17 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
     {
         ActivityEntry en = getEntry_(sockid.soid(), t);
         en._dids.addAll(vLocalAdded.getAll_().keySet());
+    }
+
+    @Override
+    public void updated_(SOCKID k, Trans t) {
+        updated_(k.soid(), _localDID.get(), t);
+    }
+
+    @Override
+    public void updated_(SOID soid, DID did, Trans t) {
+        ActivityEntry en = getEntry_(soid, t);
+        en._dids.add(did);
     }
 
     private void committing_(Map<SOID, ActivityEntry> map, Trans t) throws SQLException

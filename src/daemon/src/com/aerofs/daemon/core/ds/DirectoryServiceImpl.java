@@ -380,7 +380,7 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
     public void setOAParentAndName_(@Nonnull OA oa, @Nonnull OA oaParent, String name, Trans t)
         throws SQLException, ExAlreadyExist, ExNotDir
     {
-        if (l.isDebugEnabled()) l.debug(oa.soid() + ": move to " + oaParent.soid() + "/" + name);
+        l.debug("{}: move to {}/{}", oa.soid(), oaParent.soid(), name);
 
         // thou shalt not move ROOT or TRASH folders
         checkArgument(!oa.soid().oid().isRoot());

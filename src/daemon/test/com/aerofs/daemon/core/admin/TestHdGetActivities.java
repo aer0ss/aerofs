@@ -32,6 +32,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.SIndex;
@@ -45,6 +46,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.inject.Injector;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +63,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyCollectionOf;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestHdGetActivities extends AbstractTest
@@ -130,7 +133,11 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(CREATION_VALUE, mkpath("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);
 
-        al = new ActivityLog(ds, nvc, aldb);
+        Injector inj = mock(Injector.class);
+        when(inj.getInstance(NativeVersionControl.class)).thenReturn(nvc);
+        CfgUsePolaris usePolaris = mock(CfgUsePolaris.class);
+        when(usePolaris.get()).thenReturn(false);
+        al = new ActivityLog(ds, aldb, cfgLocalDID, usePolaris, inj);
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u,
                 udndb, factSP, new ElapsedTimer.Factory());
 

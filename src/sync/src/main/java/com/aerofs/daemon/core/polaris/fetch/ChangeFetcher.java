@@ -19,14 +19,19 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.*;
 import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Fetch changes from Polaris.
@@ -50,6 +55,12 @@ public class ChangeFetcher
 
     private final PauseSync _pauseSync;
 
+    private final List<Listener> _listeners = new ArrayList<>();
+
+    public interface Listener {
+        void updated_(SOID soid, DID did, Trans t);
+    }
+
     @Inject
     public ChangeFetcher(PolarisClient client, PauseSync pauseSync, ChangeEpochDatabase cedb,
             ApplyChange at, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, TransManager tm)
@@ -61,6 +72,10 @@ public class ChangeFetcher
         _tm = tm;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
+    }
+
+    public void addListener_(Listener l) {
+        _listeners.add(l);
     }
 
     public void fetch_(SIndex sidx, AsyncTaskCallback cb) throws Exception
@@ -141,6 +156,14 @@ public class ChangeFetcher
                 rc.oid = OID.ROOT;
             }
             try (Trans t = _tm.begin_()) {
+                DID did = new DID(rc.originator);
+                _listeners.forEach(l -> {
+                    if (rc.child == null) {
+                        l.updated_(new SOID(sidx, new OID(rc.oid)), did, t);
+                    } else {
+                        l.updated_(new SOID(sidx, new OID(rc.child)), did, t);
+                    }
+                });
                 _at.apply_(sidx, rc, c.maxTransformCount, t);
                 _cedb.setChangeEpoch_(sidx, rc.logicalTimestamp, t);
                 t.commit_();
