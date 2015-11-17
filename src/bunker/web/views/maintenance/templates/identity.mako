@@ -329,7 +329,7 @@
     <hr>
 
     <h3>Groups</h3>
-    <% groups_enabled = conf['ldap.groupsyncing.enabled'] %>
+    <% groups_enabled = str2bool(conf['ldap.groupsyncing.enabled']) %>
     <div class="row">
         <div class="col-sm-12">
             <div class="checkbox">
