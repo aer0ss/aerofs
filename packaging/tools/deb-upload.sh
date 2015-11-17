@@ -66,7 +66,7 @@ function notify_team() {
     echo "Done. Sending slack notification."
     cat mail.txt |
         $(git rev-parse --show-cdup)puppetmaster/modules/slack/files/slack_message \
-            -r "$room" \
+            -r "#success" \
             -c good \
             -u $SLACK_WEBHOOK \
             -f "Build" > /dev/null
