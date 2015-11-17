@@ -520,8 +520,9 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             while (it.next_()) {
                 MetaChange c = it.get_();
                 boolean from = cache.isInSharedTree(c.oid);
-                boolean to = c.newParent != null && _ds.resolve_(new SOID(sidx, c.newParent))
-                        .soids.contains(new SOID(sidx, oid));
+                boolean to = c.newParent != null
+                        && _ds.resolve_(_a2t.dereferenceAliasedOID_(new SOID(sidx, c.newParent)))
+                                .soids.contains(new SOID(sidx, oid));
                 if (from) {
                     l.info("discard change in migrated subtree {}{}", sidx, c.oid);
                     // changes would be rejected by polaris as the migrated tree is locked to avoid
