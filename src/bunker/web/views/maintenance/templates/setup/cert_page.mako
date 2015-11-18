@@ -66,14 +66,11 @@
             disableNavButtons();
 
             var choice = $('input[name="cert.option"]:checked').val();
-            if (choice == 'existing') {
-                gotoNextPage();
-            } else if (choice == 'new') {
-                if (verifyPresence("server-browser-certificate", "Please specify a certificate file.") &&
-                        verifyPresence("server-browser-key", "Please specify a key file.")) {
+            if (choice == 'existing' || (choice == 'new' &&
+                verifyPresence("server-browser-certificate", "Please specify a certificate file.") &&
+                verifyPresence("server-browser-key", "Please specify a key file."))) {
                     doPost("${request.route_path('json_setup_certificate')}",
                         $('form').serialize(), gotoNextPage, enableNavButtons);
-                }
             }
         }
     </script>

@@ -18,7 +18,8 @@ from maintenance_util import write_pem_to_file, \
     get_modulus_of_certificate_file, get_modulus_of_key_file, \
     is_configuration_completed, is_configuration_started, set_configuration_started, is_key_formatted_correctly, \
     get_conf_client, get_conf, is_ipv4_address, is_ipv6_address, \
-    is_hostname_resolvable, is_hostname_xmpp_compatible, save_file_to_path
+    is_hostname_resolvable, is_hostname_xmpp_compatible, save_file_to_path, \
+    certificate_is_self_signed_or_common_name_matches_hostname, unformat_pem
 from pyramid.httpexceptions import HTTPNotFound
 
 log = logging.getLogger(__name__)
@@ -341,6 +342,14 @@ def json_setup_email(request):
     request_method='POST'
 )
 def json_setup_certificate(request):
+    conf = get_conf(request)
+    hostname = conf.get('base.host.unified', '')
+
+    if request.params['cert.option'] == "existing":
+        if not _check_existing_certificate_matches_hostname(conf, hostname):
+            expected_error("The appliance hostname and the common name on your certificate do not match.")
+        return {}
+
     certificate = request.params['server.browser.certificate']
     key = request.params['server.browser.key']
 
@@ -350,6 +359,7 @@ def json_setup_certificate(request):
     try:
         is_certificate_valid = is_certificate_formatted_correctly(certificate_filename)
         is_key_valid = is_key_formatted_correctly(key_filename)
+        does_certificate_match_hostname = certificate_is_self_signed_or_common_name_matches_hostname(certificate_filename, hostname)
 
         if not is_certificate_valid and not is_key_valid:
             expected_error("The certificate and key you provided is invalid.")
@@ -357,6 +367,8 @@ def json_setup_certificate(request):
             expected_error("The certificate you provided is invalid.")
         elif not is_key_valid:
             expected_error("The key you provided is invalid.")
+        elif not does_certificate_match_hostname:
+            expected_error("The appliance hostname and the common name on your certificate do not match.")
 
         # Check that key matches the certificate.
         certificate_modulus = get_modulus_of_certificate_file(certificate_filename)
@@ -375,6 +387,14 @@ def json_setup_certificate(request):
     finally:
         os.unlink(certificate_filename)
         os.unlink(key_filename)
+
+def _check_existing_certificate_matches_hostname(conf, hostname):
+    try:
+        certificate = unformat_pem(conf.get('server.browser.certificate', ""))
+        certificate_filename = write_pem_to_file(certificate)
+        return certificate_is_self_signed_or_common_name_matches_hostname(certificate_filename, hostname)
+    finally:
+        os.unlink(certificate_filename)
 
 
 # ------------------------------------------------------------------------
