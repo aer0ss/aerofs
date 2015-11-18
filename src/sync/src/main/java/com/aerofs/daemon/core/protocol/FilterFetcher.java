@@ -7,6 +7,7 @@ import com.aerofs.base.ex.Exceptions;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.collector.Collector2;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.RPC.ExLinkDown;
@@ -31,6 +32,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.proto.Core.*;
 import com.aerofs.proto.Core.PBCore.Type;
+import com.google.common.base.Throwables;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -154,7 +156,16 @@ public class FilterFetcher
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         request.writeDelimitedTo(out);
 
-        DigestedMessage msg = _rpc.issueRequest_(did, request, tk, "gf");
+        DigestedMessage msg;
+        try {
+            msg = _rpc.issueRequest_(did, request, tk, "gf");
+        } catch (ExAborted e) {
+            if (e.getCause() != null) {
+                Throwables.propagateIfInstanceOf(e.getCause(), ExDeviceUnavailable.class);
+                throw Throwables.propagate(e.getCause());
+            }
+            throw e;
+        }
         processResponse_(sidx, msg);
     }
 

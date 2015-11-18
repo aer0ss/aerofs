@@ -62,7 +62,7 @@ public class ExponentialRetry
                     }
                 }
             };
-            l.warn("retry {} in {}: {}", name, itv, suppress(e, excludes));
+            l.warn("retry {} in {}:", name, itv, suppress(e, excludes));
             _sched.schedule(ev, itv.get());
         }
     }
