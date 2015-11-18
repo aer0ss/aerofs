@@ -1,20 +1,28 @@
 describe('Strider Controllers', function () {
 
-    beforeEach(module('ngSanitize'));
-    beforeEach(module('striderControllers'));
+    var sharedPropertiesMock = {
+        usersView: true,
+        userCount: 0,
+        inviteesCount: 0
+    }
 
+    beforeEach(module('ngSanitize'));
+    beforeEach(module(function ($provide) {
+        $provide.value('sharedProperties', sharedPropertiesMock);
+    }));
+    beforeEach(module('striderControllers'));
 
     describe('UsersController', function () {
 
-        var $controller,
-            $httpBackend,
-            createController,
-            listUsersData;
+        var $httpBackend,
+            listUsersData,
+            sharedProperties;
 
         beforeEach(inject(function ($injector) {
             $rootScope = $injector.get('$rootScope');
             $controller = $injector.get('$controller');
             $httpBackend = $injector.get('$httpBackend');
+            sharedProperties = $injector.get('sharedProperties')
 
             modalObject = {
                 result: {then: jasmine.createSpy('modalObject.result.then')}
@@ -26,7 +34,8 @@ describe('Strider Controllers', function () {
                 controller = $controller('UsersController', {
                     $scope: $rootScope,
                     $rootscope: $rootScope,
-                    $modal: modal
+                    $modal: modal,
+                    sharedProperties: sharedProperties
                 });
                 $httpBackend.flush();
                 return controller
@@ -72,8 +81,8 @@ describe('Strider Controllers', function () {
                 expect($rootScope.initialLoad.total).toBe(listUsersData.total);
             });
 
-            it('should update user count message', function () {
-                expect($rootScope.userCountMessage).toBe('User count: ' + listUsersData.total);
+            it('should update user count', function () {
+                expect($rootScope.sharedProperties.userCount).toBe(listUsersData.total);
             });
 
         });
@@ -86,7 +95,8 @@ describe('Strider Controllers', function () {
                 expect($rootScope.users.length).toBe(1);
                 expect($rootScope.paginationInfo.total).toBe(1);
                 expect($rootScope.substring).toBe('foo');
-                expect($rootScope.userCountMessage).toBe('User count: 1')
+                expect($rootScope.sharedProperties.userCount).toBe(3);
+                expect($rootScope.searchResultCount).toBe(1);
             });
 
         });
@@ -103,7 +113,7 @@ describe('Strider Controllers', function () {
                 expect($rootScope.paginationInfo.total).toBe($rootScope.initialLoad.total);
                 expect($rootScope.substring).toBe('');
                 expect($rootScope.paginationInfo.offset).toBe(0);
-                expect($rootScope.userCountMessage).toBe('User count: ' + $rootScope.initialLoad.total);
+                expect($rootScope.sharedProperties.userCount).toBe($rootScope.initialLoad.total);
             });
 
             it('should update internal scope values from request if no cache', function () {
@@ -119,7 +129,7 @@ describe('Strider Controllers', function () {
                 expect($rootScope.paginationInfo.total).toBe($rootScope.initialLoad.total);
                 expect($rootScope.substring).toBe('');
                 expect($rootScope.paginationInfo.offset).toBe(0);
-                expect($rootScope.userCountMessage).toBe('User count: ' + $rootScope.initialLoad.total);
+                expect($rootScope.sharedProperties.userCount).toBe($rootScope.initialLoad.total);
             });
         });
 

@@ -34,7 +34,7 @@ describe('Typeahead', function () {
                     ng-model="user"\
                     async-attr="data"\
                     async-data="{{userDataURL}}"\
-                    placeholder="&#128270; Name"\
+                    placeholder="Search Name"\
                     title="Search users"\
                     parent-update="updateUsers(users, total, substring)"\
                     on-clear="restore()"\

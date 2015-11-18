@@ -1,3 +1,11 @@
+<style>
+    .row.org-user .resend {
+        border-right: 1px solid gray;
+        border-radius: 0;
+        padding-right: 12px;
+    }
+</style>
+
 <div class="col-sm-12">
     <div class="row org-user" style="padding-bottom: 10px;">
         <div class="col-sm-8">
@@ -6,6 +14,9 @@
         <div class="col-sm-4">
             <a class="btn btn-plain pull-right actions" ng-click="uninvite(invitee)">
                 Uninvite
+            </a>
+            <a class="btn btn-plain pull-right actions resend" ng-click="reinvite(invitee.email)">
+                Resend
             </a>
         </div>
     </div>

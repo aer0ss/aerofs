@@ -35,6 +35,7 @@ public final class SPSchema
             C_OI_INVITEE                    = "m_to",
             C_OI_ORG_ID                     = "m_org_id",
             C_OI_SIGNUP_CODE                = "m_signup_code",
+            C_OI_TIMESTAMP                  = "m_ts",
 
             T_DEVICE                        = "sp_device",
             C_DEVICE_ID                     = "d_id",

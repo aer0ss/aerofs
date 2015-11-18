@@ -1,13 +1,20 @@
 var striderControllers = angular.module('striderControllers',['ngSanitize']);
 
-striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http',
-    function($scope, $rootScope, $log, $modal, $http){
+striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log', '$modal', '$http', 'sharedProperties',
+    function($scope, $rootScope, $log, $modal, $http, sharedProperties){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
         $scope.userFoldersURL = userFoldersURL;
         $scope.userDevicesURL = userDevicesURL;
         $scope.userDataURL = userDataURL;
         $scope.isAdmin = isAdmin;
+        $scope.searchResultCount = 0;
+        $scope.sharedProperties = sharedProperties;
+
+        $scope.toggleUsersView = function () {
+            $scope.sharedProperties.usersView = !$scope.sharedProperties.usersView
+        }
+
         var getUsersData = function(message) {
             $log.info(message);
             var params = {
@@ -28,7 +35,7 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 $rootScope.me = response.me;
 
                 setCache();
-                updateUserCountMessage();
+                updateUserCount();
             }).error(function(response) {
                 $log.warn(response);
             });
@@ -64,8 +71,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
             $scope.users = $scope.initialLoad.users;
         };
 
-        var updateUserCountMessage = function() {
-            $scope.userCountMessage = 'User count: ' + $scope.paginationInfo.total;
+        var updateUserCount = function() {
+            $scope.sharedProperties.userCount = $scope.paginationInfo.total;
         };
 
         getUsersData('Retrieving initial data');
@@ -75,12 +82,13 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
             $scope.substring = substring;
             $scope.paginationInfo.total = total;
             $scope.paginationInfo.offset = 0;
-            updateUserCountMessage();
+            $scope.searchResultCount = total;
         };
 
         $scope.restore = function() {
             $scope.substring = '';
             $scope.paginationInfo.offset = 0;
+            $scope.searchResultCount = 0;
 
             if ($scope.initialLoad.users && $scope.initialLoad.users.length){
                 populateFromCache();
@@ -88,9 +96,8 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
                 getUsersData('Retrieving new page data on clear.');
             }
 
-            updateUserCountMessage();
+            updateUserCount();
         };
-
         $scope.toggleAdmin = function(user) {
             user.is_admin = !user.is_admin;
             $http.post(setAuthURL, {
@@ -204,28 +211,52 @@ striderControllers.controller('UsersController', ['$scope', '$rootScope', '$log'
         };
     }]);
 
-striderControllers.controller('InviteesController', ['$scope', '$log', '$http',
-    function($scope, $log, $http){
+striderControllers.controller('InviteesController', ['$scope', '$log', '$http', '$modal', 'sharedProperties',
+    function($scope, $log, $http, $modal, sharedProperties){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
         $scope.newInvitee = '';
+        $scope.sharedProperties = sharedProperties;
+        $scope.toggleUsersView = function () {
+            $scope.sharedProperties.usersView = !$scope.sharedProperties.usersView
+        };
 
+        //POPULATE INITIAL INVITEES
         $http.get(inviteeDataURL).success(function(response){
             $scope.invitees = response.invitees;
+            updateInviteeCount();
         }).error(function(response){
             $log.warn(response);
         });
 
+        var updateInviteeCount = function() {
+            $scope.sharedProperties.inviteesCount = $scope.invitees.length;
+        };
+
+        //An email is passed in from the re-invite CTA.
+        //newInvitee is updated through the form.
+        //If a user types into the form  an email that is already in the invite
+        //list, it should be handled as a re-invite.
+        //Make sure the user wants to actually resend the invite
+
         $scope.invite = function() {
-            $http.post(inviteURL, {
-                'user': $scope.newInvitee
-            }).success(function(response){
-                $log.info('Invitation has been sent.');
-                $scope.invitees.push({
-                    email: $scope.newInvitee
+            var inviteesSoFar = $scope.invitees.map(function (i) { return i.email });
+
+            if (inviteesSoFar.indexOf($scope.newInvitee) < 0 ) {
+                $http.post(inviteURL, {
+                    'user': $scope.newInvitee
+                }).success(function(response){
+                    $log.info('Invitation has been sent.');
+                    $scope.invitees.push({email: $scope.newInvitee});
+                    updateInviteeCount();
+                    showSuccessMessage('Successfully invited ' + $scope.newInvitee + '.');
+                    $scope.newInvitee = '';
+                }).error(showErrorMessageWith);
+            } else {
+                $scope.reinvite($scope.newInvitee, function () {
+                    $scope.newInvitee = '';
                 });
-                $scope.newInvitee = '';
-            }).error(showErrorMessageWith);
+            }
         };
 
         $scope.uninvite = function(invitee) {
@@ -239,6 +270,40 @@ striderControllers.controller('InviteesController', ['$scope', '$log', '$http',
                         break;
                     }
                 }
+                updateInviteeCount();
+                showSuccessMessage('Invitation to ' + invitee.email + ' has been revoked.');
             }).error(showErrorMessageWith);
+        };
+
+        $scope.reinvite = function(invitee, cb) {
+            var reinviteModalCtrl = function ($scope, $modalInstance, invitee) {
+                $scope.invitee = invitee;
+                $scope.cancel = function () {
+                    $modalInstance.close();
+                };
+
+                $scope.resend = function () {
+                   $http.post(inviteURL, {
+                       'user': $scope.invitee
+                   }).success(function(response) {
+                       showSuccessMessage('Successfully re-invited ' + $scope.invitee + '.');
+                       $modalInstance.close();
+                       if (cb) { cb(); }
+                   }).error(function(data,status){
+                       showErrorMessageWith(data, status);
+                       $modalInstance.close();
+                       if (cb) { cb(); }
+                   });
+                };
+            };
+            var modalInstance = $modal.open({
+                templateUrl: '/static/strider/partials/reinvite-user-modal.html',
+                controller: reinviteModalCtrl,
+                resolve: {
+                    invitee: function() {
+                        return invitee;
+                    }
+                }
+            });
         };
     }]);

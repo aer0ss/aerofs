@@ -9,37 +9,81 @@
 
 <%block name="css">
     <link rel="stylesheet" href="${request.static_path('web:static/css/compiled/my-table.min.css')}"/>
+    <style>
+        .user-search {
+          margin-bottom: 0;
+        }
+        .result-count {
+          color: gray;
+          font-size: 12px;
+          margin-top: 5px;
+          margin-left: -15px;
+        }
+        .user-count-header {
+          margin-top: 0;
+          margin-bottom: 10px;
+        }
+        .user-count-header .total {
+          color: gray;
+        }
+        #invite_form {
+          padding: 0;
+        }
+        #invite_user_email {
+          background-color: #fff !important;
+          border: none;
+          border-color: transparent;
+          border-bottom: 1px dotted #ddd;
+          box-shadow: none;
+          border-radius: 0;
+          -webkit-box-shadow: none;
+          -webkit-border-radius: 0;
+          padding-left: 0px;
+        }
+    </style>
 </%block>
 
 <div xmlns:ng="http://angularjs.org" id="ngApp" ng-app="striderApp">
     <div class="row">
         <div class="col-sm-12">
-            <div ng-controller="UsersController">
-                <h2>Users in my organization</h2>
-                <div class="my-search">
-                    <form role="form" class="form-horizontal" name="form">
-                        <div class="form-group">
-                            <div class="row">
-                                <div class="col-xs-4 pull-right">
-                                    <div id="org-users-search"
-                                        aero-list-typeahead
-                                        label=""
-                                        ng-model="user"
-                                        async-attr="data"
-                                        async-data="{{userDataURL}}"
-                                        placeholder="&#128270; Name"
-                                        title="Search users"
-                                        parent-update="updateUsers(matches, total, substring)"
-                                        on-clear="restore()"
-                                    ></div>
-                              </div>
+            <div ng-controller="UsersController" ng-show="sharedProperties.usersView" ng-cloak>
+                <div class="row">
+                    <h2 class="col-sm-8">Users in my organization</h2>
+                    <div class="my-search col-sm-4 pull-right">
+                        <form role="form" class="form-horizontal" name="form">
+                            <div class="form-group user-search">
+                                <div id="org-users-search"
+                                    aero-list-typeahead
+                                    label=""
+                                    ng-model="user"
+                                    async-attr="data"
+                                    async-data="{{userDataURL}}"
+                                    placeholder="Search Users"
+                                    title="Search users"
+                                    parent-update="updateUsers(matches, total, substring)"
+                                    on-clear="restore()"
+                                ></div>
                             </div>
+                        </form>
+                        <div class="result-count" ng-show="searchResultCount > 0">
+                            {{ searchResultCount }} user{{ searchResultCount != 1 ? 's': ''}} found
                         </div>
-                    </form>
+                    </div>
                 </div>
-
-
-                <p><div ng-bind="userCountMessage"></div></p>
+                <div class="row user-count-header">
+                    <div class="col-sm-3 total"> Total: {{ sharedProperties.userCount }} </div>
+                    %if is_admin(request):
+                    <div class="clearfix"></div>
+                    <div class="col-sm-3 pending-invitees-link">
+                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount > 0">
+                            Pending Invites ( {{ sharedProperties.inviteesCount }} )
+                        </a>
+                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount == 0">
+                            No Pending Invites
+                        </a>
+                    </div>
+                    %endif
+                </div>
                 <div class="my-table">
                     <div class="my-table-head row">
                         <div class="col-sm-4 hidden-xs">Name</div>
@@ -61,21 +105,40 @@
                     callback="paginationInfo.callback(offset, substring)">
                 </div>
             </div>
-            <br>
+
         %if is_admin(request):
-            <h3>Invite people to organization</h3>
-            <br>
-            <div ng-controller="InviteesController">
-                <form class="form-inline" id="invite_form" method="post" ng-submit="invite()">
-                    <input type="text" class="form-control" id="invite_user_email" placeHolder="Email address" ng-model="newInvitee"/>
-                    <input id='invite_button' class="btn btn-primary" type="submit" value="Send invite"/>
-                </form>
-                <br>
-                <div class="my-table" ng-show="invitees.length > 0">
+            <div ng-controller="InviteesController" ng-hide="sharedProperties.usersView" ng-cloak>
+                <div class="row">
+                    <h2 class="col-sm-6">Pending Invites</h2>
+                </div>
+                <div class="row user-count-header">
+                    <div class="col-sm-3 total"> Total: {{ sharedProperties.inviteesCount }} </div>
+                    <div class="clearfix"></div>
+                    <div class="col-sm-3 users-link">
+                        <a href="" ng-click="toggleUsersView()">
+                            Users ( {{ sharedProperties.userCount }} )
+                        </a>
+                    </div>
+                </div>
+                <div class="my-table">
                     <div class="my-table-head row">
-                        <div class="col-sm-8 hidden-xs">Invitees</div>
+                        <div class="col-sm-8 hidden-xs">Email</div>
                     </div>
                     <div class="my-table-body">
+                        <div class="my-row row">
+                            <div class="col-sm-12">
+                                <div class="row org-user" style="padding-bottom: 10px;">
+                                    <form class="form" id="invite_form" method="post" ng-submit="invite()">
+                                        <div class="col-sm-8">
+                                            <input id="invite_user_email" class="form-control" type="text" placeHolder="Enter email address" ng-model="newInvitee"/>
+                                        </div>
+                                        <div class="col-sm-4 pull-right">
+                                            <input id='invite_button' class="btn btn-primary pull-right" type="submit" value="Send invite"/>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         <div ng-repeat="invitee in invitees" class="my-row row">
                             <div aero-invitee-row></div>
                         </div>
@@ -95,7 +158,6 @@
         %else:
             isAdmin = false;
         %endif
-
         adminLevel = ${admin_level};
         userLevel = ${user_level};
         paginationLimit = parseInt("${pagination_limit}", 10);

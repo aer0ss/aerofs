@@ -2294,13 +2294,17 @@ public class SPService implements ISPService
      */
     InvitationEmailer inviteToOrganization(User inviter, User invitee, Organization org,
             @Nullable String signUpCode)
-            throws ExAlreadyExist, SQLException, ExNotFound, ExAlreadyInvited, IOException
+            throws ExAlreadyExist, SQLException, ExNotFound, IOException
     {
         OrganizationInvitation invite = _factOrgInvite.create(invitee, org);
 
-        if (invite.exists()) throw new ExAlreadyInvited();
+        if (invite.exists()) {
+            _factOrgInvite.update(inviter, invitee, org);
+        } else {
+            _factOrgInvite.save(inviter, invitee, org, signUpCode);
+        }
 
-        _factOrgInvite.save(inviter, invitee, org, signUpCode);
+
         _auditClient.event(AuditTopic.USER, "user.org.invite")
                 .add("inviter", inviter.id())
                 .add("invitee", invitee.id())

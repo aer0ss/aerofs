@@ -267,13 +267,12 @@
                 'dataType': 'json',
                 'error': showErrorMessageFromResponse,
                 'success': function (data, textStatus, xhr) {
-                        if (xhr.status == 200) {
-                            showSuccessMessage('Successfully invited ' + emailAddress);
-                            $('#invite-coworker-email').val('');
-                        }
+                    if (xhr.status == 200) {
+                        showSuccessMessage('Successfully invited ' + emailAddress);
+                        $('#invite-coworker-email').val('');
+                    }
                 }
             });
-
             return false;
         });
     </script>

@@ -57,6 +57,13 @@ public class OrganizationInvitation
             return create(invitee, org);
         }
 
+        public void update(@Nonnull User inviter, @Nonnull User invitee,
+                @Nonnull Organization org)
+                throws SQLException
+        {
+            _db.update(inviter.id(), invitee.id(), org.id());
+        }
+
         public @Nullable OrganizationInvitation getBySignUpCodeNullable(String signUpCode)
                 throws SQLException
         {

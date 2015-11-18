@@ -1,6 +1,25 @@
+<style type="text/css">
+    .list-typeahead .glyphicon-search {
+        margin-left: -22px;
+        margin-top: 8px;
+        color: gray;
+    }
+    .list-typeahead input.list-typeahead-input {
+        border: none;
+        border-color: transparent;
+        border-bottom: 1px dotted #ddd;
+        box-shadow: none;
+        border-radius: 0;
+        -webkit-box-shadow: none;
+        -webkit-border-radius: 0;
+        padding-left: 0px;
+    }
+</style>
+
 <label ng-bind="label" style="display: inline;"></label>
-<div class="typeahead" ng-class="{'open': looking && matches.length}" style="display: inline;">
-    <input class="form-control" type="text"
+<div class="typeahead list-typeahead" ng-class="{'open': looking && matches.length}" style="display: inline;">
+    <span class="glyphicon glyphicon-search pull-left"></span>
+    <input class="form-control list-typeahead-input pull-right" type="text"
         placeholder="{{placeholder}}"
         ng-model="selectedEntity.name"
         ng-model-options="{debounce: 6000}"

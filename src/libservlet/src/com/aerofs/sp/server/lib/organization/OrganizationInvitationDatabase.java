@@ -17,21 +17,13 @@ import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.sql.Types;
+import java.sql.*;
 import java.util.List;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_OI_SIGNUP_CODE;
-import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
-import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITER;
-import static com.aerofs.sp.server.lib.SPSchema.C_OI_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.T_OI;
+import static com.aerofs.sp.server.lib.SPSchema.*;
 
 public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 {
@@ -53,6 +45,24 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
             ps.setInt(3, org.getInt());
             if (signUpCode == null) ps.setNull(4, Types.VARCHAR);
             else ps.setString(4, signUpCode);
+
+            ps.executeUpdate();
+        }
+    }
+
+    public void update(UserID inviter, UserID invitee, OrganizationID org)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(DBUtil.updateWhere(
+                T_OI,
+                C_OI_INVITEE + "=? and " + C_OI_ORG_ID + "=?",
+                C_OI_INVITER, C_OI_TIMESTAMP))) {
+
+            java.util.Date today = new java.util.Date();
+            ps.setString(1, inviter.getString());
+            ps.setTimestamp(2, new Timestamp(today.getTime()));
+            ps.setString(3, invitee.getString());
+            ps.setInt(4, org.getInt());
 
             ps.executeUpdate();
         }

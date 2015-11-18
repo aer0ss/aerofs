@@ -9,30 +9,28 @@
 </%block>
 
 <div xmlns:ng="http://angularjs.org" id="ngApp" ng-app="shadowfaxApp">
-    <div ng-controller="SharedFoldersController">
-        <div class="row">
-            <div class="col-sm-12">
-                <h2>${page_heading}</h2>
-                <div class="my-search">
-                    <form role="form" class="form-horizontal" name="form">
-                        <div class="form-group">
-                            <div class="row">
-                                <div class="col-xs-4 pull-right">
-                                    <div id="shared-folders-search"
-                                        aero-list-typeahead
-                                        label=""
-                                        ng-model="folder"
-                                        async-attr="data"
-                                        async-data="{{dataUrl}}"
-                                        placeholder="&#128270; Folder Name"
-                                        title="Search folders"
-                                        parent-update="updateFolders(matches, total, substring)"
-                                        on-clear="restore()"
-                                    ></div>
-                              </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div ng-controller="SharedFoldersController">
+                <div class="row">
+                    <h2 class="col-sm-8">${page_heading}</h2>
+                    <div class="my-search col-sm-4 pull-right">
+                        <form role="form" class="form-horizontal" name="form">
+                            <div class="form-group">
+                                <div id="shared-folders-search"
+                                    aero-list-typeahead
+                                    label=""
+                                    ng-model="folder"
+                                    async-attr="data"
+                                    async-data="{{dataUrl}}"
+                                    placeholder="Search Folders"
+                                    title="Search folders"
+                                    parent-update="updateFolders(matches, total, substring)"
+                                    on-clear="restore()"
+                                ></div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
                 <div class="my-table">
                     <div class="my-table-head row">
@@ -85,29 +83,30 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <br>
-        <div aero-pagination
-            total="paginationInfo.total"
-            offset="paginationInfo.offset"
-            pagelimit="paginationInfo.limit"
-            callback="paginationInfo.callback(offset, substring)"
-            ng-if="paginationInfo.active"></div>
-        <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
-            <div class="col-sm-12">
-                <h2>Left folders</h2>
-                <div class="my-table">
-                    <div class="my-table-head row">
-                    </div>
-                    <div class="my-table-body">
-                        <div ng-repeat="folder in leftFolders" class="my-row row">
-                            <div class="col-xs-9">
-                                {{folder.name}}
+                <br>
+                <div aero-pagination
+                    total="paginationInfo.total"
+                    offset="paginationInfo.offset"
+                    pagelimit="paginationInfo.limit"
+                    callback="paginationInfo.callback(offset, substring)"
+                    ng-if="paginationInfo.active">
+                </div>
+                <div class="row" ng-show="leftFolders.length > 0" ng-cloak>
+                    <div class="col-sm-12">
+                        <h2>Left folders</h2>
+                        <div class="my-table">
+                            <div class="my-table-head row">
                             </div>
-                            <div class="col-xs-3" id="left-folder-{{folder.spinnerID}}">
-                                <span class="folder-spinner pull-left">&nbsp;</span>
-                                <a class="btn btn-default pull-right" ng-click="rejoin(folder)">Rejoin</a>
+                            <div class="my-table-body">
+                                <div ng-repeat="folder in leftFolders" class="my-row row">
+                                    <div class="col-xs-9">
+                                        {{folder.name}}
+                                    </div>
+                                    <div class="col-xs-3" id="left-folder-{{folder.spinnerID}}">
+                                        <span class="folder-spinner pull-left">&nbsp;</span>
+                                        <a class="btn btn-default pull-right" ng-click="rejoin(folder)">Rejoin</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -29,16 +29,13 @@ public class TestSP_InviteToOrganization extends AbstractSPTest
     }
 
     @Test
-    public void shouldThrowIfInvitingSameUserTwice()
+    public void shouldNotThrowIfInvitingSameUserTwice()
             throws Exception
     {
         String invitee = "cool@dude.com";
         service.inviteToOrganization(invitee);
 
-        try {
-            service.inviteToOrganization(invitee);
-            fail();
-        } catch (ExAlreadyInvited e) {}
+        service.inviteToOrganization(invitee);
     }
 
     @Test
