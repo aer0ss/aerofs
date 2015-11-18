@@ -244,14 +244,15 @@ public class LdapGroupSynchronizer
             for (User newMember : usersToAdd) {
                 AffectedUserIDsAndInvitedFolders result = matching.addMember(newMember);
                 affected.addAll(result._affected);
+
+                // N.B. do not .send() the invitation emailer; we do not want to spam users with group invitation
+                // emails when doing an LDAP sync.
                 _invitationHelper.createBatchFolderInvitationAndEmailer(matching,
                         // use unknown team server so in the emails sender appears as "an admin"
-                        _userFact.create(UserID.UNKNOWN_TEAM_SERVER), newMember, result._folders)
-                        .send();
+                        _userFact.create(UserID.UNKNOWN_TEAM_SERVER), newMember, result._folders);
             }
 
             for (User oldMember : usersToRemove) {
-                // TODO (RD) send email
                 affected.addAll(matching.removeMember(oldMember, null));
             }
 
