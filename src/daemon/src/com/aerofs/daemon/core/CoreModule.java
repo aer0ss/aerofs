@@ -136,7 +136,7 @@ public class CoreModule extends AbstractModule
             multibind(binder(), ISchema.class, PolarisSchema.class);
 
             bind(Store.Factory.class).to(DaemonPolarisStore.Factory.class);
-
+            bind(NewUpdates.Impl.class).to(PhoenixNewUpdates.class);
             bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
             // client/SA behavioral differences
             bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);

@@ -7,7 +7,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBNewUpdates;
 import com.google.inject.Inject;
 
-public class LegacyNewUpdates extends NewUpdates.Impl {
+public class LegacyNewUpdates implements NewUpdates.Impl {
     private final AntiEntropy _ae;
 
     @Inject

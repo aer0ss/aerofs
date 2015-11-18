@@ -7,10 +7,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
-import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
@@ -30,22 +27,8 @@ public class NewUpdates implements CoreProtocolReactor.Handler
     private final LocalACL _lacl;
     private final Impl _impl;
 
-    public static class Impl {
-        @Inject private ChangeEpochDatabase _cedb;
-        @Inject private MapSIndex2Store _sidx2s;
-        @Inject private FilterFetcher _ff;
-
-        public void handle_(SIndex sidx, DID did, PBNewUpdates pb) throws Exception {
-            if (!pb.hasChangeEpoch()) throw new ExProtocolError("recv pre-phoenix notif");
-
-            Long epoch = _cedb.getChangeEpoch_(sidx);
-            if (epoch == null || pb.getChangeEpoch() > epoch) {
-                l.debug("{}: {} > {} -> fetch from polaris", sidx, pb.getChangeEpoch(), epoch);
-                _sidx2s.get_(sidx).iface(ChangeFetchScheduler.class).schedule_();
-            }
-
-            _ff.scheduleFetch_(did, sidx);
-        }
+    public interface Impl {
+        void handle_(SIndex sidx, DID did, PBNewUpdates pb) throws Exception;
     }
 
     @Inject
