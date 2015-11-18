@@ -119,7 +119,7 @@ Basic tests that cover major product features. For this test pass, use the same 
 #### Identity Management
 
 - Enter the **Identity** flow from Appliance Management Interface
-- [Configure TLS LDAP](OpenDJ-LDAP-Setup.html)
+- [Configure TLS LDAP](../../engineering/testing/opendj-ldap-setup.html)
     IP, bind DN, certificate info
     (an OpenDS server is probably a-ok)
 - Verify 'Plaintext', 'StartTLS' and 'SSL' options work

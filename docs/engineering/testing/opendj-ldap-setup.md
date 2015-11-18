@@ -21,6 +21,8 @@
   "Common Name" should be something like "users".
 4. Click **OK** to save the entry
 
+TODO: consider automating the above using [docker](https://github.com/mpillar/opendj-docker-example)
+
 ## Obtaining the Server Certificate in PEM Format
 
 This step is required for the appliance to connect to the OpenDJ server over TLS/SSL if the
