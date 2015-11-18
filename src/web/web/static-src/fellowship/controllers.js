@@ -140,6 +140,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 clearTimeout(nowSyncing);
                 $log.info('LDAP group syncing completed');
                 showSuccessMessage("Successfully synced groups with LDAP");
+                getGroupData();
             }).error(function(response, status) {
                 clearTimeout(nowSyncing);
                 $log.warn("failed ldap group syncing, error response with status " + status +
