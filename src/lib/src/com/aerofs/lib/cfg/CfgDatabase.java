@@ -44,6 +44,7 @@ public class CfgDatabase extends ICfgStore
 
     public static final CfgKey LAST_LOG_CLEANING = new CfgKey("last_log_cleaning", 0);
     public static final CfgKey DAEMON_POST_UPDATES = new CfgKey("daemon_post_updates", 0);
+    public static final CfgKey PHOENIX_CONVERSION = new CfgKey("phoenix_conversion", 0);
     public static final CfgKey UI_POST_UPDATES = new CfgKey("ui_post_updates", 0);
     public static final CfgKey LAST_VER = new CfgKey("last_ver", Versions.ZERO);
 

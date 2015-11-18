@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
@@ -22,12 +23,14 @@ import static org.mockito.Mockito.when;
 public class TestDaemonPostUpdateTasks extends AbstractTest
 {
     @Mock CfgDatabase cfgDB;
+    @Mock CfgUsePolaris cfgUsePolaris;
     DaemonPostUpdateTasks dput;
 
     @Before
     public void setUp() {
         Injector inj = Guice.createInjector(binder -> {
             binder.bind(CfgDatabase.class).toInstance(cfgDB);
+            binder.bind(CfgUsePolaris.class).toInstance(cfgUsePolaris);
             binder.bind(IDBCW.class).toInstance(mock(IDBCW.class));
             binder.bind(CfgLocalDID.class).toInstance(mock(CfgLocalDID.class));
             binder.bind(IOSUtil.class).toInstance(mock(IOSUtil.class));
@@ -51,6 +54,15 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
     @Test
     public void shouldInjectTasks() throws Exception
     {
+        when(cfgDB.getInt(CfgDatabase.DAEMON_POST_UPDATES))
+                .thenReturn(DaemonPostUpdateTasks.firstValid());
+        dput.run(true);
+    }
+
+    @Test
+    public void shouldInjectConversionTasks() throws Exception
+    {
+        when(cfgUsePolaris.get()).thenReturn(true);
         when(cfgDB.getInt(CfgDatabase.DAEMON_POST_UPDATES))
                 .thenReturn(DaemonPostUpdateTasks.firstValid());
         dput.run(true);

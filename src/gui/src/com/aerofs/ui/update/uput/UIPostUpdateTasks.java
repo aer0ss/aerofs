@@ -7,8 +7,7 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import static com.aerofs.lib.cfg.CfgDatabase.UI_POST_UPDATES;
 
 /**
- * This class is structurally identical to DaemonPostUpdateTasks.
- * TODO (WW) use the Template Methods pattern.
+ * This class is similar to DaemonPostUpdateTasks.
  */
 public class UIPostUpdateTasks
 {
@@ -20,7 +19,6 @@ public class UIPostUpdateTasks
         _cfgDB = cfgDB;
 
         _tasks = new IUIPostUpdateTask[] {
-
             new UPUTSetDeviceOSFamilyAndName(),
             new UPUTSetContactEmail()
         };

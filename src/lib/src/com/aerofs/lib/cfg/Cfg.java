@@ -417,7 +417,9 @@ public class Cfg
 
     public static boolean hasPendingDPUT()
     {
-        return _db.getInt(DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS;
+        return _db.getInt(DAEMON_POST_UPDATES) < PostUpdate.DAEMON_POST_UPDATE_TASKS
+                || (new CfgUsePolaris().get()
+                        && _db.getInt(PHOENIX_CONVERSION) < PostUpdate.PHOENIX_CONVERSION_TASKS);
     }
 
     //-------------------------------------------------------------------------

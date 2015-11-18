@@ -4,17 +4,18 @@ import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.google.common.collect.ImmutableList;
+import com.aerofs.lib.cfg.CfgKey;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.google.inject.Injector;
 
 import javax.inject.Inject;
 
 import static com.aerofs.lib.cfg.CfgDatabase.DAEMON_POST_UPDATES;
+import static com.aerofs.lib.cfg.CfgDatabase.PHOENIX_CONVERSION;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * This class is structurally identical to UIPostUpdateTasks.
- * TODO (WW) use the Template Methods pattern.
+ * This class is similar to UIPostUpdateTasks.
  *
  * We strive to allow old clients to be able to update to the newest release but to
  * avoid dragging around vast amount of migration code which sometimes stand in the
@@ -26,94 +27,37 @@ import static com.google.common.base.Preconditions.checkState;
 public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
+    private final CfgUsePolaris _usePolaris;
     private final Injector _injector;
 
-    private static class TOO_OLD_TO_UPGRADE implements IDaemonPostUpdateTask {
-        @Override
-        public void run() throws Exception {
-            SystemUtil.ExitCode.TOO_OLD_TO_UPGRADE.exit();
-        }
-    }
+    private final static int UNSUPPORTED = 55;
 
-    @SuppressWarnings("unchecked")
-    private final static ImmutableList<Class<? extends IDaemonPostUpdateTask>> _tasks = ImmutableList.of(
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            TOO_OLD_TO_UPGRADE.class,
-            DPUTFixStoreContributors.class,
-            DPUTAddStoreCollectingContentColumn.class,
-            DPUTUpdateOAFlags.class,
-            DPUTAddPhysicalStagingArea.class,
-            DPUTAddLogicalStagingArea.class,
-            DPUTRemoveBackupTicks.class,
+    private final static Class<?>[] TASKS = {
             DPUTCleanupPrefixes.class,
             DPUTFixOSXFID.class,
             DPUTMigrateStorageConfig.class,
             DPUTAddStoreUsageColumn.class,
             DPUTAddMigrantColumn.class,
             DPUTAddCollectorTables.class
-            // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter value below!
+            // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter!
+    };
 
-            // only uncomment when rolling out Polaris to keep maximum flexibility
-            // during dev and integration tests
-            // DPUTAddPolarisFetchTables.class,
-    );
-
+    // NB: all conversion tasks MUST be idempotent
+    private final static Class<?>[] PHOENIX_TASKS = {
+            DPUTAddPolarisFetchTables.class
+            // new tasks go here - also, update PHOENIX_CONVERSION_TASKS counter!
+    };
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, Injector inj)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CfgUsePolaris usePolaris, Injector inj)
     {
         _cfgDB = cfgDB;
+        _usePolaris = usePolaris;
         _injector = inj;
 
-        // please update this macro whenever new tasks are added
-        checkState(_tasks.size() == PostUpdate.DAEMON_POST_UPDATE_TASKS);
+        // please update counters whenever new tasks are added
+        checkState(UNSUPPORTED + TASKS.length == PostUpdate.DAEMON_POST_UPDATE_TASKS);
+        checkState(PHOENIX_TASKS.length == PostUpdate.PHOENIX_CONVERSION_TASKS);
     }
 
     public void run() throws Exception {
@@ -122,18 +66,37 @@ public class DaemonPostUpdateTasks
 
     static int firstValid()
     {
-        return _tasks.lastIndexOf(TOO_OLD_TO_UPGRADE.class) + 1;
+        return UNSUPPORTED;
     }
 
     void run(boolean dryRun) throws Exception {
         // the zero value is required for oldest client to run all the tasks
         assert DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
 
-        int current = _cfgDB.getInt(DAEMON_POST_UPDATES);
+        run(TASKS, DAEMON_POST_UPDATES, UNSUPPORTED, dryRun);
+
+        // This is kinda awkward
+        // Because of the choice to do a staggered rollout of Phoenix, we cannot (yet) make the
+        // conversion a simple DPUT. Instead, we need to trigger it based on a combination of
+        // config value and db state. However we still want to leverage the DPUT infrastructure
+        // for safe scheduling/retry and giving UI feedback.
+        // Eventually, when the legacy codepath is dropped, this can be folded back into the regular
+        // DPUT sequence. This will require some care to avoid breaking the upgrade sequence...
+        if (_usePolaris.get()) {
+            run(PHOENIX_TASKS, PHOENIX_CONVERSION, 0, dryRun);
+        }
+    }
+
+    private void run(Class<?>[] tasks, CfgKey k, int first, boolean dryRun) throws Exception {
+        int current = _cfgDB.getInt(k);
+
+        if (current < first) {
+            SystemUtil.ExitCode.TOO_OLD_TO_UPGRADE.exit();
+        }
 
         // N.B: no-op if current >= tasks.length
-        for (int i = current; i < _tasks.size(); i++) {
-            IDaemonPostUpdateTask task = _injector.getInstance(_tasks.get(i));
+        for (int i = current - first; i < tasks.length; i++) {
+            IDaemonPostUpdateTask task = (IDaemonPostUpdateTask) _injector.getInstance(TASKS[i]);
             if (task != null) {
                 Loggers.getLogger(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
                 if (!dryRun) task.run();
@@ -141,7 +104,7 @@ public class DaemonPostUpdateTasks
 
             // update db after every task so if later tasks fail earlier ones won't be run again
             // on the next launch
-            _cfgDB.set(DAEMON_POST_UPDATES, i + 1);
+            _cfgDB.set(k, i + 1);
         }
     }
 }

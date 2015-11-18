@@ -142,10 +142,18 @@ public class CoreModule extends AbstractModule
             bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
             bind(IContentDownloads.class).to(Downloads.class);
             bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
+
+            multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
+            multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
         } else {
             bind(Store.Factory.class).to(LegacyStore.Factory.class);
             bind(NewUpdates.Impl.class).to(LegacyNewUpdates.class);
             bind(IContentVersionControl.class).to(LegacyContentVersionControl.class);
+
+            multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsRequest.class);
+            multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsResponse.class);
+            multibind(binder(), CoreProtocolReactor.Handler.class, GetComponentRequest.class);
+            multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
         }
 
         multibind(binder(), HealthCheckService.ScheduledRunnable.class, CoreProgressWatcher.class);
@@ -155,15 +163,9 @@ public class CoreModule extends AbstractModule
         multibind(binder(), ISnapshotableNotificationEmitter.class, PathStatusNotifier.class);
         multibind(binder(), ISnapshotableNotificationEmitter.class, OnlineStatusNotifier.class);
 
-        multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsRequest.class);
-        multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsResponse.class);
-        multibind(binder(), CoreProtocolReactor.Handler.class, GetComponentRequest.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, NewUpdates.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, UpdateSenderFilter.class);
-        multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
         multibind(binder(), CoreProtocolReactor.Handler.class, RPC.class);
-        multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
-        multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
 
         // RunAtLeastOnce tasks can be run in any order so we use a set binder to simplify their
         // instantiation. However we don't want to leak the specific classes outside the package
