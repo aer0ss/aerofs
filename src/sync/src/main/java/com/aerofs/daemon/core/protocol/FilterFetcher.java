@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.RPC.ExLinkDown;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.fetch.ApplyChange;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.Cat;
@@ -54,6 +55,7 @@ public class FilterFetcher
     @Inject private CoreExponentialRetry _cer;
     @Inject private CoreScheduler _sched;
     @Inject private Devices _devices;
+    @Inject private ApplyChange _ac;
 
     private static class Req {
         private final DID did;
@@ -172,19 +174,28 @@ public class FilterFetcher
 
         if (!(_pulleddb.contains_(sidx, from) || pb.getFromBase())) {
             // RACE RACE RACE
-            // if we send a GetVers request and then discard collector filters before
+            // if we send a GetFilter request and then discard collector filters before
             // receiving the response we MUST discard any filter in the response.
             // The only safe way to discard filters is to discard the entire response
             throw new ExRetryLater("race");
         }
 
         Long c = _cedb.getChangeEpoch_(sidx);
-        if (c == null || c < pb.getSenderFilterEpoch()) {
+        if (c == null || c < pb.getSenderFilterEpoch() || _ac.hasBufferedChanges_(sidx)) {
             // RACE RACE RACE
             // if we get a fresh bloom filter before we fetch the corresponding remote content
             // from polaris we run the risk of discarding the filter before we ever have the
             // chance to add the corresponding objects to the collector queue
-            // FIXME: schedule change fetcher
+            //
+            // NB: we also wait for all buffered changes to be applied, otherwise migrated
+            // objects in the buffer might be added to the collector queue after the change
+            // epoch is updated and the collector filters may be discarded too early
+            // Ideally we would only wait for the buffered changes before the filter epoch
+            // but that would require storing the exact transform epoch in the meta buffer
+            // entry. In practice it's highly unlikely that clients would run into a long
+            // enough sequence of buffered updates that fine-grained filter application
+            // becomes important.
+            // TODO: schedule change fetcher?
             throw new ExRetryLater("missing changes");
         }
 

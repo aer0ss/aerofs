@@ -792,6 +792,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
     }
 
+    @Override
+    public boolean hasBufferedChanges_(SIndex sidx) throws SQLException {
+        return _mbdb.getBufferedChange_(sidx, Long.MAX_VALUE) != null;
+    }
+
+    @Override
     public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t)
             throws Exception {
         BufferedChange c;

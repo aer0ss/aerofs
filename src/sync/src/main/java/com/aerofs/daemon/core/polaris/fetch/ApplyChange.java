@@ -69,6 +69,8 @@ public class ApplyChange
         void share_(SOID soid, Trans t) throws Exception;
 
         void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t) throws Exception;
+
+        boolean hasBufferedChanges_(SIndex sidx) throws SQLException;
     }
 
     private final Impl _impl;
@@ -172,6 +174,10 @@ public class ApplyChange
             l.error("unsupported change type {}", c.transformType);
             throw new ExProtocolError();
         }
+    }
+
+    public boolean hasBufferedChanges_(SIndex sidx) throws SQLException {
+        return _impl.hasBufferedChanges_(sidx);
     }
 
     public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t) throws Exception{
