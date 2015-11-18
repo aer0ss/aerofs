@@ -129,11 +129,11 @@ public final class TestTransformsResource {
     }
 
     @Test
-    public void shouldReturnCorrectTransformsWhenFolderIsShared() {
+    public void shouldReturnCorrectTransformsWhenFolderIsShared() throws Exception {
         SID rootStore = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
 
-        PolarisHelpers.shareFolder(verified, folder);
+        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
 
         // note that the object type in the previous transform has also changed
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
