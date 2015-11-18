@@ -1,0 +1,7 @@
+
+location /polaris/ {
+    rewrite /polaris/(.+) /$1 break;
+    include /etc/nginx/polaris.conf;
+    proxy_cookie_path / /polaris/;
+}
+

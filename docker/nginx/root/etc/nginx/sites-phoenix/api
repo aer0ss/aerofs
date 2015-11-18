@@ -1,0 +1,12 @@
+location ~* /api/v[0-9]+\.[0-9]+/files/[A-Za-z0-9]+/content$ {
+    include /etc/nginx/havre.conf;
+}
+
+location /api/ {
+    include /etc/nginx/cors.conf;
+
+    rewrite /api/(.+) /$1 break;
+    include /etc/nginx/polaris.conf;
+    proxy_cookie_path / /api/; 
+}
+

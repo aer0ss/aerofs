@@ -35,30 +35,6 @@ Public IP" select "Enable".
 3. Point browser to the private IP address of the instance launched in Part 1.
 4. [Restore the appliance](https://support.aerofs.com/hc/en-us/articles/204631424-How-Do-I-Upgrade-My-AeroFS-Appliance)
    using the backup file downloaded in Part 1.
-5. SSH into the new appliance ```ssh -i <key name> core@<IP of new appliance>```
-6. Enter the nginx container ```docker exec -it nginx-<version> bash```.
-7. Enable polaris ```mv /etc/nginx/sites-disabled/polaris  /etc/nginx/sites/```.
-8. Enable API requests to Polaris by completing the following:
-
-        apt-get update && apt-get install vim
-        cd /etc/nginx
-        vim polaris.conf
-
-    Copy the contents of **docker/nginx/root/etc/nginx/polaris.conf** from
-    [https://gerrit.arrowfs.org/#/c/4925/](https://gerrit.arrowfs.org/#/c/4925/)
-    into **polaris.conf** in the new appliance. Save and close.
-
-        vim sites/polaris
-
-    Replace its content with content from **docker/nginx/root/etc/nginx/sites-disabled/polaris** in
-    [https://gerrit.arrowfs.org/#/c/4925/](https://gerrit.arrowfs.org/#/c/4925/). Save and close.
-
-        vim sites/havre
-
-    Replace `location/api` with
-    `location ~\* /api/v[0-9]+\.[0-9]+/files/[A-Za-z0-9]+/content`.
-
-9. Reload the nginx container ```/etc/init.d/nginx reload```
 
 ## Part 3: Update DNS Records and Populate Public Keys
 
