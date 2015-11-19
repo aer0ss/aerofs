@@ -165,7 +165,9 @@ public class Migrator implements Managed {
                 notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
             }
             update = removeMigratedFolder(migratingFolder, destination, originator);
-            notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
+            if (update != null) {
+                notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
+            }
             return null;
         });
 
@@ -302,7 +304,7 @@ public class Migrator implements Managed {
         return update;
     }
 
-    private Update removeMigratedFolder(UniqueID migrant, UniqueID destination, DID originator)
+    private @Nullable Update removeMigratedFolder(UniqueID migrant, UniqueID destination, DID originator)
     {
         if (Identifiers.isSharedFolder(migrant)) {
             // need the root store to find out the parent of the migrated shared folder
@@ -310,10 +312,14 @@ public class Migrator implements Managed {
             return dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
                 UniqueID parent = dao.mountPoints.getMountPointParent(SID.rootSID(owner), migrant);
-                Preconditions.checkState(parent != null, "could not find parent of migrating anchor %s", migrant);
-                Update update = removeAnchor(dao, originator, parent, migrant, destination);
-                dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
-                return update;
+                // daemons can auto-leave shared folders, in which case we don't have to do anything
+                if (parent != null) {
+                    Update update = removeAnchor(dao, originator, parent, migrant, destination);
+                    dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
+                    return update;
+                } else {
+                    return null;
+                }
             });
         } else {
             return dbi.inTransaction((conn, status) -> {
