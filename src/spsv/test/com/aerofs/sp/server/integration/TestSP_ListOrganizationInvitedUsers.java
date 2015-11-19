@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 public class TestSP_ListOrganizationInvitedUsers extends AbstractSPFolderTest
 {
     @Test
-    public void shouldHideExternallyManagedUsers()
+    public void shouldNotHideExternallyManagedUsers()
             throws Exception
     {
         sqlTrans.begin();
@@ -33,6 +33,7 @@ public class TestSP_ListOrganizationInvitedUsers extends AbstractSPFolderTest
 
         when(authenticator.isLocallyManaged(any(UserID.class))).thenReturn(false);
 
-        assertEquals(service.listOrganizationInvitedUsers().get().getUserIdCount(), 0);
+        // Expect the same result when using external authenticator.
+        assertEquals(service.listOrganizationInvitedUsers().get().getUserIdCount(), 3);
     }
 }

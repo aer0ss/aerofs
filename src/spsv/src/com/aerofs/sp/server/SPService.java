@@ -638,13 +638,7 @@ public class SPService implements ISPService
         ListOrganizationInvitedUsersReply.Builder builder =
                 ListOrganizationInvitedUsersReply.newBuilder();
         for (OrganizationInvitation oi : user.getOrganization().getOrganizationInvitations()) {
-            User invitee = oi.getInvitee();
-            // Return the user as a pending invitation only if the user is locally managed.
-            //
-            // See also team_members.mako:inviteUser()
-            if (_authenticator.isLocallyManaged(invitee.id())) {
-                builder.addUserId(invitee.id().getString());
-            }
+            builder.addUserId(oi.getInvitee().id().getString());
         }
 
         _sqlTrans.commit();
