@@ -160,10 +160,8 @@ public class FilterFetcher
         try {
             msg = _rpc.issueRequest_(did, request, tk, "gf");
         } catch (ExAborted e) {
-            if (e.getCause() != null) {
-                Throwables.propagateIfInstanceOf(e.getCause(), ExDeviceUnavailable.class);
-                throw Throwables.propagate(e.getCause());
-            }
+            Throwables.propagateIfInstanceOf(e.getCause(), ExDeviceUnavailable.class);
+            Throwables.propagateIfInstanceOf(e.getCause(), ExLinkDown.class);
             throw e;
         }
         processResponse_(sidx, msg);
