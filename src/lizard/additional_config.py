@@ -24,3 +24,7 @@ MAIL_USE_SSL = False
 MAIL_DEBUG = False
 MAIL_USERNAME = None
 MAIL_PASSWORD = None
+
+#Feature flag for new design
+REBRAND_RELEASED = False
+

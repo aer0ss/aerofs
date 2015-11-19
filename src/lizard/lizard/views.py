@@ -136,13 +136,27 @@ def signup_request_page():
         }
         r = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
 
-        return redirect(url_for(".signup_request_done"))
-    return render_template("request_signup.html",
-            form=form)
+        #Set a cookie on the user email - this is used for the verification page
+        #Consider replacing with session, or setting appropriate expiration date
+        response = current_app.make_response(redirect(url_for(".signup_request_done")))
+        response.set_cookie('sign_up_email', record.email)
+        return response
+
+    return render_template("request_signup.html", form=form)
 
 @blueprint.route("/request_signup_done", methods=["GET"])
 def signup_request_done():
-    return render_template("request_signup_complete.html")
+    REBRAND_RELEASED = current_app.config["REBRAND_RELEASED"]
+
+    # TODO: This route is openly accessible
+    # This should probably not be the case (MB)
+    if REBRAND_RELEASED:
+        user_email = request.cookies.get('sign_up_email')
+        if not user_email:
+            flash(u"This page does not exist.", "error")
+        return render_template("request_signup_complete.html", user_email=user_email)
+    else:
+        return render_template("request_signup_complete_legacy.html")
 
 @blueprint.route("/signup", methods=["GET", "POST"])
 def signup_completion_page():
@@ -559,7 +573,7 @@ def billing():
             flash(u"Successfully updated your credit card", "success")
             return redirect(url_for(".billing"))
 
-        # retrieve default card to display 
+        # retrieve default card to display
         if user.customer.stripe_customer_id:
             charges = stripe.Charge.all(customer=user.customer.stripe_customer_id).data
             stripe_customer = stripe.Customer.retrieve(user.customer.stripe_customer_id)

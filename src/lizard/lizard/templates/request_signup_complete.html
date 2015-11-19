@@ -1,30 +1,49 @@
 {% extends "public.html" %}
+{% from "_components.html" import render_logo_header %}
 
-{% block title %}Verification Email Sent | AeroFS Private Cloud{% endblock %}
-
-{% block content %}
-    <h1>Check Your Email</h1>
-    <p>As a security measure, we've sent you an email to verify your email address.</p>
-    <p>Please check your email for a message from AeroFS and click the link.</p>
+{% block title %}
+    Verification Email Sent | AeroFS Private Cloud
 {% endblock %}
 
+
+{% block content %}
+    {{ render_logo_header() }}
+    <div id="email-verification-container">
+        <div class="col-sm-2"></div>
+        <div class="text-center col-sm-8">
+            {% if user_email %}
+                <h1 class="email-verification-container__heading">Verify Your Email Address</h1>
+                <p class="email-verification-container__body">
+                    To ensure your privacy and security, we sent an email to {{ user_email }}.
+                    Please click the link in that email to continue. If you don't see a message in your inbox
+                    right away, check your spam filter. For assistance, contact <a href="mailto:support@aerofs.com">support@aerofs.com</a>.
+                </p>
+            {% endif %}
+        </div>
+        <div class="col-sm-2"></div>
+    </div>
+{% endblock %}
+
+
 {% block scripts %}
-<!-- Google Code for PPC - SOFTWARE TRIAL Conversion Page -->
-<script type="text/javascript">
-/* <![CDATA[ */
-var google_conversion_id = 1011963805;
-var google_conversion_language = "en";
-var google_conversion_format = "3";
-var google_conversion_color = "ffffff";
-var google_conversion_label = "LwIOCNCxy1sQna_F4gM";
-var google_remarketing_only = false;
-/* ]]> */
-</script>
-<script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">
-</script>
-<noscript>
-<div style="display:inline;">
-<img height="1" width="1" style="border-style:none;" alt="" src="//www.googleadservices.com/pagead/conversion/1011963805/?label=LwIOCNCxy1sQna_F4gM&amp;guid=ON&amp;script=0"/>
-</div>
-</noscript>
+    <!-- Taken from original file: request_signup_complete_legacy.html-->
+    <!-- assuming it is needed for now -->
+    <!-- Google Code for PPC - SOFTWARE TRIAL Conversion Page -->
+    <script type="text/javascript">
+        /* <![CDATA[ */
+        var google_conversion_id = 1011963805;
+        var google_conversion_language = "en";
+        var google_conversion_format = "3";
+        var google_conversion_color = "ffffff";
+        var google_conversion_label = "LwIOCNCxy1sQna_F4gM";
+        var google_remarketing_only = false;
+        /* ]]> */
+    </script>
+    <script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">
+    </script>
+    <noscript>
+        <div style="display:inline;">
+            <img height="1" width="1" style="border-style:none;" alt="" src="//www.googleadservices.com/pagead/conversion/1011963805/?label=LwIOCNCxy1sQna_F4gM&amp;guid=ON&amp;script=0"/>
+        </div>
+    </noscript>
 {% endblock %}

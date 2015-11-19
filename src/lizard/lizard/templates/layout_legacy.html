@@ -13,8 +13,8 @@
 
         <link href="{{ url_for('static', filename='css/google-open-sans.css') }}" rel="stylesheet" />
         <link href="{{ url_for('static', filename='css/compiled/aerofs.min.css') }}" rel="stylesheet" />
-        <link href="{{ url_for('static', filename='css/compiled/lizard_rebrand.min.css') }}" rel="stylesheet" />
-	<link href="{{ url_for('static', filename='css/compiled/style.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/compiled/lizard.min.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/compiled/style.css') }}" rel="stylesheet" />
 
         {# Le HTML5 shim, for IE6-8 support of HTML5 elements #}
         <!--[if lt IE 9]>
@@ -34,6 +34,21 @@
         })(window,document,'script','dataLayer','GTM-TPFL7W');</script>
     <!-- End Google Tag Manager -->
         <div id="wrapper">
+            <div id="dark-blue-header">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <a class="brand" href="{% block navbar_logo_link %}{% endblock %}">
+                                <img src="{{ url_for('static', filename='img/logo_small.png') }}" alt="AeroFS"/>
+                            </a>
+                            <ul class="pull-right">
+                                {% block additional_nav_pills %}{% endblock %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {# Message bar #}
             <div class="container">
                 <div class="row">
@@ -51,7 +66,7 @@
             </div>
 
            {% block body %}{% endblock %}
-           
+
             <div id="footer-push"></div>
         </div>
 
