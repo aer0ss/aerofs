@@ -69,14 +69,29 @@ public class Authenticator
             IThreadLocalTransaction<SQLException> trans, CredentialFormat format)
             throws Exception
     {
+        Exception exExternalServiceUnavailable = null;
+
         for (IAuthority auth : _authorities) {
-            if (auth.canAuthenticate(user.id())) {
-                l.debug("Auth using {} for {}", auth, user);
-                auth.authenticateUser(user, credential, trans, format);
-                l.info("auth ok {}", user);
-                return auth;
+            try {
+                l.debug("Check auth using {} for {}", auth, user);
+                if (auth.canAuthenticate(user.id())) {
+                    l.debug("Auth using {} for {}", auth, user);
+                    auth.authenticateUser(user, credential, trans, format);
+                    l.info("Auth ok for {}", user);
+                    return auth;
+                }
+            } catch (ExExternalServiceUnavailable e) {
+                l.error("External service unavailable; check next authority. Error: " + e);
+                exExternalServiceUnavailable = e;
             }
         }
+
+        if (exExternalServiceUnavailable != null) {
+            // Some downstream service is unavailable, and no other providers can auth this
+            // particular user. Rethrow, so the user knows something fishy is going on.
+            throw exExternalServiceUnavailable;
+        }
+
         l.warn("No authority can handle {}", user.id());
         throw new ExBadCredential("Refusing to authenticate user " + user.id());
     }

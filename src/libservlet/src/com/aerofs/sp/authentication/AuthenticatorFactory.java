@@ -30,12 +30,19 @@ public class AuthenticatorFactory
     {
         IAuthority[] authorities;
         if (Identity.AUTHENTICATOR == Identity.Authenticator.EXTERNAL_CREDENTIAL) {
-            authorities = new IAuthority[] { new LdapAuthority(new LdapConfiguration(), _aclPublisher, _auditClient),
-                                             new LocalAuthority() };
+            authorities = new IAuthority[] {
+                    new LdapAuthority(new LdapConfiguration(), _aclPublisher, _auditClient),
+                    new LocalAuthority(),
+            };
         } else if (Identity.AUTHENTICATOR == Identity.Authenticator.OPENID) {
-            authorities = new IAuthority[] {new OpenIdAuthority(), new LocalAuthority() };
+            authorities = new IAuthority[] {
+                    new OpenIdAuthority(),
+                    new LocalAuthority(),
+            };
         } else {
-            authorities = new IAuthority[] { new LocalAuthority() };
+            authorities = new IAuthority[] {
+                    new LocalAuthority()
+            };
         }
         return new Authenticator(authorities);
     }
