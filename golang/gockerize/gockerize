@@ -52,7 +52,7 @@ COPY . /gopath/src/$DST_DIR
 EOF
 
 # build temporary container w/ build context
-docker build -t "$tmpimg" -f "$tmpfile" "$SRC_DIR"
+docker build --no-cache=true -t "$tmpimg" -f "$tmpfile" "$SRC_DIR"
 
 rm -f "$tmpfile"
 
