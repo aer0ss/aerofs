@@ -1,0 +1,213 @@
+{% extends "logged_in.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% macro render_download_message() %}
+    <div class="col-sm-8 pull-right bottom-aligned-text">
+        <span>Or <a href="{{ url_for('.dashboard')}}">download</a> AeroFS now to deploy on your own infrastructure.</span>
+    </div>
+{% endmacro %}
+
+{% macro render_contact_us_message() %}
+    <div class="text-center bottom-aligned-text">
+        <span>Questions? Contact <a href="mailto:support@aerofs.com">support@aerofs.com</a></span>
+    </div>
+{% endmacro %}
+
+{% block title %}Dashboard | AeroFS Private Cloud{% endblock %}
+
+{% block content %}
+    <h1>Dashboard</h1>
+
+    {% if demo_started %}
+
+        {% if demo_days_left == 1 %}
+            {% set day_string ="day" %}
+        {% else %}
+            {% set day_string="days" %}
+        {% endif %}
+
+        <div id="demo-container">
+            <div id="demo-started" class="demo-page">
+                <div class="row">
+                    <h2 class="text-center">AeroFS 30-Day Demo</h2>
+                    <p class="text-center">
+                      You have {{demo_days_left}} {{day_string}} left in the demo. This is a hosted version
+                      of AeroFS. Ready to move AeroFS to your own infrastructure? Click
+                      <a href="{{ url_for('.dashboard')}}">Download On-Premises</a> to download
+                      AeroFS at anytime or <a href="mailto:support@aerofs.com">contact</a> our sales
+                      team for help.
+                    </p>
+                </div>
+            </div>
+        </div>
+    {% else %}
+
+        <div id="demo-container">
+            <div id="start-demo" class="demo-page">
+                <div class="row">
+                    <h2 class="text-center">Start Your 30-Day Demo</h2>
+                    <p class="text-center">
+                      Try AeroFS on our server before downloading AeroFS on your own infrastructure.
+                    </p>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <!--On click handler switches to next page-->
+                        <a id="start-demo-url" class="btn btn-primary btn-lg">
+                            Start Demo
+                        </a>
+                    </div>
+                    <div class="col-sm-8">
+                        <ul>
+                          <li>No credit card or setup required.</li>
+                          <li>Move to your own infrastructure at any time.</li>
+                          <!--TODO: This needs a link!-->
+                          <li>See our <a href="">privacy</a> page for information on
+                            what data we can see during the demo.
+                          </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row">
+                    {{ render_download_message() }}
+                </div>
+            </div>
+
+            <div id="choose-url" class="demo-page hidden text-center">
+                <div class="row">
+                    <h2>Choose Your Private Cloud URL</h2>
+                    <p>
+                        This is the address you and your colleagues will use to access your AeroFS,
+                        download the AeroFS client and access your file on the web during the 30 day demo.
+                    </p>
+                </div>
+                <div class="row">
+                    <span>https://</span>
+                    <input id="url-input" type="text" />
+                    <span>.aerofs.com</span>
+                    <p id="url-error-message"></p>
+                </div>
+                <div class="row">
+                    <a id="submit-url" class="btn btn-primary" data-url="{{ url_for('.submit_url') }}">
+                        Next
+                    </a>
+                </div>
+                <div class="row">
+                    {{ render_download_message() }}
+                </div>
+            </div>
+
+            <div id="setup" class="demo-page hidden text-center" data-url="{{ url_for('.get_appliance')}}">
+                <div class="row">
+                    <h2>Please wait while we set up your AeroFS</h2>
+                    <p>You'll receive and email with a link to access your AeroFS when it's ready.
+                      In a few minutes, it'll be easier than ever to securely collaborate with
+                      colleagues, share files from the web and your desktop, and more.
+                    </p>
+                </div>
+                <div class="row">
+                    {{ render_contact_us_message() }}
+                </div>
+            </div>
+
+            <div id="ready" class="demo-page hidden text-center">
+                <div class="row">
+                    <h2>Your AeroFS is Ready</h2>
+                    <p>Please click the link below to access your AeroFS and create your first user account.</p>
+                </div>
+                <div class="row">
+                    <a id="first-user-url" href=""></a>
+                </div>
+                <div class="row">
+                    {{ render_contact_us_message() }}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript">
+  (function demoPage () {
+
+      //Pages
+      var startDemoPage = $("#start-demo");
+      var chooseUrlPage = $("#choose-url");
+      var setupPage = $("#setup");
+      var readyPage = $("#ready");
+
+      //Event handlers
+      $('#start-demo-url').click(function (e) {
+          e.preventDefault();
+
+          startDemoPage.addClass('hidden');
+          chooseUrlPage.removeClass('hidden');
+      });
+
+      $("#submit-url").click(function (e) {
+          //Submit the url & start demo
+          //It may fail if the domain is taken
+          e.preventDefault();
+          var url = $(this).data('url');
+          var chosen_url = getUrlFromInput();
+          var submitUrl = $.post(url, {chosen_url: chosen_url});
+
+          submitUrl.done(function () {
+              chooseUrlPage.addClass('hidden');
+              setupPage.removeClass('hidden');
+              pollForApplication();
+          });
+
+          submitUrl.fail(function (xhr) {
+              var msg = "Oops, looks like an internal server error. " +
+                  "Please contact <a href='mailto:support@aerofs.com'>support@aerofs.com</a>.";
+
+              if ( xhr.status == 400 ) {
+                  msg = "Sorry, that url is invalid.";
+              }
+
+              if ( xhr.status == 409 ) {
+                  msg = "Sorry, that name is already taken. Please try another name.";
+              }
+
+              setUrlErrorMessage(msg);
+              clearUrlInput();
+          });
+        });
+
+      function setUrlErrorMessage (text) {
+          $("#url-error-message").html(text);
+      }
+
+      function getUrlFromInput () {
+          return $("#url-input").val();
+      }
+
+      function clearUrlInput () {
+          $("#url-input").val("");
+      }
+
+      function pollForApplication () {
+          //Ping url until
+          var url = setupPage.data('url');
+
+          var getApplication = $.get(url);
+          getApplication.done(function (response) {
+              // Oh yay, we got a response, reload the page
+              url = JSON.parse(response).first_user_url;
+
+              $("#first-user-url").html(url).attr("href", url);
+
+              setupPage.addClass('hidden');
+
+              readyPage.removeClass('hidden');
+          });
+          getApplication.fail(function (xhr, status) {
+             // Nope, not there yet
+             setTimeout(pollForApplication, 30000);
+          });
+      }
+  })();
+
+</script>
+{% endblock %}

@@ -23,22 +23,22 @@
   width:28px;
   height:19px;
   background:url(
-        {% if card.brand == "Visa" %}
-          {{ url_for('static', filename='img/visa.png')}}
-        {% elif card.brand == "American Express" %}
-          {{ url_for('static', filename='img/amex.png')}}
-        {% elif card.brand == "MasterCard "%}
-          {{ url_for('static', filename='img/mastercard.png')}}
-        {% elif card.brand == "Discover" %}
-          {{ url_for('static', filename='img/discover.png')}}
-        {% elif card.brand == "JCB" %}
-          {{ url_for('static', filename='img/jcb.png')}}
-        {% elif card.brand == "Diners Club" %}
-          {{ url_for('static', filename='img/diners.png')}}
-        {% else %}
-          {{ url_for('static', filename='img/card.svg')}}
-        {% endif %}
-        ) no-repeat center center;
+    {% if card.brand == "Visa" %}
+      {{ url_for('static', filename='img/visa.png')}}
+    {% elif card.brand == "American Express" %}
+      {{ url_for('static', filename='img/amex.png')}}
+    {% elif card.brand == "MasterCard "%}
+      {{ url_for('static', filename='img/mastercard.png')}}
+    {% elif card.brand == "Discover" %}
+      {{ url_for('static', filename='img/discover.png')}}
+    {% elif card.brand == "JCB" %}
+      {{ url_for('static', filename='img/jcb.png')}}
+    {% elif card.brand == "Diners Club" %}
+      {{ url_for('static', filename='img/diners.png')}}
+    {% else %}
+      {{ url_for('static', filename='img/card.svg')}}
+    {% endif %}
+    ) no-repeat center center;
   background-size: 100%;
 }
 </style>
@@ -46,7 +46,7 @@
 
 {% block content %}
 <div class="row">
-  <h2>Credit Card Information</h2>
+  <h1>Credit Card Information</h1>
   <div class="col-sm-5">
     <div class="row">
       <form novalidate id="ccInfo" autocomplete="on" method="POST">
@@ -146,8 +146,8 @@ jQuery(function($) {
     var expyy = parseInt( expArr[1] );
 
     var valid = $.payment.validateCardNumber($('.cc-number').val()) &&
-                $.payment.validateCardExpiry($('.cc-exp').payment('cardExpiryVal')) &&
-                $.payment.validateCardCVC($('.cc-cvc').val(), cardType);
+      $.payment.validateCardExpiry($('.cc-exp').payment('cardExpiryVal')) &&
+      $.payment.validateCardCVC($('.cc-cvc').val(), cardType);
 
     if (valid) {
       Stripe.createToken({

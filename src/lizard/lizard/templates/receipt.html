@@ -1,4 +1,4 @@
-{% extends "layout_legacy.html" %}
+{% extends "layout.html" %}
 {% block body %}
             <div class="container">
                 <div class="row">
@@ -53,7 +53,7 @@
                                                     {% if item.type == "subscription" %}
                                                         {{ item.quantity }} x {{ item.plan.name }}
                                                     {% else %}
-                                                        {{ item.description }} 
+                                                        {{ item.description }}
                                                     {% endif %}
                                                 </td>
                                                 <td><p>{{ (item.amount / 100) | format_currency }}</p></td>

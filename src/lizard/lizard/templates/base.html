@@ -3,13 +3,14 @@
 {% block body %}
      <div class="container">
         <div class="row">
-            {% set content_class="col-sm-12" %}
+            {% set content_class="col-sm-9" %}
 
             {% if self.sidebar() %}
                 <div class="col-sm-3">
                     {% block sidebar %}{% endblock %}
                 </div>
-                {% set content_class="col-sm-9" %}
+            {% else %}
+                {% set content_class= content_class + " col-sm-offset-3" %}
             {% endif %}
 
             <div class="{{ content_class }}" >

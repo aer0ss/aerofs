@@ -1,13 +1,10 @@
 {% extends "public.html" %}
-{% from "_components.html" import render_logo_header %}
 
 {% block title %}
     Verification Email Sent | AeroFS Private Cloud
 {% endblock %}
 
-
 {% block content %}
-    {{ render_logo_header() }}
     <div id="email-verification-container">
         <div class="col-sm-2"></div>
         <div class="text-center col-sm-8">
@@ -26,8 +23,6 @@
 
 
 {% block scripts %}
-    <!-- Taken from original file: request_signup_complete_legacy.html-->
-    <!-- assuming it is needed for now -->
     <!-- Google Code for PPC - SOFTWARE TRIAL Conversion Page -->
     <script type="text/javascript">
         /* <![CDATA[ */

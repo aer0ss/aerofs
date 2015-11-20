@@ -157,17 +157,14 @@ def signup_request_page():
 
 @blueprint.route("/request_signup_done", methods=["GET"])
 def signup_request_done():
-    REBRAND_RELEASED = current_app.config["REBRAND_RELEASED"]
 
     # TODO: This route is openly accessible
     # This should probably not be the case (MB)
-    if REBRAND_RELEASED:
-        user_email = request.cookies.get('sign_up_email')
-        if not user_email:
-            flash(u"This page does not exist.", "error")
-        return render_template("request_signup_complete.html", user_email=user_email)
-    else:
-        return render_template("request_signup_complete_legacy.html")
+    user_email = request.cookies.get('sign_up_email')
+    if not user_email:
+        flash(u"This page does not exist.", "error")
+    return render_template("request_signup_complete.html", user_email=user_email)
+
 
 @blueprint.route("/signup", methods=["GET", "POST"])
 def signup_completion_page():
@@ -260,6 +257,7 @@ def signup_completion_page():
 @blueprint.route("/users/edit", methods=["GET", "POST"])
 @login.login_required
 def edit_preferences():
+
     user = login.current_user
     form = forms.PreferencesForm()
     if form.validate_on_submit():
@@ -281,10 +279,12 @@ def edit_preferences():
     #form.security_emails.data = user.notify_security
     #form.release_emails.data = user.notify_release
     #form.maintenance_emails.data = user.notify_maintenance
+
     return render_template("preferences.html",
         form=form,
         user=user
-        )
+    )
+
 
 @blueprint.route("/users/invitation", methods=["POST"])
 @login.login_required
@@ -610,7 +610,8 @@ def billing():
         charges=charges,
         card=card,
         stripe_pk=current_app.config['STRIPE_PUBLISHABLE_KEY']
-        )
+    )
+
 
 @blueprint.route("/receipt/<string:id>", methods=["GET"])
 @login.login_required
@@ -662,8 +663,8 @@ def dashboard():
             db.session.commit()
 
             flash(u"Your license will downgrade to {} seats on {}"
-                        .format(requested_license_count, newest_license.expiry_date.strftime('%b %d, %Y')),
-                   "success")
+                .format(requested_license_count, newest_license.expiry_date.strftime('%b %d, %Y')),
+                "success")
             return redirect(url_for(".dashboard"))
 
         elif requested_license_count > int(newest_license.seats): #we are upgrading
@@ -678,24 +679,23 @@ def dashboard():
 
             flash(u"You already have {} seats".format(requested_license_count), "success")
             return redirect(url_for(".dashboard"))
-
     return render_template("dashboard.html",
-            form=form,
-            active_license=customer.newest_filled_license(),
-            newest_license=newest_license,
-            renewal_seats=(customer.renewal_seats or newest_license.seats),
-            appliance_version=appliance.latest_appliance_version(),
-            mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
-            mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
-            )
+        form=form,
+        active_license=customer.newest_filled_license(),
+        newest_license=newest_license,
+        renewal_seats=(customer.renewal_seats or newest_license.seats),
+        appliance_version=appliance.latest_appliance_version(),
+        mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
+        mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
+    )
 
 @blueprint.route("/administrators", methods=["GET"])
 @login.login_required
 def administrators():
     return render_template("administrators.html",
-            user=login.current_user,
-            form=forms.InviteForm(),
-            )
+        user=login.current_user,
+        form=forms.InviteForm(),
+    )
 
 @blueprint.route("/version", methods=["GET"])
 def version():
@@ -871,4 +871,5 @@ def contact_us():
         notifications.send_private_cloud_question_email(user.email, form.contact.data, form.subject.data, form.message.data)
         flash(u"Message sent. An AeroFS representative will be in touch shortly.", 'success')
         return redirect(url_for(".dashboard"))
+
     return render_template("contact_us.html", form=form)
