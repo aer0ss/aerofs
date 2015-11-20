@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.UserAndDeviceNames;
@@ -17,6 +18,7 @@ import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
@@ -28,7 +30,6 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.List;
 
 import static com.aerofs.proto.RitualNotifications.PBNotification.Type.TRANSFER;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -43,14 +44,17 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
     private final DirectoryService _ds;
     private final UserAndDeviceNames _nr;
     private final RitualNotificationServer _rns;
+    private final CoreScheduler _sched;
 
     private boolean _filterMeta = true;
 
-    protected AbstractTransferNotifier(DirectoryService ds, UserAndDeviceNames nr, RitualNotificationServer rns)
+    protected AbstractTransferNotifier(DirectoryService ds, UserAndDeviceNames nr,
+                                       RitualNotificationServer rns, CoreScheduler sched)
     {
         _ds = ds;
         _nr = nr;
         _rns = rns;
+        _sched = sched;
     }
 
     public final void filterMeta_(boolean enable)
@@ -124,25 +128,12 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
             } else if (_nr.isLocalUser(owner)) {
                 String devicename = _nr.getDeviceNameNullable_(did);
 
-                if (devicename == null) {
-                    List<DID> unresolved = Collections.singletonList(did);
-                    if (_nr.updateLocalDeviceInfo_(unresolved)) {
-                        devicename = _nr.getDeviceNameNullable_(did);
-                    }
-                }
+                if (devicename == null) scheduleUpdateDeviceInfo_(did);
 
-                return devicename == null
-                        ? S.LBL_UNKNOWN_DEVICE
-                        : "My " + devicename;
+                return "My " + (devicename != null ? devicename : "computer");
             } else {
                 FullName username = _nr.getUserNameNullable_(owner);
-
-                if (username == null) {
-                    List<DID> unresolved = Collections.singletonList(did);
-                    if (_nr.updateLocalDeviceInfo_(unresolved)) {
-                        username = _nr.getUserNameNullable_(owner);
-                    }
-                }
+                if (username == null) scheduleUpdateDeviceInfo_(did);
 
                 return (username == null ? owner.getString() : username.getString())
                         + "'s computer";
@@ -151,6 +142,21 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
             l.warn("Failed to lookup display name for {}", did, ex);
             return S.LBL_UNKNOWN_USER;
         }
+    }
+
+    private void scheduleUpdateDeviceInfo_(DID did) {
+        _sched.schedule_(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_() {
+                try {
+                    // NB: this release the core lock around a call to SP
+                    // hence it must be scheduled as a core event or notification reordering may
+                    // happen, which could, for instance, cause stale transfers to linger in the
+                    // transfer dialog forever.
+                    _nr.updateLocalDeviceInfo_(Collections.singletonList(did));
+                } catch (Exception e) {}
+            }
+        });
     }
 
     private PBTransferEvent newTransferEvent_(TransferredItem item, TransferProgress progress, boolean isUpload)

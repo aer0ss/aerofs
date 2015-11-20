@@ -4,14 +4,13 @@
 
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.notification.DownloadNotifier.DownloadThrottler;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 public class TestDownloadNotifier extends AbstractTestNotifier
 {
@@ -47,7 +46,7 @@ public class TestDownloadNotifier extends AbstractTestNotifier
     {
         _throttler = spy(new DownloadThrottler(_factTimer));
         _downloadNotifier = new DownloadNotifier(_directoryService, _userAndDeviceNames,
-                _notificationServer, _throttler);
+                _notificationServer, mock(CoreScheduler.class), _throttler);
         _downloadNotifier.filterMeta_(true);
     }
 }

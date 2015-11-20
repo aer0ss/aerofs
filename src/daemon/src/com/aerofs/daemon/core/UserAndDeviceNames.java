@@ -33,8 +33,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Wrapper around DID2User and UserAndDeviceNameDatabase that can make SP calls when the content
@@ -43,38 +41,6 @@ import java.util.Set;
 public class UserAndDeviceNames
 {
     private static final Logger l = Loggers.getLogger(UserAndDeviceNames.class);
-
-    public static class UserInfo
-    {
-        public final UserID _userId;
-        public final @Nullable FullName _userName;
-
-        public UserInfo(UserID userId, @Nullable FullName userName)
-        {
-            assert userId != null;
-            this._userId = userId;
-            this._userName = userName;
-        }
-
-        public String getName()
-        {
-            return _userName != null ? _userName.getString() : _userId.getString();
-        }
-    }
-
-    public static class DeviceInfo
-    {
-        public final UserInfo owner;
-        // null if the caller is not the device owner
-        public final @Nullable String deviceName;
-
-        public DeviceInfo(UserInfo owner, @Nullable String deviceName)
-        {
-            assert owner != null;
-            this.owner = owner;
-            this.deviceName = deviceName;
-        }
-    }
 
     private final CfgLocalUser _localUser;
     private final TokenManager _tokenManager;
@@ -199,37 +165,6 @@ public class UserAndDeviceNames
             for (DID did : dids) pb.add(BaseUtil.toPB(did));
             return _factSP.create().signInRemote().getDeviceInfo(pb);
         });
-    }
-
-    /**
-     * Get device info for a collection of DIDs from the local DB
-     * @return a DID -> DeviceInfo map
-     */
-    private void getDeviceInfoMapLocally_(Iterable<DID> dids, Map<DID, DeviceInfo> resolved,
-            Set<DID> unresolved) throws Exception
-    {
-        for (DID did : dids) {
-            UserID owner = _d2u.getUserIDForDIDNullable_(did);
-            if (owner == null) {
-                unresolved.add(did);
-                continue;
-            }
-
-            FullName name = null;
-            String deviceName = null;
-            if (owner.equals(_localUser.get())) {
-                deviceName = _udndb.getDeviceNameNullable_(did);
-                if (deviceName == null) {
-                    unresolved.add(did);
-                }
-            }
-
-            name = _udndb.getUserNameNullable_(owner);
-            if (name == null) {
-                unresolved.add(did);
-            }
-            resolved.put(did, new DeviceInfo(new UserInfo(owner, name), deviceName));
-        }
     }
 
     /**

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.notification;
 
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.lib.Throttler;
@@ -26,9 +27,10 @@ class UploadNotifier extends AbstractTransferNotifier
     private final UploadThrottler _throttler;
 
     @Inject
-    UploadNotifier(DirectoryService ds, UserAndDeviceNames nr, RitualNotificationServer rns, UploadThrottler throttler)
+    UploadNotifier(DirectoryService ds, UserAndDeviceNames nr, RitualNotificationServer rns,
+                   CoreScheduler sched, UploadThrottler throttler)
     {
-        super(ds, nr, rns);
+        super(ds, nr, rns, sched);
 
         _throttler = throttler;
         _throttler.setDelay(1 * C.SEC);
