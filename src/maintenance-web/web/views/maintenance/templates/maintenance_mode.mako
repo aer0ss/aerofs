@@ -3,7 +3,7 @@
 
 <div class="col-sm-12 text-center">
     <h3>Down for maintenance</h3>
-    <p>Your AeroFS adminstrators are performing maintenance.</p>
+    <p>Your AeroFS administrators are performing maintenance.</p>
 
     <%
         mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
