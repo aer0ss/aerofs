@@ -361,6 +361,7 @@ class TCPStores implements IPresenceSource, IDevicePresenceListener
     }
 
     // NB: can't synchronize on this or will deadlock with PresenceService
+    // FIXME: rare race can cause precond failure on expel/readmit
     @Override
     public void onDevicePresenceChanged(DID did, boolean isPotentiallyAvailable)
     {
