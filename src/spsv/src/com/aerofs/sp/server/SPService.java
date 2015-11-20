@@ -3570,11 +3570,6 @@ public class SPService implements ISPService
             emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, admin,
                     newMember, updates._folders));
         }
-        // FIXME: this comment was here before:
-            // since adding members to a group can send out org invites, we make sure they haven't
-            // exceeded the free org size limit
-        // Now I'm confused. Are we not checking that they are within the limit of their license?
-        // The "free org size limit" mentioned is ... 3. That is old old hybrid code. Do we need a license check here?
 
         _aclPublisher.publish_(needsACLUpdate.build());
 
