@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.presence;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.transport.ITransport;
@@ -15,6 +16,7 @@ import com.google.gson.*;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
+import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +110,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
                 }
             }
         } catch (Exception e) {
-            l.warn("invalid locations", e);
+            l.warn("invalid locations", BaseLogUtil.suppress(e, ClosedChannelException.class));
         }
     }
 

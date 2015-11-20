@@ -102,7 +102,7 @@ public class TC implements IDumpStatMisc, ITokenUseListener
          */
         public boolean abort_(@Nonnull Throwable cause)
         {
-            l.debug("abort {}: {}", _thd.getName(), cause);
+            l.debug("abort {}: {}", _thd.getName(), cause.getClass());
 
             return unblockWithThrowable_(Preconditions.checkNotNull(cause));
         }
