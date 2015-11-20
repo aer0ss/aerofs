@@ -173,6 +173,7 @@ def signup_completion_page():
     POST /signup?code=<access_code> <form data>
     """
     user_signup_code = request.args.get("signup_code", None)
+
     if not user_signup_code:
         # return to the "enter your email so we can verify it" page
         flash("That link didn't include a signup code.", "error")
@@ -250,9 +251,11 @@ def signup_completion_page():
             flash(u"Login failed for {}: probably marked inactive?", "error")
 
         return redirect(url_for(".index"))
-    return render_template("complete_signup.html",
-            form=form,
-            record=signup)
+
+    return render_template("complete_signup_legacy.html",
+        form=form,
+        record=signup,
+    )
 
 @blueprint.route("/users/edit", methods=["GET", "POST"])
 @login.login_required

@@ -1,7 +1,9 @@
 #!env/bin/python
+import base64
 import argparse
 import datetime
 import sys
+import os
 
 from lizard import create_app, db, models
 
@@ -24,6 +26,23 @@ def make_new_user(email, password, first_name, last_name, customer):
     u.set_password(password)
     db.session.add(u)
     return u
+
+def sign_up_user(email, first_name, last_name, customer):
+    signup_code = base64.urlsafe_b64encode(os.urandom(30))
+    print "Sign Up Code: " + signup_code
+
+    # insert code/email pair into UnboundSignup
+    record = models.UnboundSignup()
+    record.email=email
+    record.signup_code=signup_code
+    record.first_name = first_name
+    record.last_name = last_name
+    record.company_name = customer.name
+    record.phone_number = ""
+    record.job_title = ""
+    db.session.add(record)
+
+    return signup_code
 
 def make_new_license(org, days, seats, full, audit, identity, mdm, device_restriction):
     l = models.License()
@@ -59,6 +78,7 @@ def main():
     parser.add_argument("--license-identity", help="allow identity", action="store_true")
     parser.add_argument("--license-mdm", help="allow MDM", action="store_true")
     parser.add_argument("--license-device-restriction", help="allow device restriction", action="store_true")
+    parser.add_argument("--signup-only", help="generate signup code but no password yet", default=False)
 
     parser.add_argument("email", nargs="+", help="email addresses to create accounts for")
     args = parser.parse_args(sys.argv[1:])
@@ -77,7 +97,11 @@ def main():
             email = mail.decode('utf-8')
             if not user_exists(email):
                 print "creating Admin {} ({} {})".format(email, args.first_name, args.last_name)
-                make_new_user(email, args.password, args.first_name, args.last_name, org)
+
+                if args.signup_only:
+                    sign_up_user(email, args.first_name, args.last_name, org)
+                else:
+                    make_new_user(email, args.password, args.first_name, args.last_name, org)
             else:
                 print "{} already exists, moving on".format(email)
         print "Creating fake license ({} days, {} seats, {}, {}, {}, {}, {})".format(
