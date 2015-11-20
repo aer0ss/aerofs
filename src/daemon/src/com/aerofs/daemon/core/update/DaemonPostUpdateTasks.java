@@ -96,7 +96,7 @@ public class DaemonPostUpdateTasks
 
         // N.B: no-op if current >= tasks.length
         for (int i = current - first; i < tasks.length; i++) {
-            IDaemonPostUpdateTask task = (IDaemonPostUpdateTask) _injector.getInstance(TASKS[i]);
+            IDaemonPostUpdateTask task = (IDaemonPostUpdateTask) _injector.getInstance(tasks[i]);
             if (task != null) {
                 Loggers.getLogger(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
                 if (!dryRun) task.run();
