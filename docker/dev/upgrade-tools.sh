@@ -56,7 +56,7 @@ if [ $(uname -s) = "Linux" ] ; then
         fi
     fi
     if [ -z "$(which crane)" ] ; then
-        bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/master/download.sh)" && sudo mv crane /usr/local/bin/crane
+        bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/v1.1.1/download.sh)" && sudo mv crane /usr/local/bin/crane
     fi
     if [ -z "$(which docker-machine)" ] ; then
         curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip \
