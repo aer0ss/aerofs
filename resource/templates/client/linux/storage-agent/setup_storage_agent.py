@@ -30,7 +30,6 @@ warnings.filterwarnings('ignore')
 
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.connection import SyncConnectionService
-from aerofs_sp.sp import _SPServiceWrapper
 from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.gen.sp_pb2 import RegisterDeviceCall
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
@@ -108,56 +107,56 @@ def _parse_input_args(argv):
 
         username = username if username is not None else properties.get('userid', None)
         password = password if password is not None else properties.get('password', None)
-        root_anchor = root_anchor if root_anchor is not None else properties.get('root', "{}".format(os.path.expanduser("~")))
+        root_anchor = os.path.join(root_anchor if root_anchor is not None else properties.get('root', "{}".format(os.path.expanduser("~"))), \
+                    "AeroFS")
         appliance_addr = appliance_addr if appliance_addr is not None else properties.get('appliance', None)
-        rtroot = rtroot if rtroot is not None else properties.get('rtroot', None)
-        sa_config_dir= sa_config_dir if sa_config_dir is not None else properties.get('conf', None)
-
+        rtroot = rtroot if rtroot is not None else properties.get('rtroot', os.path.join(os.path.dirname(root_anchor), ".aerofs-storage-agent"))
+        sa_config_dir = sa_config_dir if sa_config_dir is not None else properties.get('conf', rtroot)
         storage_type = properties.get('storage_type', None)
         storage_dict = get_storage_dict(storage_type, properties)
 
-    if username is None:
-        username = raw_input("AeroFS username: ")
-    if password is None:
-        password = getpass.getpass('AeroFS password: ')
-    if root_anchor is None:
-        root_anchor = raw_input("Absolute location of your AeroFS directory.[{}]: ".format(os.path.expanduser("~")))
-        root_anchor = '{0}/AeroFS'.format(os.path.expanduser("~")) if root_anchor == '' else root_anchor + "/AeroFS"
     else:
-        root_anchor = os.path.join(root_anchor, "AeroFS")
-    if rtroot is None:
-       rtroot = default_rtroot
-    if appliance_addr is None:
-        appliance_addr = raw_input("Address of your AeroFS appliance(only hostname): ")
-    if sa_config_dir is None:
-        sa_config_dir = raw_input("Absolute location of where to install the storage-agent config properties.[{}]: ".format(rtroot))
-        sa_config_dir = rtroot if sa_config_dir == '' else sa_config_dir
-
-    if storage_type is None:
-        print ("The following storage options are available:")
-        print ("[1] Store compressed local files on disk (Default).")
-        print ("[2] Store files on Amazon S3")
-        print ("[3] Store  files on OpenStack Swift")
-        storage_type = raw_input("Choose your option: ") or "1"
-        if int(storage_type) == 1:
-            storage_type = "LOCAL"
-        elif int(storage_type) == 2:
-            storage_type = "S3"
-        elif int(storage_type) == 3:
-            storage_type = "SWIFT"
-
-    if not storage_dict:
-       storage_dict = get_storage_dict(storage_type)
-
-    if owner_uid == 0:
-        print("Looks like you are running this script as root. Would you like to create all AeroFS specific folders as: ")
-        print("[1] {} (Default)".format(os.environ.get('SUDO_USER')))
-        print("[2] root")
-        owner = raw_input("Choose your option: ") or "1"
-        if int(owner) == 2:
-            owner_uid = 0
+        if username is None:
+            username = raw_input("AeroFS username: ")
+        if password is None:
+            password = getpass.getpass('AeroFS password: ')
+        if root_anchor is None:
+            root_anchor = raw_input("Absolute location of your AeroFS directory.[{}]: ".format(os.path.expanduser("~")))
+            root_anchor = '{0}/AeroFS'.format(os.path.expanduser("~")) if root_anchor == '' else root_anchor + "/AeroFS"
         else:
-            owner_uid = int(os.environ.get('SUDO_UID'))
+            root_anchor = os.path.join(root_anchor, "AeroFS")
+        if rtroot is None:
+            rtroot = default_rtroot
+        if appliance_addr is None:
+            appliance_addr = raw_input("Address of your AeroFS appliance(only hostname): ")
+        if sa_config_dir is None:
+            sa_config_dir = raw_input("Absolute location of where to install the storage-agent config properties.[{}]: ".format(rtroot))
+            sa_config_dir = rtroot if sa_config_dir == '' else sa_config_dir
+
+        if storage_type is None:
+            print ("The following storage options are available:")
+            print ("[1] Store compressed local files on disk (Default).")
+            print ("[2] Store files on Amazon S3")
+            print ("[3] Store  files on OpenStack Swift")
+            storage_type = raw_input("Choose your option: ") or "1"
+            if int(storage_type) == 1:
+                storage_type = "LOCAL"
+            elif int(storage_type) == 2:
+                storage_type = "S3"
+            elif int(storage_type) == 3:
+                storage_type = "SWIFT"
+
+        if not storage_dict:
+           storage_dict = get_storage_dict(storage_type)
+
+        if owner_uid == 0:
+            print("Looks like you are running this script as root. Would you like to create all AeroFS specific folders as: ")
+            print("[1] {} (Default)".format(os.environ.get('SUDO_USER')))
+            print("[2] root")
+            owner = raw_input("Choose your option: ") or "1"
+            if int(owner) == 1:
+                owner_uid = int(os.environ.get('SUDO_UID'))
+
 
     return username, password, root_anchor, rtroot, appliance_addr, sa_config_dir, storage_dict
 
@@ -195,11 +194,11 @@ def _create_rtroot_with_perms(rtroot):
         # and chown every single one of those.
         cmd = ['mkdir', '-p', rtroot]
         subprocess.check_output(cmd, preexec_fn=exec_as_owner(owner_uid, pwd.getpwuid(owner_uid).pw_gid))
-        cmd = ['touch', os.path.join(rtroot, "polaris")]
-        subprocess.check_output(cmd, preexec_fn=exec_as_owner(owner_uid, pwd.getpwuid(owner_uid).pw_gid))
 
+    cmd = ['touch', os.path.join(rtroot, "polaris")]
+    subprocess.check_output(cmd, preexec_fn=exec_as_owner(owner_uid, pwd.getpwuid(owner_uid).pw_gid))
 
-def _create_sa_conf_file(sp_client, username, root_anchor, rtroot, did, sa_user_id, storage_dict, sa_conf_dir):
+def _create_sa_conf_file(sp, username, root_anchor, rtroot, did, sa_user_id, storage_dict, sa_conf_dir):
     cfg_data = {
         'user_id': sa_user_id,
         'device_id': did.hex,
@@ -225,11 +224,10 @@ def _create_sa_conf_file(sp_client, username, root_anchor, rtroot, did, sa_user_
 
 def _sign_in_user(rtroot, username, password, appliance_addr):
     con = SyncConnectionService("https://{}:4433/sp/".format(appliance_addr), SP_PROTO_VERSION)
-    sp_service = SPServiceRpcStub(con)
-    sp = _SPServiceWrapper(sp_service)
+    sp = SPServiceRpcStub(con)
     while True:
         try:
-            reply = sp.sign_in(actor=None, user_id=username, password=password)
+            reply = sp.credential_sign_in(username, password)
             break
         except ExceptionReply as e:
             if e.get_type() == PBException.BAD_CREDENTIAL:
@@ -241,7 +239,7 @@ def _sign_in_user(rtroot, username, password, appliance_addr):
             print ("Unable to connect to your AeroFS appliance at {}. Please make sure that your appliance is up and reachable. Exiting now...".format(appliance_addr))
             sys.exit()
 
-    if reply.need_second_factor:
+    if reply.HasField('need_second_factor') and reply.need_second_factor:
         while(True):
             try:
                 second_factor = int(raw_input("Enter your second factor:"))
@@ -355,9 +353,9 @@ def _get_network_interfaces():
     return pb_interfaces
 
 
-def _install_sa_user_impl(sp_client, rtroot):
+def _install_sa_user_impl(sp, rtroot):
     try:
-        sa_user_id = sp_client.get_team_server_user_id().id
+        sa_user_id = sp.get_team_server_user_id().id
     except ExceptionReply as e:
         if e.get_type() == PBException.NO_PERM:
             print ("You don't have permissions to install a storage agent. Please contant your organization admin.")
@@ -380,7 +378,7 @@ def _install_sa_user_impl(sp_client, rtroot):
     # DER enconding
     der_encoded_req = crypto.dump_certificate_request(crypto.FILETYPE_ASN1, csr_req)
 
-    cert = sp_client.register_team_server_device(did.bytes, der_encoded_req, platform.system(), fullOSName, device_name, pb_network_interfaces).cert
+    cert = sp.register_team_server_device(did.bytes, der_encoded_req, platform.system(), fullOSName, device_name, pb_network_interfaces).cert
 
     _write_key_to_file(rtroot, key)
     _write_cert_to_file(rtroot, cert)
@@ -388,11 +386,11 @@ def _install_sa_user_impl(sp_client, rtroot):
     return did, sa_user_id
 
 
-def _install_user(sp_client, rtroot, root_anchor):
-    assert sp_client is not None
+def _install_user(sp, rtroot, root_anchor):
+    assert sp is not None
 
     _create_root_anchor(root_anchor)
-    return _install_sa_user_impl(sp_client, rtroot)
+    return _install_sa_user_impl(sp, rtroot)
 
 
 def _download_site_config(appliance_addr):
