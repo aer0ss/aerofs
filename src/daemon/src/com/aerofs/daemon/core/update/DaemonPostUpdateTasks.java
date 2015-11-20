@@ -104,7 +104,7 @@ public class DaemonPostUpdateTasks
 
             // update db after every task so if later tasks fail earlier ones won't be run again
             // on the next launch
-            _cfgDB.set(k, i + 1);
+            _cfgDB.set(k, i + first + 1);
         }
     }
 }
