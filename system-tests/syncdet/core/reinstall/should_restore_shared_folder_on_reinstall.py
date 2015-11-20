@@ -54,12 +54,6 @@ def main():
     assertTrue(os.path.exists(sub_shared_folder()))
     assertTrue(os.path.exists(sub_regular_folder()))
 
-    # N.B. (JG) Previous tests may have expelled stores, which are not listed under
-    # list_admitted_or_linked_shared_folders. When we reinstall, we clear the db and forget that we have
-    # expelled them, so the list of shared folders can grow. This test checks that shared
-    # folders are restored, which is true iff all shares from before are present after.
-    assertTrue(sf.issubset(set(ritual.connect().list_admitted_or_linked_shared_folders())))
-
     # check that all invalid tag files have been removed
     n = 0
     while not DirTree('invalid', {
@@ -70,10 +64,20 @@ def main():
                 'notsid':   {},
                 'dir':      {}
             }).represents(os.path.join(instance_unique_path(), 'invalid'), True):
-        time.sleep(0.2)
         n += 1
         if n > 10:
             assertTrue(False)
+        time.sleep(0.2)
+
+    # N.B. (JG) Previous tests may have expelled stores, which are not listed under
+    # list_admitted_or_linked_shared_folders. When we reinstall, we clear the db and forget that we have
+    # expelled them, so the list of shared folders can grow. This test checks that shared
+    # folders are restored, which is true iff all shares from before are present after.
+    while not sf.issubset(set(ritual.connect().list_admitted_or_linked_shared_folders())):
+        n += 1
+        if n > 10:
+            assertTrue(False)
+        time.sleep(0.2)
 
 
 spec = {'entries': [main]}
