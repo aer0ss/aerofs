@@ -203,13 +203,13 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 //  -> assign a new random OID to the local object
                 throw new ExProtocolError();
             } else if (oa.parent().equals(oidParent) && oa.name().equals(name)) {
-                l.info("nop insert {}{} {}/name", sidx, oidParent, oidChild, name);
+                l.info("nop insert {}{} {}/{}", sidx, oidChild, oidParent, name);
                 _mcdb.deleteChanges_(sidx, oidChild, t);
                 return;
             } else if (_ds.isDeleted_(oa)) {
                 l.info("restoring {}{} {}/{}", sidx, oidChild, parent.soid(), name);
             } else {
-                l.info("move insert {}{} {}/name", sidx, oidParent, oidChild, name);
+                l.info("move insert {}{} {}/{}", sidx, oidChild, oidParent, name);
             }
             applyMove_(parent, oa, name, timestamp, t);
             return;
