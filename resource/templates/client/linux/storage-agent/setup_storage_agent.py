@@ -358,7 +358,7 @@ def _install_sa_user_impl(sp, rtroot):
         sa_user_id = sp.get_team_server_user_id().id
     except ExceptionReply as e:
         if e.get_type() == PBException.NO_PERM:
-            print ("You don't have permissions to install a storage agent. Please contant your organization admin.")
+            print ("You don't have permissions to install a storage agent. Please contact your organization admin.")
             sys.exit()
 
     # Generate new RSA keypair
