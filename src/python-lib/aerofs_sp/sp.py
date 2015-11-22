@@ -23,12 +23,12 @@ class _SPServiceWrapper(object):
     def __init__(self, rpc_service):
         self._service = rpc_service
 
-    def sign_in(self, actor=None, user_id=None, password=None):
-        if actor is None and user_id is None:
+    def sign_in(self, actor=None):
+        if actor is None:
             actor = local_actor()
-        user_id = user_id if user_id is not None else actor.aero_userid
-        password = password.encode("utf-8") if password is not None else actor.aero_password.encode("utf-8")
-        return self._service.credential_sign_in(user_id, password)
+        user_id = actor.aero_userid
+        password = actor.aero_password.encode("utf-8")
+        self._service.credential_sign_in(user_id, password)
 
     def provide_second_factor(self, second_factor):
         return self._service.provide_second_factor(second_factor)
@@ -93,11 +93,6 @@ class _SPServiceWrapper(object):
     def get_two_factor_setup_enforcement(self):
         return self._service.get_two_factor_setup_enforcement()
 
-    def get_team_server_user_id(self):
-        return self._service.get_team_server_user_id()
-
     def set_two_factor_setup_enforcement(self, level):
         return self._service.set_two_factor_setup_enforcement(level)
 
-    def register_team_server_device(self, did_bytes, der_encoded_req, os_family, fullOSName, device_name, interfaces):
-        return self._service.register_team_server_device(did_bytes, der_encoded_req, os_family, fullOSName, device_name, interfaces)
