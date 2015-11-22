@@ -48,7 +48,7 @@ shadowfaxControllers.controller('SharedFoldersController',
             active: hasPagination,
             total: 0,
             offset: 0,
-            limit: parseInt(paginationLimit, 10),
+            limit: parseInt(paginationLimit),
             callback: function(offset,substring){
                 $scope.paginationInfo.offset = offset;
                 $scope.substring = substring || '';

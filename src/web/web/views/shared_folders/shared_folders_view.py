@@ -19,6 +19,7 @@ from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
 from aerofs_sp.gen.sp_pb2 import JOINED, PENDING, LEFT
+from aerofs_common.constants import PAGE_LIMIT
 
 
 log = logging.getLogger(__name__)
@@ -30,8 +31,6 @@ def _encode_store_id(sid):
 
 def _decode_store_id(encoded_sid):
     return base64.b32decode(encoded_sid)
-
-PAGE_LIMIT = 20
 
 
 @view_config(

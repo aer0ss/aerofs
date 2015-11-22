@@ -4,9 +4,9 @@ from pyramid.httpexceptions import HTTPOk
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
 from web.sp_util import exception2error
+from aerofs_common.constants import PAGE_LIMIT
 
 log = logging.getLogger(__name__)
-PAGE_LIMIT = 20
 
 @view_config(
     route_name = 'org_groups',
@@ -69,6 +69,7 @@ def json_list_org_groups(request):
         'members': _get_members(request, group.group_id)
     } for group in reply.groups]
     return {
+        'total': reply.total_count,
         'groups': groups
     }
 

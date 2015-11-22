@@ -258,6 +258,11 @@ public class Organization
         return _f._odb.searchAutocompleteUsers(_id, offset, maxResults, searchPrefix);
     }
 
+    public int countGroups() throws SQLException
+    {
+        return _f._gdb.countGroups(_id);
+    }
+
     public ImmutableList<Group> listGroups(int maxResults, int offset)
             throws SQLException
     {

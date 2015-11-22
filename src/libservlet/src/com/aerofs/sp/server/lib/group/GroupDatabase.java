@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_SG_COMMON_NAME;
@@ -168,6 +169,22 @@ public class GroupDatabase extends AbstractSQLDatabase
     {
         if (!rs.next()) {
             throw new ExNotFound("group " + gid + " not found");
+        }
+    }
+
+    /**
+     * @param orgId ID of the organization.
+     * @return Number of groups in the organization {@code orgId}.
+     */
+    public int countGroups(OrganizationID orgId)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_SG,
+                C_SG_ORG_ID + "=?", "count(*)"))) {
+            ps.setInt(1, orgId.getInt());
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
         }
     }
 

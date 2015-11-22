@@ -160,7 +160,7 @@
         %endif
         adminLevel = ${admin_level};
         userLevel = ${user_level};
-        paginationLimit = parseInt("${pagination_limit}", 10);
+        paginationLimit = parseInt("${pagination_limit}");
 
         userFoldersURL = "${request.route_path('user_shared_folders')}";
         userDevicesURL = "${request.route_path('user_devices')}";

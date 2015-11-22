@@ -4,29 +4,36 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
     function($scope, $rootScope, $log, $modal, $http){
         var csrftoken = $('meta[name=csrf-token]').attr('content');
         $http.defaults.headers.common["X-CSRF-Token"] = csrftoken;
+        $scope.getGroupsURL = getGroupsURL;
         $scope.isAdmin = isAdmin;
         $rootScope.knownGroupNames = ['Taken', 'Acme'];
 
-        var getGroupData = function () {
-            $http.get(getGroupsURL).success(function(response){
+        var getGroupData = function() {
+            var params = {
+            offset: $scope.paginationInfo.offset.toString()
+            }
+            $http.get(getGroupsURL, {
+            params: params
+            }).success(function(response){
                 $scope.groups = response.groups;
-                $scope.paginationInfo.total = response.groups.length;
+                $scope.paginationInfo.total = response.total;
             }).error(function(response){
                 showErrorMessageFromResponse(response);
             });
         };
+
         $scope.paginationInfo = {
             total: 0,
             offset: 0,
-            limit: parseInt(paginationLimit, 10),
+            limit: parseInt(paginationLimit),
             callback: function(offset){
                 $scope.paginationInfo.offset = offset;
-                getGroupData();
+		getGroupData();
             }
         };
         getGroupData();
 
-        $scope.getNewGroup = function () {
+        $scope.getNewGroup = function() {
             return {
                 name: '',
                 newMemberEmail: '',
@@ -79,7 +86,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 }
             };
 
-            scope.cancel = function () {
+            scope.cancel = function() {
                 $modalInstance.dismiss('cancel');
             };
 
@@ -91,12 +98,12 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
         };
 
         $scope.add = function() {
-            var addGroupModalCtrl = function ($scope, $modalInstance, newGroup) {
+            var addGroupModalCtrl = function($scope, $modalInstance, newGroup) {
                 $scope.newGroup = newGroup;
 
                 $scope = setGroupCtrlMethods($scope, $modalInstance);
 
-                $scope.ok = function () {
+                $scope.ok = function() {
                     $http.post(addGroupURL, {
                         name: $scope.newGroup.name,
                         members: _user_objects_to_email_list($scope.newGroup.members)
@@ -122,7 +129,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 templateUrl: '/static/fellowship/partials/add-group.html',
                 controller: addGroupModalCtrl,
                 resolve: {
-                    newGroup: function () {
+                    newGroup: function() {
                         return $scope.getNewGroup();
                     }
                 }
@@ -159,7 +166,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
 
                 $scope = setGroupCtrlMethods($scope, $modalInstance);
 
-                $scope.ok = function () {
+                $scope.ok = function() {
                     $http.post(editGroupURL, {
                         'id': $scope.group.id,
                         'name': $scope.newGroup.name,
@@ -187,7 +194,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 templateUrl: '/static/fellowship/partials/add-group.html',
                 controller: editGroupModalCtrl,
                 resolve: {
-                    group: function () {
+                    group: function() {
                         return group;
                     }
                 }
@@ -206,7 +213,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 $scope.group = group;
                 $scope.removeGroup = removeGroup;
 
-                $scope.ok = function () {
+                $scope.ok = function() {
                     $http.post(removeGroupURL, {
                         'id': $scope.group.id
                     }).success(function(response){
@@ -217,7 +224,7 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                         $modalInstance.close();
                     });
                 };
-                $scope.cancel = function () {
+                $scope.cancel = function() {
                     $modalInstance.dismiss('cancel');
                 };
             };
@@ -226,10 +233,10 @@ fellowshipControllers.controller('GroupsController', ['$scope', '$rootScope', '$
                 templateUrl: '/static/fellowship/partials/delete-group.html',
                 controller: deleteGroupModalCtrl,
                 resolve: {
-                    removeGroup: function () {
+                    removeGroup: function() {
                         return removeGroup;
                     },
-                    group: function () {
+                    group: function() {
                         return group;
                     }
                 }

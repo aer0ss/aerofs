@@ -14,6 +14,7 @@ from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled
 from web.auth import is_admin
 from web.views.org_groups.org_groups_view import json_list_org_groups
+from aerofs_common.constants import PAGE_LIMIT
 
 # URL param keys
 URL_PARAM_USER = 'user'
@@ -21,7 +22,6 @@ URL_PARAM_LEVEL = 'level'
 URL_PARAM_FULL_NAME = 'full_name'
 URL_PARAM_ERASE_DEVICES = 'erase_devices'
 
-PAGE_LIMIT = 20
 # we currently show a maximum of 6 entries
 AUTOCOMPLETE_ENTRIES = 6
 

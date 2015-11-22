@@ -49,7 +49,9 @@
                     total="paginationInfo.total"
                     offset="paginationInfo.offset"
                     pagelimit="paginationInfo.limit"
-                    callback="paginationInfo.callback(offset)"></div>
+                    callback="paginationInfo.callback(offset)">
+
+            </div>
             <p class="help-block">Group-sharing groups let you <strong>share folders with an entire set of people</strong> instead of having to invite each person individually.</p>
             <p class="help-block">Any organization member can invite a group to a folder that they administer. <strong>Only organization admins can create or modify the members of a group.</strong></p>
         </div>
@@ -71,7 +73,7 @@
         editGroupURL = "${request.route_path('json.edit_org_group')}";
         removeGroupURL = "${request.route_path('json.remove_org_group')}";
         syncGroupsURL = "${request.route_path('json.sync_groups')}";
-        paginationLimit = "${pagination_limit}";
+        paginationLimit = parseInt("${pagination_limit}");
         maxMembers = parseInt("${member_limit}");
     </script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>

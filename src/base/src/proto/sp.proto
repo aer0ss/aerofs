@@ -1613,6 +1613,7 @@ message ListGroupsCall {
 
 message ListGroupsReply {
     repeated PBGroup groups = 1;
+    required uint32 total_count = 2;
 }
 
 message ListGroupMembersCall {

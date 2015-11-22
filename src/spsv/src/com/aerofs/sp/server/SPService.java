@@ -3662,13 +3662,15 @@ public class SPService implements ISPService
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         Organization org = user.getOrganization();
+        int groupCount = org.countGroups();
         ListGroupsReply reply = ListGroupsReply.newBuilder()
                 .addAllGroups(groups2pbGroups(org.listGroups(maxResults, offset, searchPrefix)))
+                .setTotalCount(org.countGroups())
                 .build();
         _sqlTrans.commit();
 
         l.info("{} listed groups; total: {}", user, reply.getGroupsCount());
-
+        
         return createReply(reply);
     }
 
