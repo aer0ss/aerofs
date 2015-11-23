@@ -558,9 +558,15 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
 
         @Override
         public InputStream getBlock(ContentBlockHash key) throws IOException {
-            // FIXME: ensure that the file does not get removed while being read
             InjectableFile f = _uploadDir.newChild(key.toHex());
-            return f.exists() ? f.newInputStream() : _bsb.getBlock(key);
+            if (f.exists()) {
+                try {
+                    return f.newInputStream();
+                } catch (FileNotFoundException e) {
+                    // race condition: file got deleted between existence check and open
+                }
+            }
+            return _bsb.getBlock(key);
         }
 
         @Override
