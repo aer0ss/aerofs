@@ -320,6 +320,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                         try (Trans t = _tm.begin_()) {
                             _cedb.setHighestChangeEpoch_(_sidx, maxTimestamp, t);
                             highestTimestamps.put(_sidx, maxTimestamp);
+                            t.commit_();
                         }
                     }
 
