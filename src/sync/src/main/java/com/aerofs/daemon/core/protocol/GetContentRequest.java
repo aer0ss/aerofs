@@ -6,7 +6,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
@@ -151,8 +150,6 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
 
         OID oid = new OID(BaseUtil.fromPB(request.getObjectId()));
         long rcv = request.getLocalVersion();
-
-        if (_cedb.getChangeEpoch_(sidx) == null) throw new ExProtocolError();
 
         SOID soid = new SOID(sidx, oid);
 

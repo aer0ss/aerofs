@@ -80,13 +80,18 @@ public class NewUpdatesSender
     public void sendForStore_(SIndex sidx, @Nullable Long epoch)
             throws Exception
     {
+        SID sid = _sidx2sid.getNullable_(sidx);
+        if (sid == null) {
+            l.info("{} no longer present", sidx);
+            return;
+        }
+
         // see Rule 3 in acl.md
         if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
             l.info("we have no editor perm for {}", sidx);
             return;
         }
 
-        SID sid = _sidx2sid.getThrows_(sidx);
         PBNewUpdates.Builder bd = PBNewUpdates.newBuilder().setStoreId(BaseUtil.toPB(sid));
         if (epoch != null) bd.setChangeEpoch(epoch);
 
