@@ -107,7 +107,7 @@
         Creating user specific tokens using this interface is <b>not</b> meant to replace the typical
         OAuth authentication flow for 3rd party applications. These credentials should <b>not</b>
         be carelessly supplied to 3rd party vendors. More information is available on our
-        <a href="https://aerofs.com/developers">developer website</a>.
+        <a href="https://aerofs.com/developers" target="_blank">developer website</a>.
     </p>
     </div>
 
