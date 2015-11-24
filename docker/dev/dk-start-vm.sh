@@ -9,7 +9,7 @@ fi
 
 VM=$1
 
-docker_machine_ls="$(docker-machine ls | grep "${VM}")"
+docker_machine_ls="$(docker-machine ls | grep "${VM}" || true)"
 
 if [ -n "${docker_machine_ls}" ]
 then
