@@ -1,4 +1,5 @@
 <%! from web.views.maintenance.maintenance_util import is_maintenance_mode %>
+
 <%inherit file="marketing_layout.mako"/>
 
 <%namespace name="maintenance_alert" file="maintenance_alert.mako"/>

@@ -42,6 +42,8 @@ def main(global_config, **settings):
         default_permission='admin'
     )
 
+    config.add_settings({'is_bunker':'True'})
+
     # Add support for Mako template engine
     config.include('pyramid_mako')
 

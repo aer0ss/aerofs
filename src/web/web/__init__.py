@@ -6,7 +6,10 @@ from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
 import views
+import base64
+import logging
 
+log = logging.getLogger(__name__)
 
 def main(global_config, **settings):
     """
@@ -54,6 +57,11 @@ def main(global_config, **settings):
         config.include('{}.{}'.format(views.__name__, view))
 
     config.scan()
+
+    # Save custom logo:
+    if 'customization.logo' in settings:
+        with open('/opt/web/web/static/img/logo_custom.png','wb') as logo:
+            logo.write(base64.decodestring(settings['customization.logo']))
 
     # Config committing. Pyramid does some great config conflict detection. This conflict detection
     # is limited to configuration changes between commits. Since some of the default configuration

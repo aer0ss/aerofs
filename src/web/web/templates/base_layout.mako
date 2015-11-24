@@ -109,7 +109,12 @@
                 <div class="col-sm-12" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
                         <li class="logo"><a href="${self.home_url()}">
-                            <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
+                            %if request.registry.settings.get('customization.logo') and request.registry.settings.get('is_bunker') is not 'True':
+                                <img src="${request.static_path('web:static/img/logo_custom.png')}" width="144" height="40" alt="AeroFS"/>
+                            %else:
+                                <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
+                            %endif
+
                         </a></li>
                         <%block name="top_navigation_bar_desktop"/>
                         <%block name="top_navigation_bar_tablet"/>

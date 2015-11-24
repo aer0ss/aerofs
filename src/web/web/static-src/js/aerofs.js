@@ -233,3 +233,23 @@ function linkFileSelectorToField(selector, field) {
     }
   });
 }
+
+
+//NOTE: Do not use this function with IE<=11. Not supported.
+function linkFileSelectorToField_base64(selector, field) {
+  'use strict';
+  $(selector).on('change', function() {
+    var file = this.files[0];
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function() {
+        $(field).val(this.result.split(',')[1]);
+      };
+      // N.B. IE 11 doesn't support readAsDataURL() despite what
+      //   MSDN doc claims.
+      reader.readAsDataURL(file);
+    } else {
+      $(field).val('');
+    }
+  });
+}
