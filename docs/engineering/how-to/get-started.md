@@ -95,6 +95,8 @@ It'll prompt you before it does anything, but the defaults are sane.
 Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
 
     brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools jq
+    
+Mac: Close and open your terminal to use the new ruby version.  
 
     brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
     
