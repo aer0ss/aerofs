@@ -11,7 +11,6 @@ import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
 import com.aerofs.polaris.api.operation.*;
-import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.*;
@@ -22,7 +21,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.DBI;
-import org.skife.jdbi.v2.ResultIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,16 +87,6 @@ public class ConversionResource {
             UniqueID target = conversion.getAliasNullable(operation.oid, store);
             affectedObjects.add(target != null ? target : operation.oid);
 
-            // operation on an object which we are supposed to ignore
-            if (OID.TRASH.equals(affectedObjects.get(0))) {
-                if (operation.operation instanceof InsertChild) {
-                    InsertChild ic = ((InsertChild) operation.operation);
-                    conversion.addAlias(ic.child, store, OID.TRASH);
-                }
-                // exit the operation early, no point trying to operate on objects which don't exist
-                return new OperationResult(Lists.newArrayList(new Updated((conn.attach(com.aerofs.polaris.dao.Transforms.class)).getLatestLogicalTimestamp(), DUMMY_OBJECT)));
-            }
-
             // this never does anything, since INSERT_CHILD and UPDATE_CONTENT have affectedOIDs -> empty list
             for (UniqueID oid : operation.operation.affectedOIDs()) {
                 target = conversion.getAliasNullable(oid, store);
@@ -146,8 +134,7 @@ public class ConversionResource {
                         UniqueID conflict = dao.children.getActiveChildNamed(oid, ic.childName);
                         if (conflict != null) {
                             Preconditions.checkState(conflict.equals(child) || !ic.aliases.contains(conflict), "incorrectly resolved aliases leading to avoidable conflict with %s and %s", child, conflict);
-                            op = moveConflictingObjectIfIncomingVersionDominates(dao, conversion, token, principal.getDevice(), oid, child, conflict, ic) ?
-                                    makeOperation(oid, currentParent, child, ic) : null;
+                            op = makeOperationWithConflict(dao, conversion, token, principal.getDevice(), oid, currentParent, child, conflict, ic);
                         } else {
                             op = makeOperation(oid, currentParent, child, ic);
                         }
@@ -250,7 +237,6 @@ public class ConversionResource {
 
     public UniqueID mergeMultipleResolutions(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID store, ArrayList<UniqueID> resolutions)
     {
-        // TODO (RD) this makes transactions unboundedly large, but hopefully this is rare enough that it'll be alright
         Preconditions.checkArgument(resolutions.size() > 0, "cannot merge empty list of resolutions");
         if (resolutions.size() == 1) {
             return resolutions.get(0);
@@ -268,7 +254,6 @@ public class ConversionResource {
         assert highestResolution != null;
         LOGGER.info("merging resolutions {} in store {} into target {}", resolutions, store, highestResolution);
         Preconditions.checkState(resolutions.remove(highestResolution), "found a highest resolution %s not in list", highestResolution);
-        List<DeletableChild> currentChildren = getChildren(dao, highestResolution);
 
         for (UniqueID r : resolutions) {
             Preconditions.checkState(!Identifiers.isSharedFolder(r), "shared folders cannot have aliases");
@@ -277,39 +262,11 @@ public class ConversionResource {
                 LOGGER.info("removing object {} to merge into {}", r, highestResolution);
                 objectStore.performTransform(dao, token, device, rParent, new RemoveChild(new OID(r)));
             }
-            List<DeletableChild> rChildren = getChildren(dao, r);
-            for (DeletableChild c : rChildren) {
-                if (!c.deleted) {
-                    DeletableChild conflict = currentChildren.stream().filter(x -> Arrays.equals(c.name, x.name)).findAny().orElse(null);
-                    // TODO (RD) merging will have to recursively check for conflicts
-//                    if (conflict != null) {
-//                        Map<DID, Long> cVers = toMap(conversion.getDistributedVersion(c.oid, Conversion.COMPONENT_META));
-//                        if (newVersionDominates(conversion.getDistributedVersion(conflict.oid, Conversion.COMPONENT_META), cVers)) {
-//                            // recursive merge or maybe just do db fiddly hackery
-
-//
-//                        }
-//                    } else {
-                    if (conflict == null) {
-                        objectStore.performTransform(dao, token, device, r, new MoveChild(c.oid, highestResolution, c.name));
-                        currentChildren.add(c);
-                    }
-                }
-            }
+            // TODO (RD) it is possible to try and merge conflicted subtrees, but for right now it's only introducing extra complication
+            // see earlier commits on this file for a first pass impl
             conversion.remapAlias(store, r, highestResolution);
         }
         return highestResolution;
-    }
-
-    private List<DeletableChild> getChildren(DAO dao, UniqueID p) {
-        List<DeletableChild> children = Lists.newArrayList();
-        try (ResultIterator<DeletableChild> c = dao.children.getChildren(p)) {
-            while (c.hasNext()) {
-                // include deleted objects here as well
-                children.add(c.next());
-            }
-        }
-        return children;
     }
 
     private Operation makeOperation(UniqueID oid, @Nullable UniqueID currentParent, UniqueID child, InsertChild ic)
@@ -322,23 +279,29 @@ public class ConversionResource {
     }
 
     // returns if the operation should be executed or not, will move a name conflicting object out of the way if necessary
-    private boolean moveConflictingObjectIfIncomingVersionDominates(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID parent, UniqueID child, UniqueID conflict, InsertChild ic)
+    @Nullable private Operation makeOperationWithConflict(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID parent, @Nullable UniqueID currentParent, UniqueID child, UniqueID conflict, InsertChild ic)
     {
         assert ic.versions != null;
         if (!conflict.equals(child)) {
             // N.B. cannot just drop operations making a folder because there could be further operations under that folder which will persistently fail
-            // alternatively, add a new table for objects which we are choosing to ignore
+            // instead, we move them into the tree - meaning one of the objects gets renamed
             if (newVersionDominates(conversion.getDistributedVersion(conflict, Conversion.COMPONENT_META), ic.versions)) {
                 LOGGER.info("moving name conflict {} with new object {} from under parent {}", conflict, child, parent);
                 objectStore.performTransform(dao, token, device, parent, new MoveChild(conflict, parent, nonConflictingName(dao, parent, conflict, ic.childName)));
-                return true;
+                return makeOperation(parent, currentParent, child, ic);
             } else {
-                Preconditions.checkState(ic.child.equals(child), "have an illogical alias %s for name conflicting object %s with conflict %s", child, ic.child, conflict);
-                conversion.addAlias(ic.child, dao.objects.getStore(parent), OID.TRASH);
+                // TODO (RD) consider queueing up a remove operation for this case
+                Preconditions.checkState(child.equals(ic.child), "have an illogical alias %s for name conflicting object %s with conflict %s", child, ic.child, conflict);
+                if (currentParent != null) {
+                    return new MoveChild(child, parent, nonConflictingName(dao, parent, child, ic.childName));
+                } else {
+                    return new InsertChild(child, ic.childObjectType, nonConflictingName(dao, parent, child, ic.childName), null, null, null);
+                }
             }
+        } else {
+            // inserting a child where it already is with the same name, would be a no-op
+            return null;
         }
-        // inserting a child where it already is with the same name, would be a no-op
-        return false;
     }
 
     private boolean newVersionDominates(List<Conversion.Tick> oldVersion, Map<DID, Long> newVersion)
