@@ -22,6 +22,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;
@@ -60,11 +61,12 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
     private final CfgLocalUser _cfgLocalUser;
     private final CfgLocalDID _cfgLocalDID;
     private final IMapSIndex2SID _sidx2sid;
+    private final CfgUsePolaris _usePolaris;
 
     @Inject
     public HdGetActivities(ActivityLog al, DirectoryService ds, DeviceToUserMapper d2u,
             UserAndDeviceNames udinfo, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID,
-            IMapSIndex2SID sidx2sid)
+            IMapSIndex2SID sidx2sid, CfgUsePolaris usePolaris)
     {
         _al = al;
         _ds = ds;
@@ -73,6 +75,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         _cfgLocalUser = cfgLocalUser;
         _cfgLocalDID = cfgLocalDID;
         _sidx2sid = sidx2sid;
+        _usePolaris = usePolaris;
     }
 
     @Override
@@ -207,18 +210,25 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             }
         }
 
-        // MDID can only appear for local changes
-        checkState(mobile == null
-                || (myDIDs.equals(Collections.singleton(_cfgLocalDID.get())) && user2did.isEmpty()));
 
         StringBuilder sb = new StringBuilder();
+        if (_usePolaris.get()) {
+            // FIXME(polaris): find owner for mdid (ask bifrost/sparta and cache it...)
+        } else {
+            // MDID can only appear for local changes
+            checkState(mobile == null
+                    || (myDIDs.equals(Collections.singleton(_cfgLocalDID.get())) && user2did.isEmpty()));
+        }
+
+        if (mobile != null) {
+            // TODO app/device name
+            sb.append("An authorized application");
+            return sb;
+        }
 
         boolean first = true;
         if (!myDIDs.isEmpty()) {
-            if (mobile != null) {
-                // TODO app/device name
-                sb.append("An authorized application");
-            } else if (brief) {
+            if (brief) {
                 first = and(sb, first);
                 sb.append("You");
             } else {
