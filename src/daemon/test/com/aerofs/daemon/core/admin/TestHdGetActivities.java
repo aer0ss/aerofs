@@ -141,7 +141,8 @@ public class TestHdGetActivities extends AbstractTest
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u,
                 udndb, factSP, new ElapsedTimer.Factory());
 
-        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid);
+        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid,
+                mock(CfgUsePolaris.class));
 
         when(cfgLocalUser.get()).thenReturn(me);
 
