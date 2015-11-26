@@ -6,13 +6,23 @@
 </%def>
 
 ## Render a link menu for navigation bars
-## @param link: tuple (route_name, menu_label)
+## @param link: tuple (route_name, menu_label, menu_badge)
 <%def name="link(link)">
     <li
         %if request.matched_route and request.matched_route.name == link[0]:
             class="active"
         %endif
-    ><a href="${request.route_path(link[0])}">${link[1]}</a></li>
+    ><a href="${request.route_path(link[0])}">${link[1]}
+    <%
+    	try:
+    		badge = link[2]
+    	except:
+    		badge = ""
+    %>
+    %if badge:
+    	<span class="badge">${badge}</span>
+    %endif
+    </a></li>
 </%def>
 
 <%def name="api_doc_url()">/docs/api</%def>

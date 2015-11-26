@@ -8,6 +8,7 @@
     from web.auth import is_admin
     from pyramid.security import authenticated_userid
     from web.util import str2bool
+    from web.util import get_folder_invitation_count
 %>
 
 <div class="row">
@@ -212,7 +213,13 @@
         links = []
         links.append(('files', _("My files")))
         links.append(('my_shared_folders', _("Manage shared folders")))
-        links.append(('accept', _("Pending invitations")))
+
+        pending_count = get_folder_invitation_count(request)
+        if pending_count:
+            links.append(('accept', _("Pending invitations"), _(str(pending_count))))
+        else:
+            links.append(('accept', _("Pending invitations")))
+
         links.append(('my_devices', _("My devices")))
     %>
     % for link in links:

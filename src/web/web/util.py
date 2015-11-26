@@ -216,6 +216,10 @@ def str2bool(v):
     else:
         return v.lower() in ("yes", "true", "t", "1", "on")
 
+def get_folder_invitation_count(request):
+    sp = get_rpc_stub(request)
+    return len(sp.list_pending_folder_invitations().invitation)
+
 def get_deployment_secret(settings):
     secret_file = settings['deployment.secret_file']
     with open(secret_file) as f:
