@@ -18,6 +18,20 @@ LINE="$(docker images | grep ${SPECIMEN})"
 REGISTRY="$(echo "${LINE}" | awk '{print $1}' | sed -e "s,${SPECIMEN}$,,")"
 TAG="$(echo "${LINE}" | awk '{print $2}')"
 
+# Keep legacy sync as the default
+# necessary to cover legacy in CI until all customers are moved to Phoenix
+CONFIG="${REGISTRY}aerofs/config:${TAG}"
+echo "Modifying ${CONFIG} ..."
+true && {
+    TMP="$(mktemp -d -t XXXXXX)"
+    cat > "${TMP}/Dockerfile" <<END
+FROM ${CONFIG}
+RUN  sed -i s/enable_phoenix=true// /external.properties.default
+END
+    docker build -t ${CONFIG} "${TMP}"
+    rm -rf "${TMP}"
+}
+
 # Enable disabled services in Nginx
 NGINX="${REGISTRY}aerofs/nginx:${TAG}"
 echo "Modifying ${NGINX} ..."
