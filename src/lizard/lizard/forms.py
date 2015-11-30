@@ -2,7 +2,7 @@ import datetime
 
 from flask.ext.wtf import Form
 from flask_wtf.file import FileField, FileRequired
-from wtforms import StringField, PasswordField, BooleanField, IntegerField, DateField, SelectField, TextAreaField
+from wtforms import StringField, PasswordField, BooleanField, IntegerField, DateField, SelectField, TextAreaField, HiddenField
 from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo, NumberRange
 
 class LoginForm(Form):
@@ -19,6 +19,17 @@ class SignupForm(Form):
     company_size = StringField("Company Size", validators=[Optional()])
     current_fss = StringField("Current file sharing solution", validators=[Optional()])
     country = StringField("Country", validators=[Optional()])
+    demandramp_rm__utm_medium__c = HiddenField("demandramp_rm__utm_medium__c", validators=[Optional()])
+    demandramp_rm__utm_source__c = HiddenField("demandramp_rm__utm_source__c", validators=[Optional()])
+    demandramp_rm__utm_campaign__c = HiddenField("demandramp_rm__utm_campaign__c", validators=[Optional()])
+    demandramp_rm__utm_content__c = HiddenField("demandramp_rm__utm_content__c", validators=[Optional()])
+    demandramp_rm__utm_term__c = HiddenField("demandramp_rm__utm_term__c", validators=[Optional()])
+    demandramp_rm__referring_url__c = HiddenField("demandramp_rm__referring_url__c", validators=[Optional()])
+    demandramp_rm__destination_url__c = HiddenField("demandramp_rm__destination_url__c", validators=[Optional()])
+    demandramp_rm__form_fill_out_url__c = HiddenField("demandramp_rm__form_fill_out_url__c", validators=[Optional()])
+    demandramp_rm__landing_page_url__c = HiddenField("demandramp_rm__landing_page_url__c", validators=[Optional()])
+    demandramp_rm__person_id__c = HiddenField("demandramp_rm__person_id__c", validators=[Optional()])
+    demandramp_rm__session_id__c = HiddenField("demandramp_rm__session_id__c", validators=[Optional()])
 
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[Length(min=6)])

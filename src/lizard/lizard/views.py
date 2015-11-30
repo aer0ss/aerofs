@@ -132,7 +132,18 @@ def signup_request_page():
             'job_title': record.job_title.encode('utf-8'),
             'company_size': form.company_size.data.encode('utf-8'),
             'current_fss': form.current_fss.data.encode('utf-8'),
-            'country': form.country.data.encode('utf-8')
+            'country': form.country.data.encode('utf-8'),
+            'demandramp_rm__utm_medium__c': form.demandramp_rm__utm_medium__c.data.encode('utf-8'),
+            'demandramp_rm__utm_source__c': form.demandramp_rm__utm_source__c.data.encode('utf-8'),
+            'demandramp_rm__utm_campaign__c': form.demandramp_rm__utm_campaign__c.data.encode('utf-8'),
+            'demandramp_rm__utm_content__c': form.demandramp_rm__utm_content__c.data.encode('utf-8'),
+            'demandramp_rm__utm_term__c': form.demandramp_rm__utm_term__c.data.encode('utf-8'),
+            'demandramp_rm__referring_url__c': form.demandramp_rm__referring_url__c.data.encode('utf-8'),
+            'demandramp_rm__destination_url__c': form.demandramp_rm__destination_url__c.data.encode('utf-8'),
+            'demandramp_rm__form_fill_out_url__c': form.demandramp_rm__form_fill_out_url__c.data.encode('utf-8'),
+            'demandramp_rm__landing_page_url__c': form.demandramp_rm__landing_page_url__c.data.encode('utf-8'),
+            'demandramp_rm__person_id__c': form.demandramp_rm__person_id__c.data.encode('utf-8'),
+            'demandramp_rm__session_id__c': form.demandramp_rm__session_id__c.data.encode('utf-8')
         }
         r = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
 
