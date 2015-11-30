@@ -13,7 +13,8 @@ import itsdangerous
 from itsdangerous import TimestampSigner
 import markupsafe
 
-from lizard import analytics_client, db, login_manager, csrf, stripe, filters, login_helper
+from lizard import analytics_client, db, login_manager, csrf, stripe, filters, login_helper, \
+    password_reset_helper
 from . import appliance, notifications, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
@@ -819,18 +820,22 @@ def complete_password_reset():
 
     try:
         signed_reset_token = base64.urlsafe_b64decode(reset_blob.encode("latin1"))
-    except Exception as e:
+    except Exception:
         flash(u"Not a valid password reset token.", "error")
         return redirect(url_for(".start_password_reset"))
 
     s = TimestampSigner(current_app.secret_key)
     try:
         reset_token = s.unsign(signed_reset_token, max_age=3600)
-    except itsdangerous.BadSignature as e:
+    except itsdangerous.BadSignature:
         flash(u"Not a valid password reset token.", "error")
         return redirect(url_for(".start_password_reset"))
-    except itsdangerous.SignatureExpired as e:
+    except itsdangerous.SignatureExpired:
         flash(u"Password reset token valid but expired.", "error")
+        return redirect(url_for(".start_password_reset"))
+
+    if password_reset_helper.has_been_used(reset_blob):
+        flash(u"Password reset token valid but has already been used.", "error")
         return redirect(url_for(".start_password_reset"))
 
     token = json.loads(reset_token)
@@ -839,6 +844,8 @@ def complete_password_reset():
     form = forms.CompleteSignupForm()
     if form.validate_on_submit():
         admin = models.Admin.query.filter_by(email=token_email).first_or_404()
+        # Mark as used.
+        password_reset_helper.use(reset_blob)
         # Reset the password
         admin.set_password(form.password.data)
         # Save to DB
