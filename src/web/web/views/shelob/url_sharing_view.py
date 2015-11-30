@@ -90,14 +90,6 @@ def create_url(request):
     reply = _make_sp_request(get_rpc_stub(request).create_url, (soid))
     key = reply.url_info.key
 
-    assert len(reply.url_info.soid) == 64, reply.url_info.soid
-
-    _audit(request, "LINK", "link.create", {
-        'caller': authenticated_userid(request),
-        'key': key,
-        'soid': {'sid': reply.url_info.soid[:32], 'oid': reply.url_info.soid[32:]},
-    })
-
     return {
         "key": key,
         "require_login": reply.url_info.require_login,
@@ -142,7 +134,6 @@ def get_url_info(request):
     if password is not None:
         password = password.encode('utf-8')
     reply = _make_sp_request(get_rpc_stub(request).get_url_info, (key, password))
-    _audit(request, "LINK", "link.access", {'key': key})
     return _pb_rest_object_url_to_dict(reply.url_info)
 
 
@@ -161,12 +152,6 @@ def set_url_require_login(request):
         error.expected_error('missing "require_login" param')
 
     _make_sp_request(get_rpc_stub(request).set_url_require_login, (key, require_login))
-
-    _audit(request, 'LINK', 'link.set_require_login', {
-        'caller': authenticated_userid(request),
-        'key': key,
-        'require_login': require_login,
-    })
 
     return {}
 
@@ -196,12 +181,6 @@ def set_url_expires(request):
 
     _make_sp_request(get_rpc_stub(request).set_url_expires, (key, expires_abs_milli))
 
-    _audit(request, "LINK", "link.set_expiry", {
-        'caller': authenticated_userid(request),
-        'key': key,
-        'expiry': int(expires),
-    })
-
     return {}
 
 
@@ -217,11 +196,6 @@ def remove_url_expires(request):
         error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url_expires, (key))
 
-    _audit(request, "LINK", "link.remove_expiry", {
-        'caller': authenticated_userid(request),
-        'key': key,
-    })
-
     return {}
 
 
@@ -236,11 +210,6 @@ def remove_url(request):
     if key is None:
         error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url, (key))
-
-    _audit(request, "LINK", "link.delete", {
-        'caller': authenticated_userid(request),
-        'key': key,
-    })
 
     return {}
 
@@ -261,11 +230,6 @@ def set_url_password(request):
     password = password.encode('utf-8')
     _make_sp_request(get_rpc_stub(request).set_url_password, (key, password))
 
-    _audit(request, "LINK", "link.set_password", {
-        'caller': authenticated_userid(request),
-        'key': key,
-    })
-
     return {}
 
 
@@ -280,11 +244,6 @@ def remove_url_password(request):
     if key is None:
         error.expected_error('missing "key" param')
     _make_sp_request(get_rpc_stub(request).remove_url_password, (key))
-
-    _audit(request, "LINK", "link.remove_password", {
-        'caller': authenticated_userid(request),
-        'key': key,
-    })
 
     return {}
 

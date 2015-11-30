@@ -131,7 +131,8 @@ public abstract class BifrostTest extends AbstractTest
 
     public static void createTestEntities(UserID user, Injector inj)
     {
-        ResourceServer rs = createResourceServer(inj);
+        ResourceServer rs = createResourceServer(inj, RESOURCEKEY, RESOURCESECRET,
+                ImmutableSet.of("files.read", "files.write"));
         Client client = createClient(inj, rs, CLIENTID, CLIENTSECRET, CLIENTNAME,
                 ImmutableSet.of("files.read", "files.write"), 0L);
         createClient(inj, rs, CLIENTSHORTEXPIRYID, CLIENTSECRET, CLIENTNAME,
@@ -145,16 +146,18 @@ public abstract class BifrostTest extends AbstractTest
                 ImmutableSet.of("read", "write"));
     }
 
-    public static ResourceServer createResourceServer(Injector inj)
+    public static ResourceServer createResourceServer(Injector inj, String key, String secret,
+            Set<String> scopes)
     {
         ResourceServer rs = new ResourceServer();
         rs.updateTimeStamps();
         rs.setContactEmail("localadmin@example.com");
         rs.setContactName("local admin");
         rs.setName("Auth server");
-        rs.setKey(RESOURCEKEY);
-        rs.setSecret(RESOURCESECRET);
-        rs.setScopes(ImmutableSet.of("files.read", "files.write"));
+        rs.setKey(key);
+        rs.setSecret(secret);
+        rs.setScopes(scopes);
+        rs.setClients(Sets.newHashSet());
         inj.getInstance(ResourceServerRepository.class).save(rs);
         return rs;
     }
@@ -179,7 +182,7 @@ public abstract class BifrostTest extends AbstractTest
 
         Set<Client> clients = rs.getClients();
         if (clients != null){
-            clients.addAll(rs.getClients());
+            clients.add(client);
         } else {
             rs.setClients(Sets.newHashSet(client));
         }

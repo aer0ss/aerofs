@@ -7,10 +7,7 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
@@ -31,11 +28,11 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("unchecked")
 public class TestSharedFolderResource extends AbstractResourceTest
 {
-    private final String BASE_RESOURCE = "/v1.1/shares/";
-    private final String RESOURCE = BASE_RESOURCE + "{sid}";
-    private final String V13_RESOURCE = "/v1.3/shares/{sid}/";
-    private final String GROUPS_RESOURCE = V13_RESOURCE + "groups/";
-    private final String SINGLE_GROUP_RESOURCE = GROUPS_RESOURCE + "{gid}";
+    private static final String BASE_RESOURCE = "/v1.1/shares/";
+    private static final String RESOURCE = BASE_RESOURCE + "{sid}";
+    private static final String V13_RESOURCE = "/v1.3/shares/{sid}/";
+    private static final String GROUPS_RESOURCE = V13_RESOURCE + "groups/";
+    private static final String SINGLE_GROUP_RESOURCE = GROUPS_RESOURCE + "{gid}";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -104,7 +101,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     @Test
     public void shouldReturn401WhenDelegatedSharedSecretInvalid() throws Exception
     {
-        givenSecret("polaris", "notasharedsecret", DID.generate(), user)
+        givenSecret("polaris", "notasharedsecret", user, DID.generate())
                 .expect()
                 .statusCode(401)
                 .body("type", equalTo("UNAUTHORIZED"))
@@ -115,7 +112,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     @Test
     public void shouldReturn401WhenDelegatedSharedSecretMismatch() throws Exception
     {
-        givenSecret("polaris", UniqueID.generate().toStringFormal(), DID.generate(), user)
+        givenSecret("polaris", UniqueID.generate().toStringFormal(), user, DID.generate())
                 .expect()
                 .statusCode(401)
                 .body("type", equalTo("UNAUTHORIZED"))
@@ -195,7 +192,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         SID sid = SID.rootSID(user);
 
-        givenSecret("polaris", deploymentSecret, DID.generate(), user)
+        givenSecret("polaris", deploymentSecret, user, DID.generate())
         .expect()
                 .statusCode(200)
                 .body("id", equalTo(sid.toStringFormal()))
@@ -1057,7 +1054,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
 
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SFGroupMember("123", "A group", new String[] {"WRITE"}),
+                .body(new SFGroupMember("123", "A group", new String[]{"WRITE"}),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(404)

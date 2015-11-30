@@ -214,7 +214,7 @@ public class TokenResource
         }
         if (!request.getClient().isExactMatch(credentials)) {
             l.warn("invalid client credentials in create token request");
-            // FIXME why do we send this reponse? what do these headers do? it's unlike a normal oauth error response
+            // FIXME why do we send this response? what do these headers do? it's unlike a normal oauth error response
             return Response.status(Response.Status.UNAUTHORIZED)
                     .header(WWW_AUTHENTICATE, BASIC_REALM)
                     .build();

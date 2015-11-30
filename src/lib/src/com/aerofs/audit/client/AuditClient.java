@@ -43,7 +43,8 @@ public class AuditClient
         USER,
         SHARING,
         DEVICE,
-        ORGANIZATION
+        ORGANIZATION,
+        LINK,
     }
 
     /**

@@ -1642,6 +1642,13 @@ public class SPService implements ISPService
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.create")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", link.getKey())
+                .add("soid", restObject.toStringFormal())
+                .publish();
+
         return createReply(CreateUrlReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
 
@@ -1690,6 +1697,11 @@ public class SPService implements ISPService
         PBRestObjectUrl pbRestObjectUrl = link.toPB();
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.access")
+                .add("ip", _remoteAddress.get())
+                .add("key", key)
+                .publish();
+
         return createReply(GetUrlInfoReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
 
@@ -1711,8 +1723,15 @@ public class SPService implements ISPService
                 firstNonNull(oldExpiry, 0L));
         _zelda.deleteToken(link.getToken());
 
-        link.setRequireLogin(requireLogin.booleanValue(), newToken);
+        link.setRequireLogin(requireLogin, newToken);
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.LINK, "link.set_require_login")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .add("require_login", requireLogin)
+                .publish();
 
         return createVoidReply();
     }
@@ -1736,6 +1755,13 @@ public class SPService implements ISPService
         link.setExpires(expires, newToken);
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.set_expiry")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .add("expiry", expires)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1758,6 +1784,12 @@ public class SPService implements ISPService
         link.removeExpires(newToken);
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.remove_expiry")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1777,6 +1809,12 @@ public class SPService implements ISPService
 
         link.delete();
         _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.LINK, "link.delete")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .publish();
 
         return createVoidReply();
     }
@@ -1802,6 +1840,12 @@ public class SPService implements ISPService
         link.setPassword(password.toByteArray(), newToken);
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.set_password")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1818,6 +1862,12 @@ public class SPService implements ISPService
         link.removePassword();
         _sqlTrans.commit();
 
+        _auditClient.event(AuditTopic.LINK, "link.remove_password")
+                .add("ip", _remoteAddress.get())
+                .add("caller", requester.id().getString())
+                .add("key", key)
+                .publish();
+
         return createVoidReply();
     }
 
@@ -1833,7 +1883,9 @@ public class SPService implements ISPService
 
         _sqlTrans.begin();
         UrlShare link = _factUrlShare.create(key);
-        // FIXME: note the intellij suggestion here. What if password _is_ null? Throw something?
+        if (password == null) {
+            throw new ExBadCredential();
+        }
         link.validatePassword(password.toByteArray());
         _sqlTrans.commit();
         return createVoidReply();

@@ -77,6 +77,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -246,7 +247,13 @@ public class SPServlet extends AeroServlet
             _factUserSettingsToken.inject(_ustdb);
         }
 
-        _zelda = new Zelda("http://sparta.service:8700", "sp", deploymentSecret);
+        try {
+            _zelda = Zelda.create("http://sparta.service:8700", "sp", deploymentSecret);
+        } catch (MalformedURLException e) {
+            // this is impossible. Things have gone horribly wrong if we end up here.
+            throw new AssertionError("Malformed bifrost URL: http://sparta.service:8700", e);
+        }
+
         _accessCodeProvider = new AccessCodeProvider(_auditClient, _identitySessionManager);
 
         _service = new SPService(_db,

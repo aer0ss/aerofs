@@ -9,12 +9,13 @@ import com.google.gson.JsonParser;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import static java.net.URLEncoder.encode;
 
 /**
  * The requirements for link sharing complicates identity management, and Zelda was created as a
@@ -33,19 +34,31 @@ import static java.net.URLEncoder.encode;
  */
 public class Zelda
 {
-    // protected so unit tests can read it
-    protected static final String CHARSET = StandardCharsets.UTF_8.name();
+    private static final String CLIENT_ID = "aerofs-zelda";
+    private static final String CLIENT_NAME = "AeroFS Link Sharing";
+    private static final String REDIRECT_URI = "aerofs://redirect";
+    private static final String RESOURCE_SERVER_KEY = "oauth-havre";
+    public static final String CHARSET = StandardCharsets.UTF_8.name();
 
-    private final String _bifrostUrl;
+    private final URL _bifrostUrl;
     private final String _auth;
 
     private final LazyChecked<String, IOException> _secret
             = new LazyChecked<>(this::getSecretImpl);
 
-    public Zelda(String bifrostUrl, String serviceId, String deploymentSecret)
+    public Zelda(URL bifrostUrl, String auth)
     {
         _bifrostUrl = bifrostUrl;
-        _auth = String.format("Aero-Service-Shared-Secret %s %s", serviceId, deploymentSecret);
+        _auth = auth;
+    }
+
+    public static Zelda create(String bifrostUrl, String serviceID, String deploymentSecret)
+            throws MalformedURLException
+    {
+        return new Zelda(
+                new URL(bifrostUrl),
+                String.format("Aero-Service-Shared-Secret %s %s", serviceID, deploymentSecret)
+        );
     }
 
     // this method is created and made protected so we can override it in unit tests
@@ -61,20 +74,11 @@ public class Zelda
         return extractJsonField(getClientInfo(), "secret");
     }
 
-    private String extractJsonField(String json, String field)
-    {
-        return new JsonParser()
-                .parse(json)
-                .getAsJsonObject()
-                .get(field)
-                .getAsString();
-    }
-
     // protected so we can override it in unit tests
     protected HttpURLConnection openBifrostConnection(String route)
             throws IOException
     {
-        return (HttpURLConnection)new URL(new URL(_bifrostUrl), route).openConnection();
+        return (HttpURLConnection)new URL(_bifrostUrl, route).openConnection();
     }
 
     @SuppressWarnings("try")
@@ -83,7 +87,8 @@ public class Zelda
         HttpURLConnection conn = openBifrostConnection("/clients/aerofs-zelda");
         try (Closeable ignored = conn::disconnect) {
             conn.setRequestMethod("GET");
-            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setDoOutput(false);
             conn.setUseCaches(false);
             conn.setRequestProperty("Authorization", _auth);
 
@@ -106,28 +111,21 @@ public class Zelda
         HttpURLConnection conn = openBifrostConnection("/clients");
         try (Closeable ignored = conn::disconnect) {
             conn.setRequestMethod("POST");
+            conn.setDoInput(true);
             conn.setDoOutput(true);
             conn.setUseCaches(false);
             conn.setRequestProperty("Authorization", _auth);
 
             ImmutableMap<String, String> params = ImmutableMap.<String, String>builder()
-                    .put("client_id", "aerofs-zelda")
-                    .put("client_name", encode("AeroFS Link Sharing", CHARSET))
-                    .put("redirect_uri", encode("aerofs://redirect", CHARSET))
-                    .put("resource_server_key", "oauth-havre")
+                    .put("client_id", CLIENT_ID)
+                    .put("client_name", CLIENT_NAME)
+                    .put("redirect_uri", REDIRECT_URI)
+                    .put("resource_server_key", RESOURCE_SERVER_KEY)
                     .put("expires_in", "0")
                     .build();
 
             return BaseUtil.httpRequest(conn, createFormParams(params));
         }
-    }
-
-    private String createFormParams(Map<String, String> params)
-    {
-        return params.entrySet().stream()
-                .map(entry -> entry.getKey() + '=' + entry.getValue())
-                .reduce((entry1, entry2) -> entry1 + '&' + entry2)
-                .orElse("");
     }
 
     @SuppressWarnings("try")
@@ -140,15 +138,16 @@ public class Zelda
                 .put("grant_type", "authorization_code")
                 .put("code", accessCode)
                 .put("code_type", "device_authorization")
-                .put("client_id", "aerofs-zelda")
+                .put("client_id", CLIENT_ID)
                 .put("client_secret", getSecret())
-                .put("scope", encode(scope, CHARSET))
+                .put("scope", scope)
                 .put("expires_in", Long.toString(expires))
                 .build();
 
         HttpURLConnection conn = openBifrostConnection("/token");
         try (Closeable ignored = conn::disconnect) {
             conn.setRequestMethod("POST");
+            conn.setDoInput(true);
             conn.setDoOutput(true);
 
             String response = BaseUtil.httpRequest(conn, createFormParams(params));
@@ -163,8 +162,36 @@ public class Zelda
         HttpURLConnection conn = openBifrostConnection("/token/" + oldToken);
         try (Closeable ignored = conn::disconnect) {
             conn.setRequestMethod("DELETE");
+            conn.setDoInput(true);
+            conn.setDoOutput(false);
 
             BaseUtil.httpRequest(conn, null);
         }
+    }
+
+    private static String extractJsonField(String json, String field)
+    {
+        return new JsonParser()
+                .parse(json)
+                .getAsJsonObject()
+                .get(field)
+                .getAsString();
+    }
+
+    private static String createFormParams(Map<String, String> params)
+    {
+        return params.entrySet().stream()
+                .map(param -> {
+                    try {
+                        return param.getKey() + '=' + URLEncoder.encode(param.getValue(), CHARSET);
+                    } catch (UnsupportedEncodingException e) {
+                        // checked exception does not play well with lambdas.
+                        // realistically, this should not happen and is indicative of a programming
+                        // error if it does.
+                        throw new RuntimeException(e);
+                    }
+                })
+                .reduce((entry1, entry2) -> entry1 + '&' + entry2)
+                .orElse("");
     }
 }

@@ -20,15 +20,15 @@ import javax.ws.rs.ext.Provider;
  * This prevents nginx throwing a 502 when the gateway closes the downstream connection.
  */
 @Provider
-public class RuntimeExceptionMapper implements ExceptionMapper<RuntimeException>
+public class DefaultExceptionMapper implements ExceptionMapper<Throwable>
 {
     @Override
-    public Response toResponse(RuntimeException e)
+    public Response toResponse(Throwable e)
     {
         if (e instanceof WebApplicationException) {
             return ((WebApplicationException)e).getResponse();
         }
-        Loggers.getLogger(RuntimeExceptionMapper.class).warn("ex ", e);
+        Loggers.getLogger(DefaultExceptionMapper.class).warn("ex ", e);
         return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Type.INTERNAL_ERROR, "Internal error while servicing request"))

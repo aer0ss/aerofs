@@ -82,7 +82,7 @@ public abstract class AbstractRestHdIMC<T extends AbstractRestEBIMC> extends Abs
 
     protected abstract void restHandleThrows_(T ev) throws Exception;
 
-    protected boolean hasAccessToFile(OAuthToken token, Scope scope, OA oa, ResolvedPath path)
+    private boolean hasAccessToFile(OAuthToken token, Scope scope, OA oa, ResolvedPath path)
             throws SQLException
     {
         checkArgument(scope == Scope.READ_FILES || scope == Scope.WRITE_FILES);

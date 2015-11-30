@@ -6,6 +6,7 @@ package com.aerofs.sp.server.url_sharing;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseSecUtil.KeyDerivation;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoPerm;
@@ -61,6 +62,7 @@ public class UrlShare
         /**
          * @throws ExNoPerm if URL sharing is disabled
          */
+        @ParamFactory
         public UrlShare create(@Nonnull String key)
                 throws ExNoPerm
         {

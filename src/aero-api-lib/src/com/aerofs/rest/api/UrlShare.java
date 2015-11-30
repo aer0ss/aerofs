@@ -12,12 +12,14 @@ public class UrlShare
     public final String soid;
     public final String token;
     public final String createdBy;
-    public final boolean requireLogin;
+    public final @Nullable Boolean requireLogin;
     public final boolean hasPassword;
+    public final @Nullable String password;
     public final @Nullable Long expires;
 
     public UrlShare(String key, String soid, String token, String createdBy,
-            boolean requireLogin, boolean hasPassword, @Nullable Long expires)
+            @Nullable Boolean requireLogin, boolean hasPassword, @Nullable String password,
+            @Nullable Long expires)
     {
         this.key = key;
         this.soid = soid;
@@ -25,6 +27,7 @@ public class UrlShare
         this.createdBy = createdBy;
         this.requireLogin = requireLogin;
         this.hasPassword = hasPassword;
+        this.password = password;
         this.expires = expires;
     }
 }

@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.audit.client.AuditClient;
+import com.aerofs.audit.client.MockAuditClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.analytics.Analytics;
@@ -91,10 +91,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Mockito.RETURNS_MOCKS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * A base class for all tests using the SPService as the "seam"
@@ -137,8 +134,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     }
 
     protected SSMPConnection ssmp = mock(SSMPConnection.class);
-    @Spy protected AuditClient auditClient = spy(new AuditClient()
-            .setAuditorClient(System.out::println));
+    // this is only spied because of @InjectMocks.
+    @Spy protected MockAuditClient auditClient = new MockAuditClient(System.out::println);
 
     protected SPActiveUserSessionTracker userSessionTracker =
             new SPActiveUserSessionTracker();

@@ -115,7 +115,7 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             // When a WebApplicationException (or really any exception whatsoever) is thrown
             // after the response is committed (i.e. the first byte has been written on a Netty
             // channel), it is no longer possible to send an error response because HTTP does
-            // not have any mecanism to say 'wait, I cannot actually service this request'
+            // not have any mechanism to say 'wait, I cannot actually service this request'
             //
             // This case is most likely to occur when a large download is interrupted because,
             // the underlying file changed.

@@ -6,6 +6,7 @@ package com.aerofs.sp.server.audit;
 
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
+import com.aerofs.rest.auth.IUserAuthToken;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,5 +29,10 @@ public class AuditCaller
         email = issuer.getString();
         acting_as = issuer.equals(user) ? null : user.getString();
         device = id.toStringFormal();
+    }
+
+    public static AuditCaller fromUserAuthToken(IUserAuthToken token)
+    {
+        return new AuditCaller(token.user(), token.issuer(), token.uniqueId());
     }
 }

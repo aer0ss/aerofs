@@ -14,16 +14,16 @@ import static org.mockito.Mockito.*;
 
 public class TestZelda
 {
-    Zelda zelda;
+    private Zelda zelda;
 
-    HttpURLConnection conn;
-    ByteArrayOutputStream body;
+    private HttpURLConnection conn;
+    private ByteArrayOutputStream body;
 
     @Before
     public void setup()
             throws Exception
     {
-        zelda = spy(new Zelda("fake_bifrost_url", "fake_id", "fake_deployment_secret"));
+        zelda = spy(Zelda.create("http://fake_bifrost_url", "fake_id", "fake_deployment_secret"));
         conn = mock(HttpURLConnection.class);
         body = new ByteArrayOutputStream();
 
@@ -51,7 +51,7 @@ public class TestZelda
                 "&code_type=device_authorization" +
                 "&client_id=aerofs-zelda" +
                 "&client_secret=zelda_secret" +
-                "&scope=linksharing%2Cfiles.read%3Afake_soid" +
+                "&scope=linksharing%2Cfiles.read%3Afake_soid" + // url-encoded
                 "&expires_in=314", body.toString(Zelda.CHARSET));
 
         verify(zelda, times(1)).openBifrostConnection(eq("/token"));

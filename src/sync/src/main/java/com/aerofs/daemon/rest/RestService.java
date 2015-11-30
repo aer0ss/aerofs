@@ -16,19 +16,13 @@ import com.aerofs.rest.providers.*;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Version;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.common.reflect.Reflection;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.sun.jersey.core.spi.scanning.PackageNamesScanner;
-import com.sun.jersey.spi.scanning.AnnotationScannerListener;
-import com.sun.jersey.spi.scanning.PathProviderScannerListener;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -37,7 +31,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class RestService extends Service
 {
-    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 2);
+    public static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 4);
 
     // Port for the service. 0 to use any available port (default)
     // configurable for firewall-friendliness
@@ -91,7 +85,7 @@ public class RestService extends Service
                 JsonExceptionMapper.class,
                 ParamExceptionMapper.class,
                 IllegalArgumentExceptionMapper.class,
-                RuntimeExceptionMapper.class
+                DefaultExceptionMapper.class
         );
     }
 }

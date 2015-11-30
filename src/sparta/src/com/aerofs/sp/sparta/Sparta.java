@@ -35,6 +35,7 @@ import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
+import com.aerofs.sp.server.Zelda;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.sparta.providers.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
@@ -45,7 +46,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.*;
 import com.google.inject.internal.Scoping;
 import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.handler.execution.ExecutionHandler;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
@@ -56,6 +56,7 @@ import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.sql.Connection;
 import java.util.Properties;
@@ -76,7 +77,7 @@ public class Sparta extends Service
         Loggers.init();
     }
 
-    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 3);
+    static final Version HIGHEST_SUPPORTED_VERSION = new Version(1, 4);
 
     private final ExecutionHandler _executionHandler;
 
@@ -123,7 +124,6 @@ public class Sparta extends Service
         ICertificateProvider cacert = URLBasedCertificateProvider.server();
 
         Timer timer = new HashedWheelTimer();
-        ClientSocketChannelFactory clientFactory = new NioClientSocketChannelFactory();
 
         String secret = AeroService.loadDeploymentSecret();
 
@@ -134,8 +134,7 @@ public class Sparta extends Service
         Injector inj = Guice.createInjector(Stage.PRODUCTION,
                 databaseModule(sqlConnProvider),
                 clients,
-                spartaModule(timer, clientFactory));
-
+                spartaModule(timer, secret));
 
         // NB: we expect nginx or similar to provide ssl termination...
         new Sparta(inj, secret)
@@ -186,7 +185,7 @@ public class Sparta extends Service
                 JsonExceptionMapper.class,
                 ParamExceptionMapper.class,
                 IllegalArgumentExceptionMapper.class,
-                RuntimeExceptionMapper.class
+                DefaultExceptionMapper.class
         );
     }
 
@@ -251,24 +250,33 @@ public class Sparta extends Service
         };
     }
 
-    static public Module spartaModule(final Timer timer, final ClientSocketChannelFactory clientFactory)
+    static public Module spartaModule(Timer timer, String deploymentSecret)
     {
         return new AbstractModule() {
             @Override
             protected void configure()
             {
+                String bifrostUrl = getStringProperty("sparta.oauth.url", "http://localhost:8700");
+
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
                         getStringProperty("sparta.oauth.id", ""),
                         getStringProperty("sparta.oauth.secret", ""),
-                        URI.create(getStringProperty("sparta.oauth.url",
-                                "https://localhost:8700/tokeninfo")),
+                        URI.create(bifrostUrl + "/tokeninfo"),
                         timer,
                         null,
-                        clientFactory
+                        new NioClientSocketChannelFactory()
                 ));
+
+                try {
+                    bind(Zelda.class).toInstance(Zelda.create(bifrostUrl, "sparta", deploymentSecret));
+                } catch (MalformedURLException e) {
+                    String msg = String.format("Malformed bifrost URL: %s", bifrostUrl);
+                    l.error(msg);
+                    throw new IllegalArgumentException(msg, e);
+                }
             }
 
             @Provides @Singleton

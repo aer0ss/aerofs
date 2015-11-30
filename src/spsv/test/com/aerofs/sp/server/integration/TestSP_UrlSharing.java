@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -30,8 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TestSP_UrlSharing extends AbstractSPFolderTest
 {
@@ -95,6 +95,26 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertFalse(objectUrl.hasExpires());
         assertTrue(objectUrl.hasRequireLogin());
         assertFalse(objectUrl.getRequireLogin());
+    }
+
+    @Test
+    public void createUrl_shouldGenerateAuditEvent() throws Exception
+    {
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+        setSession(owner);
+
+        RestObject restObject = new RestObject(sid);
+        service.createUrl(restObject.toStringFormal());
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.create", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp")); // we can't control SP's time, not yet...
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertTrue(payload.containsKey("key"));
+        assertEquals(restObject.toStringFormal(), payload.get("soid"));
     }
 
     @Test
@@ -168,6 +188,25 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertFalse(getReply.hasExpires());
         assertTrue(getReply.hasRequireLogin());
         assertFalse(getReply.getRequireLogin());
+    }
+
+    @Test
+    public void getUrlInfo_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.getUrlInfo(key);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.access", payload.get("event"));
+        assertEquals(key, payload.get("key"));
     }
 
     @Test
@@ -379,6 +418,29 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void setUrlRequireLogin_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.setUrlRequireLogin(key, true);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.set_require_login", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+        assertEquals("true", payload.get("require_login"));
+    }
+
+    @Test
     public void setUrlRequireLogin_shouldThrowIfKeyDoesNotExist() throws Exception
     {
         String key = UniqueID.generate().toStringFormal();
@@ -431,6 +493,29 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         assertEquals(object.toStringFormal(), getReply.getSoid());
         assertEquals(expires, getReply.getExpires());
         assertFalse(getReply.getRequireLogin());
+    }
+
+    @Test
+    public void setUrlExpires_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.setUrlExpires(key, 3000L);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.set_expiry", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+        assertEquals("3000", payload.get("expiry"));
     }
 
     @Test
@@ -492,6 +577,29 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void removeUrlExpires_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.setUrlExpires(key, 3000L);
+        service.removeUrlExpires(key);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.remove_expiry", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+    }
+
+    @Test
     public void removeUrlExpires_shouldThrowIfKeyDoesNotExist() throws Exception
     {
         String key = UniqueID.generate().toStringFormal();
@@ -545,6 +653,28 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
     }
 
     @Test
+    public void removeUrl_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.removeUrl(key);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.delete", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+    }
+
+    @Test
     public void removeUrl_shouldThrowIfKeyDoesNotExist() throws Exception
     {
         try {
@@ -592,6 +722,29 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertTrue(getReply.getHasPassword());
         assertEquals(mockToken, getReply.getToken());
+    }
+
+    @Test
+    public void setUrlPassword_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.setUrlPassword(key, ByteString.copyFromUtf8("fake_password"));
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.set_password", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+        assertFalse(payload.containsKey("password"));
     }
 
     @Test
@@ -735,6 +888,30 @@ public class TestSP_UrlSharing extends AbstractSPFolderTest
         // check that the password was removed
         PBRestObjectUrl getReply = service.getUrlInfo(key).get().getUrlInfo();
         assertFalse(getReply.hasHasPassword() && getReply.getHasPassword());
+    }
+
+    @Test
+    public void removeUrlPassword_shouldGenerateAuditEvent() throws Exception
+    {
+        RestObject object = new RestObject(sid);
+        String key = service.createUrl(object.toStringFormal())
+                .get().getUrlInfo().getKey();
+
+        setSession(owner);
+        doReturn("there is no place like 127.0.0.1").when(remoteAddress).get();
+
+        service.setUrlPassword(key, ByteString.copyFromUtf8("fake_password"));
+        service.removeUrlPassword(key);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.remove_password", payload.get("event"));
+        assertTrue(payload.containsKey("timestamp"));
+        assertEquals("there is no place like 127.0.0.1", payload.get("ip"));
+        assertEquals(owner.id().getString(), payload.get("caller"));
+        assertEquals(key, payload.get("key"));
+        assertFalse(payload.containsKey("password"));
     }
 
     @Test
