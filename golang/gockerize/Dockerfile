@@ -7,9 +7,9 @@ RUN apt-get update &&\
         ca-certificates \
         curl \
         git \
-        golang-go \
         mercurial \
         patch \
+        golang-go \
         &&\
     mkdir /gopath
 
