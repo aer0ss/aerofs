@@ -4,6 +4,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.AccessCodeProvider;
 import com.aerofs.sp.server.Zelda;
 import com.google.common.collect.ImmutableMap;
@@ -88,13 +89,12 @@ public class TestUrlShareResource extends AbstractResourceTest
 
     @Test
     public void getURLInfo_should200GivenReadAccess()
-            throws Exception
-    {
+            throws Exception {
         mockTime(5000L);
 
         givenReadAccess()
                 .header(X_REAL_IP, "4.2.2.2")
-        .expect()
+                .expect()
                 .statusCode(SC_OK)
                 .body("key", equalTo(key))
                 .body("soid", equalTo(soid.toStringFormal()))
@@ -104,7 +104,7 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .body("has_password", equalTo(false))
                 .body("password", nullValue())
                 .body("expires", equalTo(0))
-        .when()
+                .when()
                 .get(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
@@ -115,7 +115,13 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("5000", payload.get("timestamp"));
         assertEquals(key, payload.get("key"));
 
-        Map caller = (Map)payload.get("caller");
+        assertHasCaller(payload, user);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertHasCaller(Map<String, Object> payload, UserID user)
+    {
+        Map<String, Object> caller = (Map<String, Object>)payload.get("caller");
 
         assertTrue(caller.containsKey("email"));
         assertEquals(user.getString(), caller.get("acting_as"));
@@ -199,11 +205,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("false", payload.get("require_login"));
         assertFalse(payload.containsKey("expires"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -313,11 +315,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("8000", payload.get("expiry"));
         assertEquals("true", payload.get("require_login"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -364,11 +362,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertFalse(payload.containsKey("password"));
         assertFalse(payload.containsValue("fake"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -413,11 +407,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals(key, payload.get("key"));
         assertEquals("8000", payload.get("expiry"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -460,11 +450,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals(key, payload.get("key"));
         assertEquals("true", payload.get("require_login"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -488,11 +474,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("5000", payload.get("timestamp"));
         assertEquals(key, payload.get("key"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -518,11 +500,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("5000", payload.get("timestamp"));
         assertEquals(key, payload.get("key"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -549,11 +527,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("5000", payload.get("timestamp"));
         assertEquals(key, payload.get("key"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test
@@ -580,11 +554,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals(key, payload.get("key"));
         assertEquals("false", payload.get("require_login"));
 
-        Map caller = (Map)payload.get("caller");
-
-        assertTrue(caller.containsKey("email"));
-        assertEquals(user.getString(), caller.get("acting_as"));
-        assertTrue(caller.containsKey("device"));
+        assertHasCaller(payload, user);
     }
 
     @Test

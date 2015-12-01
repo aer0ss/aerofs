@@ -18,6 +18,7 @@ public class LocationMatchers
     {
         _prefix = prefix;
         _locationMatcher = new CapturingMatcher<String>() {
+            private static final long serialVersionUID = -1L;
             @Override
             public boolean matches(Object argument)
             {
@@ -28,8 +29,7 @@ public class LocationMatchers
                 return false;
             }
         };
-        _keyMatcher = new ArgumentMatcher<String>()
-        {
+        _keyMatcher = new ArgumentMatcher<String>() {
             @Override
             public boolean matches(Object argument)
             {
