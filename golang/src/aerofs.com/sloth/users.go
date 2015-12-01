@@ -82,11 +82,11 @@ func BuildUsersRoutes(db *sql.DB, broadcaster broadcast.Broadcaster) *restful.We
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
 		Returns(200, "Avatar updated", "bytestring").
 		Returns(401, "Invalid authorization", nil).
-		Returns(404, "User does not exist", nil))
+		Returns(404, "No avatar found", nil))
 
 	ws.Route(ws.PUT("/{uid}/avatar").Filter(UserIsTarget).To(u.updateAvatar).
 		Doc("Get user's avatar").
-		Notes("This returns the raw avatar data. It should be hot-linkable in an img tag.").
+		Notes("This expects the raw avatar data in the body.").
 		Consumes(restful.MIME_OCTET).
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
 		Reads("bytestring").
@@ -350,14 +350,10 @@ func (u UsersResource) getAvatar(request *restful.Request, response *restful.Res
 	var avatar []byte
 	err := u.db.QueryRow("SELECT avatar FROM users WHERE id=?", id).Scan(&avatar)
 	switch {
-	case err == sql.ErrNoRows:
+	case err == sql.ErrNoRows || len(avatar) == 0:
 		response.WriteHeader(404)
 	case err != nil:
 		errors.PanicOnErr(err)
-	case len(avatar) == 0:
-		// FIXME: Temporary, this is. Only assets we own, should we serve.
-		response.AddHeader("Location", "http://i.imgur.com/uwt3qHk.jpg")
-		response.WriteErrorString(302, "Found")
 	default:
 		response.Write(avatar)
 	}

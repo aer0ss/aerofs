@@ -409,11 +409,10 @@ try:
             headers={"Accept": "application/octet-stream"})
     assert r.status_code == 404, r
 
-    # GET /users/uid/avatar default avatar
+    # GET /users/uid/avatar no avatar
     r = s.get("{}/users/{}/avatar?authorization=jgray".format(BASE_URL, "jgray"),
-            allow_redirects=False,
             headers={"Accept": "application/octet-stream"})
-    assert r.status_code == 302, r
+    assert r.status_code == 404, r
 
     # PUT /users/uid/avatar no auth
     r = s.put("{}/users/{}/avatar".format(BASE_URL, "jgray"),
