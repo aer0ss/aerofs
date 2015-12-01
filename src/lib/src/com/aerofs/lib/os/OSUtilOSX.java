@@ -2,8 +2,13 @@ package com.aerofs.lib.os;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam.RootAnchor;
+import com.aerofs.lib.OutArg;
+import com.aerofs.lib.S;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
@@ -135,6 +140,10 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public boolean isShellExtensionInstalled()
     {
+        if(OSUtil.isOSXYosemiteOrNewer()) {
+            l.info("Yosemite or newer, shell extension installed automatically.");
+            return true;
+        }
         // Check if the /Contents directory is a symlink
         // TODO (GS): This is needed to transition from the previous state when we were copying
         // rather than symlinking. We can remove this check and only test for existance once
@@ -192,6 +201,11 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public void installShellExtension(boolean silently) throws IOException, SecurityException
     {
+        if(OSUtil.isOSXYosemiteOrNewer()) {
+            l.info("Finder Extension installation not necessary on Yosemite or newer");
+            return;
+        }
+
         String oldChecksum = Cfg.db().get(SHELLEXT_CHECKSUM);
         String checksum = getShellExtensionChecksum();
 
@@ -263,14 +277,17 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // it's not installed, we can retry to start it after installShellExtension()
         _socketFile = socketFile;
 
-        if (!isShellExtensionInstalled()) {
-            l.warn("Finder Extension not found - not launching");
-            return;
-        }
-
         try {
-            SystemUtil.execBackground(FINDEREXT_DIR + "/Contents/Resources/finder_inject",
-                    _socketFile.getAbsolutePath());
+            if (OSUtil.isOSXYosemiteOrNewer()) {
+                l.warn("Finder Extension not active - launching with pluginkit");
+                SystemUtil.execBackground("pluginkit","-e","use","-i","com.aerofs.finder.sync");
+            } else if(isShellExtensionInstalled()){
+                SystemUtil.execBackground(FINDEREXT_DIR + "/Contents/Resources/finder_inject",
+                        _socketFile.getAbsolutePath());
+            } else {
+                l.warn("Finder Extension not found - not launching");
+                return;
+            }
         } catch (IOException e) {
             l.warn("Unable to launch Finder extension " + Util.e(e));
         }
@@ -374,7 +391,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // This logic seems weird, but I'm just refactoring, not rewriting
         InjectableFile.Factory factFile = new InjectableFile.Factory();
         InjectableFile result = factFile.create(AppRoot.abs());
-        String suffix = OSUtil.getOSVersion().startsWith("10.10") ? "Yosemite" : "";
+        String suffix = OSUtil.isOSXYosemiteOrNewer() ? "Yosemite" : "";
         result = result.newChild("icons").newChild(icon.name + suffix + ".icns");
         if (!result.exists()) {
             newDefectWithLogs("gui.icon_path.osx")

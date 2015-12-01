@@ -4,7 +4,7 @@
 #import "AeroSocket.h"
 #import "AeroOverlay.h"
 #import "AppleEventConstants.h"
-#import "../gen/Shellext.pb.h"
+#import "../../osx_common/gen/Shellext.pb.h"
 #import "AeroOverlayCache.h"
 
 #import  "../../common/common.h"

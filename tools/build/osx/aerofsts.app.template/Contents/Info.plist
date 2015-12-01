@@ -9,7 +9,9 @@
 	<key>CFBundleName</key>
 	<string>AeroFSTeamServer</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.aerofs.Main</string>
+	<string>com.aerofs.finder</string>
+	<key>CFBundleIconFile</key>
+	<string>AeroFS</string>
 	<key>CFBundleVersion</key>
 	<string>100.0</string>
 	<key>CFBundleAllowMixedLocalizations</key>
@@ -24,8 +26,7 @@
 	<string>????</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-	<key>CFBundleIconFile</key>
-	<string>AeroFS.icns</string>
-    <key>NSHighResolutionCapable</key> <true/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>

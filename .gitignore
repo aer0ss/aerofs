@@ -28,3 +28,7 @@ syncroot
 buildroot
 golang/bin
 golang/pkg
+**/bin
+**/.settings
+**/.classpath
+**/.project

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+thisdir=$(dirname $0)
+
+rm -rf $thisdir/../Build/*
+xcodebuild -workspace $thisdir/../finder.xcworkspace -scheme sync -configuration Release
+
+if [ $? -ne 0 ]
+then
+    echo "ERROR: xcodebuild failed."
+    exit 1
+fi
+
+# We no longer need to do this, but it's decent policy.
+echo "Looking for absolute paths hardcoded in the executable..."
+error1=$(strings - $thisdir/../Build/Products/Release/finder.app | grep -c /Users)
+error2=$(strings - $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex | grep -c /Users)
+
+if [ $error1 -ne 0 ] || [ $error2 -ne 0 ]
+then
+    echo "ERROR: strings failed. Hard coded absolute paths exist in the executable..."
+    exit 2
+fi
+
+echo "Signing code..."
+security unlock-keychain -p "$(cat /Volumes/aerofskeys/keychain_passphrase.txt)" /Volumes/aerofskeys/aerofs.keychain
+codesign -f -s "Air Computing, Inc." --entitlements \
+  $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex/Contents/Resources/sync.entitlements \
+  $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex
+if [ $? -ne 0 ] ; then
+    echo "Codesigning failed.  Do you have the keys installed in your keychain?"
+    exit 3
+fi
+
+echo "Moving to resource/client..."
+rm -rf $thisdir/../../../../resource/client/shellext/osx/sync.appex
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+cp -a $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex $thisdir/../../../../resource/client/shellext/osx
+
+echo
+echo "SUCCESS."

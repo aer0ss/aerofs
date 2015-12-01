@@ -29,13 +29,13 @@
 		16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 16978F9D144E3C2D00F92021 /* InfoPlist.strings */; };
 		16A2353A185BCB4500649B38 /* sidebar.tiff in Resources */ = {isa = PBXBuildFile; fileRef = 16A23539185BCB4500649B38 /* sidebar.tiff */; };
 		16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16A99D5F145B296600C3EA3D /* AeroOverlay.mm */; };
-		16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F60E9C153F6F2B00A25339 /* Shellext.pb.m */; };
 		16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */; };
 		5E0CF56CB85528E2A9A72917 /* AeroSidebarIcon.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E0CF97ADD3CA11D7C41611C /* AeroSidebarIcon.mm */; };
+		6B018B631C18CE45007E7938 /* AeroOverlayCache.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6B018B611C18CE45007E7938 /* AeroOverlayCache.mm */; };
+		6B1413671C0E619000BD8A04 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B1413641C0E619000BD8A04 /* Shellext.pb.m */; };
+		6B1413681C0E619000BD8A04 /* Path_status.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 6B1413661C0E619000BD8A04 /* Path_status.pb.m */; };
 		F341E7721612683D0055FC67 /* in_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E76F1612683D0055FC67 /* in_sync_overlay.icns */; };
 		F341E7731612683D0055FC67 /* out_of_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */; };
-		F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6C /* Path_status.pb.m */; };
-		F341E7741612683D0055FC6F /* AeroOverlayCache.mm in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6E /* AeroOverlayCache.mm */; };
 		F341E7741612683D0055FC72 /* OverlayCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC71 /* OverlayCache.cpp */; };
 		F3DC484E164982AE00D66E1E /* conflict_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F3DC484D164982AE00D66E1E /* conflict_overlay.icns */; };
 /* End PBXBuildFile section */
@@ -109,18 +109,18 @@
 		16A23539185BCB4500649B38 /* sidebar.tiff */ = {isa = PBXFileReference; lastKnownFileType = image.tiff; name = sidebar.tiff; path = images/sidebar.tiff; sourceTree = SOURCE_ROOT; };
 		16A99D5F145B296600C3EA3D /* AeroOverlay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlay.mm; path = src/AeroOverlay.mm; sourceTree = SOURCE_ROOT; };
 		16A99D60145B296600C3EA3D /* AeroOverlay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlay.h; path = src/AeroOverlay.h; sourceTree = SOURCE_ROOT; };
-		16F60E9C153F6F2B00A25339 /* Shellext.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Shellext.pb.m; path = gen/Shellext.pb.m; sourceTree = "<group>"; };
-		16F60E9D153F6F2B00A25339 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = gen/Shellext.pb.h; sourceTree = "<group>"; };
 		16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroFinderExt.m; path = src/AeroFinderExt.m; sourceTree = SOURCE_ROOT; };
 		16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroFinderExt.h; path = src/AeroFinderExt.h; sourceTree = SOURCE_ROOT; };
 		5E0CF6CCE3866B78016BF2BF /* AeroSidebarIcon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AeroSidebarIcon.h; sourceTree = SOURCE_ROOT; };
 		5E0CF97ADD3CA11D7C41611C /* AeroSidebarIcon.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AeroSidebarIcon.mm; sourceTree = SOURCE_ROOT; };
+		6B018B601C18CE45007E7938 /* AeroOverlayCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AeroOverlayCache.h; path = ../osx_common/src/AeroOverlayCache.h; sourceTree = "<group>"; };
+		6B018B611C18CE45007E7938 /* AeroOverlayCache.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlayCache.mm; path = ../osx_common/src/AeroOverlayCache.mm; sourceTree = "<group>"; };
+		6B1413631C0E619000BD8A04 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = ../osx_common/gen/Shellext.pb.h; sourceTree = "<group>"; };
+		6B1413641C0E619000BD8A04 /* Shellext.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Shellext.pb.m; path = ../osx_common/gen/Shellext.pb.m; sourceTree = "<group>"; };
+		6B1413651C0E619000BD8A04 /* Path_status.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path_status.pb.h; path = ../osx_common/gen/Path_status.pb.h; sourceTree = "<group>"; };
+		6B1413661C0E619000BD8A04 /* Path_status.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Path_status.pb.m; path = ../osx_common/gen/Path_status.pb.m; sourceTree = "<group>"; };
 		F341E76F1612683D0055FC67 /* in_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = in_sync_overlay.icns; path = images/in_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
 		F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = out_of_sync_overlay.icns; path = images/out_of_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
-		F341E7741612683D0055FC6B /* Path_status.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path_status.pb.h; path = gen/Path_status.pb.h; sourceTree = "<group>"; };
-		F341E7741612683D0055FC6C /* Path_status.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Path_status.pb.m; path = gen/Path_status.pb.m; sourceTree = "<group>"; };
-		F341E7741612683D0055FC6E /* AeroOverlayCache.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlayCache.mm; path = src/AeroOverlayCache.mm; sourceTree = SOURCE_ROOT; };
-		F341E7741612683D0055FC70 /* AeroOverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlayCache.h; path = src/AeroOverlayCache.h; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC71 /* OverlayCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OverlayCache.cpp; path = ../common/OverlayCache.cpp; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC73 /* OverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OverlayCache.h; path = ../common/OverlayCache.h; sourceTree = SOURCE_ROOT; };
 		F3DC484D164982AE00D66E1E /* conflict_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = conflict_overlay.icns; path = images/conflict_overlay.icns; sourceTree = SOURCE_ROOT; };
@@ -201,6 +201,7 @@
 			isa = PBXGroup;
 			children = (
 				16F8E753144EF66B00F78CD3 /* gen */,
+				6B018B641C18CED1007E7938 /* osx_common */,
 				16978F8B144E3B1B00F92021 /* src */,
 				16978F8C144E3B1B00F92021 /* Supporting Files */,
 				1600FB42147BEE6D001C0A40 /* FinderExtensionTests */,
@@ -237,10 +238,7 @@
 		16978F8B144E3B1B00F92021 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				F341E7741612683D0055FC73 /* OverlayCache.h */,
-				F341E7741612683D0055FC71 /* OverlayCache.cpp */,
-				F341E7741612683D0055FC70 /* AeroOverlayCache.h */,
-				F341E7741612683D0055FC6E /* AeroOverlayCache.mm */,
+				6B018B651C18CEDB007E7938 /* common */,
 				1640B4551455C3A40049B1B6 /* finder_inject */,
 				16088EEB1451DA8D00CDFCDC /* FinderTypes.h */,
 				1644252714648FE500DE4546 /* FinderTypes.mm */,
@@ -293,12 +291,30 @@
 		16F8E753144EF66B00F78CD3 /* gen */ = {
 			isa = PBXGroup;
 			children = (
-				F341E7741612683D0055FC6C /* Path_status.pb.m */,
-				F341E7741612683D0055FC6B /* Path_status.pb.h */,
-				16F60E9C153F6F2B00A25339 /* Shellext.pb.m */,
-				16F60E9D153F6F2B00A25339 /* Shellext.pb.h */,
+				6B1413631C0E619000BD8A04 /* Shellext.pb.h */,
+				6B1413641C0E619000BD8A04 /* Shellext.pb.m */,
+				6B1413651C0E619000BD8A04 /* Path_status.pb.h */,
+				6B1413661C0E619000BD8A04 /* Path_status.pb.m */,
 			);
 			name = gen;
+			sourceTree = "<group>";
+		};
+		6B018B641C18CED1007E7938 /* osx_common */ = {
+			isa = PBXGroup;
+			children = (
+				6B018B601C18CE45007E7938 /* AeroOverlayCache.h */,
+				6B018B611C18CE45007E7938 /* AeroOverlayCache.mm */,
+			);
+			name = osx_common;
+			sourceTree = "<group>";
+		};
+		6B018B651C18CEDB007E7938 /* common */ = {
+			isa = PBXGroup;
+			children = (
+				F341E7741612683D0055FC73 /* OverlayCache.h */,
+				F341E7741612683D0055FC71 /* OverlayCache.cpp */,
+			);
+			name = common;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -320,7 +336,7 @@
 			name = FinderExtensionTests;
 			productName = FinderExtensionTests;
 			productReference = 1600FB3A147BEE6D001C0A40 /* FinderExtensionTests.octest */;
-			productType = "com.apple.product-type.bundle";
+			productType = "com.apple.product-type.bundle.ocunit-test";
 		};
 		1640B4521455C3A40049B1B6 /* finder_inject */ = {
 			isa = PBXNativeTarget;
@@ -364,6 +380,7 @@
 		16978F79144E3B1B00F92021 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastTestingUpgradeCheck = 0720;
 				LastUpgradeCheck = 0410;
 			};
 			buildConfigurationList = 16978F7C144E3B1B00F92021 /* Build configuration list for PBXProject "FinderExtension" */;
@@ -456,9 +473,9 @@
 				16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */,
 				1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */,
 				16692664150AD6450072DA1E /* AsyncSocket.m in Sources */,
-				16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */,
-				F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */,
-				F341E7741612683D0055FC6F /* AeroOverlayCache.mm in Sources */,
+				6B1413681C0E619000BD8A04 /* Path_status.pb.m in Sources */,
+				6B1413671C0E619000BD8A04 /* Shellext.pb.m in Sources */,
+				6B018B631C18CE45007E7938 /* AeroOverlayCache.mm in Sources */,
 				F341E7741612683D0055FC72 /* OverlayCache.cpp in Sources */,
 				5E0CF56CB85528E2A9A72917 /* AeroSidebarIcon.mm in Sources */,
 			);

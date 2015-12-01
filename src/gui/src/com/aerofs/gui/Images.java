@@ -6,12 +6,22 @@ import com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.os.OSUtil;
+
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
 import javax.annotation.Nonnull;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -19,7 +29,12 @@ import java.util.Map;
 
 import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.IN_SYNC;
 import static com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus.OUT_OF_SYNC;
-import static java.lang.Math.*;
+
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.round;
+import static java.lang.Math.sin;
 
 // learn about resource management: http://help.eclipse.org/ganymede/index.jsp?topic=/org.eclipse.platform.doc.isv/reference/api/index.html
 
@@ -105,19 +120,14 @@ public class Images {
         return s_spinner_frames[frame % s_spinner_frames.length];
     }
 
-    private static boolean isOSXYosemite()
-    {
-        return OSUtil.isOSX() && OSUtil.getOSVersion().startsWith("10.10");
-    }
-
     public static Image getSharedFolderIcon()
     {
-        return isOSXYosemite() ? get(ICON_SHARED_FOLDER_YOSEMITE) : get(ICON_SHARED_FOLDER);
+        return OSUtil.isOSXYosemiteOrNewer() ? get(ICON_SHARED_FOLDER_YOSEMITE) : get(ICON_SHARED_FOLDER);
     }
 
     public static Image getFolderIcon()
     {
-        return isOSXYosemite() ? get(ICON_FOLDER_YOSEMITE) : get(ICON_FOLDER);
+        return OSUtil.isOSXYosemiteOrNewer() ? get(ICON_FOLDER_YOSEMITE) : get(ICON_FOLDER);
     }
 
     /**

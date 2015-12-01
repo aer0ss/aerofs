@@ -1,0 +1,19 @@
+#!/bin/bash
+thisdir=$(dirname $0)
+
+rm -rf $thisdir/../Build/*
+xcodebuild -workspace $thisdir/../finder.xcworkspace -scheme sync -configuration Debug
+
+if [ $? -ne 0 ]
+then
+    echo "ERROR: xcodebuild failed."
+    exit 1
+fi
+
+echo "Moving to approot..."
+rm -rf $thisdir/../../../../approot/sync.appex
+# cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
+cp -a $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex $thisdir/../../../../approot
+
+echo
+echo "SUCCESS."

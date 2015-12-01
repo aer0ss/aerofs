@@ -1,5 +1,5 @@
 #import "AeroSocket.h"
-#import "../gen/Shellext.pb.h"
+#import "../../osx_common/gen/Shellext.pb.h"
 #import "AeroFinderExt.h"
 #import <sys/un.h>
 #import <sys/socket.h>

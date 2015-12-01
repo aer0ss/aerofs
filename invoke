@@ -144,7 +144,7 @@ PROTO_MAPPINGS = {
                             ],
             },
         # ObjC protobufs
-        os.path.join(GIT_ROOT, "src", "shellext", "osx_finder", "gen"):
+        os.path.join(GIT_ROOT, "src", "shellext", "osx_common", "gen"):
             {
                 "lang": "objc",
                 "includes": [ os.path.join(SRC_BASE, "src", "proto"),

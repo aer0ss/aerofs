@@ -254,6 +254,7 @@ function make_osx_packages() {
     local local_VERSIONED_MAC_DMG_FILENAME="${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.dmg"
     local local_UNVERSIONED_MAC_DMG_FILENAME="${AEROFS_PRODUCT_SPACEFREE}Install.dmg"
     local local_OSX_LOCAL_MAC_APP_DIR=Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java
+    local local_OSX_LOCAL_MAC_PLUGINS_DIR=Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Plugins
     local local_OSX_INSTALLER_VOLUME_DIR="/Volumes/${AEROFS_PRODUCT_SPACEFREE} Installer"
     local local_OSX_TEMPLATE_APP_FILENAME="osx/${AEROFS_PRODUCT_UNIX}.app.template"
 
@@ -261,6 +262,7 @@ function make_osx_packages() {
     readonly local_VERSIONED_MAC_DMG_FILENAME
     readonly local_UNVERSIONED_MAC_DMG_FILENAME
     readonly local_OSX_LOCAL_MAC_APP_DIR
+    readonly local_OSX_LOCAL_MAC_PLUGINS_DIR
     readonly local_OSX_INSTALLER_VOLUME_DIR
     readonly local_OSX_TEMPLATE_APP_FILENAME
 
@@ -275,6 +277,10 @@ function make_osx_packages() {
 
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
+    if is_client ; then
+        # Move the Finder Sync app extension into the Mac App's Plugin directory within the temp directory created above
+        mv "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}"/sync.appex "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_PLUGINS_DIR}"/sync.appex
+    fi
 
     if $SIGNED ; then
         echo ">> sign app for Mac App Store"

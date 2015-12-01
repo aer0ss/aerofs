@@ -12,6 +12,7 @@ typedef unsigned long uint32_t;
 #else   // defined(_MSC_VER)
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <runetype.h>
 
 #define FORCE_INLINE __attribute__((always_inline))

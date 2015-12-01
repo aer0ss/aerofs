@@ -9,8 +9,13 @@ import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.PostUpdate;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.StorageType;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -21,7 +26,12 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
 import javax.annotation.Nullable;
-import java.io.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -30,7 +40,11 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Scanner;
 
-import static com.aerofs.lib.cfg.CfgDatabase.*;
+import static com.aerofs.lib.cfg.CfgDatabase.DAEMON_POST_UPDATES;
+import static com.aerofs.lib.cfg.CfgDatabase.PHOENIX_CONVERSION;
+import static com.aerofs.lib.cfg.ICfgStore.CRED;
+import static com.aerofs.lib.cfg.ICfgStore.ROOT;
+import static com.aerofs.lib.cfg.ICfgStore.S3_BUCKET_ID;
 
 /**
  * This class is unfriendly to dependency injection and should be eventually removed.
@@ -341,6 +355,11 @@ public class Cfg
             String userName =  System.getProperty("user.name");
             String clientType = L.isMultiuser() ? "ts" : "single";
             return Util.join(parentDir, Joiner.on("_").join(userName, type.getFileName(), clientType));
+        } else if (NativeSocketType.SHELLEXT.equals(type)
+                && OSUtil.isOSXYosemiteOrNewer()) {
+            return Util.join(System.getProperty("user.home"),
+                    "/Library/Containers/com.aerofs.finder.sync/Data/",
+                    type.getFileName() + ".sock");
         } else {
             return Util.join(_baseCfg.absRTRoot(), type.getFileName() + ".sock");
         }

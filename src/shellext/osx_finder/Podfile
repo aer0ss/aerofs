@@ -1,0 +1,8 @@
+target 'finder' do
+
+end
+
+target 'sync' do
+    pod 'CocoaAsyncSocket', :git => 'https://github.com/robbiehanson/CocoaAsyncSocket.git', :commit => '6e018ddf7c456106f898efae66ea5e5c94737a96'
+    pod 'ProtobufObjC', '~> 0.0.1'
+end

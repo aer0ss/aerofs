@@ -24,9 +24,11 @@ import com.aerofs.ritual.RitualClientProvider;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.protobuf.InvalidProtocolBufferException;
+
 import org.slf4j.Logger;
-import java.nio.channels.ClosedChannelException;
+
 import java.io.File;
+import java.nio.channels.ClosedChannelException;
 import java.util.List;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
@@ -53,6 +55,9 @@ public class ShellextService
     {
         if (_server == null) {
             File socketFile = new File(Cfg.nativeSocketFilePath(NativeSocketType.SHELLEXT));
+            if(!socketFile.exists()) {
+                socketFile.getParentFile().mkdirs();
+            }
             _server = new ShellextServer(this, socketFile,
                     NativeSocketAuthenticatorFactory.create());
             _server.start_();
