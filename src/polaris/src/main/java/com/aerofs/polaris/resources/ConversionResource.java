@@ -2,7 +2,6 @@ package com.aerofs.polaris.resources;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.ids.*;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.acl.Access;
@@ -14,6 +13,7 @@ import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.*;
+import com.aerofs.polaris.dao.types.LockableLogicalObject;
 import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.base.Preconditions;
@@ -68,7 +68,7 @@ public class ConversionResource {
                 Throwable cause = Resources.rootCause(e);
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(cause));
                 if (cause instanceof PolarisException || cause instanceof IllegalArgumentException) {
-                    LOGGER.info("fail conversion batch operation {}", operation, BaseLogUtil.suppress(cause));
+                    LOGGER.info("fail conversion batch operation {}", operation, cause);
                 } else {
                     LOGGER.warn("unexpected fail conversion batch operation {}", operation, cause);
                 }
@@ -82,26 +82,23 @@ public class ConversionResource {
     private OperationResult performConversionTransform(AeroUserDevicePrincipal principal, UniqueID store, TransformBatchOperation operation)
     {
         List<UniqueID> affectedObjects = Lists.newArrayList();
-        OperationResult result = dbi.inTransaction((conn, status) -> {
+        boolean aliased = dbi.inTransaction((conn, status) -> {
             Conversion conversion = conn.attach(Conversion.class);
             UniqueID target = conversion.getAliasNullable(operation.oid, store);
+            // if assuming acting purely on other objects from conversion, target should always be non-null here
             affectedObjects.add(target != null ? target : operation.oid);
+            boolean a = target != null;
 
             // this never does anything, since INSERT_CHILD and UPDATE_CONTENT have affectedOIDs -> empty list
             for (UniqueID oid : operation.operation.affectedOIDs()) {
                 target = conversion.getAliasNullable(oid, store);
                 affectedObjects.add(target != null ? target : oid);
             }
-            return null;
+            return a;
         });
 
-        if (result != null) {
-            return  result;
-        }
-
-        // TODO since all operations are in the same store, reuse one access token?
         ObjectStore.AccessToken accessToken = objectStore.checkAccess(principal.getUser(), affectedObjects, Access.READ, Access.WRITE);
-        Preconditions.checkArgument(accessToken.stores.contains(store), "operations submitted to route for store %s does not operation on that store", store);
+        Preconditions.checkArgument(accessToken.stores.contains(store) || aliased, "operations submitted to route for store %s does not operate on that store", store);
         Lock l = objectStore.lockObject(affectedObjects.get(0));
         try {
             return performTransformIfVersionDominates(principal, accessToken, store, affectedObjects.get(0), operation.operation);
@@ -119,29 +116,52 @@ public class ConversionResource {
             DAO dao = new DAO(conn);
             OperationResult result = null;
             switch (operation.type) {
-                // TODO (RD) alias stores with pre-sharing folders
                 case INSERT_CHILD: {
                     InsertChild ic = (InsertChild) operation;
                     Preconditions.checkArgument(ic.versions != null, "conversion operations must include distributed versions");
                     Preconditions.checkArgument(ic.aliases != null, "conversion operations must include aliases");
+
                     UniqueID child = mergeMultipleResolutions(dao, conversion, token, principal.getDevice(), store, resolveChild(dao, conversion, store, ic));
                     List<Conversion.Tick> currentVersion = conversion.getDistributedVersion(child, Conversion.COMPONENT_META);
                     UniqueID currentParent = Identifiers.isSharedFolder(child) ? dao.mountPoints.getMountPointParent(store, child) : dao.children.getParent(child);
-                    // first clause is for multiple users inserting a sharedfolder
+                    UniqueID folderToShare = null;
+                    InsertChild originalInsert = null;
+                    // first clause is for multiple users inserting a shared folder
                     if ((Identifiers.isSharedFolder(child) && currentParent == null) || newVersionDominates(currentVersion, ic.versions)) {
-                        LOGGER.debug("dominating op {} on child {} under {}", ic, child, oid);
-                        Operation op;
-                        UniqueID conflict = dao.children.getActiveChildNamed(oid, ic.childName);
-                        if (conflict != null) {
-                            Preconditions.checkState(conflict.equals(child) || !ic.aliases.contains(conflict), "incorrectly resolved aliases leading to avoidable conflict with %s and %s", child, conflict);
-                            op = makeOperationWithConflict(dao, conversion, token, principal.getDevice(), oid, currentParent, child, conflict, ic);
-                        } else {
-                            op = makeOperation(oid, currentParent, child, ic);
+                        if (Identifiers.isSharedFolder(child) && currentParent == null)  {
+                            LOGGER.info("inserting anchor {} into store {}", child, store);
+                            UniqueID folder = SID.convertedStoreSID2folderOID(new SID(child));
+                            UniqueID folderAlias = conversion.getAliasNullable(folder, store);
+                            if (folderAlias == null) {
+                                // folder doesn't exist yet, need to create aliases for the original folder
+                                conversion.addAlias(folder, store, child);
+                            } else {
+                                folderToShare = child;
+                                originalInsert = ic;
+                                // repurpose the op to move the pre-sharing folder to the right spot and name
+                                ic = new InsertChild(folderAlias, dao.objectTypes.get(folderAlias), ic.childName, null, toMap(currentVersion), ic.aliases);
+                                child = folderAlias;
+                                currentParent = dao.children.getParent(child);
+                            }
                         }
 
-                        if (op != null) {
-                            LOGGER.debug("performing op {} on {}", op, currentParent != null ? currentParent : oid);
-                            result = objectStore.performTransform(dao, token, principal.getDevice(), currentParent != null ? currentParent : oid, op);
+                        if (currentParent != null && (dao.children.isDeleted(currentParent, child) || dao.objects.get(child).locked == LockStatus.MIGRATED)) {
+                            if (folderToShare != null && folderToShare.equals(SID.folderOID2convertedStoreSID(new OID(child)))) {
+                                LOGGER.info("restoring child {} as anchor to be shared", child);
+                                //restore a deleted anchor if necessary so we can share it after
+                                byte [] oldName = dao.children.getChildName(currentParent, child);
+                                UniqueID conflict = dao.children.getActiveChildNamed(currentParent, oldName);
+                                if (notNullAndNotEqual(conflict, child)) {
+                                    // move a conflict out of the way of the restore
+                                    objectStore.performTransform(dao, token, principal.getDevice(), currentParent, new MoveChild(conflict, currentParent, nonConflictingName(dao, currentParent, conflict, oldName)));
+                                }
+                                objectStore.performTransform(dao, token, principal.getDevice(), child, new Restore());
+                                result = performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
+                            } else {
+                                LOGGER.info("discarding op {} on deleted/migrated {}", ic, child);
+                            }
+                        } else {
+                            result = performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
                         }
                         saveVersion(conversion, child, Conversion.COMPONENT_META, ic.versions);
                     }
@@ -149,8 +169,15 @@ public class ConversionResource {
                     for (UniqueID alias : ic.aliases) {
                         conversion.addAlias(alias, store, child);
                     }
-                    if (!child.equals(ic.child)) {
+                    // make sure that all existing objects have an alias, even if it just points to themselves
+                    if (conversion.getAliasNullable(ic.child, store) == null) {
                         conversion.addAlias(ic.child, store, child);
+                    }
+
+                    if (folderToShare != null) {
+                        for (TransformBatchOperation op : shareFolder(dao, conversion, store, child, folderToShare, oid, originalInsert)) {
+                            result = objectStore.performTransform(dao, token, principal.getDevice(), op.oid, op.operation);
+                        }
                     }
                     break;
                 }
@@ -159,11 +186,17 @@ public class ConversionResource {
                     Preconditions.checkArgument(uc.versions != null, "conversion operations must include distributed versions");
                     List<Conversion.Tick> currentVersion = conversion.getDistributedVersion(oid, Conversion.COMPONENT_CONTENT);
                     if (newVersionDominates(currentVersion, uc.versions)) {
-                        LOGGER.debug("dominating op {} on oid {}", uc, oid);
-                        // make sure there's no version conflict arising from the update content
-                        LogicalObject o = dao.objects.get(oid);
+                        LockableLogicalObject o = dao.objects.get(oid);
                         Preconditions.checkState(o != null, "cannot find object %s to update", oid);
-                        result = objectStore.performTransform(dao, token, principal.getDevice(), oid, new UpdateContent(o.version, uc.hash, uc.size, uc.mtime, null));
+                        UniqueID parent = dao.children.getParent(oid);
+                        Preconditions.checkState(parent != null, "cannot find parent of object %s to update", oid);
+                        if (o.locked == LockStatus.MIGRATED || dao.children.isDeleted(parent, oid)) {
+                            LOGGER.info("discarding op {} on deleted/migrated {}");
+                        } else {
+                            LOGGER.debug("dominating op {} on oid {}", uc, oid);
+                            // make sure there's no version conflict arising from the update content
+                            result = objectStore.performTransform(dao, token, principal.getDevice(), oid, new UpdateContent(o.version, uc.hash, uc.size, uc.mtime, null));
+                        }
                         saveVersion(conversion, oid, Conversion.COMPONENT_CONTENT, uc.versions);
                     }
                     break;
@@ -181,6 +214,45 @@ public class ConversionResource {
         });
     }
 
+    @Nullable private OperationResult performInsert(DAO dao, Conversion conversion, ObjectStore.AccessToken token, AeroUserDevicePrincipal principal, UniqueID oid, @Nullable UniqueID currentParent, UniqueID child, InsertChild ic)
+    {
+        LOGGER.debug("dominating op {} on child {} under {}", ic, child, oid);
+        Operation op;
+        UniqueID conflict = dao.children.getActiveChildNamed(oid, ic.childName);
+        if (conflict != null) {
+            Preconditions.checkState(conflict.equals(child) || !ic.aliases.contains(conflict), "incorrectly resolved aliases leading to avoidable conflict with %s and %s", child, conflict);
+            op = makeOperationWithConflict(dao, conversion, token, principal.getDevice(), oid, currentParent, child, conflict, ic);
+        } else {
+            op = makeOperation(oid, currentParent, child, ic);
+        }
+
+        if (op != null) {
+            LOGGER.debug("performing op {} on {}", op, currentParent != null ? currentParent : oid);
+            return objectStore.performTransform(dao, token, principal.getDevice(), currentParent != null ? currentParent : oid, op);
+        } else {
+            return null;
+        }
+    }
+
+    private List<TransformBatchOperation> shareFolder(DAO dao, Conversion conversion, UniqueID rootStore, UniqueID folder, UniqueID store, UniqueID destination, InsertChild ic)
+    {
+        List<TransformBatchOperation> ops = Lists.newArrayList();
+        UniqueID parent = dao.children.getParent(folder);
+        Preconditions.checkState(parent != null, "found an alias target %s without a parent", folder);
+
+        if (folder.equals(SID.convertedStoreSID2folderOID(new SID(store)))) {
+            // we make the SHARE operation an exception here, in that it will restore a deleted object if necessary
+            ops.add(new TransformBatchOperation(folder, new Share()));
+            conversion.remapAlias(rootStore, folder, store);
+        } else {
+            // messy folder to shared folder aliasing, delete the mismatch and start the folder from scratch
+            ops.add(new TransformBatchOperation(parent, new RemoveChild(new OID(folder))));
+            ops.add(new TransformBatchOperation(destination, new InsertChild(store, ObjectType.STORE, ic.childName, null, null, null)));
+            // don't remap the alias here, because we don't want the shared folder to be affected by further changes to folder
+        }
+        return ops;
+    }
+
     private ArrayList<UniqueID> resolveChild(DAO dao, Conversion conversion, UniqueID store, InsertChild ic)
     {
         assert ic.aliases != null;
@@ -189,9 +261,7 @@ public class ConversionResource {
         if (Identifiers.isSharedFolder(ic.child)) {
             // Shared Folders cannot have any aliases
             Preconditions.checkArgument(ic.aliases.isEmpty(), "shared folder should not have any aliases");
-            Preconditions.checkState(conversion.getAliasNullable(ic.child, store) == null, "shared folder already has alias on polaris");
             resolutions.add(ic.child);
-            // TODO (RD) detect if non-shared folder exists
             return Lists.newArrayList(resolutions);
         }
 
@@ -205,32 +275,24 @@ public class ConversionResource {
             UniqueID aliasForAlias = conversion.getAliasNullable(distributedAlias, store);
             if (aliasForAlias != null) {
                 // any existing aliases are treated as canon
-                LOGGER.debug("adding an aliased-alias {} for an alias {} as a resolution for {}", aliasForAlias, distributedAlias, ic.child);
+                LOGGER.debug("adding target {} of an alias {} as a resolution for {}", aliasForAlias, distributedAlias, ic.child);
                 resolutions.add(aliasForAlias);
-            } else {
-                UniqueID aliasStore = dao.objects.getStore(distributedAlias);
-                if (aliasStore != null && aliasStore.equals(store)) {
-                    LOGGER.debug("adding an existing alias {} as a resolution for {}", distributedAlias, ic.child);
-                    resolutions.add(distributedAlias);
-                }
             }
         }
-        UniqueID resolvedChild = conversion.getAliasNullable(ic.child, store);
-        resolvedChild = resolvedChild != null ? resolvedChild : ic.child;
-        UniqueID storeForChild = dao.objects.getStore(resolvedChild);
-        if (notNullAndNotEqual(storeForChild, store) && resolutions.isEmpty()) {
-            // OID conflict with object from other store, need to make new OID to resolve to
-            Preconditions.checkState(resolvedChild.equals(ic.child), "hitting OID conflict for target %s of alias %s", resolvedChild, ic.child);
-            LOGGER.debug("adding a newly generated OID for OID conflict {}", resolvedChild);
-            resolutions.add(OID.generate());
-        } else if (storeForChild != null && storeForChild.equals(store)) {
-            // meaning this child already exists in the store
-            LOGGER.debug("adding existing object/alias {} as resolution for {}", resolvedChild, ic.child);
-            resolutions.add(resolvedChild);
-        } else if (resolutions.isEmpty()) {
-            Preconditions.checkState(resolvedChild.equals(ic.child), "found a nonexistent target %s for alias %s", resolvedChild, ic.child);
-            LOGGER.debug("no resolutions available for {}", resolvedChild);
-            resolutions.add(resolvedChild);
+
+        if (resolutions.isEmpty() && notNullAndNotEqual(dao.objects.getStore(ic.child), store)) {
+            OID newOid = OID.generate();
+            LOGGER.info("adding a newly generated OID {} for OID conflict {}", newOid, ic.child);
+            resolutions.add(newOid);
+        } else {
+            UniqueID childAlias = conversion.getAliasNullable(ic.child, store);
+            if (childAlias != null) {
+                LOGGER.debug("adding existing object/alias {} as resolution for {}", childAlias, ic.child);
+                resolutions.add(childAlias);
+            } else if (resolutions.isEmpty()) {
+                LOGGER.debug("no resolutions available for {}, adding self", ic.child);
+                resolutions.add(ic.child);
+            }
         }
         return Lists.newArrayList(resolutions);
     }
@@ -262,7 +324,7 @@ public class ConversionResource {
                 LOGGER.info("removing object {} to merge into {}", r, highestResolution);
                 objectStore.performTransform(dao, token, device, rParent, new RemoveChild(new OID(r)));
             }
-            // TODO (RD) it is possible to try and merge conflicted subtrees, but for right now it's only introducing extra complication
+            // it is possible to try and merge conflicted subtrees, but for right now it's only introducing extra complication and not considered worthwhile
             // see earlier commits on this file for a first pass impl
             conversion.remapAlias(store, r, highestResolution);
         }
@@ -290,7 +352,7 @@ public class ConversionResource {
                 objectStore.performTransform(dao, token, device, parent, new MoveChild(conflict, parent, nonConflictingName(dao, parent, conflict, ic.childName)));
                 return makeOperation(parent, currentParent, child, ic);
             } else {
-                // TODO (RD) consider queueing up a remove operation for this case
+                // TODO (RD) consider queueing up a remove operation for this case, will mean that other further operations on this child would have to restore object first
                 Preconditions.checkState(child.equals(ic.child), "have an illogical alias %s for name conflicting object %s with conflict %s", child, ic.child, conflict);
                 if (currentParent != null) {
                     return new MoveChild(child, parent, nonConflictingName(dao, parent, child, ic.childName));
@@ -331,7 +393,6 @@ public class ConversionResource {
 
     private void saveVersion(Conversion conversion, UniqueID oid, int component, Map<DID, Long> version)
     {
-        conversion.deleteTicks(oid, component);
         List<DID> devices = Lists.newArrayList();
         List<Long> ticks = Lists.newArrayList();
         version.forEach((key, value) -> {

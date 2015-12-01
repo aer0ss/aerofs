@@ -142,7 +142,6 @@ public class TestConversionResource {
         TransformBatchResult result = submitBatch(store, batch);
         assertThat(result.results.size(), equalTo(3));
         assertThat(result.results.get(2).successful, equalTo(false));
-        // TODO illegal argument should have a specific polaris error code
         assertThat(result.results.get(2).error.errorCode, equalTo(PolarisError.UNKNOWN));
     }
 
@@ -173,7 +172,6 @@ public class TestConversionResource {
         assertThat(t.transforms.get(0).getChild(), not(child));
     }
 
-    // TODO (RD) this one is debatable behavior
     @Test
     public void shouldOverrideNonConversionTransforms() throws Exception
     {
@@ -625,7 +623,7 @@ public class TestConversionResource {
         submitBatchSuccessfully(store, batch);
 
         batch = new TransformBatch(Lists.newArrayList(
-                // later insertion of the conflicted object in a way that doesn't get dropped
+                // later insertion of the conflicted object in a way that doesn't lead to conflicts or objects getting renamed
                 new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "othername", null, conflictVersion, null)),
                 new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, dominating, null))));
         submitBatchSuccessfully(store, batch);
@@ -762,8 +760,408 @@ public class TestConversionResource {
         assertThat(new String(c3.getChildName()), equalTo("object"));
     }
 
-    // TODO (RD) shared folder and pre-sharing folder tests
+    @Test
+    public void shouldAliasFolderToSharedFolder() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
+        OID folder = SID.convertedStoreSID2folderOID(sharedFolder), child = OID.generate();
+        Map<DID, Long> emptyVersion = Maps.newHashMap(), version = Maps.newHashMap();
+        DID device = DID.generate();
+        version.put(device, 1L);
 
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)),
+                new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "shared_folder", null, version, null)),
+                new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(2L));
+        assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(0).getChild(), equalTo(child));
+
+        sharedFolder = SID.generate();
+        folder = SID.convertedStoreSID2folderOID(sharedFolder);
+        child = OID.generate();
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder2", null, emptyVersion, null)),
+                // can cause a rename, should not depend on a name conflict
+                new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "different_name", null, version, null)),
+                new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(5L));
+        assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(0).getChild(), equalTo(child));
+    }
+
+    @Test
+    public void shouldShareFolderUponReceivingSharedFolderUpdate() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
+        OID folder = SID.convertedStoreSID2folderOID(sharedFolder), child = OID.generate();
+        Map<DID, Long> emptyVersion = Maps.newHashMap(), version = Maps.newHashMap();
+        DID device = DID.generate();
+        version.put(device, 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "shared_folder", null, version, null)),
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)),
+                new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null))));
+
+        submitBatchSuccessfully(rootStore, batch);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(3L));
+        assertThat(t.transforms.size(), equalTo(1));
+        assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(0).getChild(), equalTo(child));
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+        assertThat(t.transforms.get(1).getOid(), equalTo(folder));
+        assertThat(t.transforms.get(1).getTransformType(), equalTo(TransformType.SHARE));
+
+        sharedFolder = SID.generate();
+        folder = SID.convertedStoreSID2folderOID(sharedFolder);
+        child = OID.generate();
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "other_name", null, version, null)),
+                // detection should not rely on a name conflict ideally, this will cause folder to be renamed and then SHARE'd
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder2", null, emptyVersion, null)),
+                new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(7L));
+        assertThat(t.transforms.size(), equalTo(1));
+        assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(0).getChild(), equalTo(child));
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+        assertThat(t.transforms.get(3).getOid(), equalTo(rootStore));
+        assertThat(t.transforms.get(3).getTransformType(), equalTo(TransformType.RENAME_CHILD));
+        assertThat(t.transforms.get(3).getChild(), equalTo(folder));
+        assertThat(new String(t.transforms.get(3).getChildName()), equalTo("shared_folder2"));
+
+        assertThat(t.transforms.get(4).getOid(), equalTo(folder));
+        assertThat(t.transforms.get(4).getTransformType(), equalTo(TransformType.SHARE));
+    }
+
+    @Test
+    public void objectsShouldBePersistedAcrossFolderSharing() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
+        OID folder = SID.convertedStoreSID2folderOID(sharedFolder), child = OID.generate();
+        Map<DID, Long> emptyVersion = Maps.newHashMap(), version = Maps.newHashMap();
+        DID device = DID.generate();
+        version.put(device, 1L);
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+            new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "shared_folder", null, version, null)),
+            new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null)),
+            new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)),
+            new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)));
+
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(5L));
+        assertThat(t.transforms.size(), equalTo(2));
+        assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(0).getChild(), equalTo(child));
+        assertThat(t.transforms.get(0).getTransformType(), equalTo(TransformType.INSERT_CHILD));
+
+        assertThat(t.transforms.get(1).getOid(), equalTo(child));
+        assertThat(t.transforms.get(1).getTransformType(), equalTo(TransformType.UPDATE_CONTENT));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void shouldCarryAliasesOverFolderSharing() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
+        OID folder = SID.convertedStoreSID2folderOID(sharedFolder), folderAlias = OID.generate(), child = OID.generate(), childAlias = OID.generate(), child2 = OID.generate();
+        Map<DID, Long> emptyVersion = Maps.newHashMap(), version = Maps.newHashMap();
+        DID device = DID.generate();
+        version.put(device, 1L);
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "shared_folder", null, version, Lists.newArrayList(folderAlias))),
+                new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, Lists.newArrayList(childAlias))),
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)),
+                new TransformBatchOperation(folderAlias, insertChild(child2, ObjectType.FILE, "child2", null, version, null)),
+                new TransformBatchOperation(childAlias, new UpdateContent(0L, hash, 100L, 1024L, version)));
+
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(3));
+        assertThat(t.transforms, containsInAnyOrder(
+                TestTransformsResource.matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, child, ObjectType.FILE, "child"),
+                TestTransformsResource.matchesReorderableMetaTransform(DEVICE, sharedFolder, TransformType.INSERT_CHILD, child2, ObjectType.FILE, "child2"),
+                TestTransformsResource.matchesReorderableContentTransform(DEVICE, child, 1L, hash, 100L, 1024L)
+        ));
+    }
+
+    @Test
+    public void shouldDropFolderIfOIDDoesntMatchSID() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
+        OID folder = SID.convertedStoreSID2folderOID(sharedFolder), folderAlias = OID.generate(), child = OID.generate();
+        Map<DID, Long> emptyVersion = Maps.newHashMap(), version = Maps.newHashMap();
+        DID device = DID.generate();
+        version.put(device, 1L);
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(folderAlias, ObjectType.FOLDER, "shared_folder", null, version, Lists.newArrayList(folder))),
+                new TransformBatchOperation(folderAlias, insertChild(child, ObjectType.FILE, "child", null, version, null)),
+                new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)));
+
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+
+        assertThat(t.maxTransformCount, equalTo(4L));
+        assertThat(t.transforms.get(2).getOid(), equalTo(rootStore));
+        assertThat(t.transforms.get(2).getChild(), equalTo(folderAlias));
+        assertThat(t.transforms.get(2).getTransformType(), equalTo(TransformType.REMOVE_CHILD));
+        assertThat(t.transforms.get(3).getOid(), equalTo(rootStore));
+        assertThat(t.transforms.get(3).getChild(), equalTo(sharedFolder));
+        assertThat(t.transforms.get(3).getTransformType(), equalTo(TransformType.INSERT_CHILD));
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(0));
+
+        OID child2 = OID.generate(), child3 = OID.generate();
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(folderAlias, insertChild(child2, ObjectType.FILE, "child2", null, version, null)),
+                new TransformBatchOperation(folderAlias, insertChild(child3, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(child3, insertChild(child2, ObjectType.FOLDER, "nested_child", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(0));
+
+        // replicates what is in the old folder
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(sharedFolder, insertChild(child, ObjectType.FILE, "child", null, version, null)),
+                new TransformBatchOperation(sharedFolder, insertChild(child2, ObjectType.FILE, "child2", null, version, null)),
+                new TransformBatchOperation(sharedFolder, insertChild(child3, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(child3, insertChild(child2, ObjectType.FILE, "nested_child", null, version, null))));
+        submitBatchSuccessfully(sharedFolder, batch);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(4));
+        assertThat(t.transforms.get(0).getChild(), not(child));
+        assertThat(t.transforms.get(1).getChild(), not(child2));
+        assertThat(t.transforms.get(2).getChild(), not(child3));
+        assertThat(t.transforms.get(3).getChild(), not(child2));
+    }
+
+    @Test
+    public void canHandleInterleavedRemoveChild() throws Exception
+    {
+        SID store = SID.generate();
+        OID child = OID.generate(), child2 = OID.generate();
+        Map<DID, Long> version = Maps.newHashMap();
+        version.put(DID.generate(), 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(child, insertChild(child2, ObjectType.FILE, "file", null, version, null))));
+        submitBatchSuccessfully(store, batch);
+
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, child, child2);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(3L));
+
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(child2, new UpdateContent(0L, hash, 100L, 1024L, version)),
+                new TransformBatchOperation(store, insertChild(child2, ObjectType.FILE, "file", null, version, null))));
+        submitBatchSuccessfully(store, batch);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
+        assertThat(t.maxTransformCount, equalTo(3L));
+    }
+
+    @Test
+    public void shouldShareFolderIfAnchorIsDeleted() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), store = SID.generate();
+        OID anchor = SID.convertedStoreSID2folderOID(store), child = OID.generate(), child2 = OID.generate();
+        Map<DID, Long> version = Maps.newHashMap(), emptyVersion = Maps.newHashMap();
+        version.put(DID.generate(), 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(anchor, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(anchor, insertChild(child, ObjectType.FILE, "file", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, rootStore, anchor);
+        // cause a name conflict
+        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
+        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared folder");
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(store, ObjectType.STORE, "shared folder", null, emptyVersion, null)),
+                new TransformBatchOperation(anchor, insertChild(child2, ObjectType.FILE, "file2", null, version, null)));
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+
+        byte[] hash = new byte[32], hash2 = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+        random.nextBytes(hash2);
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)),
+                new TransformBatchOperation(child2, new UpdateContent(0L, hash2, 200L, 512L, version))));
+        submitBatchSuccessfully(store, batch);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(10));
+        assertThat(t.transforms.get(9).getTransformType(), equalTo(TransformType.SHARE));
+        assertThat(t.transforms.get(9).getOid(), equalTo(anchor));
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(4));
+    }
+
+    @Test
+    public void shouldShareFolderIfAnchorIsMigrated() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), store = SID.generate(), store2 = SID.generate();
+        OID anchor = SID.convertedStoreSID2folderOID(store), child = OID.generate(), child2 = OID.generate();
+        Map<DID, Long> version = Maps.newHashMap(), emptyVersion = Maps.newHashMap();
+        version.put(DID.generate(), 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(anchor, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(anchor, insertChild(child, ObjectType.FILE, "file", null, version, null))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, store2, anchor, "migrated").jobID, 10);
+        // cause a name conflict
+        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
+        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared folder");
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(store, ObjectType.STORE, "shared folder", null, emptyVersion, null)),
+                new TransformBatchOperation(anchor, insertChild(child2, ObjectType.FILE, "file2", null, version, null)));
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+
+        byte[] hash = new byte[32], hash2 = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+        random.nextBytes(hash2);
+        batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)),
+                new TransformBatchOperation(child2, new UpdateContent(0L, hash2, 200L, 512L, version))));
+        submitBatchSuccessfully(store, batch);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(10));
+        assertThat(t.transforms.get(9).getTransformType(), equalTo(TransformType.SHARE));
+        assertThat(t.transforms.get(9).getOid(), equalTo(anchor));
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(4));
+    }
+
+    @Test
+    public void shouldHandleDeletedAndMigratedAnchorWithoutMatchingOID() throws Exception
+    {
+        SID rootStore = SID.rootSID(USERID), store = SID.generate(), store2 = SID.generate(), crossStore = SID.generate();
+        OID anchor1 = SID.convertedStoreSID2folderOID(store), anchor2 = SID.convertedStoreSID2folderOID(store2);
+        OID alias1 = OID.generate(), alias2 = OID.generate();
+        Map<DID, Long> version = Maps.newHashMap(), emptyVersion = Maps.newHashMap();
+        version.put(DID.generate(), 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(alias1, ObjectType.FOLDER, "folder", null, version, Lists.newArrayList(anchor1))),
+                new TransformBatchOperation(rootStore, insertChild(alias2, ObjectType.FOLDER, "folder2", null, version, Lists.newArrayList(anchor2)))));
+        submitBatchSuccessfully(rootStore, batch);
+
+        PolarisHelpers.removeFileOrFolder(AUTHENTICATED, rootStore, alias1);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, crossStore, alias2, "migrated").jobID, 10);
+
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+                new TransformBatchOperation(rootStore, insertChild(store, ObjectType.STORE, "shared folder", null, emptyVersion, null)),
+                new TransformBatchOperation(rootStore, insertChild(store2, ObjectType.STORE, "shared folder2", null, emptyVersion, null)));
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
+        assertThat(t.transforms.size(), equalTo(6));
+        assertThat(t.transforms.get(4).getTransformType(), equalTo(TransformType.INSERT_CHILD));
+        assertThat(t.transforms.get(4).getChild(), equalTo(store));
+        assertThat(t.transforms.get(5).getTransformType(), equalTo(TransformType.INSERT_CHILD));
+        assertThat(t.transforms.get(5).getChild(), equalTo(store2));
+    }
+
+    @Test
+    public void canHandleInterleavedCrossStoreMove() throws Exception
+    {
+        SID store = SID.generate(), store2 = SID.generate();
+        OID child = OID.generate(), child2 = OID.generate();
+        Map<DID, Long> version = Maps.newHashMap();
+        version.put(DID.generate(), 1L);
+
+        TransformBatch batch = new TransformBatch(Lists.newArrayList(
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(child, insertChild(child2, ObjectType.FILE, "file", null, version, null))));
+        submitBatchSuccessfully(store, batch);
+
+        PolarisHelpers.moveObject(AUTHENTICATED, store, store2, child, "folder");
+
+        byte[] hash = new byte[32];
+        Random random = new Random();
+        random.nextBytes(hash);
+        List<TransformBatchOperation> ops = Lists.newArrayList(
+            new TransformBatchOperation(child2, new UpdateContent(0L, hash, 100L, 1024L, version)),
+            new TransformBatchOperation(store, insertChild(child2, ObjectType.FILE, "file", null, version, null)));
+        submitOpsSuccessFullyWithin(store, ops, 10);
+
+        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
+        // 2 inserts and a remove in the original store, then 2 inserts in the new store
+        assertThat(t.maxTransformCount, equalTo(5L));
+    }
+
+    // will fail only if fails "tries" number of times in a row without getting any work done
+    private void submitOpsSuccessFullyWithin(UniqueID store, List<TransformBatchOperation> ops, int tries) throws InterruptedException {
+        int failures = 0;
+        while (true) {
+            try {
+                TransformBatchResult r = submitBatch(store, new TransformBatch(ops));
+                for (TransformBatchOperationResult opResult : r.results) {
+                    if (opResult.successful) {
+                        ops.remove(0);
+                        failures = 0;
+                    } else {
+                        failures++;
+                        break;
+                    }
+                }
+                if (ops.isEmpty()) {
+                    // successfully submitted all ops
+                    return;
+                }
+            } catch (Exception e) {
+                failures++;
+            }
+            if (failures > tries) {
+                throw new AssertionError(String.format("failed to submit batch over %d tries", tries));
+            } else {
+                Thread.sleep(250);
+            }
+        }
+    }
 
     private void submitBatchSuccessfully(UniqueID store, TransformBatch batch)
     {

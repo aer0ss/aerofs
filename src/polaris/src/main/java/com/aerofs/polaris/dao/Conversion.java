@@ -24,16 +24,14 @@ public interface Conversion {
     @SqlQuery("select did, tick from converted_ticks where oid = :oid and component = :component")
     List<Tick> getDistributedVersion(@Bind("oid") UniqueID oid, @Bind("component") int component);
 
-    @SqlUpdate("delete from converted_ticks where oid = :oid and component = :component")
-    int deleteTicks(@Bind("oid") UniqueID oid, @Bind("component") int component);
-
-    @SqlBatch("insert into converted_ticks (oid, component, did, tick) values(:oid, :component, :did, :tick)")
+    @SqlBatch("replace into converted_ticks (oid, component, did, tick) values(:oid, :component, :did, :tick)")
     void insertTick(@Bind("oid") UniqueID oid, @Bind("component") int component, @Bind("did") List<DID> device, @Bind("tick") List<Long> tick);
 
     @SqlQuery("select target from aliases where alias = :alias and store = :store")
     @Nullable UniqueID getAliasNullable(@Bind("alias") UniqueID alias, @Bind("store") UniqueID store);
 
-    @SqlUpdate("insert into aliases (alias, store, target) values(:alias, :store, :target) on duplicate key update alias=alias")
+    // on duplicate key does nothing, need to use remapAlias if you want to redirect an alias
+    @SqlUpdate("insert ignore into aliases (alias, store, target) values(:alias, :store, :target)")
     int addAlias(@Bind("alias") UniqueID alias, @Bind("store") UniqueID store, @Bind("target") UniqueID target);
 
     @SqlUpdate("update aliases set target = :newtarget where store = :store and target = :oldtarget")

@@ -24,6 +24,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
@@ -275,6 +276,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
         private final SID _sid;
         private final List<Batch.BatchOp> _ops;
         private int failures = 0;
+        private long delay = LibParam.EXP_RETRY_MIN_DEFAULT;
         private Throwable lastError = null;
         private final Semaphore completionSignaler = new Semaphore(0);
 
@@ -348,6 +350,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                                 ops.remove(0);
                                 // reset the failure counter
                                 failures = 0;
+                                delay = LibParam.EXP_RETRY_MIN_DEFAULT;
                             }
                         } else {
                             l.warn("conversion op failed {} {} {}", or.errorCode, or.errorMessage, GsonUtil.GSON.toJson(ops.get(i)));
@@ -370,6 +373,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
         public void onSuccess_(boolean hasMore) {
             if (hasMore) {
                 failures = 0;
+                delay = LibParam.EXP_RETRY_MIN_DEFAULT;
                 submit();
             } else {
                 // signal that the operations have been successfully submitted
@@ -385,6 +389,12 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                 completionSignaler.release();
             } else {
                 l.warn("error submitting conversion ops", t);
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    l.error("interrupted", e);
+                }
+                delay = Math.min(LibParam.EXP_RETRY_MAX_DEFAULT, delay * 2);
                 submit();
             }
         }

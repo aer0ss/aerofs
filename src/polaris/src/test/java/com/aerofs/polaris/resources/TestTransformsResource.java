@@ -359,7 +359,7 @@ public final class TestTransformsResource {
         }
     }
 
-    private static Matcher<? super Transform> matchesMetaTransform(
+    public static Matcher<? super Transform> matchesMetaTransform(
             final long logicalTimestamp,
             final DID originator,
             final UniqueID oid,
@@ -373,7 +373,7 @@ public final class TestTransformsResource {
         return new MetaTransformMatcher(logicalTimestamp, originator, oid, transformType, newVersion, child, childObjectType, childName, migrant, false, false, false);
     }
 
-    private static Matcher<? super Transform> matchesReorderableMetaTransform(
+    public static Matcher<? super Transform> matchesReorderableMetaTransform(
             final DID originator,
             final UniqueID oid,
             final TransformType transformType,
@@ -406,7 +406,7 @@ public final class TestTransformsResource {
     }
 
 
-    private static Matcher<? super Transform> matchesContentTransform(
+    public static Matcher<? super Transform> matchesContentTransform(
             final long logicalTimestamp,
             final DID originator,
             final UniqueID oid,
@@ -418,7 +418,7 @@ public final class TestTransformsResource {
         return new ContentTransformMatcher(logicalTimestamp, originator, oid, newVersion, contentHash, contentSize, contentMtime, false, false);
     }
 
-    private static Matcher<? super Transform> matchesReorderableContentTransform(
+    public static Matcher<? super Transform> matchesReorderableContentTransform(
             final DID originator,
             final UniqueID oid,
             final long newVersion,

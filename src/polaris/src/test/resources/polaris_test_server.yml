@@ -28,7 +28,7 @@ sparta:
   maxConnections: 10
 
 logging:
-  level: WARN
+  level: INFO
 
   console:
     enabled: true
