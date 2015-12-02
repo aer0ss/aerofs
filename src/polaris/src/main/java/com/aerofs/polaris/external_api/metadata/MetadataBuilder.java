@@ -117,10 +117,9 @@ public class MetadataBuilder
         }
     }
 
-    private UniqueID createAppDataIfNecessary(DAO dao, AeroOAuthPrincipal principal,
+    private UniqueID createAppDataIfNecessary(DAO dao, AeroOAuthPrincipal principal, SID rootSID,
             List<Updated> updated)
     {
-        SID rootSID = SID.rootSID(principal.getUser());
         UniqueID appDataId = dao.children.getActiveChildNamed(rootSID, APPDATA_FOLDER_NAME.getBytes());
         if (appDataId == null) {
             // Create .appdata
@@ -131,7 +130,7 @@ public class MetadataBuilder
             // still call this method to get the access token for performTransform.
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     Sets.newHashSet(objectStore.getStore(dao, rootSID)), READ, WRITE);
-            updated.addAll(performTransform(dao, accessToken,
+            updated.addAll(objectStore.performTransform(dao, accessToken,
                     principal.getDID(), rootSID,
                     new InsertChild(appDataId, FOLDER, APPDATA_FOLDER_NAME, null)).updated);
         }
@@ -146,7 +145,7 @@ public class MetadataBuilder
             clientId = OID.generate();
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     Sets.newHashSet(objectStore.getStore(dao, appDataId)), READ, WRITE);
-            updated.addAll(performTransform(dao, accessToken,
+            updated.addAll(objectStore.performTransform(dao, accessToken,
                     principal.getDID(), appDataId,
                     new InsertChild(clientId, FOLDER, principal.audience(), null)).updated);
             return clientId;
@@ -170,11 +169,17 @@ public class MetadataBuilder
         UniqueID oid;
         if (object.isAppData()) {
             List<Updated> updated = Lists.newArrayList();
-            oid = dbi.inTransaction((conn, status) ->
-                    createAppDataIfNecessary(new DAO(conn), principal, updated));
-            Map<UniqueID, Long> updatedStores = updated.stream()
-                    .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
-            updatedStores.forEach(notifier::notifyStoreUpdated);
+            SID rootSID = SID.rootSID(principal.getUser());
+            Lock l = objectStore.lockObject(rootSID);
+            try {
+                oid = dbi.inTransaction((conn, status) ->
+                        createAppDataIfNecessary(new DAO(conn), principal, rootSID, updated));
+                Map<UniqueID, Long> updatedStores = updated.stream()
+                        .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
+                updatedStores.forEach(notifier::notifyStoreUpdated);
+            } finally {
+                l.unlock();
+            }
         } else {
             oid = fromRestObject(principal, object);
         }
@@ -431,13 +436,18 @@ public class MetadataBuilder
         AccessToken accessToken = checkAccess(principal, Lists.newArrayList(parentOID),
                 READ, WRITE);
 
-        ApiOperationResult result  = dbi.inTransaction((conn, status) ->
-                create(new DAO(conn), principal, restParent, parentOID, name, version, accessToken,
-                        isFile));
-        Map<UniqueID, Long> updatedStores =result.updated.stream()
-                .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
-        updatedStores.forEach(notifier::notifyStoreUpdated);
-        return result.response;
+        Lock l = objectStore.lockObject(parentOID);
+        try {
+            ApiOperationResult result = dbi.inTransaction((conn, status) ->
+                    create(new DAO(conn), principal, restParent, parentOID, name, version, accessToken,
+                            isFile));
+            Map<UniqueID, Long> updatedStores = result.updated.stream()
+                    .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
+            updatedStores.forEach(notifier::notifyStoreUpdated);
+            return result.response;
+        } finally {
+            l.unlock();
+        }
     }
 
     private ApiOperationResult create(DAO dao, AeroOAuthPrincipal principal, RestObject object,
@@ -458,7 +468,7 @@ public class MetadataBuilder
 
         OID oid = OID.generate();
         l.info("Create object. parent {} object name {} oid {}", parentOID, name, oid);
-        OperationResult result = performTransform(dao, accessToken, principal.getDID(),
+        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
                 parentOID, new InsertChild(oid, isFile ? FILE : FOLDER, name, null));
         l.info("Result for creating object {}: {}", name, result);
 
@@ -472,31 +482,43 @@ public class MetadataBuilder
                 .build());
    }
 
-    public Response move(AeroOAuthPrincipal principal, RestObject object, String parent, String name)
-    {
+    public Response move(AeroOAuthPrincipal principal, RestObject object, String parent, String name) {
         Preconditions.checkArgument(parent != null, "Destination is null.");
         Preconditions.checkArgument(name != null, "No object name given.");
 
         UniqueID oid = restObject2OID(principal, object);
         UniqueID toParent = restObject2OID(principal, RestObject.fromString(parent));
-        Set<UniqueID> stores = dbi.inTransaction((conn, Status) -> {
+
+        // Keep track of parent OID and store OIDs required for use later in the same operation but
+        // outside the transaction. We need to do this because we need to:
+        // 1. Check Access for stores outside transactions because that needs to network with
+        // Sparta.
+        // 2. Be able to lock objects outside transaction.
+        ParentAndStores ps = dbi.inTransaction((conn, Status) -> {
             DAO dao = new DAO(conn);
             UniqueID parentOID = getParentOID(dao, principal.getUser(), oid);
             if (parentOID == null) {
                 throw new NotFoundException(oid);
             }
-            return Sets.newHashSet(objectStore.getStore(dao, parentOID), objectStore.getStore(dao, toParent));
+            return new ParentAndStores(parentOID,
+                    Sets.newHashSet(objectStore.getStore(dao, parentOID), objectStore.getStore(dao, toParent)));
         });
 
-        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(), stores,
+        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(), ps.stores,
                 READ, WRITE);
-        ApiOperationResult result  = dbi.inTransaction((conn, status) ->
-                move(new DAO(conn), principal, object, RestObject.fromString(parent), oid,
-                        toParent, name, accessToken));
-        Map<UniqueID, Long> updatedStores = result.updated.stream()
-                .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
-        updatedStores.forEach(notifier::notifyStoreUpdated);
-        return result.response;
+
+        Lock l = objectStore.lockObject(ps.parent);
+        try {
+            ApiOperationResult result = dbi.inTransaction((conn, status) ->
+                    move(new DAO(conn), principal, object, RestObject.fromString(parent), oid,
+                            toParent, name, accessToken));
+            Map<UniqueID, Long> updatedStores = result.updated.stream()
+                    .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
+            updatedStores.forEach(notifier::notifyStoreUpdated);
+            return result.response;
+        } finally {
+            l.unlock();
+        }
     }
 
     private ApiOperationResult move(DAO dao, AeroOAuthPrincipal principal, RestObject object,
@@ -517,7 +539,7 @@ public class MetadataBuilder
         }
 
         l.info("Move object <oid, name> <{}, {}> from {} to {}", oid, name, fromParent, toParent);
-        OperationResult result = performTransform(dao, accessToken, principal.getDID(),
+        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
         UniqueID child = dao.children.getActiveChildNamed(toParent, name.getBytes());
         return new ApiOperationResult(result.updated, Response.ok()
@@ -530,23 +552,28 @@ public class MetadataBuilder
         l.info("Deleting object {}", object.toStringFormal());
 
         UniqueID oid = restObject2OID(principal, object);
-        Set<UniqueID> parentStores = dbi.inTransaction((conn, Status) -> {
+        ParentAndStores ps = dbi.inTransaction((conn, Status) -> {
             DAO dao = new DAO(conn);
             UniqueID parent = getParentOID(dao, principal.getUser(), oid);
             if (parent == null) {
                 throw new NotFoundException(oid);
             }
-            return Sets.newHashSet(objectStore.getStore(dao, parent));
+            return new ParentAndStores(parent, Sets.newHashSet(objectStore.getStore(dao, parent)));
         });
 
-        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
-                parentStores, READ, WRITE);
-        ApiOperationResult result = dbi.inTransaction((conn, status) ->
-                delete(new DAO(conn), principal, object, oid, accessToken));
-        Map<UniqueID, Long> updatedStores =result.updated.stream()
-                .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
-        updatedStores.forEach(notifier::notifyStoreUpdated);
-        return result.response;
+        Lock l = objectStore.lockObject(ps.parent);
+        try {
+            AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
+                    ps.stores, READ, WRITE);
+            ApiOperationResult result = dbi.inTransaction((conn, status) ->
+                    delete(new DAO(conn), principal, object, oid, accessToken));
+            Map<UniqueID, Long> updatedStores =result.updated.stream()
+                    .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
+            updatedStores.forEach(notifier::notifyStoreUpdated);
+            return result.response;
+        } finally {
+            l.unlock();
+        }
     }
 
     private ApiOperationResult delete(DAO dao, AeroOAuthPrincipal principal, RestObject object,
@@ -560,7 +587,7 @@ public class MetadataBuilder
         Preconditions.checkArgument(!Identifiers.isRootStore(oid), "cannot remove user root");
 
         UniqueID parent = getParentOID(dao, principal.getUser(), oid);
-        OperationResult result = performTransform(dao, accessToken,
+        OperationResult result = objectStore.performTransform(dao, accessToken,
                 principal.getDID(), parent, new RemoveChild(new OID(oid)));
 
         l.info("Result for deleting object {}: {}", oid.toStringFormal(), result);
@@ -585,16 +612,6 @@ public class MetadataBuilder
         return Response.ok()
                 .entity(filtered)
                 .build();
-    }
-
-    private OperationResult performTransform(DAO dao, AccessToken token, DID device, UniqueID oid, Operation operation)
-    {
-        Lock l = objectStore.lockObject(oid);
-        try {
-            return objectStore.performTransform(dao, token, device, oid, operation);
-        } finally {
-            l.unlock();
-        }
     }
 
     private ChildrenList children(DAO dao, AeroOAuthPrincipal principal, RestObject object,
@@ -637,7 +654,25 @@ public class MetadataBuilder
         return Response.ok().entity(parentPath(parentFolders.values())).build();
     }
 
-    public static final class ApiOperationResult
+    // POJO to store parent OID and store OID for later use within an API operation since both are
+    // computed within a single transaction.
+    private static final class ParentAndStores
+    {
+        @NotNull
+        @Valid
+        public final UniqueID parent;
+
+        @NotNull
+        public final Set<UniqueID> stores;
+
+        public ParentAndStores(UniqueID parent, Set<UniqueID> stores)
+        {
+            this.parent = parent;
+            this.stores = stores;
+        }
+    }
+
+    private static final class ApiOperationResult
     {
         @NotNull
         @Valid
@@ -645,7 +680,6 @@ public class MetadataBuilder
 
         @NotNull
         public final Response response;
-
 
         public ApiOperationResult(List<Updated> updated, Response response)
         {
