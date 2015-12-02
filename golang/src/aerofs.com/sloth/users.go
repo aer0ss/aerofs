@@ -20,6 +20,11 @@ type UsersResource struct {
 	db          *sql.DB
 }
 
+// Practically, this will either be an instance of *sql.Row or *sql.Rows
+type Scannable interface {
+	Scan(...interface{}) error
+}
+
 //
 // Route definitions
 //
@@ -54,7 +59,7 @@ func BuildUsersRoutes(db *sql.DB, broadcaster broadcast.Broadcaster) *restful.We
 
 	ws.Route(ws.GET("/{uid}").To(u.getById).
 		Doc("Get user's profile").
-		Notes("Note the absence of the avatar. It must be requested separately due to its size.").
+		Notes("Note that the avatarPath is provided if an avatar has been uploaded. The avatar data must be requested separately at the provided path.").
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
 		Returns(200, "User info", User{}).
 		Returns(401, "Invalid authorization", nil).
@@ -179,22 +184,13 @@ func BuildUsersRoutes(db *sql.DB, broadcaster broadcast.Broadcaster) *restful.We
 
 func (u UsersResource) getAll(request *restful.Request, response *restful.Response) {
 	userList := make([]User, 0)
-	rows, err := u.db.Query("SELECT id,first_name,last_name,tag_id FROM users")
+	rows, err := u.db.Query("SELECT id,first_name,last_name,tag_id,ISNULL(avatar) FROM users")
 	errors.PanicOnErr(err)
 	defer rows.Close()
-	now := time.Now()
 	for rows.Next() {
-		var user User
-		var tagId sql.NullString
-		err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &tagId)
+		user, err := parseUserRow(rows)
 		errors.PanicOnErr(err)
-		if val, err := tagId.Value(); err != nil {
-			errors.PanicOnErr(err)
-		} else if val != nil {
-			user.TagId = val.(string)
-		}
-		user.LastOnlineTime = getLastOnlineTime(user.Id, now)
-		userList = append(userList, user)
+		userList = append(userList, *user)
 	}
 	response.WriteEntity(UserList{Users: userList})
 }
@@ -204,8 +200,7 @@ func (u UsersResource) getById(request *restful.Request, response *restful.Respo
 	// begin transaction
 	tx := BeginOrPanic(u.db)
 	// query db
-	user, err := getUser(tx, id)
-	errors.PanicAndRollbackOnErr(err, tx)
+	user := getUser(tx, id)
 	// end transaction
 	CommitOrPanic(tx)
 	// write response
@@ -235,8 +230,7 @@ func (u UsersResource) updateUser(request *restful.Request, response *restful.Re
 	// start transaction
 	tx := BeginOrPanic(u.db)
 	// determine whether user exists already
-	oldUser, err := getUser(tx, id)
-	errors.PanicAndRollbackOnErr(err, tx)
+	oldUser := getUser(tx, id)
 	var dbFunc func(*sql.Tx, *User) error
 	if oldUser == nil {
 		dbFunc = insertUser
@@ -516,23 +510,11 @@ func userExists(tx *sql.Tx, uid string) bool {
 	return true
 }
 
-func getUser(tx *sql.Tx, uid string) (*User, error) {
-	var user User
-	var tagId sql.NullString
-	err := tx.QueryRow("SELECT id,first_name,last_name,tag_id FROM users WHERE id=?", uid).
-		Scan(&user.Id, &user.FirstName, &user.LastName, &tagId)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	} else if err != nil {
-		return nil, err
-	}
-	if val, err := tagId.Value(); err != nil {
-		errors.PanicOnErr(err)
-	} else if val != nil {
-		user.TagId = val.(string)
-	}
-	user.LastOnlineTime = getLastOnlineTime(user.Id, time.Now())
-	return &user, nil
+func getUser(tx *sql.Tx, uid string) *User {
+	row := tx.QueryRow("SELECT id,first_name,last_name,tag_id,ISNULL(avatar) FROM users WHERE id=?", uid)
+	user, err := parseUserRow(row)
+	errors.PanicAndRollbackOnErr(err, tx)
+	return user
 }
 
 func insertUser(tx *sql.Tx, user *User) error {
@@ -554,6 +536,28 @@ func updateUser(tx *sql.Tx, user *User) error {
 //
 // Misc Helpers
 //
+
+func parseUserRow(row Scannable) (*User, error) {
+	var user User
+	var tagId sql.NullString
+	var hasNoAvatar bool
+	err := row.Scan(&user.Id, &user.FirstName, &user.LastName, &tagId, &hasNoAvatar)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	if val, err := tagId.Value(); err != nil {
+		return nil, err
+	} else if val != nil {
+		user.TagId = val.(string)
+	}
+	user.LastOnlineTime = getLastOnlineTime(user.Id, time.Now())
+	if !hasNoAvatar {
+		user.AvatarPath = "/" + user.Id + "/avatar"
+	}
+	return &user, nil
+}
 
 // Return the number of seconds since the user was last seen online, or nil if
 // the user has never made a request.

@@ -31,6 +31,7 @@ type User struct {
 	FirstName      string  `json:"firstName"`
 	LastName       string  `json:"lastName"`
 	TagId          string  `json:"tagId,omitempty"`
+	AvatarPath     string  `json:"avatarPath,omitempty"`
 	LastOnlineTime *uint64 `json:"lastOnlineTime,omitempty"`
 }
 

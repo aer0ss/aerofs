@@ -107,6 +107,7 @@ try:
     assert r.json()["lastName"] == "Gray", r.json()
     assert r.json()["id"] == "dgray", r.json()
     assert r.json()["tagId"] == "dg", r.json()
+    assert "avatarPath" not in r.json(), r.json()
 
     # GET /users
     r = s.get(BASE_URL + "/users", headers=JGRAY_AUTH)
@@ -447,6 +448,11 @@ try:
                 "Content-Type": "application/octet-stream",
             })
     assert r.ok, r
+
+    # GET /users/uid should have avatarPath
+    r = s.get("{}/users/{}".format(BASE_URL, "jgray"), headers=JGRAY_AUTH)
+    assert r.ok, r
+    assert r.json().get("avatarPath") != None, r.json()
 
     # GET /users/uid/avatar
     r = s.get("{}/users/{}/avatar".format(BASE_URL, "jgray"),
