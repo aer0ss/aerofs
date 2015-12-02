@@ -616,6 +616,11 @@ public class GUI implements IUI
     @Override
     public void shutdown()
     {
+        // this thread's stack trace will provide a better context of why we are shutting down
+        // than the message printed by the daemon monitor.
+        l.info("shutting down.");
+        l.debug("Stack trace:", new Exception());
+
         exec(() -> {
             if (st() != null) st().dispose();
 

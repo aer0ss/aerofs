@@ -606,7 +606,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         _stopping = true;
 
-        l.warn("stop daemon");
+        l.info("stopping daemon.");
+        l.debug("Stack trace:", new Exception());
 
         // try a clean shutdown first, to minimize likelihood of data corruption
         try {
