@@ -389,9 +389,16 @@ def json_setup_certificate(request):
         os.unlink(key_filename)
 
 def _check_existing_certificate_matches_hostname(conf, hostname):
+    certificate = unformat_pem(conf.get('server.browser.certificate', ""))
+
+    # Legacy backup file does not contain a browser cert when the user is using a pre-installed
+    # certificate.
+    if not certificate:
+        return True
+
     try:
-        certificate = unformat_pem(conf.get('server.browser.certificate', ""))
         certificate_filename = write_pem_to_file(certificate)
+
         return certificate_is_self_signed_or_common_name_matches_hostname(certificate_filename, hostname)
     finally:
         os.unlink(certificate_filename)
