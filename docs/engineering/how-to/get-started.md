@@ -98,10 +98,10 @@ Note: Do not use `sudo` for the following command. You should not need it if the
     
 Mac: Close and open your terminal to use the new ruby version.  
 
-    brew install $HOME/repos/aerofs/tools/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/protobuf.brew/protobuf-objc.rb
-    
+    brew install $HOME/repos/aerofs/tools/brew_formulae/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/brew_formulae/protobuf-objc.rb
+
     gem install kramdown jekyll
-    
+
     pip install virtualenv protobuf requests pyyaml
 
     npm install -g less minifier uglify-js
@@ -233,7 +233,7 @@ If you are not using the VPN/offline, you may want to add the following to your 
 
 ## Build and launch the client
 
-This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition, 
+This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition,
 
     cd $HOME/repos/aerofs/
     ./invoke clean proto
@@ -255,12 +255,12 @@ If you work on UI code, it can be anonying that the daemon restarts every time y
 
      touch ~/rtroot/user1/nodm
      approot/run ~/rtroot/user1 daemon &
-     
+
 `nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The next time the UI launches it will not restart the daemon.
 
 ## Compile static files
 
-Compiled files are not included in source control, so to get all the styles and JS working on the local version of the website you'll need to compile them. For how to do so, please see "Compiling Less and JS" in src/web/web/README.txt. 
+Compiled files are not included in source control, so to get all the styles and JS working on the local version of the website you'll need to compile them. For how to do so, please see "Compiling Less and JS" in src/web/web/README.txt.
 
 You'll need to install some dependencies, then run `make watch` and hopefully never need to pay attention to Less/JS compilation/minification again!
 
@@ -298,13 +298,13 @@ You only need to run the above two steps once until you need to update client bi
 Run a single test case:
 
     $ invoke syncdet --syncdet-case=core.basic.should_rename_file
-    
+
 This test case correponds to the Python file ~/repos/aerofs/system-tests/syncdet/core/basic/should_move_file.py.
-     
+
 Run a scenario that contains all basic test cases:
 
     $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/core/basic/test_basic.scn
-    
+
 Now, run all the tests!
 
     $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/all.scn # all tests

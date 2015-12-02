@@ -1,6 +1,0 @@
-#!/bin/bash -e
-#
-# Script to do both 'git review' and take a picture of the coder.
-
-git review $@
-git picture

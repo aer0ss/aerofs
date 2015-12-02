@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Connecting to c.aerofs.com..."
-ssh c.aerofs.com "cmd-user $@"
