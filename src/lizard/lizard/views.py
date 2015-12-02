@@ -1,21 +1,20 @@
 import base64
-import datetime
 import time
 import os
 import json
-import urllib
 import requests
+from itsdangerous import TimestampSigner
+import itsdangerous
+import markupsafe
+import stripe
+import flask_scrypt as scrypt
+import flask_login as login
 
 from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, \
     url_for, Response, session
-from flask.ext import scrypt, login
-import itsdangerous
-from itsdangerous import TimestampSigner
-import markupsafe
 
-from lizard import analytics_client, db, login_manager, csrf, stripe, filters, login_helper, \
-    password_reset_helper
-from . import appliance, notifications, forms, models
+from lizard import analytics_client, db, login_manager, csrf, login_helper, password_reset_helper, \
+    appliance, notifications, forms, models
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
 
@@ -246,7 +245,7 @@ def signup_completion_page():
                 })
         analytics_client.track(admin.customer_id, "Signed Up For Private Cloud", {
             'email': markupsafe.escape(admin.email)
-            });
+            })
 
         # Log user in.
         login_success = login_helper.login_user(admin)
@@ -406,20 +405,19 @@ def pay():
                 plan=billing_frequency,
                 quantity=license_request.seats)
             license_request.stripe_subscription_id = stripe_subscription.id
-        else: # pro-rate
+        else: # Pro-rate.
             license_request.expiry_date = newest_license.expiry_date
             license_request.stripe_subscription_id = newest_license.stripe_subscription_id
             stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
             stripe_subscription.prorate = "true"
             stripe_subscription.quantity = license_request.seats
             stripe_subscription.save()
-            #immediattely charge the customer (otherwise the customer will get charged at the end of the billing period)
+            # Immediattely charge the customer (otherwise the customer will get charged at the end of the billing period).
             try:
-                invoice = stripe.Invoice.create(customer=stripe_customer.id)
-                invoice = invoice.pay()
-            except (stripe.error.CardError, stripe.error.StripeError) as e:
-                # try and roll back the subscription if the invoice payment failed
-                # (why stripe throws an error as opposed to a null invoice here is beyond me)
+                stripe.Invoice.create(customer=stripe_customer.id).pay()
+            except (stripe.CardError, stripe.StripeError) as e:
+                # Try and roll back the subscription if the invoice payment failed.
+                # (Why stripe throws an error as opposed to a null invoice here is beyond me)
                 if customer.stripe_customer_id and not newest_license.is_trial:
                     stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
                     stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
@@ -427,12 +425,12 @@ def pay():
                     stripe_subscription.quantity = newest_license.seats
                     stripe_subscription.save()
                 raise
-    except stripe.error.CardError as e:
-        # Since it's a decline, stripe.error.CardError will be caught
+    except stripe.CardError as e:
+        # Since it's a decline, stripe.error.CardError will be caught.
         body = e.json_body
         err  = body['error']
         msg = err['message']
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         msg = u"An unknown error has occured and your card has not been charged. Please try again later."
         current_app.logger.warn(e)
     except Exception as e:
@@ -592,12 +590,12 @@ def billing():
             default_card = stripe_customer.default_source
             if default_card:
                 card = stripe_customer.sources.retrieve(default_card)
-    except stripe.error.CardError as e:
+    except stripe.CardError as e:
         # Since it's a decline, stripe.error.CardError will be caught
         body = e.json_body
         err  = body['error']
         msg = err['message']
-    except stripe.error.StripeError as e:
+    except stripe.StripeError as e:
         msg = u"An unknown error has occured and your card has not been changed. Please try again later."
         current_app.logger.warn(e)
     except Exception as e:
@@ -820,7 +818,7 @@ def complete_password_reset():
 
     try:
         signed_reset_token = base64.urlsafe_b64decode(reset_blob.encode("latin1"))
-    except Exception:
+    except TypeError:
         flash(u"Not a valid password reset token.", "error")
         return redirect(url_for(".start_password_reset"))
 
@@ -846,9 +844,9 @@ def complete_password_reset():
         admin = models.Admin.query.filter_by(email=token_email).first_or_404()
         # Mark as used.
         password_reset_helper.use(reset_blob)
-        # Reset the password
+        # Reset the password.
         admin.set_password(form.password.data)
-        # Save to DB
+        # Save to DB.
         db.session.add(admin)
         db.session.commit()
         # Destroy all other sessions for this user to prevent replay attack.

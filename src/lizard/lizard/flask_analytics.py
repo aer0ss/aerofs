@@ -1,7 +1,6 @@
 # This is a Flask wrapper for SegmentIO's analytics class to allow it to be
 # initialized by configuration parameters from a Flask app.
 # It is designed to behave like a proxy object for the underlying analytics client.
-import logging
 
 from analytics.client import Client as _Client
 

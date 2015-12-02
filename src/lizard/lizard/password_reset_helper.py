@@ -1,5 +1,4 @@
-from flask import current_app, session
-from flask.ext import login
+from flask import current_app
 
 KEY_PREFIX = 'lizard-pw-reset_'
 

@@ -1,8 +1,8 @@
 import os
 
 from flask import Flask
-from flask.ext.login import LoginManager
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CsrfProtect
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError

@@ -1,14 +1,11 @@
-from StringIO import StringIO
 import datetime
-import tarfile
-
-from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, flash
-
-from aerofs_licensing import unicodecsv
-from lizard import db, csrf
-from . import appliance, notifications, forms, models
-
 import stripe
+import tarfile
+from StringIO import StringIO
+from aerofs_licensing import unicodecsv
+from lizard import db, csrf, appliance, notifications, forms, models
+from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
+    flash
 
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
@@ -41,8 +38,8 @@ def customer_actions(org_id):
         if customer.stripe_customer_id and form.stripe_subscription_id.data:
             try:
                 stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
-                subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
-            except stripe.error.InvalidRequestError, e:
+                stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
+            except stripe.InvalidRequestError, e:
                 body = e.json_body
                 err = body['error']
                 flash (err['message'], "error")
@@ -85,7 +82,7 @@ def license_actions(license_id):
             try:
                 stripe_customer = stripe.Customer.retrieve(license.customer.stripe_customer_id)
                 subscription = stripe_customer.subscriptions.retrieve(form.stripe_subscription_id.data)
-            except stripe.error.InvalidRequestError, e:
+            except stripe.InvalidRequestError, e:
                 body = e.json_body
                 err = body['error']
                 flash (err['message'], "error")
@@ -281,18 +278,17 @@ def upload_bundle():
     form = forms.InternalLicenseBundleUploadForm(csrf_enabled=False)
     if form.validate_on_submit():
         blob = form.license_bundle.data
-        # Read tarball
+        # Read tarball.
         tarball = tarfile.open(fileobj=blob.stream)
         tarball.list()
         license_index_flo = tarball.extractfile("license-index")
         index_csv = unicodecsv.UnicodeDictReader(license_index_flo)
         just_imported = []
-        # The construction here gives safe incremental progress.  You can just
-        # keep uploading the same license bundle and it'll ignore the files
-        # that are already in the DB.
+        # The construction here gives safe incremental progress. You can just keep uploading the
+        # same license bundle and it'll ignore the files that are already in the DB.
         for row in index_csv:
             print row
-            # extract ID, seats, trial, audit, expiry date, issue date, filename
+            # Extract ID, seats, trial, audit, expiry date, issue date, filename.
             customer_id = row["ID"]
             seats = row["Seats"]
             expiry_date = datetime.datetime.strptime(row["Expiry Date"], "%Y-%m-%d")
@@ -303,7 +299,7 @@ def upload_bundle():
             allow_mdm = row["Allow MDM"].lower() == "true"
             allow_device_restriction = row["Allow Device Restriction"].lower() == "true"
             filename = row["Filename"]
-            # Look for a matching License in state PENDING
+            # Look for a matching License in state PENDING.
             license_request = models.License.query.filter_by(customer_id=customer_id,
                     state=models.License.states.PENDING,
                     seats=seats,
@@ -315,24 +311,23 @@ def upload_bundle():
                     allow_device_restriction=allow_device_restriction
                     ).first()
             if license_request is not None:
-                # Extract license file from tarball
+                # Extract license file from tarball.
                 license_file_flo = tarball.extractfile(filename)
                 license_file_bytes = license_file_flo.read()
-                # Update License: set license file blob, state=FILLED
+                # Update License: set license file blob, state=FILLED.
                 license_request.blob = license_file_bytes
                 license_request.state = models.License.states.FILLED
-                # commit
+                # Commit.
                 db.session.add(license_request)
                 just_imported.append(row)
-                # email all admins in org
+                # Email all admins in org.
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
-                    notifications.send_license_available_email(admin, license_request.customer)
-                # Prefer committing after sending the emails.  In the case of a
-                # failure, admins listed before the one triggering the failure
-                # will get duplicate emails, but if you commit before sending
-                # the mails and there's an email failure, that message to the
-                # user will be lost and they'll hear nothing from us.
+                    notifications.send_license_available_email(admin)
+                # Prefer committing after sending the emails.In the case of a failure, admins listed
+                # before the one triggering the failure will get duplicate emails, but if you commit
+                # before sending the mails and there's an email failure, that message to the user
+                # will be lost and they'll hear nothing from us.
                 db.session.commit()
             else:
                 print "Got a license descriptor without no outstanding license request. Discarding."

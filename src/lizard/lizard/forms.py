@@ -1,9 +1,9 @@
 import datetime
 
-from flask.ext.wtf import Form
+from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 from wtforms import StringField, PasswordField, BooleanField, IntegerField, DateField, SelectField, TextAreaField, HiddenField
-from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, EqualTo, NumberRange
+from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, NumberRange
 
 class LoginForm(Form):
     email = StringField('Email', validators=[Email()])

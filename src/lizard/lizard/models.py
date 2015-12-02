@@ -1,7 +1,5 @@
 import datetime
-
-from flask.ext import scrypt
-
+import flask_scrypt as scrypt
 from lizard import db
 
 # Maximum length of a valid email address, in bytes, including null terminator

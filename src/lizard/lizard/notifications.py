@@ -1,4 +1,3 @@
-import datetime
 import json
 import smtplib
 import requests
@@ -6,8 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from flask import current_app, render_template, url_for
-
-from . import appliance
 
 SUPPORT_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
@@ -61,7 +58,7 @@ def _invite_email_for(email_address, company, invite_code):
     return _make_email_message(email_address, "You've been invited to help purchase AeroFS Private Cloud",
             text_body, html_body)
 
-def _license_available_email_for(admin, company):
+def _license_available_email_for(admin):
     # We can't use url_for() here because it's not part of this server instance
     # (this email is sent from internal app - links would point to the internal
     # app, rather than the user-facing one)
@@ -120,8 +117,8 @@ def send_invite_email(email_address, company, invite_code):
     msg = _invite_email_for(email_address, company, invite_code)
     _send_email(email_address, msg)
 
-def send_license_available_email(admin, company):
-    msg = _license_available_email_for(admin, company)
+def send_license_available_email(admin):
+    msg = _license_available_email_for(admin)
     _send_email(admin.email, msg)
 
 def send_password_reset_email(email_address, link):

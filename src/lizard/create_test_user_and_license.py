@@ -11,14 +11,14 @@ def make_new_org(org_name):
     o = models.Customer()
     o.name = org_name
     o.active = True
-    o.renewal_seats = 30# default
+    o.renewal_seats = 30 # Default.
     db.session.add(o)
     return o
 
 def make_new_user(email, password, first_name, last_name, customer):
     u = models.Admin()
     u.email = email
-    u.customer = org
+    u.customer = customer
     u.first_name = first_name
     u.last_name = last_name
     u.set_password(password)
@@ -45,7 +45,7 @@ def make_new_license(org, days, seats, full, audit, identity, mdm, device_restri
 def user_exists(email):
     return len(models.Admin.query.filter_by(email=email).all()) != 0
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--org-name", help="set an organization name", default=u"Test Company")
     parser.add_argument("--org-id", type=int, help="don't create an org, but use the existing one with the specified ID")
@@ -62,11 +62,10 @@ if __name__ == "__main__":
 
     parser.add_argument("email", nargs="+", help="email addresses to create accounts for")
     args = parser.parse_args(sys.argv[1:])
-    # We need a request context to have the flask request globals available (db connection, for one)
+    # We need a request context to have the flask request globals available.
     ctx = app.test_request_context('/?next=http://example.com')
     with ctx:
-        org = None
-        if args.org_id != None:
+        if args.org_id is not None:
             org = models.Customer.query.get(args.org_id)
             if not org:
                 raise ValueError("No org with specified id: {}".format(args.org_id))
@@ -89,3 +88,6 @@ if __name__ == "__main__":
                 "device restriction allowed" if args.license_device_restriction else "no device restriction")
         l = make_new_license(org, args.license_days, args.license_seats, args.license_full, args.license_audit, args.license_identity, args.license_mdm, args.license_device_restriction)
         db.session.commit()
+
+if __name__ == '__main__':
+    main()

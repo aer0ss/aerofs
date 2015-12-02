@@ -1,5 +1,5 @@
 from flask import current_app, session
-from flask.ext import login
+import flask_login as login
 
 
 def _get_store():
