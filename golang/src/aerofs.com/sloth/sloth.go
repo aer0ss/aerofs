@@ -10,6 +10,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -170,8 +171,7 @@ func main() {
 	flag.IntVar(&port, "port", 8001, "Port upon which the server should listen")
 	flag.StringVar(&dbName, "db", "sloth", "MySQL database to use")
 	flag.StringVar(&dbHost, "dbHost", "localhost", "MySQL host address")
-	//FIXME: use $HOME instead of /Users/jgray
-	flag.StringVar(&swaggerFilePath, "swagger", "/Users/jgray/repos/swagger-ui/dist", "Path to swagger-ui files; if missing, swagger will not be invoked.")
+	flag.StringVar(&swaggerFilePath, "swagger", os.Getenv("HOME")+"/repos/swagger-ui/dist", "Path to swagger-ui files; if missing, swagger will not be invoked.")
 	flag.Parse()
 
 	// format url strings
