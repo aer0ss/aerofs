@@ -24,8 +24,6 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 
@@ -68,14 +66,7 @@ class LstConflicts extends Composite
             public void onNotificationReceived(PBNotification notification)
             {
                 if (notification.getType() == Type.CONFLICT_COUNT) {
-                    GUI.get().safeAsyncExec(LstConflicts.this, new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            reload();
-                        }
-                    });
+                    GUI.get().safeAsyncExec(LstConflicts.this, LstConflicts.this::reload);
                 }
             }
 
@@ -87,14 +78,7 @@ class LstConflicts extends Composite
         };
 
         UIGlobals.rnc().addListener(notificationListener);
-        addDisposeListener(new DisposeListener()
-        {
-            @Override
-            public void widgetDisposed(DisposeEvent disposeEvent)
-            {
-                UIGlobals.rnc().removeListener(notificationListener);
-            }
-        });
+        addDisposeListener(disposeEvent -> UIGlobals.rnc().removeListener(notificationListener));
     }
 
     public void setConflictEventListener(IConflictEventListener listener)

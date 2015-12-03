@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.conflicts;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
 import com.aerofs.gui.GUIUtil;
@@ -23,6 +24,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -35,6 +37,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 class CompBranch extends Composite
 {
+    private final static Logger l = Loggers.getLogger(CompBranch.class);
+
     private final @Nonnull Branch _branch;
 
     private IConflictEventListener _listener;
@@ -172,7 +176,8 @@ class CompBranch extends Composite
                 public void onSuccess(String filePath)
                 {
                     try {
-                        // FIXME: borked if filePath == dest
+                        l.info("save conflict {} {} -> {}",
+                                _branch._conflict._path, _branch._kidx, dest);
                         FileUtil.copy(new File(filePath), new File(dest), false, true);
                     } catch (IOException e) {
                         onFailure(e);
@@ -218,8 +223,7 @@ class CompBranch extends Composite
     {
         checkState(GUI.get().isUIThread());
 
-        _branch.delete(new GUIExecutor(this), new FutureCallback<Void>()
-        {
+        _branch.delete(new GUIExecutor(this), new FutureCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid)
             {

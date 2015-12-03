@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
+import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -40,6 +41,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import org.slf4j.Logger;
 
 import java.io.FileNotFoundException;
@@ -92,6 +94,7 @@ public class HashQueue
     private final VersionUpdater _vu;
     private final TransManager _tm;
     private final TokenManager _tokenManager;
+    private final Injector _inj; // late binding of BranchDeleter to work around circular dep...
     private final AnalyticsEventCounter _saveCounter;
 
     enum State
@@ -228,28 +231,35 @@ public class HashQueue
         private void updateCAHash_(ContentHash newHash, Trans t)
                 throws IOException, SQLException, ExNotFound
         {
-            SOKID sokid = new SOKID(soid, KIndex.MASTER);
-
             // OA and MASTER CA MUST exist when we get here
             OA oa = _ds.getOAThrows_(soid);
-            CA ca = oa.caMasterThrows();
+            oa.caMasterThrows();
 
-            ContentHash oldHash = _ds.getCAHash_(sokid);
-            final boolean same = oldHash != null && newHash.equals(oldHash)
-                    && ca.length() == length;
+            SOKID k = new SOKID(soid, KIndex.MASTER);
+            ContentHash oldHash = _ds.getCAHash_(k);
+            _ds.setCA_(k, length, mtime, newHash, t);
+            state = State.COMMITTED;
 
-            // only bump version if the content hash changes
-            // hopefully avoid spurious updates as experienced by some users at BB
-            if (same) {
-                l.info("change {} mtime {} {}", soid, ca.mtime(), mtime);
-                _ds.setCA_(sokid, length, mtime, newHash, t);
-            } else {
-                l.info("change {} content {} {}", soid, oldHash, newHash);
-                _ds.setCA_(sokid, length, mtime, newHash, t);
-                state = State.COMMITTED;
-                _vu.update_(new SOCKID(sokid, CID.CONTENT), t);
-                _saveCounter.inc();
+            // detect match with existing CA
+            for (Entry<KIndex, CA> e : oa.cas().entrySet()) {
+                KIndex kidx = e.getKey();
+                CA ca = e.getValue();
+                if (ca.length() != length) continue;
+                SOKID sokid = new SOKID(soid, kidx);
+                ContentHash old = kidx.isMaster() ? oldHash : _ds.getCAHash_(sokid);
+                if (old == null || !newHash.equals(old)) continue;
+                if (kidx.isMaster()) {
+                    // no version bump if MASTER unchanged
+                    l.info("change {} mtime {} {}", soid, ca.mtime(), mtime);
+                    return;
+                }
+                l.info("match branch {}k{} content {} {}", soid, kidx, old, newHash);
+                _inj.getInstance(BranchDeleter.class).deleteBanch_(soid, kidx, t);
+                return;
             }
+            l.info("change {} content {} {}", soid, oldHash, newHash);
+            _vu.update_(new SOCKID(k, CID.CONTENT), t);
+            _saveCounter.inc();
         }
     }
 
@@ -288,12 +298,13 @@ public class HashQueue
 
     @Inject
     public HashQueue(CoreScheduler sched, DirectoryService ds, VersionUpdater vu, TransManager tm,
-            TokenManager tokenManager, Analytics analytics)
+                     TokenManager tokenManager, Injector inj, Analytics analytics)
     {
         _sched = sched;
         _ds = ds;
         _vu = vu;
         _tm = tm;
+        _inj = inj;
         _tokenManager = tokenManager;
         _saveCounter = new AnalyticsEventCounter(analytics) {
             @Override

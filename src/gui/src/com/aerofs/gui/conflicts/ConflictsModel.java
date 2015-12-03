@@ -37,7 +37,7 @@ import static com.google.common.collect.Lists.newArrayListWithCapacity;
  * invoke the callback on the GUI thread.
  *
  * The intent of having a model is to de-couple non-GUI logic away from GUI so that GUI code won't
- * be as messy and interwined, and these methods can be independently tested should we choose to.
+ * be as messy and intertwined, and these methods can be independently tested should we choose to.
  *
  * N.B. Also includes formatting logic which probably doesn't belong here.
  */
