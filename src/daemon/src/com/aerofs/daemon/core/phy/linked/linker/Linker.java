@@ -84,6 +84,16 @@ public class Linker implements ILinker, IListener
     }
 
     @Override
+    public void populate() {
+        _lrm.init_();
+    }
+
+    @Override
+    public void clear() {
+        _lrm.clearMap();
+    }
+
+    @Override
     public boolean isFirstScanInProgress_(SID sid)
     {
         LinkerRoot lr = _lrm.get_(sid);

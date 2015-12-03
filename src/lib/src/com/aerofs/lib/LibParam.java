@@ -189,7 +189,7 @@ public class LibParam extends BaseParam
         // UI and processes can access them.
         public static final int DAEMON_POST_UPDATE_TASKS = 61;
         public static final int UI_POST_UPDATE_TASKS = 2;
-        public static final int PHOENIX_CONVERSION_TASKS = 2;
+        public static final int PHOENIX_CONVERSION_TASKS = 3;
     }
 
     public static class Ritual

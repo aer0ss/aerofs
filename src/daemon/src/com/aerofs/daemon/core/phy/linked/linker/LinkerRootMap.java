@@ -453,4 +453,9 @@ public class LinkerRootMap
 
         _os.markHiddenSystemFile(absAuxRoot);
     }
+
+    void clearMap()
+    {
+        _map.clear();
+    }
 }

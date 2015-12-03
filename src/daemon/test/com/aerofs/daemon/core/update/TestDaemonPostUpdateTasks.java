@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.phy.ILinker;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -58,8 +60,11 @@ public class TestDaemonPostUpdateTasks extends AbstractTest
             binder.bind(ContentFetchQueueDatabase.class).toInstance(mock(ContentFetchQueueDatabase.class));
             binder.bind(ContentChangesDatabase.class).toInstance(mock(ContentChangesDatabase.class));
             binder.bind(ChangeEpochDatabase.class).toInstance(mock(ChangeEpochDatabase.class));
+            binder.bind(CentralVersionDatabase.class).toInstance(mock(CentralVersionDatabase.class));
             binder.bind(IAliasDatabase.class).toInstance(mock(IAliasDatabase.class));
             binder.bind(PolarisClient.class).toInstance(mock(PolarisClient.class));
+            binder.bind(IPhysicalStorage.class).toInstance(mock(IPhysicalStorage.class));
+            binder.bind(ILinker.class).toInstance(mock(ILinker.class));
         });
         dput = inj.getInstance(DaemonPostUpdateTasks.class);
     }

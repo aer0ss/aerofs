@@ -104,14 +104,14 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
         return sidx;
     }
 
-    void add_(SIndex sidx) throws SQLException
+    public void add_(SIndex sidx) throws SQLException
     {
         SID sid = _db.getSID_(sidx);
         Util.verify(_sid2sidx.put(sid, sidx) == null);
         Util.verify(_sidx2sid.put(sidx, sid) == null);
     }
 
-    SID delete_(SIndex sidx)
+    public SID delete_(SIndex sidx)
     {
         SID sid = _sidx2sid.remove(sidx);
         assert sid != null : sidx;

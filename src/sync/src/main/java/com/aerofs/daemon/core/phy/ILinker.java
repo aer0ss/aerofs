@@ -18,6 +18,10 @@ public interface ILinker extends IStartable
 {
     public void init_();
 
+    public void populate();
+
+    public void clear();
+
     public void restoreRoot_(SID sid, String absPath, Trans t)
             throws SQLException, IOException;
 
@@ -37,6 +41,12 @@ public interface ILinker extends IStartable
 
         @Override
         public void init_() {}
+
+        @Override
+        public void populate() {}
+
+        @Override
+        public void clear() {}
 
         @Override
         public void restoreRoot_(SID sid, String absPath, Trans t)

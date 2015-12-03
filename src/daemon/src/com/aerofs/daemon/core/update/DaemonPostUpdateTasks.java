@@ -45,7 +45,8 @@ public class DaemonPostUpdateTasks
     // NB: all conversion tasks MUST be idempotent
     private final static Class<?>[] PHOENIX_TASKS = {
             DPUTAddPolarisFetchTables.class,
-            DPUTSubmitLocalTreeToPolaris.class
+            DPUTSubmitLocalTreeToPolaris.class,
+            DPUTHandlePrePhoenixConflicts.class,
             // new tasks go here - also, update PHOENIX_CONVERSION_TASKS counter!
     };
 
