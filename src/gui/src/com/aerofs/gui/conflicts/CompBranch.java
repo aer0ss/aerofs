@@ -167,12 +167,12 @@ class CompBranch extends Composite
         final String dest = promptSaveAsPathNullable();
         if (dest != null) {
             notifyStatusChanged(true);
-            _branch.export(new GUIExecutor(this), new FutureCallback<String>()
-            {
+            _branch.export(new GUIExecutor(this), new FutureCallback<String>() {
                 @Override
                 public void onSuccess(String filePath)
                 {
                     try {
+                        // FIXME: borked if filePath == dest
                         FileUtil.copy(new File(filePath), new File(dest), false, true);
                     } catch (IOException e) {
                         onFailure(e);

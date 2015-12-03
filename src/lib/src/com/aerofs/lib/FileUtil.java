@@ -447,6 +447,7 @@ public abstract class FileUtil
     public static void copy(File from, File to, boolean exclusive, boolean keepMTime,
             @Nullable ProgressIndicators pi) throws IOException
     {
+        if (from.getAbsolutePath().equals(to.getAbsolutePath())) return;
         if (exclusive && !to.createNewFile()) {
             throw new ExFileIO("file {} already exists", to);
         }
