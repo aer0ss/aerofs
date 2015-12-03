@@ -117,11 +117,16 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         if (did.equals(Cfg.did())) return new Peer(Cfg.user(), "this computer");
         String device = "";
         UserID user = _udn.getDeviceOwnerNullable_(did);
+        if (user == null && _udn.updateLocalDeviceInfo_(ImmutableList.of(did))) {
+            user = _udn.getDeviceOwnerNullable_(did);
+        }
         if (user == null) {
             user = UserID.UNKNOWN;
         } else if (user.equals(Cfg.user())) {
             device = _udn.getDeviceNameNullable_(did);
-            // TODO: fix name resolution... (e.g. do in the background)
+            if (device == null && _udn.updateLocalDeviceInfo_(ImmutableList.of(did))) {
+                device = _udn.getDeviceNameNullable_(did);
+            }
             if (device == null) device = UNKNOWN_DEVICE;
         }
         return new Peer(user, device);

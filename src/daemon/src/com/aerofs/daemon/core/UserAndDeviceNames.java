@@ -173,14 +173,7 @@ public class UserAndDeviceNames
     public @Nullable UserID getDeviceOwnerNullable_(DID did)
             throws SQLException, ExProtocolError
     {
-        UserID owner = _d2u.getUserIDForDIDNullable_(did);
-
-        // SP call if local DB doesn't have the info
-        if (owner == null && updateLocalDeviceInfo_(Lists.<DID>newArrayList(did))) {
-            owner = _d2u.getUserIDForDIDNullable_(did);
-        }
-
-        return owner;
+        return _d2u.getUserIDForDIDNullable_(did);
     }
 
     public boolean isLocalUser(UserID userID)

@@ -124,6 +124,7 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
             UserID owner = _nr.getDeviceOwnerNullable_(did);
 
             if (owner == null) {
+                scheduleUpdateDeviceInfo_(did);
                 return S.LBL_UNKNOWN_USER;
             } else if (_nr.isLocalUser(owner)) {
                 String devicename = _nr.getDeviceNameNullable_(did);
