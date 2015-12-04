@@ -10,7 +10,6 @@ whichever you prefer.
 
 Prerequisites:
     - understand common docker and crane commands such as 'start', 'kill', 'rm'
-    - run upgrade-tools.sh before using dk-* commands.
 
 Commands:
     dk-create-vm  set up a VM for doing docker-related things and then run dk-env
@@ -31,7 +30,6 @@ Example:
 
 Follow these steps to start developing and testing an AeroFS service 'foo' from scratch:
 
-    $ docker/dev/upgrade-tools.sh # install required tools
     $ dk-create-vm                # create a docker-machine VM
     $ dk-create                   # build and launch the entire appliance. it may take a while.
     $ make -C src/foo             # rebuild foo's Docker image after some code change

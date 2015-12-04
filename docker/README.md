@@ -1,11 +1,11 @@
-This folder contains Docker specific files, tools, and build scripts. For more 
+This folder contains Docker specific files, tools, and build scripts. For more
 information, please see [this design doc](../docs/design/docker.html).
 
 # Get started with development environtment
 
 1. Install build tools. You may run this script again at any time to upgrade the tools.
 
-        $ ~/repos/aerofs/docker/dev/upgrade-tools.sh
+        $ ~/repos/aerofs/tools/env/update-env
 
 2. Build and launch the appliance. The first run takes about 40 minutes. Follow-up instructions
 is printed at the end of the process. [Learn Docker](https://docs.docker.com/userguide/) while
@@ -24,14 +24,14 @@ it's in progress.
 # Build appliance VM image
 
         $ docker/ship-aerofs/build-vm.sh
-        
+
 This builds the preloaded VM (See Ship Enterprise docs). The path to the generated
 file is printed at the end of the process.
 
 # Build appliance cloud-config file
 
         $ docker/ship-aerofs/build-vm.sh
-        
+
 This builds the cloud-config file (See Ship Enterprise docs). The path to the generated
 file is printed at the end of the process.
 

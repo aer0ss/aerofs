@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
+
+ansible-playbook $DIR/playbook.yaml -i 127.0.0.1, --ask-become-pass

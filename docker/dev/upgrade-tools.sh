@@ -1,38 +1,11 @@
 #!/bin/bash
 set -ex
 
-function yellow_print()
-{
-    (set +x
-        YELLOW='1;33'
-        cecho() { echo -e "\033[$1m$2\033[0m"; }
-        echo
-        cecho ${YELLOW} "$@"
-        echo
-    )
-}
 
-if [ -z "$(which vboxmanage)" ]; then
-    echo 'Please install VirtualBox first.'
-    exit 11
-fi
-
-# Mac.
-if [ $(uname -s) = "Darwin" ] ; then
-    # Install docker cli
-    brew update && brew install --upgrade docker graphviz
-
-    # Install crane
-    bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/v1.1.1/download.sh)"
-    mv crane /usr/local/bin/crane
-
-    # Install docker-machine
-    curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_darwin-amd64.zip \
-        > docker-machine.zip
-    unzip docker-machine.zip
-    rm docker-machine.zip
-    mv -f docker-machine* /usr/local/bin/
-fi
+# Mac: this is now managed by our Ansible playbook. (tools/env/playbook.yaml)
+# If you're on OS X, just run tools/env/update-env
+#
+# In the future, we'll probably want to use Ansible for Linux as well and remove this script entirely
 
 # Linux.
 if [ $(uname -s) = "Linux" ] ; then

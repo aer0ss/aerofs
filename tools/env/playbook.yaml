@@ -1,0 +1,111 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+
+  vars:
+    aerofs_root: "{{ ansible_env.HOME}}/repos/aerofs"
+
+  tasks:
+
+    - name: Check Sudo Password
+      command: ls
+      become: yes
+      become_method: sudo
+      changed_when: no
+
+    - name: Update Homebrew
+      homebrew: update_homebrew=yes
+
+    - name: Install Brew Packages
+      homebrew:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - ant
+        - autoconf
+        - automake
+        - bash-completion
+        - coreutils
+        - docker
+        - docker-machine
+        - dpkg      # used to build Debian packages for our servers.
+        - fakeroot  # used to build Debian packages for our servers.
+        - git
+        - gpg       # used for license files and needed to run python unit tests.
+        - gpgme     # library wrapping gpg, which we use for license file generation/verification
+        - gradle    # used to build some Java projects.
+        - groovy
+        - jq
+        - maven
+        - msitools  # used to repackage Windows installers to create MSI installers.
+        - mysql     # for unit tests
+        - npm       # used to run JavaScript unit tests.
+        - pigz      # parallel gzip implementation used to speed up compressing disk images
+        - python
+        - qemu      # provides qemu-img, which is used to convert disk images to different formats.
+        - qt        # provides qmake which generates Makefiles for many of our native libraries
+        - redis     # for unit tests
+        - ruby
+        - s3cmd     # s3cmd (developer version required) is used for pushing assets and installers to S3 buckets and cloudfront. Only the --devel version of s3cmd supports --cf-invalidate
+        - swig      # swig is used for our native libraries
+        - wget
+        - "{{ aerofs_root }}/tools/brew_formulae/makensis.rb"  # used to build Windows installers
+        - "{{ aerofs_root }}/tools/brew_formulae/scons.rb"
+        - "{{ aerofs_root }}/tools/brew_formulae/swtoolkit.rb"
+
+    - name: Install Ruby gems
+      gem:
+        name: "{{ item }}"
+      with_items:
+        - jekyll    # used to build the API docs, which are part of the web package.
+        - kramdown  # used by tools/markdown_watch.sh to compile .md files into .html
+
+    - name: Install pip Packages
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - git-review
+        - jinja2
+        - protobuf
+        - pyyaml       # used for SyncDET to parse yaml files.
+        - requests
+        - virtualenv
+
+    - name: Install NPM packages
+      npm:
+        global: yes
+        name: "{{ item }}"
+      with_items:
+       - less        # used to compile less scripts into CSS.
+       - minifier    # used to minify JavaScripts.
+       - uglify-js   # used to beautify JavaScripts.
+
+    - name: Install protobuf-objc
+      homebrew: state=head name="{{ aerofs_root }}/tools/brew_formulae/protobuf-objc.rb"
+
+    - name: Configure Vim
+      lineinfile:
+        dest: ~/.vimrc
+        line: "{{ item }}"
+        create: yes
+      with_items:
+        - "syntax on"
+        - "set hlsearch"
+
+    - name: Configure zsh
+      lineinfile:
+        dest: ~/.zshrc
+        line: "source {{ aerofs_root }}/tools/bashrc/include.sh"
+        create: yes
+      when: ansible_env.SHELL == "/bin/zsh" or ansible_env.SHELL == "/usr/local/bin/zsh"
+
+    - name: Configure bash
+      lineinfile:
+        dest: ~/.bash_profile
+        line: "source {{ aerofs_root }}/tools/bashrc/include.sh"
+        create: yes
+      when: ansible_env.SHELL == "/bin/bash"
+
+    - name: Install crane
+      get_url: url=https://github.com/michaelsauter/crane/releases/download/v1.5.1/crane_darwin_amd64 dest=/usr/local/bin/crane mode=0755
+

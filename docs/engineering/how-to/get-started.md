@@ -1,311 +1,92 @@
-## Welcome, new AeroFS teammate!
+Get Started With AeroFS
+=======================
 
-By now, you have received:
+By now you should have followed the step-by-step onboarding process at
+https://github.com/aerofs/welcome and ran the update-env command.
 
-  * a laptop
-  * an @aerofs.com email account provided by Google
+If everything went well, you should have all the necessary software installed and there should be a
+clone of our git repository at ~/repos/aerofs.
 
-You'll need to do several things to get started with AeroFS.
+Now what?
 
-## Make sure your local user ID is good
+This guide will briefly explain how to build and run our code base.
 
-Your user ID should follow the format "<first_name><last_name_initial>" e.g. "alext." Otherwise there will be ongoing pain in the future. Creating a new account and deleting the existing one is one of easier ways to change your user ID.
+AeroFS is split in two parts: the appliance, which is the server side of things, and the desktop
+client. (There are also the mobile clients but we won't be discussing that here.)
 
-## Set up full-disk encryption with FileVault
+The appliance is a virtual machine running a set of 20-30 Docker containers. Each Docker container
+provides a specific service, like authenticating users, serving the website, enforcing the license
+restrictions, and so on. Collectively, they form the AeroFS appliance, and that's what our customers
+download and run on their infrastructure.
 
-System Preferences -> Security and Privacy -> FileVault -> Turn On FileVault.
+As an AeroFS developer, you will need to run all these Docker containers locally on a virtual
+machine on your Mac. As you make changes to the code base, you rebuild and relaunch the affected
+containers so that you can test your changes.
 
-This will require that you reboot.
 
-## Create an SSH key, and get it deployed on our machines
+## Building and running the AeroFS appliance
 
-    $ ssh-keygen -t rsa -b 2048
+You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal
+repository.
 
-Your private key is `$HOME/.ssh/id_rsa`.  Keep it secret.  Keep it safe.
+We have a set of shell commands to facilitate the management of our Docker containers. You can get a
+list and a short description of these commands by running:
 
-Your public key is `$HOME/.ssh/id_rsa.pub`. Ask for a volunteer in the #eng chat channel to add your public key to the appropriate places.
-
-## Install Tunnelblick and get on the AeroFS VPN
-
-Ping Matt to provision you a VPN config bundle.
-You will need it to access most of the internal servers and build the project.
-
-See [VPN](../references/vpn.html), and in particular, follow the bit about setting up a new engineer/box. Make sure Tunnelblick isn't running before you double-click on AeroFSVPN.tblk.
-
-## Register for Gerrit, our code review tool
-
-Log into `gerrit.arrowfs.org` using your @aerofs.com Google account. Choose a username and add your SSH key. When you've finished registering ask Matt to add you to the 'Developers' group in Gerrit.
-
-## Register for JIRA, our issue tracker
-
-Log into [Atlassian JIRA](https://aerofs.atlassian.net/) using your @aerofs.com credentials and use the interface to ask for access.  They will quickly be granted by someone with mighty admin powers.
-
-## Install AeroFS client and join the team folder
-
-  * Ask Matt to invite you to the AeroFS organization and to the `Air Computing Team` shared folder.
-  * Accept the invitation via the email you received
-  * Go to [https://share.aerofs.com/](https://share.aerofs.com/)
-  * [Download and install the AeroFS client](https://share.aerofs.com/download).
-  * [Accept the shared folder invitation](https://share.aerofs.com/accept).
-
-## Install XCode
-
-[XCode](https://itunes.apple.com/us/app/xcode/id497799835?mt=12) is a huge (~2.5 GB) application.  Fortunately you can continue to work on this guide while it downloads.  Just be sure it's finished installing before you run the `brew` commands.
-
-## Install XCode command line tools
-
-    gcc
-    xcode-select --install
-
-will launch a dialog prompting you to install XCode command line tools. Follow the instructions to install the tools. Note that there are _two sets_ of "command line developer tools," so one must run both commands to get both sets.
-
-## Install JDK 8
-
-[JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-
-[JCE Unlimited Strength Policy](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)
-
-You should configure your environment to pick up JDK8 instead of the default JDK6 shipped with OSX.
-For bash this can be achieved by adding the following line to your `~/.bash_profile`:
-
-    export JAVA_HOME="$(/usr/libexec/java_home -v '1.8*')"
-
-## Obtain the AeroFS source code
-
-Before this step, you'll need your accounts created on gerrit, so get to that.
-
-Make sure you put the repo at `$HOME/repos/aerofs`:
-
-    mkdir -p $HOME/repos && cd $HOME/repos
-    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/syncdet
-    git clone ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
-
-## Install Homebrew
-
-[Homebrew](http://mxcl.github.io/homebrew/) is a package manager for OSX.  We use many open-source softwares packaged with homebrew, and have a few of our own formulae for internal things (we'll get to them later)
-
-Paste the following in a terminal:
-
-    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-
-It'll prompt you before it does anything, but the defaults are sane.
-
-## Install packages
-
-Note: Do not use `sudo` for the following command. You should not need it if the paths are set up properly in the previous step.
-
-    brew update && brew upgrade && brew install git python fakeroot ant wget maven gradle groovy swig qt qemu pigz ruby gpg gpgme dpkg npm s3cmd bash-completion coreutils autoconf automake msitools jq
-    
-Mac: Close and open your terminal to use the new ruby version.  
-
-    brew install $HOME/repos/aerofs/tools/brew_formulae/{scons,swtoolkit,makensis}.rb && brew install --HEAD $HOME/repos/aerofs/tools/brew_formulae/protobuf-objc.rb
-
-    gem install kramdown jekyll
-
-    pip install virtualenv protobuf requests pyyaml
-
-    npm install -g less minifier uglify-js
-
-This step takes a while. It's probably a good time to look around in our [mailing list](../references/mailing-list.html).
-
-  * `git` is used for source control.
-  * `python` is used by some services and SyncDET (source: the syncdet repo on gerrit), our distributed test harness.  We suggest installing the version from homebrew since it integrates nicely, is reasonably contained, is up-to-date, and keeps you from having to do privilege escalation all the time.
-  * `dpkg`, `fakeroot`, `wget` are used to build Debian packages for our servers.  We need a patched version of dpkg, since homebrew and perl modules don't really play well together.
-  * `qemu` (which provides `qemu-img`) is used to convert disk images to different formats.
-  * `pigz` is a parallel gzip implementation used to speed up compressing disk images
-  * `gradle` is used to build some Java projects.
-  * `swig` is used for our native libraries
-  * `s3cmd` (developer version required) is used for pushing assets and installers to S3 buckets and cloudfront.  Only the `--devel` version of `s3cmd` supports `--cf-invalidate`
-  * `qt` provides `qmake` which generates Makefiles for many of our native libraries
-  * `ruby` and `kramdown` are used by tools/markdown_watch.sh to compile .md files into .html
-  * `makensis` is used to build Windows installers
-  * `gpg` is used for license files and needed to run python unit tests.
-  * `gpgme` is a library wrapping gpg, which we use for license file generation/verification
-  * `jekyll` is used to build the API docs, which are part of the web package
-  * `pyyaml` is used for SyncDET to parse yaml files.
-  * `npm` is used to run JavaScript unit tests.
-  * `less` is used to compile less scripts into CSS.
-  * `minifier` is used to minify JavaScripts.
-  * `uglify-js` is used to beautify JavaScripts.
-  * `msitools` is used to repackage Windows installers to create MSI installers.
-
-## Update your command path
-
-Prepend (not append):
-
-    /usr/local/bin:/usr/local/sbin:/usr/local/Cellar/ruby/{version}/bin
-
-to your path, with `{version}` replaced by the version of your ruby install.
-
-## Install IDEs
-
-We suggest [IntelliJ IDEA CE](http://www.jetbrains.com/idea/download/) for Java and [PyCharm](http://www.jetbrains.com/pycharm/download/) for Python.
-
-To compile from IntelliJ you may need to force it to run under Java 8. To do that:
-in /Application/IntelliJ IDEA*.app/Contents/Info.plist
-change `JVMVersion` to `1.8*`
-
-You may also need to manually point IntelliJ to the newly installed JDK (you will need to open a project to set it up):
-
-File > Project Structure... > SDKs > + > JDK
-the path should be something like /Library/Java/JavaVirtualMachines/jdk1.8.0_11.jdk/Contents/Home
-
-You may also need to manually point IntelliJ to the newly installed gradle:
-
-Preferences > Build, Execution, and Deployment > Built Tools > Gradle > Use local gradle distribution
-the path should be something like "/usr/local/opt/gradle/libexec"
-
-Import the the "aerofs" and "baseline" repos into IntelliJ. Because IntelliJ has trouble parsing the gradle files completely it is necessary to manually enable some of the libraries we use:
-
-File > Project Structure > Project Settings > Modules > Dependencies
-Enable the checkboxes for all dependencies in the "src_base" and "src_bifrost" modules.
-
-We require that you use either an IDE or a language validator to check syntax and formatting for code in markup and scripting languages, such as Python, HTML, CSS, and JavaScript. Note that the first time you open IntelliJ, IntelliJ will launch background tasks to download various libraries from Maven Central to the local Maven cache. This process is time-intensive (~15 minutes) and you will see background tasks running, one after another, in IntelliJ.
-
-## Install VM tools
-
-* `vagrant` may be found [here](http://www.vagrantup.com)
-* `VirtualBox` may be found [here](http://www.virtualbox.org/wiki/Downloads) (Required version: 4.3.28).
-
-## Install Mono MDK
-
-Download and install the latest [Mono MDK](http://www.go-mono.com/mono-downloads/download.html). (for signcode, to sign our Windows executables. Not required if you don't deploy production releases.)
-
-## Install git-review for a better gerrit experience
-
-    cd $HOME/repos/aerofs
-    pip install git-review
-    scp -p -P 29418 <gerrit username>@gerrit.arrowfs.org:hooks/commit-msg .git/hooks/
-    git remote add gerrit ssh://<gerrit username>@gerrit.arrowfs.org:29418/aerofs
-
-This installs `git-review`, installs a post-commit hook for gerrit and adds the gerrit remote.
-
-## Enable vim syntax highlighting
-
-    cat > ~/.vimrc <<END
-    syntax on
-    set hlsearch
-    END
-
-## Set up MySQL and Redis for unit tests
-
-`brew install mysql redis`. Follow the instructions from `brew info redis` and `brew info mysql` to setting them to run automatically via `launchctl`.
-
-Set a good root password for MySQL, then create the test user for MySQL:
-
-    mysql -u root -p << EOF
-    CREATE USER 'test'@'localhost' IDENTIFIED BY PASSWORD '*7F7520FA4303867EDD3C94D78C89F789BE25C4EA' ;
-    GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
-    FLUSH PRIVILEGES;
-    EOF
-
-## Build and launch private AeroFS Service VM (aka local prod)
-
-This VM is required to run your private AeroFS clients that are isolated from the production and other developers' environments.
-
-You'll need to be on the VPN to complete this step, since it'll pull some packages from an internal repository.
-
-Setup docker environment the first time:
-
-     ~/repos/aerofs/docker/dev/upgrade-tools.sh
-     echo source ~/repos/aerofs/tools/bashrc/include.sh >> ~/.bash_profile
-     source ~/repos/aerofs/tools/bashrc/include.sh
-     # Display the documentation
      dk-help
+
+Your first step will be to create the virtual machine where the Docker containers will run:
+
      dk-create-vm
-     docker-machine upgrade docker-dev
 
-The default toolchain uses docker-machine. Raw docker is only partially supported at this time.
-If you want to use raw docker you will need to add `--dns 172.17.42.1` to the docker daemon options
-(e.g. in `/etc/default/docker` for Ubuntu) and restart it (`sudo service docker restart`) to use the
-containerized DNS server on which the build system relies.
-
-And finally, you can build and configure a fresh appliance
+Once `dk-create-vm` completes, type the following command:
 
      dk-create
 
-The last step may take a while (expect at least 45 mins). Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing.
+This will build and launch all our Docker containers. It takes a while (expect at least 45 mins).
+Grab a coffee from Philz, look at other docs, or chat with your new teammates while it's ongoing.
 Especially, see `docker/README.md`.
 
-If you are not using the VPN/offline, you may want to add the following to your `/etc/hosts`:
+Once `dk-create` completes, your new appliance should be ready. Running `docker ps` should give you
+a list of the containers running there. Your appliance is accessible on 192.168.99.100, and to make
+things easier we have configured the DNS entry of share.syncfs.com to resolve to this IP address.
 
-    192.168.99.100 share.syncfs.com
+So go ahead, open your browser, and navigate to
+[https://share.syncfs.com](https://share.syncfs.com). Follow the steps there. If you want to play
+with the admin settings of the appliance, you'll need the license file which you'll find at
+`~/repos/aerofs/tools/test.license`.
 
-## Build and launch the client
+Now you have a fully functional AeroFS appliance.
 
-This step requires a running local prod. In addition, you need to be on the VPN to complete this step, since it'll pull some packages from an internal repository. In addition,
+
+## Building and running the AeroFS client
+
+This step requires a that you have a running AeroFS appliance. In addition, you need to be on the
+VPN to complete this step, since it'll pull some packages from an internal repository.
 
     cd $HOME/repos/aerofs/
     ./invoke clean proto
     gradle clean dist
-    ./invoke --product CLIENT setupenv
-    approot/run ~/rtroot/user1 gui
+    ./invoke --product CLIENT
+    setupenv approot/run ~/rtroot/user1 gui
 
-If you get an error about protobuf when running `./invoke clean proto` make sure that you've installed Xcode command line tools. This happens because homebrew installs headers in /usr/local/include but in newer releases of Xcode gcc won't search that location unless the command line tools are installed.
+Running gradle will compile the Java source code and create the class files needed to run the
+client. Running invoke will create a directory called approot and populate it with all environment-
+dependent resources.
 
-Running gradle will compile the Java source code and create the class files needed to run the client. Running invoke will create a directory called approot and populate it with all environment-dependent resources.
-
-Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone daemon process with no UI support.
+Replace `gui` with `cli` to launch AeroFS in the command line. Use `daemon` to run the barebone
+daemon process with no UI support.
 
 Run `sh` to enter interactive AeroFS shell. This command requires a running daemon.
 
+
 ### To avoid relaunching the daemon every time
 
-If you work on UI code, it can be anonying that the daemon restarts every time you launch GUI or CLI: restarting the daemon is slow and also causes your production daemon process to restart. To work around it:
+If you work on UI code, it can be anonying that the daemon restarts every time you launch GUI or
+CLI: restarting the daemon is slow and also causes your production daemon process to restart. To
+work around it:
 
      touch ~/rtroot/user1/nodm
      approot/run ~/rtroot/user1 daemon &
 
-`nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The next time the UI launches it will not restart the daemon.
-
-## Compile static files
-
-Compiled files are not included in source control, so to get all the styles and JS working on the local version of the website you'll need to compile them. For how to do so, please see "Compiling Less and JS" in src/web/web/README.txt.
-
-You'll need to install some dependencies, then run `make watch` and hopefully never need to pay attention to Less/JS compilation/minification again!
-
-## Sign up accounts in local prod
-
-Go to the URL [https://share.syncfs.com](https://share.syncfs.com) to create the first admin account.
-
-Or, you can use the signup script:
-
-    ~/repos/aerofs/tools/signup.sh -u TEST_USER_NAME@aerofs.com -p password
-
-When asked for vagrant password use: `vagrant`. It will create user signup record with default password `uiuiui`.
-You can specify -p flag to set custom password as TEST_USER_NAME you can use: YOUR_USER_NAME+ANY_SUFFIX@aerofs.com e.g. bob+test@aerofs.com.
-
-## Set up and run SyncDET tests
-
-Skim through the SyncDET manual at docs/usermanual.pdf in the syncdet repo to get familiar with SyncDET concepts.
-
-Before running SyncDET tests, you need to [setup SyncDET actors VMs](setup-syncdet-actors.html). Then:
-
-Build client packages for all OSes:
-
-    cd ~/repos/aerofs
-    invoke --product=CLIENT --unsigned setupenv clean proto build_client package_clients
-    invoke prepare_syncdet --product=CLIENT
-
-Replace CLIENT WITH TEAM_SERVER if you are testing the team server.
-
-Clean up and install the client packages to the actors:
-
-    $ invoke syncdet --syncdet-case=lib.cases.clean_install
-
-You only need to run the above two steps once until you need to update client binaries.
-
-Run a single test case:
-
-    $ invoke syncdet --syncdet-case=core.basic.should_rename_file
-
-This test case correponds to the Python file ~/repos/aerofs/system-tests/syncdet/core/basic/should_move_file.py.
-
-Run a scenario that contains all basic test cases:
-
-    $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/core/basic/test_basic.scn
-
-Now, run all the tests!
-
-    $ invoke syncdet --syncdet-scenario=./system-tests/syncdet/all.scn # all tests
-
+`nodm` means "no daemon monitor." It asks the UI not to take ownership of the daemon process. The
+next time the UI launches it will not restart the daemon.
