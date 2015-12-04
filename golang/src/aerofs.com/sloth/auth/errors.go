@@ -5,5 +5,5 @@ type TokenNotFoundError struct {
 }
 
 func (e TokenNotFoundError) Error() string {
-	return "Token not found: " + e.Token
+	return "token not found: " + e.Token
 }

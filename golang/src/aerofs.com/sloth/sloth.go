@@ -3,6 +3,7 @@ package main
 import (
 	"aerofs.com/service"
 	"aerofs.com/service/mysql"
+	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
 	"flag"
 	"fmt"
@@ -148,6 +149,7 @@ type Event struct {
 
 //
 // Global variables shared by modules
+// TODO: closures for filters which wrap these args
 //
 
 // Map of user id to the time they last made a network request
@@ -155,8 +157,10 @@ var lastOnlineTimes = make(map[string]time.Time)
 var lastOnlineTimesMutex = sync.RWMutex{}
 
 // Shared broadcaster between REST/WS
-// Filters don't take args, so this must be global :(
 var broadcaster = broadcast.NewBroadcaster()
+
+// OAuth token verifier
+var tokenVerifier auth.TokenVerifier
 
 //
 // Main
@@ -166,6 +170,7 @@ func main() {
 	var port int
 	var host, dbHost, dbName string
 	var swaggerFilePath string
+	var verifier string
 
 	// wait for dependent containers
 	service.ServiceBarrier()
@@ -176,7 +181,15 @@ func main() {
 	flag.StringVar(&dbName, "db", "sloth", "MySQL database to use")
 	flag.StringVar(&dbHost, "dbHost", "localhost", "MySQL host address")
 	flag.StringVar(&swaggerFilePath, "swagger", os.Getenv("HOME")+"/repos/swagger-ui/dist", "Path to swagger-ui files; if missing, swagger will not be invoked.")
+	flag.StringVar(&verifier, "verifier", "bifrost", "Token verifier to use. Currently \"bifrost\" or \"echo\"")
 	flag.Parse()
+
+	// initialize token verifier
+	if verifier == "echo" {
+		tokenVerifier = auth.NewEchoTokenVerifier()
+	} else {
+		tokenVerifier = auth.NewBifrostTokenVerifier()
+	}
 
 	// format url strings
 	portStr := ":" + strconv.Itoa(port)

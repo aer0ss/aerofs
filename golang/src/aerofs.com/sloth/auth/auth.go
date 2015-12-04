@@ -12,10 +12,6 @@ type TokenVerifier interface {
 	VerifyToken(token string) (string, error)
 }
 
-func NewTokenVerifier() TokenVerifier {
-	return new(echoTokenVerifier)
-}
-
 //
 // Echo Implementation
 //
@@ -24,4 +20,8 @@ type echoTokenVerifier struct{}
 
 func (tv *echoTokenVerifier) VerifyToken(token string) (string, error) {
 	return token, nil
+}
+
+func NewEchoTokenVerifier() TokenVerifier {
+	return new(echoTokenVerifier)
 }

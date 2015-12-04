@@ -25,7 +25,7 @@ print 'db is clear, starting tests...'
 
 # build and run the server in the background
 subprocess.check_call('make clean sloth', shell=True)
-sloth_server = subprocess.Popen('./sloth -db="slothtest"', shell=True)
+sloth_server = subprocess.Popen('./sloth -db="slothtest" -verifier="echo"', shell=True)
 
 try:
     # FIXME: poll with timeout instead

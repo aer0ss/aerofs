@@ -2,7 +2,7 @@
 # must use go v1.5 or greater
 export GO15VENDOREXPERIMENT = 1
 
-GOCKERIZE_CTX = ..
+GOCKERIZE_CTX = ../../
 GOCKERIZE_DIR = ../../../gockerize
 GO_PKG_NAME   = aerofs.com/sloth
 IMAGE_NAME 	  = aeroim/sloth
@@ -11,7 +11,7 @@ TAG 		  = latest
 
 all: image
 
-sloth: *.go
+sloth: **/*.go
 	go build
 
 image: sloth

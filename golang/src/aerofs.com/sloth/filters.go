@@ -49,7 +49,6 @@ func CheckUser(request *restful.Request, response *restful.Response, chain *rest
 		return
 	}
 	// verify token's validity
-	tokenVerifier := auth.NewTokenVerifier()
 	owner, err := tokenVerifier.VerifyToken(token)
 	_, ok := err.(*auth.TokenNotFoundError)
 	if ok {

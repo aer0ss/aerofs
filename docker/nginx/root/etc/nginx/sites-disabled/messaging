@@ -1,14 +1,17 @@
 # All trifrost functions (signin, register devices):
 location ~ /messaging/(auth|invite|devices) {
+    include /etc/nginx/cors.conf;
+    add_header Access-Control-Allow-Origin * always;
     rewrite /messaging/(.+) /$1 break;
     proxy_pass http://trifrost.service:8888;
 }
 
 location /messaging/sloth/ {
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection $http_connection;
-  rewrite /messaging/sloth/(.+) /$1 break;
-  proxy_pass http://sloth.service:8001;
+    # Preserve Upgrade and Connection headers for websockets
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $http_connection;
+    rewrite /messaging/sloth/(.+) /$1 break;
+    proxy_pass http://sloth.service:8001;
 }
 
 location /messaging/blurb/ {

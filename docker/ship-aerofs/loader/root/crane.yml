@@ -68,6 +68,7 @@ containers:
       link:
         - config:config.service
         - mysql:mysql.service
+        - sparta:sparta.service
 
   nginx:
     image: aerofs/nginx
