@@ -279,9 +279,9 @@ preload() {
         echo
     )
 
-    # Overwrite cloud-config.yml, disable ssh, & shut donw
+    # Overwrite cloud-config.yml, disable ssh, & shut down
     ssh ${SSH_ARGS} 'cat > tmp && sudo mv -f tmp /usr/share/oem/cloud-config.yml' < "${OUTPUT}/cloud-config.yml"
-    ssh ${SSH_ARGS} "rm -rf ~core/.ssh && sudo shutdown 0"
+    ssh ${SSH_ARGS} "rm -rf ~core/.ssh && sudo systemd-run shutdown"
 
     (set +x
         echo "Wait for VM to shutdown..."
