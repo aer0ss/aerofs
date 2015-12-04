@@ -17,7 +17,7 @@ location /messaging/blurb/ {
 }
 
 # Static aeroim web resources
-location /aeroim/ {
+location /messages/ {
     proxy_pass http://aeroimweb.service:80;
 }
 
