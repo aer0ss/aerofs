@@ -1,6 +1,7 @@
 package main
 
 import (
+	"aerofs.com/service"
 	"aerofs.com/service/mysql"
 	"aerofs.com/sloth/broadcast"
 	"flag"
@@ -165,6 +166,9 @@ func main() {
 	var port int
 	var host, dbHost, dbName string
 	var swaggerFilePath string
+
+	// wait for dependent containers
+	service.ServiceBarrier()
 
 	// parse command-line args
 	flag.StringVar(&host, "host", "localhost", "Host name of the web server")
