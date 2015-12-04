@@ -847,9 +847,8 @@ public class SharedFolderResource extends AbstractSpartaResource
             auditEvent.add("set_password", true);
         }
 
-        // for the time being, requireLogin defaults to false
-        if (request.requireLogin != null && request.requireLogin) {
-            urlShare.setRequireLogin(true, accessToken);
+        if (request.requireLogin != null) {
+            urlShare.setRequireLogin(request.requireLogin, accessToken);
         }
         auditEvent.add("require_login", firstNonNull(request.requireLogin, false));
 
