@@ -10,7 +10,6 @@ import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
 import com.aerofs.polaris.api.operation.*;
-import com.aerofs.polaris.api.types.LogicalObject;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.aerofs.polaris.dao.*;
 import com.aerofs.polaris.dao.types.LockableLogicalObject;
@@ -18,7 +17,6 @@ import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
@@ -44,8 +42,6 @@ public class ConversionResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransformBatchResource.class);
     private final ObjectStore objectStore;
     private final DBI dbi;
-    // used for no-op replies to conversion operations
-    private final LogicalObject DUMMY_OBJECT = new LogicalObject(OID.ROOT, OID.ROOT, 0L, ObjectType.STORE);
 
     public ConversionResource(@Context DBI dbi, @Context ObjectStore objects, @Context Notifier notifier) {
         this.objectStore = objects;
@@ -62,8 +58,7 @@ public class ConversionResource {
 
         for (TransformBatchOperation operation: batch.operations) {
             try {
-                OperationResult result = performConversionTransform(principal, store, operation);
-                results.add(new TransformBatchOperationResult(result));
+                results.add(new TransformBatchOperationResult(performConversionTransform(principal, store, operation)));
             } catch (Exception e) {
                 Throwable cause = Resources.rootCause(e);
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(cause));
@@ -207,7 +202,7 @@ public class ConversionResource {
             }
 
             if (result == null) {
-                return new OperationResult(Lists.newArrayList(new Updated(dao.transforms.getLatestLogicalTimestamp(), DUMMY_OBJECT)));
+                return new OperationResult(Lists.newArrayList(new Updated(dao.transforms.getLatestLogicalTimestamp(), dao.objects.get(oid))));
             } else {
                 return result;
             }
@@ -303,32 +298,24 @@ public class ConversionResource {
         if (resolutions.size() == 1) {
             return resolutions.get(0);
         }
-        // TODO (RD) come up with a better algorithm than most dominating, perhaps just highest device tick?
-        Map<DID, Long> highestVersion = Maps.newHashMap();
-        UniqueID highestResolution = null;
-        for (UniqueID r : resolutions) {
-            Map<DID, Long> rVersion = toMap(conversion.getDistributedVersion(r, Conversion.COMPONENT_META));
-            if (newVersionDominates(highestVersion, rVersion)) {
-                highestVersion = rVersion;
-                highestResolution = r;
-            }
-        }
-        assert highestResolution != null;
-        LOGGER.info("merging resolutions {} in store {} into target {}", resolutions, store, highestResolution);
-        Preconditions.checkState(resolutions.remove(highestResolution), "found a highest resolution %s not in list", highestResolution);
+        // use the same method the daemon does to choose the target
+        UniqueID target = Collections.max(resolutions);
+        assert target != null;
+        LOGGER.info("merging resolutions {} in store {} into target {}", resolutions, store, target);
+        Preconditions.checkState(resolutions.remove(target), "found a highest resolution %s not in list", target);
 
         for (UniqueID r : resolutions) {
             Preconditions.checkState(!Identifiers.isSharedFolder(r), "shared folders cannot have aliases");
             UniqueID rParent = dao.children.getParent(r);
             if (rParent != null && dao.children.getActiveChildName(rParent, r) != null) {
-                LOGGER.info("removing object {} to merge into {}", r, highestResolution);
+                LOGGER.info("removing object {} to merge into {}", r, target);
                 objectStore.performTransform(dao, token, device, rParent, new RemoveChild(new OID(r)));
             }
             // it is possible to try and merge conflicted subtrees, but for right now it's only introducing extra complication and not considered worthwhile
             // see earlier commits on this file for a first pass impl
-            conversion.remapAlias(store, r, highestResolution);
+            conversion.remapAlias(store, r, target);
         }
-        return highestResolution;
+        return target;
     }
 
     private Operation makeOperation(UniqueID oid, @Nullable UniqueID currentParent, UniqueID child, InsertChild ic)

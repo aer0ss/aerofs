@@ -10,10 +10,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisClient;
-import com.aerofs.daemon.core.polaris.api.Batch;
-import com.aerofs.daemon.core.polaris.api.BatchResult;
-import com.aerofs.daemon.core.polaris.api.LocalChange;
-import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -54,6 +51,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
     private final LocalACL _acl;
     private final TransManager _tm;
     private final NativeVersionDatabase _nvdb;
+    private final CentralVersionDatabase _cvdb;
     private final MetaChangesDatabase _mcdb;
     private final RemoteContentDatabase _rcdb;
     private final ContentFetchQueueDatabase _cfdb;
@@ -74,6 +72,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             LocalACL acl,
             TransManager tm,
             NativeVersionDatabase nvdb,
+            CentralVersionDatabase cvdb,
             MetaChangesDatabase mcdb,
             RemoteContentDatabase rcdb,
             ContentFetchQueueDatabase cfdb,
@@ -89,6 +88,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
         _acl = acl;
         _tm = tm;
         _nvdb = nvdb;
+        _cvdb = cvdb;
         _mcdb = mcdb;
         _rcdb = rcdb;
         _cfdb = cfdb;
@@ -335,6 +335,8 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                                 switch (op.operation.type) {
                                     case UPDATE_CONTENT: {
                                         _nvdb.deleteLocalVersion_(new SOCKID(_sidx, new OID(op.oid), CID.CONTENT, KIndex.MASTER), change.getVersion(), t);
+                                        // defer local version to remote changes
+                                        _cvdb.setVersion_(_sidx, new OID(or.updated.get(0).object.oid), -1L, t);
                                         break;
                                     }
                                     case INSERT_CHILD: {

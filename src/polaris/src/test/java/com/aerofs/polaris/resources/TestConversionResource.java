@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 
 import static org.apache.http.HttpStatus.SC_OK;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -65,37 +66,39 @@ public class TestConversionResource {
     public void shouldIgnoreUpdatesIfVersionDoesNotDominate() throws Exception
     {
         SID store = SID.generate();
-        OID child = OID.generate();
+        OID file = OID.generate(), folder = OID.generate();
         Map<DID, Long> version = Maps.newHashMap(), nondominating = Maps.newHashMap(), conflictVersion = Maps.newHashMap();
         DID device1 = DID.generate(), device2 = DID.generate();
         version.put(device1, 1L);
         version.put(device2, 2L);
         nondominating.put(device1, 1L);
         conflictVersion.put(device1, 2L);
-        conflictVersion.put(device1, 1L);
+        conflictVersion.put(device2, 1L);
 
         byte[] hash = new byte[32];
         Random random = new Random();
         random.nextBytes(hash);
         TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FILE, "file", null, version, null)),
-                new TransformBatchOperation(child, new UpdateContent(0L, hash, 100, 1024, version))));
+                new TransformBatchOperation(store, insertChild(file, ObjectType.FILE, "file", null, version, null)),
+                new TransformBatchOperation(store, insertChild(folder, ObjectType.FOLDER, "folder", null, version, null)),
+                new TransformBatchOperation(file, new UpdateContent(0L, hash, 100, 1024, version))));
 
         submitBatchSuccessfully(store, batch);
 
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        assertThat(t.maxTransformCount, equalTo(2L));
+        assertThat(t.maxTransformCount, equalTo(3L));
 
         batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FILE, "new_name_for_file", null, nondominating, null)),
-                new TransformBatchOperation(child, new UpdateContent(0L, hash, 200, 2048, nondominating)),
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FILE, "new_name_for_file", null, conflictVersion, null)),
-                new TransformBatchOperation(child, new UpdateContent(0L, hash, 200, 2048, conflictVersion))));
-
+                new TransformBatchOperation(store, insertChild(file, ObjectType.FILE, "new_name_for_file", null, nondominating, null)),
+                new TransformBatchOperation(file, new UpdateContent(0L, hash, 200, 2048, nondominating)),
+                new TransformBatchOperation(store, insertChild(file, ObjectType.FILE, "new_name_for_file", null, conflictVersion, null)),
+                new TransformBatchOperation(file, new UpdateContent(0L, hash, 200, 2048, conflictVersion)),
+                new TransformBatchOperation(store, insertChild(folder, ObjectType.FOLDER, "new_name_for_folder", null, nondominating, null)),
+                new TransformBatchOperation(store, insertChild(folder, ObjectType.FOLDER, "new_name_for_folder", null, conflictVersion, null))));
         submitBatchSuccessfully(store, batch);
 
         t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        assertThat(t.maxTransformCount, equalTo(2L));
+        assertThat(t.maxTransformCount, equalTo(3L));
     }
 
     @Test
@@ -473,19 +476,18 @@ public class TestConversionResource {
     public void previouslySubmittedObjectsRemovedUponFindingAlias() throws Exception
     {
         SID store = SID.generate();
-        OID child = OID.generate(), alias = OID.generate();
-        Map<DID, Long> version1 = Maps.newHashMap(), version2 = Maps.newHashMap();
+        OID oid1 = OID.generate(), oid2 = OID.generate();
+        OID child = min(oid1, oid2), alias = max(oid1, oid2);
+        Map<DID, Long> version = Maps.newHashMap();
         DID device1 = DID.generate(), device2 = DID.generate();
-        version1.put(device1, 1L);
-        version1.put(device2, 2L);
-        version2.put(device1, 2L);
-        version2.put(device2, 2L);
+        version.put(device1, 1L);
+        version.put(device2, 2L);
 
         TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(alias, ObjectType.FOLDER, "name1", null, version2, null)),
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "name2", null, version1, null)),
+                new TransformBatchOperation(store, insertChild(alias, ObjectType.FOLDER, "name1", null, version, null)),
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "name2", null, version, null)),
                 // object is already created, but now has to alias
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "name1", null, version1, Lists.newArrayList(alias)))));
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "name1", null, version, Lists.newArrayList(alias)))));
 
         submitBatchSuccessfully(store, batch);
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
@@ -494,14 +496,16 @@ public class TestConversionResource {
         assertThat(t.transforms.get(2).getChild(), equalTo(child));
         assertThat(t.transforms.get(2).getTransformType(), equalTo(TransformType.REMOVE_CHILD));
 
-        // if the versions are switched a different set of transforms will result, but the end result is the same
-        child = OID.generate();
-        alias = OID.generate();
+        // if the OID ordering is switched a different set of transforms will result, but the end result is the same
+        oid1 = OID.generate();
+        oid2 = OID.generate();
+        child = max(oid1, oid2);
+        alias = min(oid1, oid2);
         batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(alias, ObjectType.FOLDER, "folder1", null, version1, null)),
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder2", null, version2, null)),
+                new TransformBatchOperation(store, insertChild(alias, ObjectType.FOLDER, "folder1", null, version, null)),
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder2", null, version, null)),
                 // object is already created, but now has to alias
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder1", null, version2, Lists.newArrayList(alias)))));
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "folder1", null, version, Lists.newArrayList(alias)))));
 
         submitBatchSuccessfully(store, batch);
         t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 3L, 10);
@@ -558,19 +562,18 @@ public class TestConversionResource {
     public void shouldResolveMultipleAliases() throws Exception
     {
         SID store = SID.generate();
-        OID child = OID.generate(), alias1 = OID.generate(), alias2 = OID.generate(), alias3 = OID.generate(), alias4 = OID.generate();
-        Map<DID, Long> version = Maps.newHashMap(), emptyVersion = Maps.newHashMap(), higherVersion = Maps.newHashMap();
+        List<OID> oids = Lists.newArrayList(OID.generate(),OID.generate(),OID.generate(),OID.generate(),OID.generate());
+        Collections.sort(oids);
+        OID child = oids.get(0), alias2 = oids.get(1), alias3 = oids.get(2), alias4 = oids.get(3), highestAlias = oids.get(4);
+        Map<DID, Long> version = Maps.newHashMap();
         DID device1 = DID.generate(), device2 = DID.generate();
         version.put(device1, 1L);
         version.put(device2, 2L);
-        higherVersion.put(device1, 2L);
-        higherVersion.put(device2, 4L);
         TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                // higherVersion on alias1  to insure that it wins the resolution merges
-                new TransformBatchOperation(store, insertChild(alias1, ObjectType.FILE, "file", null, higherVersion, null)),
+                new TransformBatchOperation(store, insertChild(highestAlias, ObjectType.FILE, "file", null, version, null)),
                 new TransformBatchOperation(store, insertChild(alias2, ObjectType.FILE, "file2", null, version, Lists.newArrayList(alias4))),
-                new TransformBatchOperation(store, insertChild(alias3, ObjectType.FILE, "file3", null, emptyVersion, null)),
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FILE, "file", null, version, Lists.newArrayList(alias1, alias2, alias3)))));
+                new TransformBatchOperation(store, insertChild(alias3, ObjectType.FILE, "file3", null, version, null)),
+                new TransformBatchOperation(store, insertChild(child, ObjectType.FILE, "file", null, version, Lists.newArrayList(highestAlias, alias2, alias3)))));
 
         submitBatchSuccessfully(store, batch);
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
@@ -588,7 +591,7 @@ public class TestConversionResource {
         random.nextBytes(hash);
         batch = new TransformBatch(Lists.newArrayList(
                 new TransformBatchOperation(child, new UpdateContent(0L, hash, 100, 1024, version)),
-                new TransformBatchOperation(alias1, new UpdateContent(0L, hash, 100, 1024, version)),
+                new TransformBatchOperation(highestAlias, new UpdateContent(0L, hash, 100, 1024, version)),
                 new TransformBatchOperation(alias2, new UpdateContent(0L, hash, 100, 1024, version)),
                 new TransformBatchOperation(alias3, new UpdateContent(0L, hash, 100, 1024, version)),
                 new TransformBatchOperation(alias4, new UpdateContent(0L, hash, 100, 1024, version))));
@@ -1193,5 +1196,13 @@ public class TestConversionResource {
                 .and()
                 .when().post(PolarisTestServer.getConversionURL(store))
                 .then();
+    }
+
+    private static <T extends Comparable<? super T>> T max(T a, T b) {
+        return a.compareTo(b) > 0 ? a : b;
+    }
+
+    private static <T extends Comparable<? super T>> T min(T a, T b) {
+        return a.compareTo(b) > 0 ? b : a;
     }
 }
