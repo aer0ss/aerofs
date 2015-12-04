@@ -15,15 +15,6 @@
     margin-bottom: 5px;
 }
 
-.breadcrumb {
-    font-size: 1.5em;
-    background-color: transparent;
-    padding-left: 0;
-}
-.breadcrumb li {
-    padding-bottom: 6px;
-}
-
 .link-status a {
     color: #bbb;
 }

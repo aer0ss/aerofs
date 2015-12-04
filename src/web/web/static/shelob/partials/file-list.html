@@ -2,7 +2,7 @@
   <div id="actions"
     ng-if="!currentShare.token"
     ng-hide="!fsLocation.currentFolder">
-    <span aero-file-upload class="btn btn-primary" id="upload-file"
+    <span aero-file-upload class="btn btn-default" id="upload-file"
       ng-hide="isOldIE" ng-class="{'disabled': error.status == 503 }"></span>
     <button type="button" class="btn btn-default" id="new-folder"
       ng-click="newFolder.hidden=false"
@@ -10,7 +10,7 @@
   </div>
 
   <div class="row">
-    <div aero-link-options 
+    <div aero-link-options
       ng-model="currentShare.link"
       title="Sharing Options"
       ng-if="currentShare.token && currentShare.isAdmin"></div>
@@ -85,7 +85,7 @@
         ng-if="!currentShare.token && outstandingRequests === 0"
         ng-show="!newFolder.hidden">
         <div class="col-md-6 col-sm-7 col-xs-12">
-          <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png"></div>
+          <div class="icon"><img src="/static/shelob/img/icons/40x40/filetype_folder.png" width="40" height="40"></div>
           <div class="name">
             <input aero-in-place-edit
               type="text"
@@ -98,7 +98,7 @@
         </div>
       </div>
 
-      <div class="my-row row" 
+      <div class="my-row row"
         ng-if="!objects.length && outstandingRequests === 0">
         <div class="col-sm-12 object dir-status">
           <div ng-hide="error.status == 503 && !(currentShare.isSingleObject)">

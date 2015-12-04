@@ -75,10 +75,10 @@
                     %if is_admin(request):
                     <div class="clearfix"></div>
                     <div class="col-sm-3 pending-invitees-link">
-                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount > 0">
+                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount > 0" ng-cloak>
                             Pending Invites ( {{ sharedProperties.inviteesCount }} )
                         </a>
-                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount == 0">
+                        <a href="" ng-click="toggleUsersView()" ng-show="sharedProperties.inviteesCount == 0" ng-cloak>
                             No Pending Invites
                         </a>
                     </div>

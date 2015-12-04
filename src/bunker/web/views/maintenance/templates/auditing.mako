@@ -23,7 +23,7 @@
 
         <label class="radio">
             <input type='radio' id="audit-option-disable" name='audit-enabled'
-            value='false'
+            value='false' style="vertical-align: middle"
                 %if not is_audit_enabled:
                     checked
                 %endif
@@ -35,7 +35,7 @@
 
         <label class="radio">
             <input type='radio' id="audit-option-enable" name='audit-enabled'
-                    value='true'
+            value='true' style="vertical-align: middle"
                 %if is_audit_enabled:
                     checked
                 %endif

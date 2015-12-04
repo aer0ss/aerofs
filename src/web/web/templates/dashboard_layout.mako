@@ -30,15 +30,13 @@
 </div>
 
 <%block name="top_navigation_bar_mobile">
-    <div class="visible-xs">
+    <div class="visible-xs mobile">
         <div class="btn-group pull-right">
             <a href="#" class="btn btn-default dropdown-toggle"
                     data-toggle="dropdown">
                 <span class="glyphicon glyphicon-th-list"></span> Menu
             </a>
             <ul class="dropdown-menu">
-                <%navigation:marketing_links/>
-                <li class="divider"></li>
                 <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
@@ -65,15 +63,13 @@
 </%block>
 
 <%block name="top_navigation_bar_tablet">
-    <div class="hidden-lg hidden-xs">
+    <div class="hidden-lg hidden-xs tablet">
         <div class="btn-group pull-right">
             <a href="#" class="btn btn-default dropdown-toggle"
                     data-toggle="dropdown">
                 <span class="glyphicon glyphicon-th-list"></span> Menu
             </a>
             <ul class="dropdown-menu">
-                <%navigation:marketing_links/>
-                <li class="divider"></li>
                 <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
@@ -93,8 +89,7 @@
 </%block>
 
 <%block name="top_navigation_bar_desktop">
-        <%navigation:marketing_links/>
-        <li class="pull-right dropdown visible-lg">
+        <li class="pull-right dropdown visible-lg nav-link">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                 ${authenticated_userid(request)} <b class="caret"></b>
             </a>
@@ -104,7 +99,7 @@
                 <li><a href="${request.route_path('settings')}">Settings</a></li>
                 <li><a href="${request.route_path('logout')}">Sign out</a></li>
             </ul>
-        <li class="pull-right dropdown visible-lg">
+        <li class="pull-right dropdown visible-lg nav-link">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
                 ${render_download_text()} <b class="caret"></b>
             </a>
@@ -193,7 +188,7 @@
             <%
                 mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
             %>
-            <li><a href="${mng_url}" target="_blank">Manage appliance</a></li>
+            <li class="nav-link"><a href="${mng_url}" target="_blank">Manage appliance</a></li>
 
             <%
                 links = [
@@ -254,13 +249,34 @@
 
 <%def name="render_user_invite()">
     <div class="well">
-    <p><strong>Invite a coworker to AeroFS:</strong></p>
+    <p><strong>Invite a coworker to AeroFS</strong></p>
     <form id="invite-coworker" class="form">
         <input type="text" class="form-control" id="invite-coworker-email" placeHolder="Email address"/><br/>
         <button id="invite-coworker-submit" class="btn btn-primary" type="submit">Send invite</button>
     </form>
     </div>
 </%def>
+
+<%block name="footer">
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12" id="footer-span">
+                    <ul class="list-inline">
+                        <li><a href="https://www.aerofs.com/about">About</a></li>
+                        <li><a href="https://www.aerofs.com/press">Press</a></li>
+                        <li><a href="http://www.aerofs.com/blog">Blog</a></li>
+                        <li><a href="http://www.twitter.com/aerofs">Twitter</a></li>
+                        <li><a href="https://www.aerofs.com/careers">Careers</a></li>
+                        <li><a href="https://www.aerofs.com/terms">Terms</a></li>
+                        <li><a href="http://support.aerofs.com">Support</a></li>
+                        <li class="pull-right">&copy; Air Computing Inc. 2015</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</%block>
 
 <%block name="layout_scripts">
     <script type="text/javascript">

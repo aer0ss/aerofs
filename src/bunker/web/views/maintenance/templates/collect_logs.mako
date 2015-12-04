@@ -129,6 +129,7 @@
 
     <div class="form-group">
         <label for="select-users">Collect client logs from these users:</label>
+        <br />
         <button type="button" id="select-users"
                 class="btn btn-default">Select Users</button>
     </div>
@@ -207,7 +208,7 @@
                 placeholder="Subject"
                 value="${subject}"
                 required/>
-
+        <p></p>
         <label for="message">Description:*</label>
         <textarea id="message" name="message" class="form-control"
                   placeholder="Message (please describe the problem)"

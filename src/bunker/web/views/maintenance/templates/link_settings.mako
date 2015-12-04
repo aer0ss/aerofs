@@ -34,7 +34,8 @@
                 />
                 Yes
             </label>
-            <br />
+        </div>
+        <div class="radio">
             <label>
                 <input id="require-login-true-radio" type='radio' name='links_require_login' value="true"
                     %if links_require_login:

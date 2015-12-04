@@ -38,12 +38,12 @@
 
         <p>You may optionally upload a custom 144x44 logo for AeroFS. Changes will be reflected on the main AeroFS web portal. </p>
 
-        <div class="col-sm-8 col-sm-offset-4">
+        <div class="col-sm-4 col-sm-offset-4" id="white-label-container">
             <p>Current logo:</p>
             %if request.registry.settings.get('customization.logo'):
                 <img src="/static/img/logo_custom.png" width="144" height="40" alt="AeroFS"/>
             %else:
-                <img src="/static/img/logo_small.png" width="144" height="40" alt="AeroFS"/>
+                <img src="/static/img/aero_logo.png" width="151" height="37" alt="AeroFS"/>
             <br/><br/>
             %endif
         </div>
@@ -65,7 +65,7 @@
                      />Custom Logo:
                         <input type="file" name="white-label-logo-selector" id="white-label-logo-selector">
                     <input type="hidden" name="white-label-logo" id ="white-label-logo">
-                    <p class="help-block">Please upload a 144x44 sized image. Leave blank to use existing logo.</p>
+                    <p class="help-block">Please upload a 151x37 proportionally sized image. Leave blank to use existing logo.</p>
                 </label>
             </div>
         </div>

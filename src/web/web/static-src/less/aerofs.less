@@ -1,35 +1,76 @@
 @import "includes/bootstrap/bootstrap.less";
 @import "includes/aerofs-variables.less";
+@import "includes/aerofs-mixins.less";
 
-// We use h4 for modal titles. A normal font weight is not pretty for titles.
-h4 {
-  font-weight:600;
+////////
+// All
+html, body {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  .body-1;
+  color: @aero-navyblue;
+}
+
+/*
+  Allow angular.js to be loaded in body, hiding cloaked elements until
+  templates compile.  The !important is important given that there may be
+  other selectors that are more specific or come later and might alter display.
+  http://stackoverflow.com/questions/11249768/angularjs-ng-cloak-ng-show-elements-blink
+ */
+[ng\:cloak], [ng-cloak], .ng-cloak {
+  display: none !important;
 }
 
 ////////
-// Make the footer stick to the bottom
-
-@footerHeight: 4em;
-@footerPaddingTop: 10px;
-
-.border-radius(@radius) {
-  .border-top-radius(@radius);
-  .border-right-radius(@radius);
-  .border-bottom-radius(@radius);
-  .border-left-radius(@radius);
-}
-
-html, body {
-  height: 100%;
-}
-
-h1, h4 {
+// Text
+h1 {
+  .title-1;
   margin-bottom: @line-height-computed;
+}
+
+h2 {
+  .title-2;
+}
+
+h4 {
+  .title-3;
+  font-weight: 600;
 }
 
 label {
   font-weight: normal;
 }
+
+p a {
+  .link;
+  text-transform: none;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+////////
+// Buttons
+.btn:not(.btn-plain) {
+  font-weight: 600 !important;
+}
+
+.btn-default:hover {
+  background-color: @aero-gray;
+}
+
+/////////
+// Dropdown
+.dropdown-menu li > a {
+  color: @aero-navyblue;
+}
+
+////////
+// Footer
+// Make the footer stick to the bottom
+@footerHeight: 4em;
+@footerPaddingTop: 10px;
 
 #wrapper {
   min-height: 100%;
@@ -47,12 +88,6 @@ footer {
   height: @footerHeight;
   color: @gray-light;
   font-size: 85%;
-}
-
-// Also see #top-nav-span
-#footer-span {
-  border-top: @headerFooterSeparator;
-  padding-top: @footerPaddingTop;
 }
 
 ////////
@@ -74,106 +109,150 @@ footer {
   margin-top: 30px;
 }
 
-h2 {
-  line-height: 24.75pt;
-  margin: 0 0 1em 0;
-}
-
 .page-headline-banner {
   padding-bottom: 40px;
   .bottom-divider;
 }
 
-////////
-// Nav bars
+.body-container .left-nav {
+  margin-top: 5px; //So the text baseline is aligned with title
+}
 
-// Also see #footer-span
-#top-nav-span {
-  // Add a light-grey line under the top nav bar.
-  border-bottom: @headerFooterSeparator;
+////////
+// Top Nav
+.logo-wrapper,
+.top-nav {
+  line-height: 68px;
+}
+
+.logo-wrapper img {
+  margin-left: 15px; //Line up logo with left nav text
 }
 
 .top-nav {
-  // Undo the large bottom margin for the top nav bar.
-  margin-bottom: inherit;
-  padding: 8px 0 0;
-  min-height: 68px;
+  margin: 0;
+  padding: 0;
 
   .dropdown-menu {
     font-size: 11pt;
   }
 }
 
-.top-nav > li + li, .top-nav .btn-group {
-  // Pull down all but the first item (i.e. the logo) in the top nav bar
-  margin-top: 19px;
-  font-weight: 700;
-  font-size: 18px;
+.top-nav > .nav-link > a {
+  background: none !important;
 }
 
-.top-nav .btn-group {
+.top-nav .nav-link a:first-child {
+  padding-right: 0px;
+}
+
+.top-nav .nav-link .dropdown-menu {
+  margin-top: -20px;
+}
+
+.top-nav .tablet .btn-group {
+  margin-top:  20px;
   margin-left: 8px;
 }
 
-/* hack to get around limitations of bootstrap navbar styles and
-how our templates inherit the top nav */
-@media (max-width: 1200px) {
-  .nav .marketing-link {
-    display: none;
-  }
+.top-nav .mobile .btn-group {
+  margin-top:  10px;
+  margin-left: 8px;
+}
 
-  .nav .dropdown-menu .marketing-link {
-    display: block;
-  }
+.top-nav .btn-group .dropdown-menu {
+  min-width: 180px;
 }
 
 .top-nav-wrapper {
   margin-bottom: @standard-padding;
 }
 
+////////
+// Breadcrumb
+
 .breadcrumb {
   padding-top: 0;
+  padding-left: 15px;
+  background-color: transparent;
+  .title-2;
 }
 
-// Override Bootstrap's style for active navigation items
-.left-nav > .active > a,
-.left-nav > .active > a:hover {
-  background: transparent;
-  text-shadow: none;
-  font-weight: bold;
-  color: @link-hover-color;
+.breadcrumb > .active,
+.breadcrumb > .active a{
+  color: @aero-navyblue;
 }
 
-.nav-padding {
-  padding: 4px 0 2px 15px;
+.breadcrumb > li:not(.active),
+.breadcrumb > li:not(.active) a {
+  color: #999;
+}
+
+.breadcrumb li {
+  padding-bottom: 6px;
+}
+
+#actions {
+  margin-top: 2px;
+}
+
+#actions button.btn-default {
+  margin-left: 5px;
+}
+
+////////
+// Left Nav
+.left-nav .nav-header {
+  .label-1;
+  .nav-padding;
+  background-color: none;
+  color: @aero-navyblue;
 }
 
 .left-nav ul {
   list-style-type: none;
-  margin-bottom: 9px;
+  margin-bottom: 20px;
   padding-left: 0;
-  li {
-    .nav-padding();
-  }
 }
 
-.nav-header {
-  .nav-padding();
-  font-weight: 400;
-  font-size: .9em;
-  background: #EEE;
-  color: #999;
-  text-shadow: 0 1px 0 rgba(255,255,255, 0.5);
-  text-transform: uppercase;
+.left-nav ul li.nav-link,
+.left-nav ul li.text-muted {
+  .nav-padding;
+  .body-1;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.left-nav ul li.text-muted {
+  .text-muted !important;
+}
+
+.left-nav ul .nav-link a:hover {
+  text-decoration: none;
+}
+
+// Override Bootstrap's style for active navigation items
+.left-nav .active > a,
+.left-nav .active > a:hover {
+  background: transparent;
+  text-shadow: none;
+  font-weight: bold;
+  color: @aero-blue;
 }
 
 .nav-pills > li > a, .nav-pills ul li a {
   display: block;
   padding: 3px 15px;
 }
+
+//Otherwise our email address is shifted left in web
+.nav-pills > li.pull-right > a {
+  padding: 3px 0 3px 30px;
+}
+
 .nav-pills > .logo > a {
-  padding: 0 15px;
-  margin-top: 9px;
+  padding: 0 15px 0 0;
+  margin-top: 11px;
 }
 
 // Override Bootstrap's @gray-lighter background color
@@ -283,7 +362,7 @@ div.jumbo_banner > h2 {
 }
 
 .invitation_title {
-    color: @base02;
+    color: @aero-navyblue;
     font-size: 120%;
 }
 
@@ -333,7 +412,7 @@ div.jumbo_banner > h2 {
   .ie7-restore-right-whitespace();
   line-height: 14px;
   vertical-align: text-top;
-  background-image: url("@{aerofsIconSpritePath}");
+  background-image: url("@{aero-icon-sprite-path}");
   background-position: 14px 14px;
   background-repeat: no-repeat;
 
@@ -354,7 +433,7 @@ div.jumbo_banner > h2 {
 .label {
   font-size: 70%;
   margin-left: 7px;
-  background-color: #eee;
+  background-color: @aero-gray;
   color: #999;
   text-shadow: none;
   font-weight: normal;
@@ -373,30 +452,20 @@ img.screenshot {
 }
 
 blockquote {
-  border-left-color: darken(@bodyBackground, 10%);
+  border-left-color: darken(@aero-white, 10%);
 }
 
 // override Bootstrap's <hr> style which always use @white for border-bottom
 hr {
-  border-bottom: 1px solid @hrBorder;
+  border-bottom: 1px solid @hr-border;
 }
 
 .accordion-group {
   background-color: white;
 }
 
-// Override Bootstrap's red
-code {
-  color: @codeColor;
-}
-
 .img-bordered {
   border: 1px solid @gray-light;
-}
-
-.sign-up-text-highlight {
-  color: @green;
-  font-weight: bold;
 }
 
 // This is for .arch-legend's absolute position to work
@@ -409,7 +478,15 @@ code {
   color: dimgrey;
 }
 div.arch-image {
-    margin: 0 auto 15px;
+  margin: 0 auto 15px;
+}
+
+.well {
+  padding: 15px;
+}
+
+#error-wrap .alert {
+  margin-left: 15px; // to match .nav-padding
 }
 
 #modal {
@@ -438,18 +515,18 @@ div.arch-image {
 }
 
 .tutorial img {
-  background: #eee;
+  background: @aero-gray;
   padding: 12px;
 }
 #modal-user-role-table .pending {
   color: #999;
-  background: #eee;
+  background: @aero-gray;
 }
 // Login page
 .login {
   h1 {
     text-align: center;
-    color: @base02;
+    color: @aero-navyblue;
   }
   h6 {
       text-align: center;
@@ -458,6 +535,10 @@ div.arch-image {
   }
   .tooltip-img {
     display:inline-block;
+  }
+
+  .form-group .input-medium {
+    color: @aero-navyblue;
   }
 
   .openid-login {
@@ -516,17 +597,18 @@ div.arch-image {
     columns:2; -moz-columns:2; -webkit-columns:2;
 }
 
-/* Mixin: used for signup button and free trial button */
-#dark-blue-header .gold-button {
-    background-color: @gold;
-    border-color: darken(@gold, 20%);
-    color: black;
-    font-weight: 600;
+#dark-blue-header .btn-special {
+    background-color: @aero-blue;
+    border-color: @aero-blue;
+    color: @aero-white;
+    text-shadow: .25px .25px #aaa;
+
     &:hover {
-        background-color: lighten(@gold, 7%);
+        border-color: darken(@aero-blue, 7%);
+        background-color: darken(@aero-blue, 7%);
     }
     &:active {
-        border-color: @gold;
-        background-color: darken(@gold, 10%);
+        border-color: darken(@aero-blue, 10%);
+        background-color: darken(@aero-blue, 10%);
     }
 }

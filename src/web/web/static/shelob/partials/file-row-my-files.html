@@ -2,8 +2,8 @@
     <div class="object row">
         <div class="col-xs-12 col-sm-7 col-md-6">
           <div class="icon">
-            <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png">
-            <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png">
+            <img ng-if="object.type == 'folder' && !object.is_shared" src="/static/shelob/img/icons/40x40/filetype_folder.png" width="40" height="40">
+            <img ng-if="object.type == 'folder' && object.is_shared" src="/static/shelob/img/icons/40x40/filetype_shared_folder.png" width="40" height="40">
             <div ng-if="object.type == 'file'" aero-icon data-mime-type={{object.mime_type}}></div>
           </div>
           <div class="name">
@@ -27,13 +27,13 @@
           {{object.last_modified | date: 'short'}}
         </div>
         <div class="col-xs-1 link-status">
-          <a ng-if="enableLinksharing" 
-             ng-show="object.links.length > 0" 
-             ng-click="toggleLink(object)" 
+          <a ng-if="enableLinksharing"
+             ng-show="object.links.length > 0"
+             ng-click="toggleLink(object)"
              title="Link settings">
-            <span class="glyphicon glyphicon-link"></span> 
+            <span class="glyphicon glyphicon-link"></span>
             <span class="extra-settings-icons">
-              <span ng-show="object.links[0].expires > 0" class="glyphicon glyphicon-time"></span> 
+              <span ng-show="object.links[0].expires > 0" class="glyphicon glyphicon-time"></span>
               <span ng-show="object.links[0].has_password" class="glyphicon glyphicon-lock"></span>
               <span ng-show="object.links[0].require_login" class="glyphicon glyphicon-user"></span>
             </span>
@@ -49,7 +49,7 @@
                     <li ng-if="enableLinksharing && isManagedObject(object)"><a
                        ng-click="showLink(object)"
                        class="edit action action-link">
-                        <span class="glyphicon glyphicon-link"></span> 
+                        <span class="glyphicon glyphicon-link"></span>
                         <span ng-hide="object.links.length > 0">Create link</span>
                         <span ng-show="object.links.length > 0">Link settings</span>
                     </a></li>
@@ -120,8 +120,8 @@
               </form>
             </div>
             <div class="col-sm-2 options">
-              <div aero-link-options 
-                ng-model="link" 
+              <div aero-link-options
+                ng-model="link"
                 title="Options"
                 on-delete="removeLink(object, key)"></div>
             </div>

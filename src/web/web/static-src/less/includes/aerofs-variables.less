@@ -3,64 +3,47 @@
 //
 // N.B. never modify bootstrap/variables.less (or anything copied from the
 // Bootstrap library). Use this file to override variables.
-//
+
 /* Variables */
-@lightestblue: #e4f1f9;
-@ltblue: #add5ea;
-@medblue: #3594c9;
-@darkblue: #0e6290;
-@darkestblue: #0A2C49;
-@haze: rgba(255,255,255,.8);
-@gold: #fdd251;
-@oatmeal: #f9f9f9;
-@darkoats: #e7e7e7;
 
+// Fonts
+@aero-mainfont:                  'Open Sans', 'verdana', sans-serif;
 
-@blue:                  @ltblue;
-@yellow:                #fddb0e;
-@green:                 #5cb85c;
-@red:                   #d9534f;
+// Colors
+@aero-white:                     #ffffff;
+@aero-gray:                      #eee;
+@aero-blue:                      darken(#00beda, 7%); //The logo/folder color
+@aero-navyblue:                  #334455;
+@aero-green:                     #3c763d;
+@aero-lightgreen:                #eaeec4;
 
-// N.B. update @hrBorder accordingly if this value changes
-@bodyBackground:        white;
+// Bootstrap overrides
+@brand-primary:                  @aero-navyblue;
 
-// Typography
-// -------------------------
-@font-family-sans-serif:  'Open Sans', sans-serif;
-@font-size-base:          11pt;
-@headings-font-weight:    300;
-@headings-color:          @darkestblue;
+@btn-default-color:              @aero-navyblue;
+@btn-default-bg:                 @aero-white;
+@btn-default-border:             @aero-navyblue;
 
-@standard-padding: 22px;
+@btn-primary-color:              @aero-white;
+@btn-primary-bg:                 @aero-navyblue;
+@btn-primary-border:             @aero-navyblue;
 
-// Buttons
-// -------------------------
-// Note: we use aerofs.less to override buttons' foreground colors
+@btn-success-color:              @aero-white;
+@btn-success-bg:                 @aero-navyblue;
+@btn-success-border:             @aero-navyblue;
 
-@btn-primary-bg:        @medblue;
-// Since @btn-primary-bg has been changed, copy this line from
-// variable.less to update @btnPrimaryBackgroundHighlight.
-@btnPrimaryBackgroundHighlight:     spin(@btn-primary-bg, 20%);
+@state-success-bg:               @aero-lightgreen;
+@state-success-border:           @aero-lightgreen;
 
-// AeroFS specific variables
-// -------------------------
+@hr-border:	                     darken(@aero-gray, 10%);
+@code-color:                     darken(@aero-green, 10%);
 
-// Base colors
-// We use a naming scheme similar to Solarized (http://ethanschoonover.com/solarized)
-// The 0 prefix indicates a dark color, and the larger the number, the darker (or the lighter if no 0)
-@base2:                 @lightestblue;
-@base1:                 @ltblue;
-@base01:                @darkblue;
-@base02:                @darkestblue;
+/* Since @btn-primary-bg has been changed, copy this line from
+   variable.less to update @btnPrimaryBackgroundHighlight. */
+@btnPrimaryBackgroundHighlight:  spin(@btn-primary-bg, 20%);
 
-// override Bootstrap <hr> border color to be less disruptive
-@hrBorder:	            @base1;
-
-@successMessageColor:   #3c763d;
-@errorMessageColor:     #a94442;
-
-@codeColor:             darken(@successMessageColor, 10%);
-
-@aerofsIconSpritePath:  "../../img/aerofs-icons.png";
-@iconSpritePath: "../../img/glyphicons-halflings.png";
-@icon-font-path: "../../fonts/";
+// Misc.
+@standard-padding:               22px;
+@aero-icon-sprite-path:          "../../img/aerofs-icons.png";
+@iconSpritePath:                 "../../img/glyphicons-halflings.png";
+@icon-font-path:                 "../../fonts/";

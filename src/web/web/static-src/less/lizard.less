@@ -1,6 +1,7 @@
 //
 // This file contains styles specific to Lizard
 //
+@import "includes/aerofs-variables.less";
 
 #messages {
     background-color: #ffff00;
@@ -17,20 +18,34 @@ h1 {
 }
 
 #dark-blue-header {
-  background-color: #156290;
+  background-color: @aero-navyblue;
   margin-bottom: 20px;
-  padding: 10px 0;
-  color: #add5ea;
+  padding: 0;
+  color: @aero-white;
 }
 
-#dark-blue-header a {
-  color: #e4f1f9;
-  text-decoration: none;
-}
-
-#dark-blue-header ul {
+#dark-blue-header .navigation {
   list-style: none;
-  margin-top: 5px;
+  margin-bottom: 0;
+  line-height: 90px;
+  vertical-align: middle;
+  font-weight: 600;
+}
+
+#dark-blue-header .navigation .sign-out {
+  margin: 0 0 0 24px;
+  color: @aero-white;
+  text-decoration: none;
+  white-space: nowrap;
+  &:hover {
+    color: @aero-blue
+  }
+}
+
+@media screen and (max-width: 767px) {
+  #dark-blue-header .navigation .email {
+    display: none;
+  }
 }
 
 .btn {

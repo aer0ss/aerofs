@@ -9,7 +9,7 @@
         mng_url = 'https://' + str(request.registry.settings['base.host.unified']) + '/admin'
     %>
 
-    <p><font size="-4">Administrators please visit your
+    <p>Administrators please visit your
     <a href="${mng_url}">Appliance Management Interface</a> to configure
-    this system.</font></p>
+    this system.</p>
 </div>

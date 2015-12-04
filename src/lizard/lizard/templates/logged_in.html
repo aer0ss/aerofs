@@ -7,7 +7,8 @@
         <form role="form" class="form-horizontal hidden" id="logout_form" action="{{ url_for('.logout') }}" method="post" name="logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         </form>
-        {{ current_user.email }} <a href="#" onclick="$('#logout_form').submit();" style="margin: 0 12px;">Sign out</a>
+        <span class="email">{{ current_user.email }}</span>
+        <a href="#" onclick="$('#logout_form').submit();" class="sign-out">Sign out</a>
     </li>
 {% endblock %}
 

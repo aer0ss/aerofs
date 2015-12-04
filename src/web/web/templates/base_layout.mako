@@ -18,7 +18,7 @@
 
     <title>
         ## See http://moz.com/learn/seo/title-tag for info on title tags
-        ## Important details: 
+        ## Important details:
         ## - titles should be <70 characters total
         ## - should not be too similar page to page (triggers "repeat content")
         ## - if the brand is young (e.g. not known), focus on keywords in the front
@@ -106,16 +106,17 @@
         ## Horizontal navigation bar
         <div class="container top-nav-wrapper">
             <div class="row">
-                <div class="col-sm-12" id="top-nav-span">
+                <div class="col-sm-3 logo-wrapper">
+                    <a href="${self.home_url()}">
+                        %if request.registry.settings.get('customization.logo') and request.registry.settings.get('is_bunker') is not 'True':
+                            <img src="${request.static_path('web:static/img/logo_custom.png')}" width="144" height="40" alt="AeroFS"/>
+                        %else:
+                            <img src="${request.static_path('web:static/img/aero_logo.png')}" width="151" height="37" alt="AeroFS"/>
+                        %endif
+                    </a>
+                </div>
+                <div class="col-sm-9" id="top-nav-span">
                     <ul class="nav nav-pills top-nav">
-                        <li class="logo"><a href="${self.home_url()}">
-                            %if request.registry.settings.get('customization.logo') and request.registry.settings.get('is_bunker') is not 'True':
-                                <img src="${request.static_path('web:static/img/logo_custom.png')}" width="144" height="40" alt="AeroFS"/>
-                            %else:
-                                <img src="${request.static_path('web:static/img/logo_small.png')}" width="144" height="40" alt="AeroFS"/>
-                            %endif
-
-                        </a></li>
                         <%block name="top_navigation_bar_desktop"/>
                         <%block name="top_navigation_bar_tablet"/>
                         <%block name="top_navigation_bar_mobile"/>
@@ -152,7 +153,7 @@
         </div>
 
         ## Main body
-        <div class="container">
+        <div class="container body-container">
             ${next.body()}
         </div>
 

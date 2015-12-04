@@ -10,17 +10,19 @@
 <%def name="link(link)">
     <li
         %if request.matched_route and request.matched_route.name == link[0]:
-            class="active"
+            class="nav-link active"
+        %else:
+            class="nav-link"
         %endif
     ><a href="${request.route_path(link[0])}">${link[1]}
     <%
-    	try:
-    		badge = link[2]
-    	except:
-    		badge = ""
+        try:
+            badge = link[2]
+        except:
+            badge = ""
     %>
     %if badge:
-    	<span class="badge">${badge}</span>
+        <span class="badge">${badge}</span>
     %endif
     </a></li>
 </%def>
