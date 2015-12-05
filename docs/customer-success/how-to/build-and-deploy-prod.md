@@ -53,7 +53,7 @@ version, use `--release-version` in step 4 below.
    corresponding slack notifications. The docker registry images will be
    available to the public immediately. The S3 artifacts need to be released
    manually by updating the version on the
-   [Private Cloud Admin Portal](http://pc.aerofs.com:8000/release).
+   [Private Cloud Admin Portal](http://enterprise.aerofs.com:8000/release).
 
 7. [OPTIONAL] Reset your docker-dev RAM.
 

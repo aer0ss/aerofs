@@ -51,7 +51,7 @@ At the end of the exercise, we'll review your experience to:
 
 Here are some areas to focus on:
 
-* Licensing web interface (privatecloud.aerofs.com)
+* Licensing web interface (enterprise.aerofs.com)
 * Web (end-user and administrative)
 * Desktop client (win, linux, mac)
 * Group sharing feature (web, desktop).

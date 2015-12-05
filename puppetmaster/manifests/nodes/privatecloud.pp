@@ -1,4 +1,4 @@
-node "privatecloud.aerofs.com" inherits default {
+node "enterprise.aerofs.com" inherits default {
     users::add_user {
         [ hiera('dev_users') ]:
     }

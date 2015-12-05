@@ -23,7 +23,7 @@ paths:
             $ref: '#/definitions/HostRecord'
         '404':
           description: 'The domain has not been registered, or the customer owning it has not configured an appliance hostname.'
-host: privatecloud.aerofs.com
+host: enterprise.aerofs.com
 schemes:
   - https
 produces:

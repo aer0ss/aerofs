@@ -64,7 +64,7 @@ def _license_available_email_for(admin):
     # app, rather than the user-facing one)
     template_args = {
             "admin": admin,
-            "dashboard_url": "https://privatecloud.aerofs.com/dashboard",
+            "dashboard_url": "https://enterprise.aerofs.com/dashboard",
             "faqs_url": "https://support.aerofs.com/hc/en-us/articles/204592794",
             "contact_url": "https://support.aerofs.com/hc/en-us/articles/201440860"
     }

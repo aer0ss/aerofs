@@ -36,7 +36,7 @@ node "z.arrowfs.org" inherits default {
     "rocklog url http://rocklog.aerofs.com/",
     "web url https://www.aerofs.com",
     "web url https://www.aerofs.com/login",
-    "pc url https://privatecloud.aerofs.com/login",
+    "pc url https://enterprise.aerofs.com/login",
     "sp url-internalcert https://sp.aerofs.com/sp",
     "api port api.aerofs.com 443",
     "api port api.aerofs.com 4433",

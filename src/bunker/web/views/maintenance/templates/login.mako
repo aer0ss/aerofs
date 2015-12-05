@@ -45,11 +45,11 @@
     <div>
         %if is_initialized:
             <p>Download your license file via your
-                <a href="https://privatecloud.aerofs.com" target="_blank">Private Cloud Dashboard</a>.
+                <a href="https://enterprise.aerofs.com" target="_blank">Private Cloud Dashboard</a>.
             </p>
         %else:
             <p>You should have received a license with this appliance. If not,
-                please <a href="https://privatecloud.aerofs.com/" target="_blank">
+                please <a href="https://enterprise.aerofs.com/" target="_blank">
                 request a license</a>.</p>
             <p><a href="https://support.aerofs.com/hc/en-us/articles/204951110" target="_blank">
                 What happens if the license expires?</a></p>

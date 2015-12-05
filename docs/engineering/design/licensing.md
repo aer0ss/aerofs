@@ -65,7 +65,7 @@ bank safe deposit box.
 
 # Private Cloud website
 
-(note: I'm using privatecloud.aerofs.com here, but we can change that if desired)
+(note: I'm using enterprise.aerofs.com here, but we can change that if desired)
 
 Users will download their license file from the AeroFS private cloud website.
 This site will be a newly designed site that will deal only with private cloud
@@ -73,7 +73,7 @@ customers.  It will have its own organization and user database, separate from
 the one use for our public cloud offering.
 
 For each organization, it should have:
-  * a nonempty list of site administrators, used only for `privatecloud.aerofs.com`
+  * a nonempty list of site administrators, used only for `enterprise.aerofs.com`
     * each admin should have an email/password
   * Address?
   * whether the organization has accepted our License Agreement
@@ -85,14 +85,14 @@ For each organization, it should have:
 
 Once the customer has provided the requisite information and agreed to the
 license, we will manually generate a license file for them and upload it to
-privatecloud.aerofs.com.  The customer can then download the VM image and their
+enterprise.aerofs.com.  The customer can then download the VM image and their
 license file.
 
 # Workflows
 
 ## Initial provisioning of license file
 
-1. User registers an account on privatecloud.aerofs.com, creating a new organization.
+1. User registers an account on enterprise.aerofs.com, creating a new organization.
 2. User can invite additional email addresses to join the organization.
 3. User must accept terms of service before accessing other site features.
 4. User can request a trial or pay for a full license.
@@ -104,14 +104,14 @@ license file.
 1. User loads .ova file into virtualization software of their choice
 2. User configures networking if needed; otherwise, visits site configuration page in browser
 3. Site configuration page prompts for license file
-4. User uploads license file that was downloaded from privatecloud.aerofs.com
+4. User uploads license file that was downloaded from enterprise.aerofs.com
 5. Site configuration now allows site configuration
 6. User completes site configuration as before
 7. Product is ready to go
 
 ## License nearing expiry
 
-We should email each of the admins known to privatecloud.aerofs.com, just as we would in the case of a software update.
+We should email each of the admins known to enterprise.aerofs.com, just as we would in the case of a software update.
 
 OPTIONALly, we may want to display a warning on web pages viewed by admins.
 

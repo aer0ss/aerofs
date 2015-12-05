@@ -25,7 +25,7 @@ etc.).
 The Organization has at least one Administrator with an account on the private
 cloud management system.
 
-Lizard (the server behind privatecloud.aerofs.com) already supports all of the
+Lizard (the server behind enterprise.aerofs.com) already supports all of the
 above, including managing verified email accounts/credentials for
 administrators.
 
@@ -47,9 +47,9 @@ simple change when we are ready to announce these features, and have the
 policies in place for domain validation/verification.
 
 
-#### privatecloud.aerofs.com : new "appliances" endpoint for directory services
+#### enterprise.aerofs.com : new "appliances" endpoint for directory services
 
-    GET privatecloud.aerofs.com/appliances/{maildomain}
+    GET enterprise.aerofs.com/appliances/{maildomain}
 
 Return 404 to indicate no such email domain, or no appliance configured for
 that organization.
@@ -70,7 +70,7 @@ Return 200 for a registered and configured appliance:
     the server. The mobile AeroFS signin uses a similar mechanism to avoid
     leaking information in the face of DNS spoofing.
 
-#### privatecloud.aerofs.com : behind-the-scenes changes
+#### enterprise.aerofs.com : behind-the-scenes changes
 
 Small changes to a small service:
 

@@ -9,7 +9,7 @@
     </p>
     <p>
         If you are an administrator of this instance, please
-        <a href="https://privatecloud.aerofs.com/" target="_blank">request a renewal</a> on our
+        <a href="https://enterprise.aerofs.com/" target="_blank">request a renewal</a> on our
         private cloud portal and <a href="${request.route_path('setup')}">upload the new license</a>
         to this system.
     </p>

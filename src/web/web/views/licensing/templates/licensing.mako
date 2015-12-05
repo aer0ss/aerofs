@@ -10,8 +10,9 @@
 <p>
     Information regarding your license quota is available below. If you need to update your
     license, you may do so by obtaining a new license file from your
-    <a href="https://pc.aerofs.com/" target="_blank">Private Cloud Dashboard</a> and subsequently
-    uploading it to your <a href="${mng_url}" target="_blank">Management Interface</a>.
+    <a href="https://enterprise.aerofs.com/" target="_blank">Private Cloud Dashboard</a> and
+    subsequently uploading it to your <a href="${mng_url}" target="_blank">Management
+    Interface</a>.
 </p>
 
 <br/>

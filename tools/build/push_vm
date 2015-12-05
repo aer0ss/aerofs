@@ -43,4 +43,4 @@ upload_artifact qcow2.gz
 upload_artifact vhd.gz
 notify_slack
 
-echo ">> Go to http://privatecloud.aerofs.com:8000/ to mark this as the current release."
+echo ">> Go to http://enterprise.aerofs.com:8000/ to mark this as the current release."
