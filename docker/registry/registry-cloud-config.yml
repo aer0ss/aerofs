@@ -1,0 +1,152 @@
+#cloud-config
+
+
+hostname: aerofs
+
+coreos:
+  units:
+    - name: getty-restart.path
+      command: start
+      content: |
+        [Unit]
+        Description=Getty Restart path
+        [Path]
+        PathExists=/etc/systemd/system/getty@tty1.service.d/50-ship.conf
+
+    - name: getty-restart.service
+      content: |
+        [Unit]
+        Description=Restart Getty
+        [Service]
+        ExecStart=/ship/getty/restart
+
+    - name: ship.service
+      command: start
+      content: |
+        [Unit]
+        Description=Ship Enterprise
+        After=docker.service
+        [Service]
+        ExecStart=/ship/sail
+
+    - name: swap.service
+      command: start
+      content: |
+        [Unit]
+        Description=Enable Swap
+        [Service]
+        ExecStart=/ship/enable-swap
+
+  oem:
+    id: ship-enterprise
+    name: Ship Enterprise
+    version-id: 0.1.1
+    home-url: http://www.shipenterprise.com/
+    bug-report-url: http://www.shipenterprise.com/
+
+  update:
+    reboot-strategy: off
+
+write_files:
+  - path: /ship/getty/restart
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -ex
+      if [ -f /ship/getty/restarted ]; then exit 0; fi
+      systemctl daemon-reload
+      systemctl restart getty@tty1
+      touch /ship/getty/restarted
+
+  - path: /etc/systemd/system/getty@tty1.service.d/50-ship.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=-/sbin/agetty --noclear --skip-login --autologin root --login-program /ship/getty/run %I $TERM
+
+  - path: /ship/getty/run
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+      dmesg -n 1
+      echo 'Loading console service...'
+
+      mkdir -p /ship/loader/run
+      [[ -f /ship/loader/run/repo ]] || echo 'registry.hub.docker.com' > /ship/loader/run/repo
+      [[ -f /ship/loader/run/tag ]] || echo '0.1.1' > /ship/loader/run/tag
+
+      IMAGE="$(cat /ship/loader/run/repo)/aerofs/registry.loader:$(cat /ship/loader/run/tag)"
+      docker run --rm -v /ship/loader/getty:/host "${IMAGE}" install-getty /host
+      while true; do /ship/loader/getty/run; done
+
+  - path: /ship/enable-swap
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -e
+      if [ 0 = 0 ]; then exit 0; fi
+      if [ ! -f /swap ]; then
+        fallocate -l 0m /swap
+        chmod 600 /swap
+        mkswap /swap
+      fi
+      swapon /swap
+
+  - path: /ship/sail
+    permissions: 0700
+    content: |
+      #!/bin/bash
+      set -ex
+      while true; do
+        RUNNING="$(docker ps -q --no-trunc)"
+        for SCOPE in $(systemctl list-units --no-legend 'docker-*.scope' | awk '{print $1}'); do
+          ID=$(echo ${SCOPE} | sed -e 's/^docker-\(.*\)\.scope$/\1/')
+          [[ "$(echo "${RUNNING}" | grep ${ID})" ]] || (
+            echo "Stopping dangling unit ${SCOPE}..."
+            systemctl stop ${SCOPE}
+          )
+        done
+
+        mkdir -p /ship/loader/run
+        [[ -f /ship/loader/run/repo ]] || echo 'registry.hub.docker.com' > /ship/loader/run/repo
+        [[ -f /ship/loader/run/tag ]] || echo '0.1.1' > /ship/loader/run/tag
+        [[ -f /ship/loader/run/target ]] || echo 'default' > /ship/loader/run/target
+
+        IMAGE="$(cat /ship/loader/run/repo)/aerofs/registry.loader:$(cat /ship/loader/run/tag)"
+
+        CONTAINER=loader-$(cat /ship/loader/run/tag)
+
+        [[ "$(docker ps -a | grep ${CONTAINER})" ]] || \
+            docker create --name "${CONTAINER}" \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v /ship/loader/run/repo:/host/ship/loader/run/repo \
+              -v /ship/loader/run/tag:/host/ship/loader/run/tag \
+              -v /ship/loader/run/target:/host/ship/loader/run/target \
+              "${IMAGE}" load /host/ship/loader/run/repo /host/ship/loader/run/tag /host/ship/loader/run/target
+
+        echo 'Starting Loader...'
+        docker start -a "${CONTAINER}"
+        echo 'Loader stopped'
+      done
+
+  - path: /https.key
+    encoding: gz+b64
+    content: |
+      H4sIAN90FFUC/22VtxKjWhZFc77i5VQXCGGDF1zg4q2wIgMkvDdC8PWj6UnnpCfZtWqbP39+x0NZtf55eOAf56GGwIf/6PD538cfxFRVOLkqD4AuABeC6dkrB0HREySw8ChFd/BfcbTZ3IrX3mYQV6iudKa/Z89qKOWRI0k7jGLg1g4fv2u/FzH7Cd+wIHHPuuBnb9nTK0Z/NbxInNQItCjJN90cZ0vIhaq+Tcj0XcSYomyJj0CKrhmPqiafSGZvy93dLMcnc+VM+rozYial1iDdsHs+3RXVR2/oIKEnQkPG3Wb5ELzvYioXPRWqjelsZmYFo21FTzXpl/UeD19Mn4l0KnXTxATnqYvnbx4QUuSVdpmlmljvdLimu7Hh9u9aPaZUARURi032LfIqXa7HZzxgUcHzbBPfdvFQjks9JkfEZrWEyrM+7L/BVODLsVEbdbvZj8tTn6j0FhQY5ocqAhfwYPzBdgW3ibpb36+B67koIs7HCa7gIzGMsXNu4VifL5N1ePdawb3YW2E8tbymegNXJwZbbgrTKw9PcmVakjt2XRHljs96WjpbfTZcI6Ge7tTXvR/69chs+XbQGy2Tm2lAMijRuWcgqRAO3tPGXj9eouYg7zk+36OImmvNC5B9HuGsHJQG8UqLSKHEWkmZzIjyYSmfY0uYnXXg1CmbQ8M9LVtlEXGyUJTVFbpafl5YrM7TlNjwx01WFLBlVm0xlfgEddKGDjQzXRrLFisgII4Bbc/LQzhGSLdDclcoVvrOcHIBnafWJevyNZMEV94jIEdWxu5xbnRYY5nPduJXWxzaMbl3GId4pK+RskeBUeaBVaVCYslXJYPt3q4Meq5Jp1FtiTkoVU+yRBr5uICNK3aerjuLCwkkVF7Ge46MjYXfwuC5pxANaJlU/XZZUh7rHmNO3UkAufcTxamNtlpFFuBdQhn7oW09EsE0eWIa2rTTS3HwPebecxhotR2UpnbR9X2Fbyt/DbxMWQsWrWlVYad1dH8Vm06BtGsQbDsr5NhJnCSdv7mV9tyeTtAPxHybx+s2gpXs5xI/ANrFvpyMM953FF6ogLoij0i3y+bfRHOcEXXPtZDa9beaK/3BbWdMVvEkLVOoJBC8WW4JGFGhhO6jypqWtfRyeC3iERv2y4jRaKwMynBOzWe5Lu4hKYl7jbSfDaNL0vv9r2R9iB8W/lBVd8W4bRwp4fj1gTkORstJ5n0x7XujLAD1Ko+HvJo/E55ahDB9UjHPejmYu1FoR4zTKtWMf0EanxmLqALcGL/0WD2cZ3L3HnlVvD5biubHAJNrJU9ME/aAptTWdFiiWuu9wbG5gkFKAKY5EHOj7rgF3Nsll9F31DqU91fZqP5HWY1bsLWDHJANL0RxhVe0G57798dDpp2W3T6Ij1FuF/uYmpp06XxVAT84O/ocqQDGiEBHap/TVNkujjdvMsk4c7/5wE4Os1I1d14NREquIL3p2nXzPz6IJqEPUK2kBD7zlNe36lJvMSDm4KJmNji6NBQl4BMAv7awKD8IDuTUUKHZC+wnGbhcY09ZVL9bVhNJ96Mb6vLxrxkDkK2Ij0z0accNhmvY/rIIVq7gqIWEMxHHeKTiz/nVTI2SppdqMm2brJ70xRy3MBTS7fozjH0jtqMhfO8bz0y4zkkur18FgtNKxDI2bLNgLx5Cd+DDtDtQKmO3OjXKc23iIwZSkYp8ydwr7nYYYbqz/yJ/ZwVa4v+fm/8Acieyb48GAAA=
+
+  - path: /https.crt
+    encoding: gz+b64
+    content: |
+      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
+
+  - path: /aws.secret
+    encoding: gz+b64
+    content: |
+      H4sIAN90FFUC/0sNNonUD3Nx980sygj2SHYJdTQPcNd3dw/0DcnOCs+OMM8MqCo2LTDjAgAEmj63KQAAAA==
+
+  - path: /aws.key
+    encoding: gz+b64
+    content: |
+      H4sIAN90FFUC/3P09nT0iozyi3QxjfJx9XUJMHNz5AIAsu6RwBUAAAA=
+
