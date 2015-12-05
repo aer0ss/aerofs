@@ -1,7 +1,6 @@
-import yaml
-from common import CRANE_YML_PATH, TAG_PATH, call_crane, get_tag
+from common import TAG_PATH, call_crane, get_tag
 from api import start
-from crane_yml import modify_yaml
+from crane_yml import modify_yaml, load_crane_yml
 
 
 def load(repo_file, tag_file, target_file):
@@ -29,8 +28,7 @@ def load(repo_file, tag_file, target_file):
 
 def get_images():
     ret = set()
-    with open(CRANE_YML_PATH) as f:
-        containers = yaml.load(f)['containers']
+    containers = load_crane_yml()['containers']
     for key in containers:
         ret.add(containers[key]['image'])
     # Sort to help us monitor the progress of tasks that enumerate images.
@@ -49,4 +47,4 @@ def verify(loader_image):
             has_loader_image = True
 
     if not has_loader_image:
-        raise Exception('{} contains no Loader image {}'.format(CRANE_YML_PATH, loader_image))
+        raise Exception('crane.yml contains no Loader image {}'.format(loader_image))

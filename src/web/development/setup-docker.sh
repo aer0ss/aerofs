@@ -8,11 +8,11 @@ echo "Patching various build files..."
 set -x
 
 patch -p1 << EOF
-diff --git a/docker/ship-aerofs/loader/root/crane.yml b/docker/ship-aerofs/loader/root/crane.yml
+diff --git a/docker/ship-aerofs/loader/root/crane.yml.jinja b/docker/ship-aerofs/loader/root/crane.yml.jinja
 index e39e7d0..bb645d2 100644
---- a/docker/ship-aerofs/loader/root/crane.yml
-+++ b/docker/ship-aerofs/loader/root/crane.yml
-@@ -148,6 +148,8 @@ containers:
+--- a/docker/ship-aerofs/loader/root/crane.yml.jinja
++++ b/docker/ship-aerofs/loader/root/crane.yml.jinja
+@@ -149,6 +149,8 @@ containers:
      image: aerofs/web
      run:
        detach: true
@@ -42,7 +42,7 @@ index 4fb5913..9921f9b 100644
 --- a/src/web/root/opt/web/production.ini.template
 +++ b/src/web/root/opt/web/production.ini.template
 @@ -13,7 +13,7 @@ deployment.sp_server_uri = http://sp.service:8080
- sp.version = 21
+ sp.version = 22
  
  # Pyramid settings
 -pyramid.reload_templates = false
@@ -61,7 +61,7 @@ echo "SUCCESS!"
 echo
 echo "To clean up patched build files, run the following commands:"
 echo
-echo "    git checkout docker/ship-aerofs/loader/root/crane.yml"
+echo "    git checkout docker/ship-aerofs/loader/root/crane.yml.jinja"
 echo "    git checkout src/web/root/run.sh"
 echo "    git checkout src/web/root/opt/web/production.ini.template"
 echo

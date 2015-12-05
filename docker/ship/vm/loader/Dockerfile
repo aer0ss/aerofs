@@ -18,7 +18,7 @@ RUN \
 RUN \
     apt-get update &&\
     apt-get install -y wget curl &&\
-    wget https://github.com/michaelsauter/crane/releases/download/v1.1.1/crane_linux_amd64 -O /usr/local/bin/crane &&\
+    wget https://github.com/michaelsauter/crane/releases/download/v1.5.1/crane_linux_amd64 -O /usr/local/bin/crane &&\
     chmod 0755 /usr/local/bin/crane &&\
     apt-get purge --auto-remove -y wget &&\
     rm -rf /var/lib/apt/lists/*
@@ -28,7 +28,7 @@ RUN \
 RUN apt-get update && apt-get install -y python &&\
     curl -SL 'https://bootstrap.pypa.io/get-pip.py' -o /tmp/get-pip.py &&\
     python /tmp/get-pip.py && rm -f /tmp/get-pip.py &&\
-    pip install Flask pyyaml requests &&\
+    pip install Flask pyyaml requests jinja2 &&\
     # Clean up
     find /usr/local \
             \( -type d -a -name test -o -name tests \) \

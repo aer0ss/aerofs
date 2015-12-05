@@ -1,6 +1,51 @@
 from re import compile
 import yaml
-from common import MODIFIED_YML_PATH, CRANE_YML_PATH, my_image_name, my_container_name
+import jinja2
+import requests
+import os.path
+from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix
+
+CRANE_JINJA_PATH = '/crane.yml.jinja'
+CRANE_YML_PATH = '/crane.yml'
+
+
+def load_crane_yml():
+    """
+    Returns the content of crane.yml as a dictionnary
+    We look first for 'crane.yml.jinja', and if it doesn't exist, we look for crane.yml.
+    """
+    if os.path.exists(CRANE_JINJA_PATH):
+        crane_yml = render_crane_yml(CRANE_JINJA_PATH, my_subdomain())
+        return yaml.load(crane_yml)
+    else:
+        with open(CRANE_YML_PATH) as f:
+            return yaml.load(f)
+
+
+def render_crane_yml(template, subdomain=None):
+    """
+    :param template: path to the crane.yml.jinja file
+    :param subdomain: the subdomain for HPC, or `None` for Private Cloud
+    :return: the content of crane.yml after template evaluation
+    Note: this function is also called by ~/repos/aerofs/docker/dev/gen-crane-yml.py
+    """
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(template)))
+    tmpl = env.get_template(os.path.basename(template))
+    return tmpl.render(hpc=subdomain is not None,
+                       get_port=lambda name, val: get_port_number(subdomain, name, val))
+
+
+def get_port_number(subdomain, port_name, default_value):
+    """
+    On HPC (ie: subdomain not None), query the port allocator service to get a port number for a given service
+    On PC (ie: subdomain is None), just return the default value
+    """
+    if subdomain:
+        r = requests.get('http://hpc-port-allocator.service/ports/{}/{}'.format(subdomain, port_name))
+        r.raise_for_status()
+        return int(r.text)
+    else:
+        return default_value
 
 
 def modify_yaml(repo, tag, my_container=None, remove_loader_container=True):
@@ -8,16 +53,14 @@ def modify_yaml(repo, tag, my_container=None, remove_loader_container=True):
         my_container = my_container_name()
     my_image = my_image_name()
 
-    with open(CRANE_YML_PATH) as f:
-        y = yaml.load(f)
-
+    y = load_crane_yml()
     containers = y['containers']
 
     loader_container = get_loader_container(containers, my_image)
     if remove_loader_container:
         del containers[loader_container]
 
-    tagged_loader_container = add_tag_to_container(loader_container, tag)
+    tagged_loader_container = rename_container(loader_container, tag)
     add_repo_and_tag_to_images(containers, repo, tag)
     modify_links(containers, tagged_loader_container, my_container, tag)
     modify_volumes_from(containers, tagged_loader_container, my_container, tag)
@@ -34,24 +77,24 @@ def get_loader_container(containers, my_image):
     for key, c in containers.iteritems():
         if c['image'] == my_image:
             if loader_container:
-                raise Exception('{} has multiple containers that refer to {}'.format(CRANE_YML_PATH, my_image))
+                raise Exception('crane.yml file has multiple containers that refer to {}'.format(my_image))
             loader_container = key
 
     if not loader_container:
-        raise Exception('{} contains no Loader image {}'.format(CRANE_YML_PATH, my_image))
+        raise Exception('crane.yml contains no Loader image {}'.format(my_image))
 
     return loader_container
 
 
 def add_repo_and_tag_to_images(containers, repo, tag):
-    prefix = image_prefix(repo)
-    suffix = image_suffix(tag)
+    img_prefix = image_prefix(repo)
+    img_suffix = image_suffix(tag)
     for key in containers.keys():
         c = containers.pop(key)
-        c['image'] = '{}{}{}'.format(prefix, c['image'], suffix)
+        c['image'] = '{}{}{}'.format(img_prefix, c['image'], img_suffix)
         c['original-name'] = key
         # Add the container back with the new container name
-        containers[add_tag_to_container(key, tag)] = c
+        containers[rename_container(key, tag)] = c
 
 
 def image_prefix(repo):
@@ -70,13 +113,13 @@ def modify_links(containers, tagged_loader_container, my_container, tag):
     """
     Add tag to all container links and replace links to the Loader container with my container name
     """
-    tag_pattern = compile(':')
-    tag_replace = '{}:'.format(container_suffix(tag))
+    pattern = compile('^([a-zA-Z0-9_-]+):')  # match any valid Docker container name followed by ':'
+    replace = '{}\\1{}:'.format(my_container_prefix(), container_suffix(tag))
     loader_pattern = compile('^{}:'.format(tagged_loader_container))
 
     for c in containers.itervalues():
         if 'run' in c and 'link' in c['run']:
-            links = [tag_pattern.sub(tag_replace, link) for link in c['run']['link']]
+            links = [pattern.sub(replace, link) for link in c['run']['link']]
             c['run']['link'] = [loader_pattern.sub('{}:'.format(my_container), link) for link in links]
 
 
@@ -89,7 +132,7 @@ def modify_volumes_from(containers, tagged_loader_container, my_container, tag):
 
     for c in containers.itervalues():
         if 'run' in c and 'volumes-from' in c['run']:
-            volumes = [add_tag_to_container(link, tag) for link in c['run']['volumes-from']]
+            volumes = [rename_container(link, tag) for link in c['run']['volumes-from']]
             c['run']['volumes-from'] = [loader_pattern.sub(my_container, link) for link in volumes]
 
 
@@ -101,14 +144,14 @@ def modify_groups(groups, tagged_loader_container, my_container, tag):
     loader_pattern = compile('^{}$'.format(tagged_loader_container))
 
     for k in groups:
-        groups[k] = [add_tag_to_container(c, tag) for c in groups[k]]
+        groups[k] = [rename_container(c, tag) for c in groups[k]]
         groups[k] = [loader_pattern.sub(my_container, c) for c in groups[k]]
 
 
-def add_tag_to_container(c, tag):
+def rename_container(c, tag):
     """
     See also: patterns defined in modify_links()
     """
-    return '{}{}'.format(c, container_suffix(tag))
+    return '{}{}{}'.format(my_container_prefix(), c, container_suffix(tag))
 
 

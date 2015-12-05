@@ -8,13 +8,13 @@ echo "Patching various build files..."
 set -x
 
 patch -p1 << EOF
-diff --git a/docker/ship-aerofs/loader/root/crane.yml b/docker/ship-aerofs/loader/root/crane.yml
+diff --git a/docker/ship-aerofs/loader/root/crane.yml.jinja b/docker/ship-aerofs/loader/root/crane.yml.jinja
 index 89689f4..1b8a6f5 100644
---- a/docker/ship-aerofs/loader/root/crane.yml
-+++ b/docker/ship-aerofs/loader/root/crane.yml
-@@ -86,6 +86,8 @@ containers:
-       publish:
-         - "8484:8484"
+--- a/docker/ship-aerofs/loader/root/crane.yml.jinja
++++ b/docker/ship-aerofs/loader/root/crane.yml.jinja
+@@ -89,6 +89,8 @@ containers:
+     run:
+       detach: true
        volume:
 +        - $(pwd)/src/web/web:/opt/web/web
 +        - $(pwd)/src/bunker/web:/opt/bunker/web
@@ -32,5 +32,5 @@ echo "SUCCESS!"
 echo
 echo "To clean up patched build files, run the following commands:"
 echo
-echo "    git checkout docker/ship-aerofs/loader/root/crane.yml"
+echo "    git checkout docker/ship-aerofs/loader/root/crane.yml.jinja"
 echo

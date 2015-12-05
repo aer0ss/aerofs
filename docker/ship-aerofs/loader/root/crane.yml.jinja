@@ -26,6 +26,7 @@ containers:
     run:
       detach: true
 
+{% if not hpc %}
   ntp:
     image: aerofs/ntp
     run:
@@ -40,13 +41,14 @@ containers:
         - data
       link:
         - config:config.service
+{% endif %}
 
   lipwig:
     image: aerofs/lipwig
     run:
       detach: true
       publish:
-        - "29438:8787"
+        - "{{ get_port('lipwig', 29438) }}:8787"
       # For /data/deployment-secret
       volumes-from:
         - data
@@ -75,11 +77,13 @@ containers:
     run:
       detach: true
       publish:
+      {% if not hpc %}
         - "80:80"
         - "443:443"
-        - "4433:4433"
         - "5222:5222"
         - "8484:8484"
+      {% endif %}
+        - "{{ get_port('nginx', 4433) }}:4433"
       volumes-from:
         - data
       link:
@@ -119,7 +123,9 @@ containers:
         - repackaging:repackaging.service
         - sparta:sparta.service
         - status:status.service
+      {% if not hpc %}
         - ntp:ntp.service
+      {% endif %}
 # so that bunker can write to the autocomplete user table
 # remove this when ldap syncing is implemented
         - mysql:mysql.service
@@ -174,6 +180,7 @@ containers:
         - charlie:charlie.service
         - auditor:auditor.service
 
+{% if not hpc %}
   zephyr:
     image: aerofs/zephyr
     run:
@@ -182,13 +189,14 @@ containers:
       detach: true
       publish:
         - "8888:8888"
+{% endif %}
 
   havre:
     image: aerofs/havre
     run:
       publish:
         # The API tunnel that AeroFS daemons connect to.
-        - "8084:8084"
+        - "{{ get_port('havre', 8084) }}:8084"
       detach: true
       volumes-from:
         # For deployment secret
@@ -355,7 +363,9 @@ containers:
         - sparta:sparta.service
         - verification:verification.service
         - web:web.service
+      {% if not hpc %}
         - zephyr:zephyr.service
+      {% endif %}
 
   logrotator:
     image: aerofs/logrotator
@@ -369,10 +379,12 @@ containers:
     image: aerofs/maintenance-nginx
     run:
       detach: true
+      {% if not hpc %}
       publish:
         - "80:80"
         - "443:443"
         - "8484:8484"
+      {% endif %}
       link:
         - ca-server:ca.service
         - config:config.service
@@ -395,7 +407,9 @@ containers:
         - config:config.service
         - loader:loader.service
         - verification:verification.service
+      {% if not hpc %}
         - ntp:ntp.service
+      {% endif %}
         # For db backup
         - mysql:mysql.service
 

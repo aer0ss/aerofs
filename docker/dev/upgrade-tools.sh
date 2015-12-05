@@ -56,7 +56,7 @@ if [ $(uname -s) = "Linux" ] ; then
         fi
     fi
     if [ -z "$(which crane)" ] ; then
-        bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/v1.1.1/download.sh)" && sudo mv crane /usr/local/bin/crane
+        bash -c "$(curl -sL https://raw.githubusercontent.com/michaelsauter/crane/v1.5.1/download.sh)" && sudo mv crane /usr/local/bin/crane
     fi
     if [ -z "$(which docker-machine)" ] ; then
         curl -L https://github.com/docker/machine/releases/download/v0.5.0/docker-machine_linux-amd64.zip \
@@ -71,6 +71,9 @@ wget http://mirrors.kernel.org/ubuntu/pool/main/m/make-dfsg/make_3.81-8.2ubuntu3
 sudo dpkg -i make_3.81.deb && rm make_3.81.deb"
         exit 22
     fi
+
+    # We need python + jinja2 to process crane.yml.jinja
+    pip install jinja2
 fi
 
 yellow_print "Docker tools updated.  Run 'dk-create-vm' now if you haven't created a docker-machine VM, or just 'dk-env' to use the rest of the dk-* toolchain."

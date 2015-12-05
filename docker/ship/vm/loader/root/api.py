@@ -3,7 +3,7 @@ from uuid import uuid4
 from os.path import exists
 from os import devnull
 from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
-    MODIFIED_YML_PATH
+    MODIFIED_YML_PATH, my_container_prefix
 import yaml, requests, subprocess
 from traceback import print_exc
 
@@ -198,6 +198,12 @@ def switch(repo, tag, target):
 
     if new:
         # Create containers
+        ####
+        # FIXME: This step runs a loader without a specific name. As a result, this loader will have an auto-
+        # generated name which means that it will incorrectly assume that it's running Private Cloud even in HPC.
+        # What this means is that in-place upgrades most likely won't work in HPC.
+        # Also, we really should be using docker-py instead of shelling out to docker-py.
+        #####
         cmd = ['docker', 'run', '--rm', '-v', '/var/run/docker.sock:/var/run/docker.sock', new_loader_image,
                'create-containers', repo, tag, new_loader]
         cmd.extend(new.keys())
@@ -242,7 +248,8 @@ def volume_set_of(image):
 
 def create_loader_container(loader_image, tag):
     # N.B. this name must be consistent with the definition in cloud-config.yml.jinja
-    container = "loader-{}".format(tag)
+    # We use a prefix in hosted private cloud so that multiple instances of the containers can run on the same box
+    container = "{}loader-{}".format(my_container_prefix(), tag)
 
     if not has_container(container):
         # Retrieve runtime parameters from the current loader and reuse them for the new loader.

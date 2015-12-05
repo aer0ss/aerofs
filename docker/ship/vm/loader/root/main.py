@@ -4,8 +4,8 @@ from sys import argv, stderr
 from os import walk
 from os.path import isfile
 import subprocess
-from common import TAG_PATH, CRANE_YML_PATH, MODIFIED_YML_PATH, call_crane
-from crane_yml import modify_yaml
+from common import TAG_PATH, MODIFIED_YML_PATH, call_crane
+from crane_yml import modify_yaml, load_crane_yml
 import loader
 import yaml
 
@@ -35,9 +35,7 @@ def main():
             print i
 
     elif argv[1] == 'containers':
-        with open(CRANE_YML_PATH) as f:
-            y = yaml.load(f)
-
+        y = load_crane_yml()
         for key in y['containers']:
             print key
 

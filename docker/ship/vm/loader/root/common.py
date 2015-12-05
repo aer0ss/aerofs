@@ -1,9 +1,8 @@
 import subprocess
 from socket import gethostname
-from re import sub
+from re import sub, match
 
 MODIFIED_YML_PATH = '/modified.yml'
-CRANE_YML_PATH = '/crane.yml'
 TAG_PATH = '/tag'
 
 
@@ -18,13 +17,6 @@ def call_crane(cmd, target):
     args.extend(['-d', 'all', '-c', MODIFIED_YML_PATH])
 
     subprocess.check_call(print_args(args))
-
-
-def add_tag_to_container(c, tag):
-    """
-    See also: patterns defined in modify_links()
-    """
-    return '{}-{}'.format(c, tag)
 
 
 def my_container_id():
@@ -53,13 +45,44 @@ def my_image_name():
     return image
 
 
+_container_name = None
+
+
 def my_container_name():
-    return subprocess.check_output(['docker', 'inspect', '-f', '{{ .Name }}', my_container_id()]).strip()
+    """
+    :returns the container name. Cache the result on first use so that subsequent calls don't shell out to docker again.
+    """
+    global _container_name
+    if not _container_name:
+        _container_name = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Name }}',
+                                                   my_container_id()]).strip('/ \n\t\r')
+
+    return _container_name
+
+
+def my_container_prefix():
+    # Note we use the following format for the prefix: <subdomain>-hpc-loader
+    # The inclusion of the -hpc- part is to prevent the loader from accidentally thinking it's running on HPC if someone
+    # uses the loader for another project and names it, e.g. "myproject-loader"
+    m = match("^(.*-hpc-)loader", my_container_name())
+    return m.groups()[0] if m else ''
+
+
+def my_subdomain():
+    """
+    :returns the subdomain if we're running on HPC or None in Private Cloud.
+    The subdomain is defined as a prefix on the loader container name.
+    Note that this will fail to return the correct result on HPC if we're running as an anonymous container.
+    """
+    prefix = my_container_prefix()
+    # remove the trailing '-hpc-' from the prefix
+    return prefix[:-5] if len(prefix) > 5 else None
 
 
 def get_tag():
     with open(TAG_PATH) as f:
         return f.read().strip()
+
 
 def print_args(args):
     print '>>>', args
