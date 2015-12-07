@@ -138,7 +138,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
 
             @Override
             public void onFailure(Throwable t) {
-                l.info("request failed {}", r, t);
+                l.info("request failed {}", r, BaseLogUtil.suppress(t, ClosedChannelException.class));
             }
         }, sameThreadExecutor());
     }

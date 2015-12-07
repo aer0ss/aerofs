@@ -53,7 +53,7 @@ public class LocalBackend implements IBlockStorageBackend
     public InputStream getBlock(ContentBlockHash key) throws IOException
     {
         InjectableFile block = getBlockFile(key);
-        if (!block.exists()) throw new FileNotFoundException();
+        if (!block.exists()) throw new FileNotFoundException(key.toHex());
         return block.newInputStream();
     }
 
