@@ -133,7 +133,7 @@ public final class TestTransformsResource {
         SID rootStore = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, rootStore, "folder");
 
-        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, rootStore, folder).jobID, 5);
 
         // note that the object type in the previous transform has also changed
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
@@ -166,7 +166,7 @@ public final class TestTransformsResource {
         PolarisHelpers.newFileContent(verified, deletedFile, 0, hash, 100, 1024);
         PolarisHelpers.removeFileOrFolder(verified, folder, deletedFile);
 
-        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, folder).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(verified, PolarisHelpers.shareFolder(verified, rootStore, folder).jobID, 5);
 
         Transforms applied = PolarisHelpers.getTransforms(verified, rootStore, -1, 10);
         assertThat(applied.transforms, hasSize(8));

@@ -194,11 +194,13 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         //
         if (!alreadyShared && _polaris.get()) {
             try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "share")) {
+                OID oid = SID.convertedStoreSID2folderOID(sid);
+                UniqueID parent = oa.parent().isRoot() ? ev._path.sid() : oa.parent();
+
                 LocalChange c = new LocalChange();
                 c.type = Type.SHARE;
+                c.child = oid.toStringFormal();
                 SettableFuture<UniqueID> f = SettableFuture.create();
-
-                OID oid = SID.convertedStoreSID2folderOID(sid);
 
                 Future<RemoteLink> w = _rldb.wait_(oa.soid().sidx(), oid);
 
@@ -213,7 +215,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
                         throw new ExTimeout();
                     }
 
-                    _client.post("/objects/" + oid.toStringFormal(), c,
+                    _client.post("/objects/" + parent.toStringFormal(), c,
                             new AsyncTaskCallback() {
                                 @Override
                                 public void onSuccess_(boolean hasMore) {}

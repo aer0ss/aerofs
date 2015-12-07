@@ -275,7 +275,7 @@ public final class TestJsonConversion {
 
     @Test
     public void shouldSerializeAndDeserializeMigrate() throws IOException {
-        Share share = new Share();
+        Share share = new Share(OID.generate());
 
         String serialized = mapper.writeValueAsString(share);
         LOGGER.info("migrate:{}", serialized);

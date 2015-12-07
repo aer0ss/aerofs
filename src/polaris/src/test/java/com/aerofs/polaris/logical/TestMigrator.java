@@ -130,7 +130,7 @@ public class TestMigrator
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        UniqueID job1 = shareFolder(sharedFolder, USERID, DEVICE, objects);
+        UniqueID job1 = shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects);
         doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
         UniqueID job2 = moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes(), USERID, DEVICE, objects).jobID;
 
@@ -173,7 +173,7 @@ public class TestMigrator
             unnestedFile = newFile(sharedFolder, String.format("file-%d", i), USERID, DEVICE, objects);
         }
 
-        waitForJobCompletion(migrator, shareFolder(sharedFolder, USERID, DEVICE, objects), 100);
+        waitForJobCompletion(migrator, shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects), 100);
 
         // at least 550 * 2 notifications. 1 for the creation, and the 1 operations for cross-store move
         verify(notifier).notifyStoreUpdated(eq(newStore), gt(1100L));
@@ -199,7 +199,7 @@ public class TestMigrator
         SID rootStore = SID.rootSID(USERID);
         OID sharedFolder = newFolder(rootStore, "shared_folder", USERID, DEVICE, objects);
         OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
-        shareFolder(sharedFolder, USERID, DEVICE, objects);
+        shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects);
 
         verify(this.migrator, timeout(1000).atLeast(1)).updateStoreForBatch(any(DAO.class), eq(DEVICE), eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(), any());
 
@@ -351,7 +351,7 @@ public class TestMigrator
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
-        UniqueID job = shareFolder(sharedFolder, USERID, DEVICE, objects);
+        UniqueID job = shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects);
 
         // fake some work being done before crash
         dbi.inTransaction(((conn, status) -> {
@@ -440,9 +440,9 @@ public class TestMigrator
         OID folder = newFolder(sharedFolder, "folder", USERID, DEVICE, objects);
         // ensure the second shareFolder call is performed before the migrator can do any work
         doReturn(UniqueID.generate()).doCallRealMethod().when(this.migrator).migrateStore(any(DAO.class), eq(SID.folderOID2convertedStoreSID(sharedFolder)), eq(DEVICE));
-        shareFolder(sharedFolder, USERID, DEVICE, objects);
+        shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects);
         try {
-            shareFolder(folder, USERID, DEVICE, objects);
+            shareFolder(sharedFolder, folder, USERID, DEVICE, objects);
             fail();
         } catch (CallbackFailedException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);

@@ -9,7 +9,9 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
+import com.aerofs.polaris.api.operation.OperationResult;
 import com.aerofs.polaris.api.operation.Restore;
+import com.aerofs.polaris.api.operation.Share;
 import com.aerofs.polaris.api.types.ObjectType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +36,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.argThat;
@@ -351,7 +354,7 @@ public final class TestObjectResource {
 
         reset(polaris.getNotifier());
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootStore, sharedFolder).jobID, 5);
 
         SID sfSID = SID.folderOID2convertedStoreSID(sharedFolder);
         PolarisHelpers.newFile(AUTHENTICATED, sfSID, "new_file");
@@ -381,18 +384,19 @@ public final class TestObjectResource {
         OID intermediateFolder = PolarisHelpers.newFolder(AUTHENTICATED, nestedMountPoint, "intermediate_folder");
         OID secondMountPoint = PolarisHelpers.newFolder(AUTHENTICATED, intermediateFolder, "shared_folder2");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, firstMountPoint);
-        PolarisHelpers.shareFolder(AUTHENTICATED, secondMountPoint);
+        PolarisHelpers.shareFolder(AUTHENTICATED, mountPointDirectChild, firstMountPoint);
+        PolarisHelpers.shareFolder(AUTHENTICATED, intermediateFolder, secondMountPoint);
 
-        PolarisHelpers.shareObject(AUTHENTICATED, mountPointDirectChild)
+        PolarisHelpers.shareObject(AUTHENTICATED, rootStore, mountPointDirectChild)
                 .assertThat().statusCode(SC_BAD_REQUEST);
 
-        PolarisHelpers.shareObject(AUTHENTICATED, nestedMountPoint)
+        PolarisHelpers.shareObject(AUTHENTICATED, rootStore, nestedMountPoint)
                 .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
     @Test
     public void shouldReturnPreviousTransformsForNoops() throws Exception {
+        SID root = SID.rootSID(USERID);
         SID store = SID.generate();
         OID folder = OID.generate();
         OID file = OID.generate();
@@ -440,19 +444,19 @@ public final class TestObjectResource {
         PolarisHelpers.removeObject(AUTHENTICATED, folder, renamedFile)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(8));
 
-        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, SID.rootSID(USERID), "sharedfolder");
-        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), sharedFolder, "sharedfolder", ObjectType.FOLDER)
+        OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, root, "sharedfolder");
+        PolarisHelpers.newObject(AUTHENTICATED, root, sharedFolder, "sharedfolder", ObjectType.FOLDER)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(9));
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
-        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), SID.folderOID2convertedAnchorOID(sharedFolder), "sharedfolder", ObjectType.STORE)
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, root, sharedFolder).jobID, 5);
+        PolarisHelpers.newObject(AUTHENTICATED, root, SID.folderOID2convertedAnchorOID(sharedFolder), "sharedfolder", ObjectType.STORE)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(10));
 
         // auto join of shared folders should also be repeatable
         SID store2 = SID.generate();
-        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), store2, "sf2", ObjectType.STORE)
+        PolarisHelpers.newObject(AUTHENTICATED, root, store2, "sf2", ObjectType.STORE)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(11));
-        PolarisHelpers.newObject(AUTHENTICATED, SID.rootSID(USERID), store2, "sf2", ObjectType.STORE)
+        PolarisHelpers.newObject(AUTHENTICATED, root, store2, "sf2", ObjectType.STORE)
                 .assertThat().body("updated[0].transform_timestamp", equalTo(11));
     }
 
@@ -463,7 +467,7 @@ public final class TestObjectResource {
         OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder1");
         OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, folder, "shared_folder1");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder);
+        PolarisHelpers.shareFolder(AUTHENTICATED, folder, sharedFolder);
 
         PolarisHelpers.newObject(AUTHENTICATED, rootStore, SID.folderOID2convertedStoreSID(sharedFolder), "shared_folder1", ObjectType.STORE)
                 .assertThat().statusCode(SC_CONFLICT);
@@ -481,7 +485,7 @@ public final class TestObjectResource {
         OID sharedFolder = PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared_folder1");
         OID sharedFile = PolarisHelpers.newFile(AUTHENTICATED, sharedFolder, "shared_file");
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sharedFolder).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootStore, sharedFolder).jobID, 5);
 
         PolarisHelpers.newObject(AUTHENTICATED, sharedFolder, OID.generate(), "under_mountpoint", ObjectType.FILE)
                 .assertThat().statusCode(SC_CONFLICT);
@@ -569,7 +573,7 @@ public final class TestObjectResource {
         OID sf = PolarisHelpers.newFolder(AUTHENTICATED, folder, "shared_folder");
         OID anchor = SID.folderOID2convertedAnchorOID(sf);
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sf).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder, sf).jobID, 5);
 
         PolarisHelpers.moveFileOrFolder(AUTHENTICATED, folder, rootStore, anchor, "new_name");
         PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, folder, anchor, "old_name");
@@ -596,7 +600,7 @@ public final class TestObjectResource {
         OID sf = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "shared_folder");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, sf, "folder2");
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, sf).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, sf).jobID, 5);
 
         PolarisHelpers.moveObject(AUTHENTICATED, rootStore, folder2, folder1, "folder1")
                 .assertThat().statusCode(SC_BAD_REQUEST);
@@ -632,7 +636,7 @@ public final class TestObjectResource {
         PolarisHelpers.newContent(AUTHENTICATED, deletedFile, 0, PolarisUtilities.hexDecode("95A8CD21628626307EEDD4439F0E40E3E5293AFD16305D8A4E82D9F851AE7AAF"), 1024, 100)
                 .assertThat().statusCode(SC_BAD_REQUEST);
 
-        PolarisHelpers.shareObject(AUTHENTICATED, deletedFolder)
+        PolarisHelpers.shareObject(AUTHENTICATED, store, deletedFolder)
                 .assertThat().statusCode(SC_BAD_REQUEST);
     }
 
@@ -864,6 +868,25 @@ public final class TestObjectResource {
         // even if it's supposedly a new version
         PolarisHelpers.newFileContent(AUTHENTICATED, file, 1, hash, 1024, 200);
         verify(polaris.getNotifier(), never()).notifyStoreUpdated(eq(store), eq(3L));
+    }
+
+    @Test
+    public void oldShareOperationFormatStillAccepted() throws Exception
+    {
+        SID root = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, root, "shared");
+        OperationResult result =
+            given()
+                .spec(AUTHENTICATED)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Share(null))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(folder))
+                .then()
+                .assertThat().statusCode(SC_OK)
+                .extract().response().as(OperationResult.class);
+
+        assertThat(result.jobID, notNullValue());
     }
 
     private void checkTreeState(UniqueID store, String json) throws IOException {

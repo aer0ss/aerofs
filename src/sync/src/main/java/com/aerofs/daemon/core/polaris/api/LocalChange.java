@@ -16,7 +16,7 @@ public class LocalChange
 
     public Type type;
 
-    // insert, move, remove
+    // insert, move, remove, share
     public String child;
 
     // insert

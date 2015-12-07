@@ -85,7 +85,7 @@ public class TestJobsResource {
         SID store = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, store, "folder_1");
 
-        OperationResult result = PolarisHelpers.shareFolder(verified, folder);
+        OperationResult result = PolarisHelpers.shareFolder(verified, store, folder);
 
         assertThat(result.jobID, Matchers.notNullValue());
     }
@@ -94,7 +94,7 @@ public class TestJobsResource {
     public void migrationJobsShouldReportCompletion() throws Exception {
         SID store = SID.rootSID(USERID);
         OID folder = PolarisHelpers.newFolder(verified, store, "folder_1");
-        UniqueID jobID = PolarisHelpers.shareFolder(verified, folder).jobID;
+        UniqueID jobID = PolarisHelpers.shareFolder(verified, store, folder).jobID;
 
         JobStatus status = PolarisHelpers.waitForJobCompletion(verified, jobID, 5);
 

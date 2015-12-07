@@ -237,7 +237,7 @@ public class ConversionResource {
 
         if (folder.equals(SID.convertedStoreSID2folderOID(new SID(store)))) {
             // we make the SHARE operation an exception here, in that it will restore a deleted object if necessary
-            ops.add(new TransformBatchOperation(folder, new Share()));
+            ops.add(new TransformBatchOperation(parent, new Share(folder)));
             conversion.remapAlias(rootStore, folder, store);
         } else {
             // messy folder to shared folder aliasing, delete the mismatch and start the folder from scratch

@@ -51,7 +51,7 @@ public class TestChildrenResource extends AbstractRestTest
         PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         PolarisHelpers.newFile(AUTHENTICATED, rootSID, "file1");
         OID share1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "share1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, share1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, share1).jobID, 5);
         String restObject = rootSID.toStringFormal() + OID.ROOT.toStringFormal();
 
         givenAccess()
@@ -82,7 +82,7 @@ public class TestChildrenResource extends AbstractRestTest
     public void shouldListAnchorAsAnchor() throws Exception
     {
         OID share1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "share1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, share1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, share1).jobID, 5);
         String restObject = rootSID.toStringFormal() + SID.folderOID2convertedAnchorOID(share1).toStringFormal();
 
         givenAccess()
@@ -101,7 +101,7 @@ public class TestChildrenResource extends AbstractRestTest
     public void shouldFollowAnchor() throws Exception
     {
         OID share1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "share1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, share1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, share1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(share1);
         String restObject = rootSID.toStringFormal() + sid1.toStringFormal();
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, sid1, "folder1");

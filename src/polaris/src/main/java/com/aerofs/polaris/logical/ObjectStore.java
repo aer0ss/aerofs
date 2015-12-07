@@ -333,6 +333,17 @@ public final class ObjectStore {
         return l;
     }
 
+    public List<Lock> lockObjects(List<UniqueID> objects)
+    {
+        // consistent lock acquisition order to avoid deadlocks
+        Collections.sort(objects);
+        List<Lock> locks = Lists.newArrayList();
+        for (UniqueID o : objects) {
+            locks.add(lockObject(o));
+        }
+        return locks;
+    }
+
     /**
      * Perform a high-level transformation on a logical object. This transformation can be an:
      * <ul>
@@ -356,11 +367,13 @@ public final class ObjectStore {
         List<UniqueID> affectedObjects = Lists.newArrayList(operation.affectedOIDs());
         affectedObjects.add(oid);
         AccessToken accessToken = checkAccess(user, affectedObjects, Access.READ, Access.WRITE);
-        Lock l = lockObject(oid);
+        List<Lock> locks = lockObjects(affectedObjects);
         try {
             return inTransaction(dao -> performTransform(dao, accessToken, device, oid, operation));
         } finally {
-            l.unlock();
+            for (Lock l : locks) {
+                l.unlock();
+            }
         }
     }
 
@@ -410,9 +423,8 @@ public final class ObjectStore {
                 break;
             }
             case SHARE: {
-                OID folderOID = new OID(oid);
-                changeToStore(dao, folderOID);
-                jobID = migrator.migrateStore(dao, SID.folderOID2convertedStoreSID(folderOID), device);
+                SID store = changeToStore(dao, oid, (Share) operation);
+                jobID = migrator.migrateStore(dao, store, device);
                 break;
             }
             case RESTORE: {
@@ -710,7 +722,19 @@ public final class ObjectStore {
         return new Updated(transformTimestamp, getExistingObject(dao, oid));
     }
 
-    private void changeToStore(DAO dao, OID folderOID) {
+    private SID changeToStore(DAO dao, UniqueID oid, Share op) {
+        UniqueID parent;
+        OID folderOID;
+        if (op.child == null) {
+            // legacy SHARE API
+            parent= dao.children.getParent(oid);
+            folderOID = new OID(oid);
+        } else {
+            parent = dao.children.getParent(op.child);
+            Preconditions.checkArgument(oid.equals(parent), "SHARE operation submitted wrong parent %s of anchor %s", oid, op.child);
+            folderOID = new OID(op.child);
+        }
+
         // check that object exists
         LogicalObject folder = getUnlockedObject(dao, folderOID);
 
@@ -721,15 +745,16 @@ public final class ObjectStore {
         // cannot share a folder that contains shared folders
         Preconditions.checkArgument(!containsSharedFolder(dao, folder.store, folderOID), "cannot share oid %s because it contains a shared folder", folderOID);
 
-        UniqueID parent = dao.children.getParent(folderOID);
         Preconditions.checkState(parent != null, "folder to be migrated %s does not have a parent", folderOID);
         Preconditions.checkArgument(!dao.children.isDeleted(parent, folderOID), "cannot migrate deleted folder %s", folderOID);
         byte[] folderName = dao.children.getChildName(parent, folderOID);
         Preconditions.checkState(folderName != null, "folder to be migrated %s does not have a name", folderOID);
 
         // create the mountpoint entry and lock the migrating folder
+        SID store = SID.folderOID2convertedStoreSID(folderOID);
         convertToAnchor(dao, folderOID, folder.store, parent, folderName);
-        newStore(dao, SID.folderOID2convertedStoreSID(folderOID));
+        newStore(dao, store);
+        return store;
     }
 
     private LockableLogicalObject getParent(DAO dao, UniqueID oid) throws NotFoundException {

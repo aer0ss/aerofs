@@ -179,19 +179,19 @@ public abstract class PolarisHelpers {
                 .then();
     }
 
-    public static ValidatableResponse shareObject(RequestSpecification authenticated, OID object) {
+    public static ValidatableResponse shareObject(RequestSpecification authenticated, UniqueID parent, OID object) {
         return given()
                 .spec(authenticated)
                 .and()
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Share())
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new Share(object))
                 .and()
-                .when().post(PolarisTestServer.getObjectURL(object))
+                .when().post(PolarisTestServer.getObjectURL(parent))
                 .then();
     }
 
-    public static OperationResult shareFolder(RequestSpecification authenticated, OID folder)
+    public static OperationResult shareFolder(RequestSpecification authenticated, UniqueID parent, OID folder)
     {
-        return shareObject(authenticated, folder)
+        return shareObject(authenticated, parent, folder)
                 .assertThat().statusCode(HttpStatus.SC_OK)
                 .and().extract().response().as(OperationResult.class);
     }
@@ -310,11 +310,11 @@ public abstract class PolarisHelpers {
         objects.performTransform(user, device, parent, op);
     }
 
-    public static UniqueID shareFolder(UniqueID folder, UserID userid, DID device,
+    public static UniqueID shareFolder(UniqueID parent, UniqueID folder, UserID userid, DID device,
             ObjectStore objects)
     {
-        Operation op = new Share();
-        return objects.performTransform(userid, device, folder, op).jobID;
+        Operation op = new Share(folder);
+        return objects.performTransform(userid, device, parent, op).jobID;
     }
 
     public static OperationResult moveObject(UniqueID parent, UniqueID newParent, UniqueID child, byte[] childName, UserID user, DID device, ObjectStore objects)

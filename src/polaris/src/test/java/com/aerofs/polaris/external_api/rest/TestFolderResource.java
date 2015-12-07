@@ -85,7 +85,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldGetMetadataForSID() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         RestObject restShared1 = new RestObject(SID.folderOID2convertedStoreSID(folder1), OID.ROOT);
 
         givenAccess()
@@ -103,7 +103,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldGetMetadataForAnchor() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         RestObject restShared1 = new RestObject(SID.folderOID2convertedStoreSID(folder1), OID.ROOT);
         RestObject restAnchor1 = new RestObject(rootSID,
                 SID.folderOID2convertedAnchorOID(folder1));
@@ -171,7 +171,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder2");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder2).jobID, 5);
 
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
         RestObject objectFolder2 = new RestObject(sid2, OID.ROOT);
@@ -241,7 +241,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID file1 = PolarisHelpers.newFile(AUTHENTICATED, folder1, "file1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         SID sid = SID.folderOID2convertedStoreSID(folder1);
         RestObject restShared1 = new RestObject(rootSID, SID.folderOID2convertedAnchorOID(folder1));
         RestObject objectShared1 = new RestObject(sid, OID.ROOT);
@@ -296,7 +296,7 @@ public class TestFolderResource extends AbstractRestTest
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder11");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder11, "folder2");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder11);
+        PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder11);
         SID sid11 = SID.folderOID2convertedStoreSID(folder11);
 
         RestObject restShared11 = new RestObject(rootSID, SID.folderOID2convertedAnchorOID(folder11));
@@ -344,7 +344,7 @@ public class TestFolderResource extends AbstractRestTest
         PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder2");
         PolarisHelpers.newFile(AUTHENTICATED, rootSID, "file1");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
 
         givenAccess()
         .expect()
@@ -362,7 +362,7 @@ public class TestFolderResource extends AbstractRestTest
         PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder3");
         PolarisHelpers.newFile(AUTHENTICATED, folder1, "file1");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder2);
+        PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2);
 
         RestObject objectFolder1 = new RestObject(rootSID, folder1);
 
@@ -420,7 +420,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldCreateUnderAnchor() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         RestObject restShared1 = new RestObject(rootSID, SID.folderOID2convertedAnchorOID(folder1));
 
         givenAccess()
@@ -437,7 +437,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldReturn403WhenViewerTriesToCreate() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
         RestObject objectFolder1 = new RestObject(sid1, OID.ROOT);
 
@@ -458,7 +458,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldReturn403WhenTriesToCreateWithReadOnlyToken() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
         RestObject objectFolder1 = new RestObject(sid1, OID.ROOT);
 
@@ -656,7 +656,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder11");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder2");
 
@@ -715,7 +715,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder11");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
 
         doThrow(new AccessException(USERID, sid1, Access.WRITE))
@@ -749,7 +749,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2).jobID, 5);
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
         RestObject restAnchor1 = new RestObject(rootSID,
                 SID.folderOID2convertedAnchorOID(folder2));
@@ -769,7 +769,7 @@ public class TestFolderResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2).jobID, 5);
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
 
         doThrow(new AccessException(USERID, sid2, Access.MANAGE))
@@ -787,7 +787,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldReturn200WhenGetMetadataForAnchorWithPermWithLinkShareToken() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         RestObject restAnchor1 = new RestObject(rootSID,
                 SID.folderOID2convertedAnchorOID(folder1));
 
@@ -806,7 +806,7 @@ public class TestFolderResource extends AbstractRestTest
     public void shouldReturn200WhenGetMetadataForStoreWithPermWithLinkShareToken() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
 
         doNothing().when(polaris.getAccessManager())
@@ -826,7 +826,7 @@ public class TestFolderResource extends AbstractRestTest
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
         PolarisHelpers.newFolder(AUTHENTICATED, folder2, "folder3");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2).jobID, 5);
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
 
         doNothing().doThrow(new AccessException(USERID, sid2, Access.MANAGE)).when(polaris.getAccessManager())
@@ -848,7 +848,7 @@ public class TestFolderResource extends AbstractRestTest
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
         PolarisHelpers.newFolder(AUTHENTICATED, folder2, "folder3");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2).jobID, 5);
 
         doNothing().when(polaris.getAccessManager())
                 .checkAccess(eq(USERID), anyCollectionOf(UniqueID.class), anyVararg());

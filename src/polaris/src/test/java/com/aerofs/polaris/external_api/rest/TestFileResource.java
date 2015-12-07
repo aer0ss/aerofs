@@ -158,7 +158,7 @@ public class TestFileResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID share1 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "share1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, share1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, folder1, share1);
         SID sid2 = SID.folderOID2convertedStoreSID(share1);
         OID file1 = PolarisHelpers.newFile(AUTHENTICATED, sid2, "file1");
 
@@ -235,7 +235,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldCreateFileUnderAnchor() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1);
+        PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1);
         RestObject restShared1 = new RestObject(rootSID, SID.folderOID2convertedAnchorOID(folder1));
 
         givenAccess()
@@ -311,7 +311,7 @@ public class TestFileResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
         RestObject objectFolder1 = new RestObject(sid1, OID.ROOT);
 
@@ -365,7 +365,7 @@ public class TestFileResource extends AbstractRestTest
         OID file1 = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "file1");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder2");
 
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder2).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder2).jobID, 5);
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
 
         System.out.println("Object to migrate: " + file1.toStringFormal());
@@ -452,7 +452,7 @@ public class TestFileResource extends AbstractRestTest
     public void shouldReturn403WhenViewerTriesToMove() throws Exception {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID file1 = PolarisHelpers.newFile(AUTHENTICATED, folder1, "file1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
 
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder2");
@@ -512,7 +512,7 @@ public class TestFileResource extends AbstractRestTest
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         OID file1 = PolarisHelpers.newFile(AUTHENTICATED, folder1, "file1");
-        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1).jobID, 5);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
         SID sid1 = SID.folderOID2convertedStoreSID(folder1);
 
         doThrow(new AccessException(USERID, sid1, Access.WRITE))
