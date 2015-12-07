@@ -234,8 +234,8 @@ func (g GroupsResource) createGroup(request *restful.Request, response *restful.
 		IsPublic:    *params.IsPublic,
 		Members:     params.Members,
 	})
-	// broadcast event
-	broadcastGroupEvent(g.broadcaster, gid)
+	// send event
+	sendGroupEvent(g.broadcaster, gid, params.Members)
 }
 
 func (g GroupsResource) getById(request *restful.Request, response *restful.Response) {
@@ -291,8 +291,12 @@ func (g GroupsResource) updateGroup(request *restful.Request, response *restful.
 	CommitOrPanic(tx)
 	// write response
 	response.WriteEntity(group)
-	// broadcast event
-	broadcastGroupEvent(g.broadcaster, gid)
+	// send event
+	var targets []string
+	if !group.IsPublic {
+		targets = group.Members
+	}
+	sendGroupEvent(g.broadcaster, gid, targets)
 }
 
 func (g GroupsResource) getMembers(request *restful.Request, response *restful.Response) {
@@ -355,9 +359,13 @@ func (g GroupsResource) addMember(request *restful.Request, response *restful.Re
 	errors.PanicAndRollbackOnErr(err, tx)
 	// end transaction
 	CommitOrPanic(tx)
-	// write response
-	// broadcast event
-	broadcastGroupEvent(g.broadcaster, gid)
+	// send event
+	var targets []string
+	if !group.IsPublic {
+		group.addMember(uid) // ensure newly-added uid is in the list
+		targets = group.Members
+	}
+	sendGroupEvent(g.broadcaster, gid, targets)
 }
 
 func (g GroupsResource) removeMember(request *restful.Request, response *restful.Response) {
@@ -385,8 +393,12 @@ func (g GroupsResource) removeMember(request *restful.Request, response *restful
 	errors.PanicAndRollbackOnErr(err, tx)
 	// end transaction
 	CommitOrPanic(tx)
-	// broadcast event
-	broadcastGroupEvent(g.broadcaster, gid)
+	// send event
+	var targets []string
+	if !group.IsPublic {
+		targets = group.Members
+	}
+	sendGroupEvent(g.broadcaster, gid, targets)
 }
 
 func (g GroupsResource) getMessages(request *restful.Request, response *restful.Response) {
@@ -474,8 +486,8 @@ func (g GroupsResource) newMessage(request *restful.Request, response *restful.R
 	CommitOrPanic(tx)
 	// write response
 	response.WriteEntity(message)
-	// broadcast event
-	broadcastGroupMessageEvent(g.broadcaster, gid)
+	// send event
+	sendGroupMessageEvent(g.broadcaster, gid, group.Members)
 }
 
 func (g GroupsResource) getReceipts(request *restful.Request, response *restful.Response) {
@@ -572,7 +584,7 @@ func (g GroupsResource) updateReceipt(request *restful.Request, response *restfu
 	// write response
 	response.WriteHeader(200)
 	response.WriteEntity(receipt)
-	broadcastGroupMessageReadEvent(g.broadcaster, gid)
+	sendGroupMessageReadEvent(g.broadcaster, gid, group.Members)
 }
 
 //
@@ -603,6 +615,12 @@ func values(m map[string]Group) []Group {
 func (g *Group) addMember(uid string) {
 	if g.Members == nil {
 		g.Members = make([]string, 0)
+	}
+	// ensure idempotency
+	for _, val := range g.Members {
+		if val == uid {
+			return
+		}
 	}
 	g.Members = append(g.Members, uid)
 }

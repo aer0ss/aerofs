@@ -6,75 +6,66 @@ import (
 	"encoding/json"
 )
 
-func broadcastUserEvent(b broadcast.Broadcaster, uid string) {
+//
+// Utility Functions
+//
+
+func _broadcastSimpleEvent(b broadcast.Broadcaster, resource, id string) {
 	bytes, err := json.Marshal(Event{
-		Resource: "USER",
-		Id:       uid,
+		Resource: resource,
+		Id:       id,
 	})
 	errors.PanicOnErr(err)
 	b.Broadcast(bytes)
 }
 
-func broadcastUserMessageEvent(b broadcast.Broadcaster, uid string) {
+func _multicastSimpleEvent(b broadcast.Broadcaster, resource, id string, targets []string) {
 	bytes, err := json.Marshal(Event{
-		Resource: "USER_MESSAGE",
-		//FIXME: this'll change when we change broadcast to auth'd multicast
-		Id: uid,
+		Resource: resource,
+		Id:       id,
 	})
 	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+	b.Multicast(bytes, targets)
 }
 
-func broadcastUserAvatarEvent(b broadcast.Broadcaster, uid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "USER_AVATAR",
-		Id:       uid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+//
+// Multicast/Broadcast functions
+//
+
+func sendUserEvent(b broadcast.Broadcaster, uid string) {
+	_broadcastSimpleEvent(b, "USER", uid)
 }
 
-func broadcastUserMessageReadEvent(b broadcast.Broadcaster, uid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "USER_MESSAGE_READ",
-		Id:       uid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+func sendUserMessageEvent(b broadcast.Broadcaster, from string, to string) {
+	_multicastSimpleEvent(b, "USER_MESSAGE", to, []string{from})
+	_multicastSimpleEvent(b, "USER_MESSAGE", from, []string{to})
 }
 
-func broadcastGroupEvent(b broadcast.Broadcaster, gid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "GROUP",
-		Id:       gid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+func sendUserAvatarEvent(b broadcast.Broadcaster, uid string) {
+	_broadcastSimpleEvent(b, "USER_AVATAR", uid)
 }
 
-func broadcastGroupMessageEvent(b broadcast.Broadcaster, gid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "GROUP_MESSAGE",
-		Id:       gid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+func sendUserMessageReadEvent(b broadcast.Broadcaster, reader string, other string) {
+	_multicastSimpleEvent(b, "USER_MESSAGE_READ", other, []string{reader})
+	_multicastSimpleEvent(b, "USER_MESSAGE_READ", reader, []string{other})
 }
 
-func broadcastGroupMessageReadEvent(b broadcast.Broadcaster, gid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "GROUP_MESSAGE_READ",
-		Id:       gid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+func sendGroupEvent(b broadcast.Broadcaster, gid string, members []string) {
+	if members == nil {
+		_broadcastSimpleEvent(b, "GROUP", gid)
+	} else {
+		_multicastSimpleEvent(b, "GROUP", gid, members)
+	}
 }
 
-func broadcastBotEvent(b broadcast.Broadcaster, bid string) {
-	bytes, err := json.Marshal(Event{
-		Resource: "BOT",
-		Id:       bid,
-	})
-	errors.PanicOnErr(err)
-	b.Broadcast(bytes)
+func sendGroupMessageEvent(b broadcast.Broadcaster, gid string, members []string) {
+	_multicastSimpleEvent(b, "GROUP_MESSAGE", gid, members)
+}
+
+func sendGroupMessageReadEvent(b broadcast.Broadcaster, gid string, members []string) {
+	_multicastSimpleEvent(b, "GROUP_MESSAGE_READ", gid, members)
+}
+
+func sendBotEvent(b broadcast.Broadcaster, bid string) {
+	_broadcastSimpleEvent(b, "BOT", bid)
 }

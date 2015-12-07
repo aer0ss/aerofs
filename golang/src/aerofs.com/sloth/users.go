@@ -265,7 +265,7 @@ func (u UsersResource) updateUser(request *restful.Request, response *restful.Re
 	// write response
 	response.WriteEntity(newUser)
 	// broadcast event
-	broadcastUserEvent(u.broadcaster, id)
+	sendUserEvent(u.broadcaster, id)
 }
 
 func (u UsersResource) getMessages(request *restful.Request, response *restful.Response) {
@@ -334,8 +334,8 @@ func (u UsersResource) newMessage(request *restful.Request, response *restful.Re
 	message.Id, err = res.LastInsertId()
 	errors.PanicOnErr(err)
 	response.WriteEntity(message)
-	// broadcast event
-	broadcastUserMessageEvent(u.broadcaster, caller)
+	// send event
+	sendUserMessageEvent(u.broadcaster, caller, uid)
 }
 
 func (u UsersResource) getAvatar(request *restful.Request, response *restful.Response) {
@@ -357,8 +357,7 @@ func (u UsersResource) updateAvatar(request *restful.Request, response *restful.
 	id := request.PathParameter("uid")
 	// limit avatar size
 	if request.Request.ContentLength > MAX_AVATAR_SIZE {
-		response.WriteErrorString(400, "blah.")
-		// response.WriteErrorString(413, fmt.Sprint("Avatar size cannot exceed ", MAX_AVATAR_SIZE, " bytes"))
+		response.WriteErrorString(413, fmt.Sprint("Avatar size cannot exceed ", MAX_AVATAR_SIZE, " bytes"))
 		return
 	}
 	// read body
@@ -367,8 +366,8 @@ func (u UsersResource) updateAvatar(request *restful.Request, response *restful.
 	// update db
 	_, err = u.db.Exec("UPDATE users SET avatar=? WHERE id=?", bytes, id)
 	errors.PanicOnErr(err)
-	// broadcast event
-	broadcastUserAvatarEvent(u.broadcaster, id)
+	// send event
+	sendUserAvatarEvent(u.broadcaster, id)
 }
 
 func (u UsersResource) getReceipts(request *restful.Request, response *restful.Response) {
@@ -443,7 +442,8 @@ func (u UsersResource) updateReceipt(request *restful.Request, response *restful
 	CommitOrPanic(tx)
 	// write response
 	response.WriteEntity(receipt)
-	broadcastUserMessageReadEvent(u.broadcaster, caller)
+	// send event
+	sendUserMessageReadEvent(u.broadcaster, caller, uid)
 }
 
 func (u UsersResource) getPinned(request *restful.Request, response *restful.Response) {

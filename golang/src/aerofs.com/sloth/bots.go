@@ -112,7 +112,7 @@ func (b BotsResource) newBot(request *restful.Request, response *restful.Respons
 		GroupId: params.GroupId,
 	})
 	// broadcast event
-	broadcastBotEvent(b.broadcaster, id)
+	sendBotEvent(b.broadcaster, id)
 }
 
 func (b BotsResource) newMessage(request *restful.Request, response *restful.Response) {
@@ -135,6 +135,9 @@ func (b BotsResource) newMessage(request *restful.Request, response *restful.Res
 		return
 	}
 	errors.PanicAndRollbackOnErr(err, tx)
+	// get group members
+	group, err := getGroup(tx, gid)
+	errors.PanicAndRollbackOnErr(err, tx)
 	// write msg to db
 	msg := Message{
 		Time: time.Now(),
@@ -156,5 +159,5 @@ func (b BotsResource) newMessage(request *restful.Request, response *restful.Res
 	// write response
 	response.WriteEntity(msg)
 	// broadcast event
-	broadcastGroupMessageEvent(b.broadcaster, gid)
+	sendGroupMessageEvent(b.broadcaster, gid, group.Members)
 }
