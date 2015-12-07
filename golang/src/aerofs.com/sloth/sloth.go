@@ -223,7 +223,7 @@ func main() {
 	log.Print("REST server listening on ", restUrlStr)
 	server := &http.Server{
 		Addr:    portStr,
-		Handler: NewMultiplexingHandler(broadcaster, restful.DefaultContainer),
+		Handler: NewMultiplexingHandler(tokenVerifier, broadcaster, restful.DefaultContainer),
 	}
 	log.Fatal(server.ListenAndServe())
 }

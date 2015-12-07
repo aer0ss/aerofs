@@ -1,21 +1,24 @@
 package main
 
 import (
+	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // implementation struct
 type websocketMultiplexingHandler struct {
+	verifier       auth.TokenVerifier
 	broadcaster    broadcast.Broadcaster
 	wsUpgrader     websocket.Upgrader
 	defaultHandler http.Handler
 }
 
-func NewMultiplexingHandler(broadcaster broadcast.Broadcaster, h http.Handler) http.Handler {
+func NewMultiplexingHandler(verifier auth.TokenVerifier, broadcaster broadcast.Broadcaster, h http.Handler) http.Handler {
 	return &websocketMultiplexingHandler{
 		wsUpgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -24,47 +27,48 @@ func NewMultiplexingHandler(broadcaster broadcast.Broadcaster, h http.Handler) h
 		},
 		defaultHandler: h,
 		broadcaster:    broadcaster,
+		verifier:       verifier,
 	}
 }
 
 func (h *websocketMultiplexingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check to see if websocket upgrade is requested
 	if r.Header.Get("Connection") == "Upgrade" && r.Header.Get("Upgrade") == "websocket" {
-		handleWebsocket(w, r, &h.wsUpgrader, h.broadcaster)
+		handleWebsocket(w, r, &h.wsUpgrader, h.verifier, h.broadcaster)
 	} else {
 		h.defaultHandler.ServeHTTP(w, r)
 	}
 }
 
-// infinitely drop incoming messages
-func handleIncomingMessages(conn *websocket.Conn, c chan interface{}, broadcaster broadcast.Broadcaster) {
-	for {
-		_, _, err := conn.ReadMessage()
-		if isChanClosedErr(err) {
-			broadcaster.Unsubscribe(c)
-			close(c)
-			return
-		} else {
-			errors.PanicOnErr(err)
-		}
+// Listen to one incoming message on `conn` for "AUTH <token>" packets.
+// Get and return the auth'd uid from `verifier`
+func authConnection(conn *websocket.Conn, verifier auth.TokenVerifier) string {
+	mtype, data, err := conn.ReadMessage()
+	errors.PanicOnErr(err)
+	s := string(data)
+	if mtype != websocket.TextMessage || !strings.HasPrefix(s, "AUTH ") {
+		panic("websocket message not AUTH")
 	}
+	token := strings.TrimPrefix(s, "AUTH ")
+	uid, err := verifier.VerifyToken(token)
+	errors.PanicOnErr(err)
+	log.Printf("ws conn %v auth by %v\n", conn.UnderlyingConn(), uid)
+	return uid
 }
 
-func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader, broadcaster broadcast.Broadcaster) {
+func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader, verifier auth.TokenVerifier, broadcaster broadcast.Broadcaster) {
 	// upgrade to websocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
 	errors.PanicOnErr(err)
+	log.Printf("new ws conn %v\n", conn.UnderlyingConn())
 
-	// subscribe to the event stream
-	events := broadcaster.Subscribe()
-
-	// handle incoming messages
-	go handleIncomingMessages(conn, events, broadcaster)
+	// authenticate channel, and subscribe to broadcaster
+	uid := authConnection(conn, verifier)
+	events := broadcaster.Subscribe(uid)
 
 	// pass all events through the websocket connection
-	log.Println("New WS client listening for events...")
 	for {
-		bytes, more := (<-events).([]byte)
+		bytes, more := <-events
 		if !more {
 			return
 		}

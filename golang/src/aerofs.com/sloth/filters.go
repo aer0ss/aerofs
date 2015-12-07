@@ -70,6 +70,7 @@ func UserIsTarget(request *restful.Request, response *restful.Response, chain *r
 		return
 	}
 	if target != owner {
+		log.Printf("403 %v != %v\n", target, owner)
 		response.WriteErrorString(403, "Forbidden")
 		return
 	}
