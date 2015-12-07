@@ -482,7 +482,7 @@ func (u UsersResource) pinConvo(request *restful.Request, response *restful.Resp
 	errors.PanicOnErr(err)
 	// insert row into db
 	_, err = tx.Exec("INSERT INTO pinned (user_id,convo_id) VALUES (?,?)", caller, cid)
-	if errors.UniqueConstraintFailed(err) {
+	if !errors.UniqueConstraintFailed(err) {
 		errors.PanicOnErr(err)
 	}
 	// end transaction

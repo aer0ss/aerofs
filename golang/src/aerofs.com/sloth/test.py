@@ -575,6 +575,10 @@ try:
     r = s.put("{}/users/{}/pinned/{}".format(BASE_URL, "jgray", "dgray"), headers=JGRAY_AUTH)
     assert r.ok, r
 
+    # PUT /users/{uid}/pinned/{uid} again for idempotency
+    r = s.put("{}/users/{}/pinned/{}".format(BASE_URL, "jgray", "dgray"), headers=JGRAY_AUTH)
+    assert r.ok, r
+
     # PUT /users/{uid}/pinned/{gid} non-member
     r = s.put("{}/users/{}/pinned/{}".format(BASE_URL, "ggray", gid), headers=JGRAY_AUTH)
     assert r.status_code == 403, r
