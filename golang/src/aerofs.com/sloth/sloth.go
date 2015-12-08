@@ -141,10 +141,14 @@ type Event struct {
 	// - "GROUP_MESSAGE_READ"
 	// - "LAST_ONLINE"
 	// - "BOT"
+	// - "TYPING"
 	Resource string `json:"resource"`
 
 	// ID of the modified user or group
 	Id string `json:"id"`
+
+	// Optional payload for transmitting additional info
+	Payload string `json:"payload,omitempty"`
 }
 
 //

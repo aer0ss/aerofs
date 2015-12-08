@@ -28,6 +28,16 @@ func _multicastSimpleEvent(b broadcast.Broadcaster, resource, id string, targets
 	b.Multicast(bytes, targets)
 }
 
+func _multicastEventWithPayload(b broadcast.Broadcaster, resource, id, payload string, targets []string) {
+	bytes, err := json.Marshal(Event{
+		Resource: resource,
+		Id:       id,
+		Payload:  payload,
+	})
+	errors.PanicOnErr(err)
+	b.Multicast(bytes, targets)
+}
+
 //
 // Multicast/Broadcast functions
 //
@@ -68,4 +78,12 @@ func sendGroupMessageReadEvent(b broadcast.Broadcaster, gid string, members []st
 
 func sendBotEvent(b broadcast.Broadcaster, bid string) {
 	_broadcastSimpleEvent(b, "BOT", bid)
+}
+
+func sendGroupTypingEvent(b broadcast.Broadcaster, uid string, gid string, members []string) {
+	_multicastEventWithPayload(b, "TYPING", uid, gid, members)
+}
+
+func sendUserTypingEvent(b broadcast.Broadcaster, uid string, cid string) {
+	_multicastEventWithPayload(b, "TYPING", uid, uid, []string{cid})
 }

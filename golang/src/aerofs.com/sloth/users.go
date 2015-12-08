@@ -136,6 +136,20 @@ func BuildUsersRoutes(db *sql.DB, broadcaster broadcast.Broadcaster) *restful.We
 		Returns(403, "Forbidden", nil))
 
 	//
+	// path: /users/{uid}/typing/{cid}
+	//
+
+	ws.Route(ws.POST("/{uid}/typing/{cid}").Filter(UserIsTarget).To(u.postTyping).
+		Doc("Mark the user as \"typing\" in a conversation").
+		Notes("User must be a member of any group in which they are typing").
+		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
+		Param(ws.PathParameter("cid", "User id or group id of conversation").DataType("string")).
+		Returns(200, "Marked as \"typing\"", nil).
+		Returns(401, "Invalid authorization", nil).
+		Returns(403, "Forbidden", nil).
+		Returns(404, "Not Found", nil))
+
+	//
 	// path: /users/{uid}/messages
 	//
 
@@ -495,6 +509,30 @@ func (u UsersResource) unpinConvo(request *restful.Request, response *restful.Re
 	// delete row
 	_, err := u.db.Exec("DELETE FROM pinned WHERE user_id=? AND convo_id=?", caller, cid)
 	errors.PanicOnErr(err)
+}
+
+func (u UsersResource) postTyping(request *restful.Request, response *restful.Response) {
+	cid := request.PathParameter("cid")
+	caller := request.Attribute(AuthorizedUser).(string)
+	tx := BeginOrPanic(u.db)
+	if userExists(tx, cid) {
+		sendUserTypingEvent(u.broadcaster, caller, cid)
+	} else {
+		group, err := getGroup(tx, cid)
+		errors.PanicAndRollbackOnErr(err, tx)
+		if group == nil {
+			response.WriteHeader(404)
+			tx.Rollback()
+			return
+		}
+		if !group.hasMember(caller) {
+			response.WriteErrorString(403, "Forbidden")
+			tx.Rollback()
+			return
+		}
+		sendGroupTypingEvent(u.broadcaster, caller, group.Id, group.Members)
+	}
+	CommitOrPanic(tx)
 }
 
 //
