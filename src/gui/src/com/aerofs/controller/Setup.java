@@ -17,6 +17,7 @@ import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgKey;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -295,6 +296,9 @@ public class Setup
         map.put(CONTACT_EMAIL, contactEmail);
         map.put(LAST_VER, Cfg.ver());
         map.put(DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
+        if (new CfgUsePolaris().get()) {
+            map.put(PHOENIX_CONVERSION, Integer.toString(PostUpdate.PHOENIX_CONVERSION_TASKS));
+        }
         map.put(UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
         map.put(SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         map.put(REST_SERVICE, Boolean.toString(apiAccess));
