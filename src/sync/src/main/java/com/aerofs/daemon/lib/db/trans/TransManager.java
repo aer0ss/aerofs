@@ -12,12 +12,9 @@ import com.google.common.collect.Lists;
 /**
  * Usage:
  *
- *  Trans trans = tm.begin_();
- *  try {
+ *  try (Trans t = tm.begin_()) {
  *      ...
- *      trans.commit_();
- *  } finally {
- *      trans.end_();
+ *      t.commit_();
  *  }
  *
  *  The try block is always required.

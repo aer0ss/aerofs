@@ -224,8 +224,7 @@ public class Aliasing
         l.info("alias msg, alias: {} vAlias: {} target: {} vTarget: {} p: {}", alias,
                 vRemoteAliasMeta, target, vRemoteTargetMeta, oidParent);
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             if (!_ds.hasAliasedOA_(target)) {
                 fetchTarget_(alias, target, vRemoteTargetMeta, oidParent, metaDiff, meta, cxt, t);
             }
@@ -311,8 +310,6 @@ public class Aliasing
         } catch (Exception|Error e) {
             l.warn("rollback triggered ", e);
             throw e;
-        } finally {
-            t.end_();
         }
     }
 

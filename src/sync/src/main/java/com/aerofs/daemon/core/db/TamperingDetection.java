@@ -4,7 +4,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCoreDatabaseParams;
 import com.aerofs.lib.db.DBUtil;
@@ -85,6 +84,7 @@ public class TamperingDetection
 
         if (expected == null || Arrays.equals(expected, actual.getBytes()) || tag.exists()) {
             setFID(actual, expected != null);
+            _dbcw.commit_();
             tag.delete();
         } else {
             ExitCode.CORE_DB_TAMPERING.exit();

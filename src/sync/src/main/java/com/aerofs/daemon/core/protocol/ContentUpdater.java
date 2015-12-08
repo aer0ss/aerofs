@@ -92,8 +92,7 @@ public class ContentUpdater {
                     content.prefixLength, cr._hash, matchingContent, tk);
         }
 
-        Trans t = _tm.begin_();
-        try {
+        try (Trans t = _tm.begin_()) {
             _causality.updateVersion_(targetBranch, content, cr, t);
             if (prefix != null) {
                 ResolvedPath path = _resolver.resolveNullable_(soid);
@@ -106,8 +105,6 @@ public class ContentUpdater {
         } catch (Exception | Error e) {
             l.debug("rollback triggered ", e);
             throw e;
-        } finally {
-            t.end_();
         }
         l.info("{} ok {}", rs.ep(), soid);
     }

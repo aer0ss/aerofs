@@ -35,9 +35,8 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
     protected void handleThrows_(EISetExpelled ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._path);
-        Trans t = _tm.begin_();
         _analytics.track(ev._expelled ? SimpleEvents.EXCLUDE_FOLDER : SimpleEvents.INCLUDE_FOLDER);
-        try {
+        try (Trans t = _tm.begin_()) {
             // explicit expulsion is used to save space so we should not simply move files to rev
             // but completely delete them
             _ps.discardRevForTrans_(t);
@@ -47,8 +46,6 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
         } catch (Exception|Error e) {
             l.warn("rollback triggered ", e);
             throw e;
-        } finally {
-            t.end_();
         }
     }
 }

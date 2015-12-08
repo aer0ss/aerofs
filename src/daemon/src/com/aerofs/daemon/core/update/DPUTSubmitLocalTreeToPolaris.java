@@ -13,9 +13,9 @@ import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
-import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.ISIDDatabase;
+import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
@@ -45,7 +45,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
     private final static Logger l = Loggers.getLogger(DPUTSubmitLocalTreeToPolaris.class);
 
     private final DirectoryService _ds;
-    private final StoreHierarchy _sh;
+    private final StoreDatabase _sdb;
     private final ISIDDatabase _siddb;
     private final CfgLocalUser _localUser;
     private final LocalACL _acl;
@@ -66,7 +66,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
     @Inject
     public DPUTSubmitLocalTreeToPolaris(
             DirectoryService ds,
-            StoreHierarchy sh,
+            StoreDatabase sh,
             ISIDDatabase siddb,
             CfgLocalUser localUser,
             LocalACL acl,
@@ -82,7 +82,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             PolarisClient client)
     {
         _ds = ds;
-        _sh = sh;
+        _sdb = sh;
         _siddb = siddb;
         _localUser = localUser;
         _acl = acl;
@@ -101,7 +101,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
 
     @Override
     public void run() throws Exception {
-        for (SIndex s : _sh.getAll_()) {
+        for (SIndex s : _sdb.getAll_()) {
             // if the change epoch already exists, then this store has already been traversed and we don't have to do it again
             if (_cedb.getChangeEpoch_(s) != null) continue;
             highestTimestamps.put(s, _cedb.getHighestChangeEpoch_(s));
