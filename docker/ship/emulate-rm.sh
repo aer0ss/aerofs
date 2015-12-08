@@ -16,11 +16,11 @@ yml() {
 
 LOADER_IMAGE=$(yml 'loader')
 
-# Container name must be identical to the name defined in emulate.sh 
+# Container name must be identical to the name defined in emulate.sh
 CONTAINER=loader
 
 echo "Getting container list ..."
-for i in $(docker run --rm ${LOADER_IMAGE} containers) ${CONTAINER}; do
+for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} containers) ${CONTAINER}; do
     echo "Removing ${i} ..."
     # Ignore `docker rm` errors
     set +e
