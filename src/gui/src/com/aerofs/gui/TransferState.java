@@ -44,12 +44,6 @@ public class TransferState
             public void onNotificationReceived(final PBNotification pb)
             {
                 if (pb.getType() == Type.TRANSFER) {
-                    PBTransferEvent t = pb.getTransfer();
-                    SOCID socid = new SOCID(t.getSocid());
-                    DID did = new DID(BaseUtil.fromPB(t.getDeviceId()));
-
-                    l.debug("update transfer: {} {} {} {}/{}",
-                            socid, t.getUpload() ? "to" : "from", did, t.getDone(), t.getTotal());
                     UI.get().asyncExec(() -> updateTransfers(pb));
                 }
             }

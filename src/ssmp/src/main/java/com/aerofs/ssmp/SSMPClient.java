@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -86,7 +87,7 @@ public class SSMPClient {
                     }
                 }, MoreExecutors.sameThreadExecutor());
             } else {
-                L.info("failed to connect", f.getCause());
+                L.info("failed to connect {}", f.getCause().toString());
             }
         });
         cf.getChannel().getCloseFuture().addListener(f -> {
@@ -137,7 +138,7 @@ public class SSMPClient {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-            if (!(e instanceof ClosedChannelException)) {
+            if (!(e instanceof ClosedChannelException || e instanceof UnresolvedAddressException)) {
                 L.warn("uncaught exception {}", e.getCause());
             }
             ctx.getChannel().close();
