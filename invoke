@@ -593,29 +593,23 @@ def build_sa(args):
     print colored("Client built.", Colors.GREEN)
 
 
-def compute_next_version(args, loader="loader"):
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', loader ]
+def compute_next_version(args):
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version' ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 
-def _write_version(version):
+def write_version(args):
+    version = args.release_version or compute_next_version(args)
     if not os.path.exists(PACKAGE_DIR):
         os.makedirs(PACKAGE_DIR)
     with open(os.path.join(PACKAGE_DIR, "current.ver"), "w") as f:
         f.write("Version={}".format(version))
         f.flush()
 
-def write_version(args):
-    version = args.release_version or compute_next_version(args)
-    _write_version(version)
-
-def write_sa_version(args):
-    version = args.release_version or compute_next_version(args, "sa-loader")
-    _write_version(version)
-
-def _package(args, products, should_clean=True, loader="loader"):
+def _package(args, products, should_clean=True):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
-    version = args.release_version or compute_next_version(args, loader)
+    # TODO(AS): Version computation based on loader/SA-loader
+    version = args.release_version or compute_next_version(args)
     # clean packaging dir
     if os.path.exists(PACKAGE_DIR) and should_clean:
         for package in os.listdir(PACKAGE_DIR):
@@ -641,7 +635,7 @@ def package_sa(args):
     products = [ args.product ] if args.product else [ "STORAGE_AGENT" ]
     assert "STORAGE_AGENT" in products and len(products) == 1, "Looks like you are trying to package desktop-client/TS. Please use package_clients."
     should_clean = "package_clients" not in args.commands or (args.commands.index("package_clients") > args.commands.index("package_sa"))
-    _package(args, products, should_clean, "sa-loader")
+    _package(args, products, should_clean)
 
 def _syncdet(args, case=None, scenario=None, extra_args=None):
     # extract args
@@ -729,7 +723,6 @@ commands = {
     "test_system": test_system,
     "test_system_archive": test_system_archive,
     "write_version": write_version,
-    "write_sa_version": write_sa_version,
 }
 
 def reconstitute_command_line(executable, args, incomplete_commands):
