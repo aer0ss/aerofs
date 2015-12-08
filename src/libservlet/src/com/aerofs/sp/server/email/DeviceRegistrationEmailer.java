@@ -40,6 +40,7 @@ public class DeviceRegistrationEmailer
             throws IOException, MessagingException
     {
         String subject = product + " Installed on Your Device " + Util.quote(deviceName);
+        String header = product + " Installed on Your Device \n" + Util.quote(deviceName);
         String body = "\n" +
                 "Hi " + firstName + ",\n" +
                 "\n" +
@@ -55,7 +56,7 @@ public class DeviceRegistrationEmailer
                 "You can manage " + manageDeviceStringAndURL + " .";
 
         Email email = new Email();
-        email.addSection(subject, body);
+        email.addSection(header, body);
         email.addDefaultSignature();
 
         _emailSender.sendPublicEmailFromSupport(SPParam.EMAIL_FROM_NAME, emailAddress, null,

@@ -18,21 +18,21 @@ public class HTMLEmail implements IEmail {
         "           <table cellpadding=\"0\" cellspacing=\"0\">" +
         "               <tr>" +
         "                   <td style=\"padding:10px 0\">" +
-        "                       <a href=\"\"><img src=\"" + SPParam.STATIC_ASSETS + "/img/logo.png\"></a>" +
+        "                       <a href=\"\"><img src=\"" + SPParam.STATIC_ASSETS + "/img/aero_logo.png\" width=\"151\" height=\"37\"></a>" +
         "                   </td>" +
         "               </tr>" +
         "           </table>" +
         "       </td>" +
         "   <tr>" +
-        "       <td style=\"border:solid #E8E8E8;border-width:1px 0;padding:50px 70px;color:#535353;\">"+
+        "       <td style=\"padding:50px 0;color:#334455;\">"+
         "           <table cellpadding=\"0\" cellspacing=\"0\">";
 
 
 
     private final String _footer;
 
-    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:#17466B;";
-    public static final String PSTYLE  = "margin:0;";
+    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:#334455;";
+    public static final String PSTYLE  = "margin:0;color:#334455";
 
     private final  StringBuilder _sb = new StringBuilder(HEADER);
     private int _sectionCount = 0;
@@ -85,6 +85,7 @@ public class HTMLEmail implements IEmail {
     {
         if (_finalized) throw new IOException("cannot add section to a finalized email");
 
+        String h = header.replace("\n", "<br/>");
         String b = body.replace("\n", "<br/>");
         if (_sectionCount > 0) {
             //spacing
@@ -93,12 +94,12 @@ public class HTMLEmail implements IEmail {
 
         _sb.append("<tr><td>");
 
-        _sb.append("<h1 style=\"" + H1STYLE + "\">" + header + "</h1>");
+        _sb.append("<h1 style=\"" + H1STYLE +"\">" + h + "</h1>");
 
         _sb.append("</td></tr>");
-
+    
         //spacing
-        _sb.append("<tr><td height=\"3\" /></tr>");
+        _sb.append("<tr><td height=\"30\" /></tr>");
 
         _sb.append("<tr><td>");
         _sb.append("<p style=\"" + PSTYLE + "\">" + b + "</p>");
