@@ -411,6 +411,7 @@ public class LinkedStorage implements IPhysicalStorage
             return false;
         }
         rev.rollback_();
+        f.created_(t);
         TransUtil.onRollback_(f._f, t, rev::save_);
         return true;
     }
@@ -586,7 +587,7 @@ public class LinkedStorage implements IPhysicalStorage
         if (!_tlUseHistory.get(t)) {
             _tlDel.get(t).add(rev);
         } else if (delete && f._sokid.kidx().isMaster()) {
-            l.info("record folder deletion {} {}:{}", f.sokid().soid(), rev.index(), f._path.virtual);
+            l.info("record file deletion {} {}:{}", f.sokid().soid(), rev.index(), f._path.virtual);
             long id = _hdb.createHistoryPath_(f._path.virtual, t);
             _hdb.insertDeletedFile_(f._sokid.soid(), id, rev.index(), t);
         }
