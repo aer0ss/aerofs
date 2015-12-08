@@ -272,7 +272,10 @@ public class ApplyChange
         _rpdb.updateParent_(parent.sidx(), oidChild, parent.oid(), name, logicalTimestamp, t);
 
         // no-op: preserve local changes
-        if (lnk.parent.equals(parent.oid()) && lnk.name.equals(name)) return;
+        if (lnk.parent.equals(parent.oid()) && lnk.name.equals(name)) {
+            l.info("no-op move {} -> {}/{}", oidChild, parent, name);
+            return;
+        }
 
         _impl.move_(parent, oidChild, name, mergeBoundary, t);
     }

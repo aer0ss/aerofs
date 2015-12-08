@@ -178,6 +178,14 @@ public class MetaChangeSubmitter implements Submitter
         try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
             while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
                 MetaChange c = resolveAliasing_(it.get_());
+                // do not send local changes for objects with buffered changes
+                // to ensure consistent resolution of meta/meta conflicts
+                if (_mbdb.isBuffered_(new SOID(sidx, c.oid))) {
+                    if (ops.isEmpty()) {
+                        cb.onFailure_(new ExRetryLater("buffered"));
+                    }
+                    break;
+                }
                 BatchOp op = op_(c, proxy);
                 if (op != null) {
                     changes.add(c);
@@ -332,28 +340,6 @@ public class MetaChangeSubmitter implements Submitter
 
     private boolean onConflict_(MetaChange c, LocalChange change, String body) throws Exception
     {
-        OA oa = _ds.getOANullable_(new SOID(c.sidx, c.oid));
-
-        if (oa == null || !oa.name().equals(c.newName) || !oa.parent().equals(c.newParent)) {
-            /**
-             * Complication: name conflicts in the middle of a chain of renames/moves
-             *
-             * we need to clean up the change queue here because it won't be done by
-             * the fetcher until another peer renames the same child, which may never
-             * happen.
-             */
-            l.info("discard conflicting local change {} {} {}", c.idx, c.sidx, c.oid);
-            try (Trans t = _tm.begin_()) {
-                _mcdb.deleteChange_(c.sidx, c.idx, t);
-                t.commit_();
-            }
-            return true;
-        }
-
-        // TODO: on PARENT_CONFLICT
-        //  -> wait until fetch complete
-        //  -> if still present, use a new OID
-
         // TODO: temporarily pause submission?
         // TODO: schedule immediate meta fetch?
         // TODO: restart submission when changes are received
