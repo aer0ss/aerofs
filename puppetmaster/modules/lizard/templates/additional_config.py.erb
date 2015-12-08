@@ -4,6 +4,10 @@ SQLALCHEMY_DATABASE_URI = 'mysql+oursql://lizard:<%= @mysql_password %>@privatec
 # Use real production Stripe keys
 STRIPE_PUBLISHABLE_KEY="<%= @stripe_publishable_key %>"
 STRIPE_SECRET_KEY="<%= @stripe_secret_key %>"
+# These are the credentials for the AWS user that lizard will use to make
+# route 53 dns settings.
+HPC_AWS_ACCESS_KEY="<%= @hpc_aws_access_key %>"
+HPC_AWS_SECRET_KEY="<%= @hpc_aws_secret_key %>"
 # Use Sendgrid to send emails
 MAIL_SERVER = "smtp.sendgrid.net"
 MAIL_PORT = 25

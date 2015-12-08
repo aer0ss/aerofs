@@ -2,6 +2,8 @@ class lizard (
     $mysql_password,
     $stripe_publishable_key,
     $stripe_secret_key,
+    $hpc_aws_access_key,
+    $hpc_aws_secret_key,
 ) {
     package{"aerofs-lizard":
         ensure => latest,
