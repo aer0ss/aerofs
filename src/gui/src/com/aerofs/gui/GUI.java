@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.gui.GUIUtil.createLabel;
 
@@ -297,16 +298,27 @@ public class GUI implements IUI
         final SettableFuture<IWaiter> w = SettableFuture.create();
 
         asyncExec(() -> {
+            if (w.isCancelled()) return;
             Wait dlg = new Wait(_sh, title, msg);
             w.set(dlg);
             dlg.openDialog();
         });
 
-        try {
-            return w.get();
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        return () -> {
+            try {
+                if (isUIThread()) {
+                    if (w.isDone()) {
+                        w.get().done();
+                    } else {
+                        w.cancel(false);
+                    }
+                } else {
+                    w.get().done();
+                }
+            } catch (InterruptedException|ExecutionException e) {
+                throw new AssertionError(e);
+            }
+        };
     }
 
     public void safeAsyncExec(final Widget w, final Runnable run)
