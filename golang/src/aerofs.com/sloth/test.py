@@ -452,7 +452,7 @@ try:
     # GET /users/uid should have avatarPath
     r = s.get("{}/users/{}".format(BASE_URL, "jgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("avatarPath") != None, r.json()
+    assert r.json()["avatarPath"] == "/users/jgray/avatar", r.json()
 
     # GET /users/uid/avatar
     r = s.get("{}/users/{}/avatar".format(BASE_URL, "jgray"),

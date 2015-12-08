@@ -554,7 +554,7 @@ func parseUserRow(row Scannable) (*User, error) {
 	}
 	user.LastOnlineTime = getLastOnlineTime(user.Id, time.Now())
 	if !hasNoAvatar {
-		user.AvatarPath = "/" + user.Id + "/avatar"
+		user.AvatarPath = "/users/" + user.Id + "/avatar"
 	}
 	return &user, nil
 }
