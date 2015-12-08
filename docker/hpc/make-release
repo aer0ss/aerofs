@@ -1,0 +1,95 @@
+#!/bin/bash
+set -e
+
+IMAGES="hpc-docker-gen hpc-port-allocator hpc-reverse-proxy"
+REGISTRY=registry.aerofs.com:5050
+
+PWD="$(dirname "$0")"
+VERSION=$($PWD/../../tools/build/compute_next_version hpc-reverse-proxy)
+
+# Sanity check the version number
+if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then
+    echo "Invalid version number: $VERSION"
+    exit 1
+fi
+
+echo "This script will do the following tasks:"
+echo " - Build Docker images for: $IMAGES"
+echo " - Tag the images with version: $VERSION"
+echo " - Push the tagged images to: $REGISTRY"
+echo ""
+echo "If this looks good, press Enter to continue."
+read
+
+# Make sure the cache is running on the Docker VM
+$PWD/../../tools/cache/start.sh
+
+
+# Build the images
+for i in ${IMAGES}; do
+    echo ""
+    echo ""
+    echo "========================================"
+    echo "  Building Docker image ${i}"
+    echo "========================================"
+    echo ""
+
+    make -C "$PWD/${i}" image
+done
+
+
+# Retry 'docker push $0' with exponential backoff. Needed as some docker registries are not reliably reachable.
+# Copied from ship/push-images.sh
+push() {
+    (set +e
+        RETRY=0
+        TIMEOUT=1
+        while true; do
+            docker push $1
+            if [ $? = 0 ]; then
+                break
+            elif [ ${RETRY} = 6 ]; then
+                echo "ERROR: Retried too many times. I gave up."
+                exit 22
+            else
+                echo "Retry #${RETRY} in ${TIMEOUT} seconds..."
+                sleep ${TIMEOUT}
+                TIMEOUT=$[TIMEOUT * 2]
+                RETRY=$[RETRY + 1]
+            fi
+        done
+    )
+}
+
+push_image() {
+    img=$1
+    tag=$2
+
+    echo ""
+    echo ""
+    echo "========================================"
+    echo "  Pushing aerofs/${img}:${tag} to ${REGISTRY}"
+    echo "========================================"
+    echo ""
+
+    PUSH_IMAGE="${REGISTRY}/aerofs/${img}:${tag}"
+    docker tag -f "aerofs/${img}" "${PUSH_IMAGE}"
+    push "${PUSH_IMAGE}"
+    docker rmi "${PUSH_IMAGE}"
+}
+
+# Tag and push to the registry
+for i in ${IMAGES}; do
+    push_image $i $VERSION
+done
+
+# Push `hpc-reverse-proxy` with tag `latest` so that we can use that to compute the next version
+push_image hpc-reverse-proxy latest
+
+
+echo "Removing untagged images to save space..."
+docker rmi `docker images --no-trunc | grep '^<none>' | awk '{print $3}'` 2>/dev/null || true
+
+echo ""
+echo ""
+echo "Finished successfully!"

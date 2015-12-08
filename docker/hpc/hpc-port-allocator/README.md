@@ -33,7 +33,10 @@ Testing locally
 
 To run the code locally you can do:
 
-    cd root virtualenv env env/bin/pip install -r requirements.txt sudo env/bin/python main.py
+    cd root
+    virtualenv env
+    env/bin/pip install -r requirements.txt
+    sudo env/bin/python main.py
 
 (sudo because we're running on port 80 - change to a port > 1024 if you'd like to avoid sudo)
 
