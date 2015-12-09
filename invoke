@@ -594,7 +594,7 @@ def build_sa(args):
 
 
 def compute_next_version(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version' ]
+    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', loader ]
     output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
     return output
 
