@@ -174,6 +174,14 @@ public class MetaChangesDatabase extends AbstractDatabase
         }
     }
 
+    private final ParameterizedStatement<SIndex> _pswGetObjectChanges = new ParameterizedStatement<>(
+            sidx -> DBUtil.selectWhere(tableName(sidx), C_META_CHANGE_OID + "=?", "count(*)"));
+    public boolean hasChanges_(SIndex sidx, OID oid) throws SQLException {
+        try (ResultSet rs = query(_pswGetObjectChanges.get(sidx), oid.getBytes())) {
+            return DBUtil.count(rs) > 0;
+        }
+    }
+
     private final ParameterizedStatement<SIndex> _pswDeleteChange = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_IDX + "=?"));
     public boolean deleteChange_(SIndex sidx, long idx, Trans t) throws SQLException

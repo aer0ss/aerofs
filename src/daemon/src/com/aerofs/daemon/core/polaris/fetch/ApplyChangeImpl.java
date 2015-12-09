@@ -899,15 +899,29 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             return targetName;
         }
 
-        l.info("rename local {} {}", oaConflict.soid(), targetName);
+        // nuke conflicting local changes
+        boolean del = _mcdb.deleteChanges_(sidx, oaConflict.soid().oid(), t);
+        if (!del) {
+            l.warn("name conflict wo/ local meta changes");
+        }
 
-        OA oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
+        OA oaParent;
+        if (clnk != null && _ds.getChild_(sidx, clnk.parent, clnk.name) == null) {
+            // conflict OID was moved locally and its remote location is free: move it back
+            l.info("revert local change: {} -> {}/{}", oaConflict.soid(), clnk.parent, clnk.name);
+
+            oaParent = _ds.getOA_(new SOID(sidx, clnk.parent));
+            targetName = clnk.name;
+        } else {
+            l.info("rename local {} {}", oaConflict.soid(), targetName);
+
+            oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
+            _mcdb.insertChange_(sidx, oaConflict.soid().oid(), lnk.parent, targetName, t);
+        }
+
         ResolvedPath pConflict = _ds.resolve_(oaConflict);
         _ds.setOAParentAndName_(oaConflict, oaParent, targetName, t);
-
         _expulsion.objectMoved_(pConflict, oaConflict.soid(), PhysicalOp.APPLY, t);
-
-        _mcdb.insertChange_(sidx, oaConflict.soid().oid(), lnk.parent, targetName, t);
         return lnk.name;
     }
 

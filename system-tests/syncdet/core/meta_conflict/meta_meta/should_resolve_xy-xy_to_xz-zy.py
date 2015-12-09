@@ -34,6 +34,12 @@ spec = meta_meta_spec(
     },
     # acceptable final states
     final=[{
+        "foo": "fool",
+        "baz": "bart"
+    }, {
+        "baz": "fool",
+        "bar": "bart"
+    }, {
         "baz": "fool",
         "baz (2)": "bart"
     }, {

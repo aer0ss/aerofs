@@ -340,6 +340,23 @@ public class MetaChangeSubmitter implements Submitter
 
     private boolean onConflict_(MetaChange c, LocalChange change, String body) throws Exception
     {
+        OID local = _ds.getChild_(c.sidx, c.newParent, c.newName);
+        if (!c.oid.equals(local)) {
+            /**
+             * Complication: name conflicts in the middle of a chain of renames/moves
+             *
+             * we need to clean up the change queue here because it won't be done by
+             * the fetcher until another peer renames the same child, which may never
+             * happen.
+             */
+            try (Trans t = _tm.begin_()) {
+                if (_mcdb.deleteChange_(c.sidx, c.idx, t)) {
+                    l.info("discard conflicting local change {} {} {}", c.idx, c.sidx, c.oid);
+                }
+                t.commit_();
+            }
+            return true;
+        }
         // TODO: temporarily pause submission?
         // TODO: schedule immediate meta fetch?
         // TODO: restart submission when changes are received

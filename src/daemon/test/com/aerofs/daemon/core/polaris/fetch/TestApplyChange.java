@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
@@ -641,9 +642,12 @@ public class TestApplyChange extends AbstractTestApplyChange
     @Test
     public void shouldRenameLocalObject() throws Exception
     {
-        addMetaChange(sidx);
         OID local = OID.generate();
-        ds.createOA_(OA.Type.FILE, sidx, local, OID.ROOT, "foo", t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.FILE, sidx, local, OID.ROOT, "foo", t);
+            mcdb.insertChange_(sidx, local, OID.ROOT, "foo", t);
+            t.commit_();
+        }
 
         OID remote = OID.generate();
 
@@ -655,6 +659,48 @@ public class TestApplyChange extends AbstractTestApplyChange
         mds.expect(rootSID,
                 folder("foo", remote),
                 file("foo (2)", local));
+
+        assertHasLocalChanges(sidx,
+                new MetaChange(sidx, -1, local, OID.ROOT, "foo (2)"));
+    }
+
+    @Test
+    public void shouldRevertLocalRename() throws Exception
+    {
+        OID foo = OID.generate();
+        OID bar = OID.generate();
+        apply(
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER)
+        );
+        ac.applyBufferedChanges_(sidx, 1, t);
+
+        mds.expect(rootSID,
+                folder("foo", foo),
+                folder("bar", bar));
+
+        try (Trans t = tm.begin_()) {
+            om.moveInSameStore_(new SOID(sidx, foo), OID.ROOT, "baz", PhysicalOp.MAP, true, t);
+            t.commit_();
+        }
+
+        assertHasLocalChanges(sidx,
+                new MetaChange(sidx, -1, foo, OID.ROOT, "baz"));
+
+        apply(
+                rename(OID.ROOT, "baz", bar)
+        );
+        try (Trans t = tm.begin_()) {
+            ac.applyBufferedChanges_(sidx, 42, t);
+            t.commit_();
+        }
+
+        mds.expect(rootSID,
+                folder("foo", foo),
+                folder("baz", bar));
+
+        // local meta change discarded
+        assertHasLocalChanges(sidx);
     }
 
     /**
@@ -689,6 +735,8 @@ public class TestApplyChange extends AbstractTestApplyChange
         mds.expect(rootSID,
                 folder("foo (2)", remote),
                 folder("foo", local));
+
+        assertHasLocalChanges(sidx);
     }
 
     @Test
