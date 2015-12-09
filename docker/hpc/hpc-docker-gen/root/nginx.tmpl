@@ -31,7 +31,7 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
 {{ range $container := $ }}
   {{ if (or (eq $container.Image.Repository "nginx") (eq $container.Image.Repository "maintenance-nginx")) }}
-    {{ $subdomain := first (split $container.Name (print "-" $container.Image.Repository)) }}
+    {{ $subdomain := first (split $container.Name (print "-hpc-" $container.Image.Repository)) }}
     {{ if gt (len $subdomain) 1 }}  {{/* sanity check */}}
 
 ### Config for subdomain "{{ $subdomain }}" - container name: "{{ $container.Name }}"

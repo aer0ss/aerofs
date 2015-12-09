@@ -10,6 +10,7 @@ from migrate.exceptions import DatabaseAlreadyControlledError
 from .flask_analytics import AnalyticsClient
 
 import stripe
+import boto3
 
 # Login manager.  Flask-login does session management.
 login_manager = LoginManager()
@@ -19,6 +20,7 @@ csrf = CsrfProtect()
 
 # Database stuff
 db = SQLAlchemy()
+
 
 def migrate_database(app):
     db_uri = app.config['SQLALCHEMY_DATABASE_URI']
@@ -69,6 +71,11 @@ def create_app(internal=False):
 
     # 5) Stripe
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
+
+    aws_session = boto3.session.Session(aws_access_key_id=app.config['HPC_AWS_ACCESS_KEY'],
+                                        aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'])
+    app.route53 = aws_session.client('route53')
+
 
     # Enable routes
     if internal:

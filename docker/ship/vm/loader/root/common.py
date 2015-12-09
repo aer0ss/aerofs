@@ -64,6 +64,8 @@ def my_container_prefix():
     # Note we use the following format for the prefix: <subdomain>-hpc-loader
     # The inclusion of the -hpc- part is to prevent the loader from accidentally thinking it's running on HPC if someone
     # uses the loader for another project and names it, e.g. "myproject-loader"
+    #
+    # Note: this must be kept in sync with lizard (~/repos/aerofs/src/lizard/lizard/hpc.py)
     m = match("^(.*-hpc-)loader", my_container_name())
     return m.groups()[0] if m else ''
 

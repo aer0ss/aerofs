@@ -3,7 +3,7 @@ import datetime
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 from wtforms import StringField, PasswordField, BooleanField, IntegerField, DateField, SelectField, TextAreaField, HiddenField
-from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, NumberRange
+from wtforms.validators import ValidationError, InputRequired, Email, Length, Optional, NumberRange, Regexp, IPAddress
 
 class LoginForm(Form):
     email = StringField('Email', validators=[Email()])
@@ -101,3 +101,18 @@ class ContactForm(Form):
 
 class AllAccountsSearchForm(Form):
     search_terms = StringField('Search Terms')
+
+# This form is used to create a new Hosted Private Cloud Deployment
+class CreateHostedDeployment(Form):
+    customer_id = StringField("Customer ID", validators=[InputRequired()])
+    subdomain = StringField("Subdomain", validators=[
+        InputRequired(),
+        Regexp('[a-z0-9][a-z0-9-]*[a-z0-9]',
+               message="Only letters, numbers and dashes are allowed for the subdomain, and it can't start or end with a dash.")])
+
+# This form is used to create a new Hosted Private Cloud Server
+class AddHPCServer(Form):
+    docker_url = StringField("Docker URL", validators=[
+        InputRequired(),
+        Regexp('https://.+', message="The URL must start with https://")])
+    public_ip = StringField("Public IP address", validators=[InputRequired(), IPAddress()])

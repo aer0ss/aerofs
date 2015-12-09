@@ -21,5 +21,7 @@ requests
 scrypt
 sqlalchemy-migrate
 stripe
+docker-py
+boto3
 # Hoisted dependencies from licensing:
 pygpgme

@@ -1,8 +1,10 @@
-# Note: this file is for testing configuration only.  Make sure to update
-# production configuration in
-# puppetmaster/modules/lizard/files/additional_config.py
+import os
+
+# Note: this file is for testing configuration only. Make sure to update production configuration in:
+# ~/repos/aerofs/puppetmaster/modules/lizard/templates/additional_config.py.erb
 # if you add any required keys.
 DEBUG=True
+
 # These segmentio api and secret keys are for testing only.
 SEGMENTIO_WRITE_KEY="DXiiCHhPnCb0IhkSy0BcGSe1UQBCAbNS"
 SEGMENTIO_DEBUG=True
@@ -10,8 +12,8 @@ SEGMENTIO_DEBUG=True
 # These stripe keys are for testing only
 STRIPE_SECRET_KEY="sk_test_vEjpSRt2LE4jgfxB709l8NCG"
 STRIPE_PUBLISHABLE_KEY="pk_test_LL4hvnijboGKs7CJLA6CUh15"
+
 # local dev: use sqlite db
-import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'state', 'database.db')
 
@@ -28,3 +30,24 @@ MAIL_PASSWORD = None
 #Feature flag for new design
 REBRAND_RELEASED = False
 
+#################################
+# Hosted Private Cloud settings
+#################################
+
+# Credentials for user 'hosted_private_cloud_test' on Amazon AWS.
+# This user can do only one thing: edit Route 53 subdomains for "syncfs.com".
+# https://console.aws.amazon.com/iam/home?#users/hosted_private_cloud_test
+HPC_AWS_ACCESS_KEY = 'AKIAJMRKGMRSXXUS6NLQ'
+HPC_AWS_SECRET_KEY = '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'
+
+# The Route 53 Hosted Zone on which we will create HPC subdomains.
+HPC_ROUTE_53_HOSTED_ZONE_ID = 'Z2COTO8BJU2Z9X'  # syncfs.com - https://console.aws.amazon.com/route53/home#resource-record-sets:Z2COTO8BJU2Z9X
+
+# The domain name that we will use for Hosted Private Cloud.
+# This domain must match HPC_ROUTE_53_HOSTED_ZONE_ID
+HPC_DOMAIN = 'syncfs.com'
+
+# Certificates used to communicate with the Docker daemon
+HPC_PATH_TO_DOCKER_CA_CERT = os.path.expanduser('~/.docker/machine/certs/ca.pem')
+HPC_PATH_TO_DOCKER_CLIENT_CERT = os.path.expanduser('~/.docker/machine/certs/cert.pem')
+HPC_PATH_TO_DOCKER_CLIENT_KEY = os.path.expanduser('~/.docker/machine/certs/key.pem')

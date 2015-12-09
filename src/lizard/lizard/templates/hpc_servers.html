@@ -1,0 +1,62 @@
+{% extends "admin.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block title %}Hosted Private Cloud | Licensing Admin{% endblock %}
+
+{% block content %}
+    <h1>Hosted Private Cloud Servers</h1>
+
+<script>
+    {# TODO (GS):
+         - better error handling than just alert()
+         - show progress indicator
+    #}
+    function remove_server(server_id) {
+        if (confirm("Are you sure that you want to remove this server?")) {
+            $.ajax({
+                url: '/hpc_servers/' + server_id,
+                type: 'DELETE',
+                headers: {"X-CSRFToken": "{{ csrf_token() }}"},
+                success: function(result) {
+                    $("#row-" + server_id).remove();
+                },
+                error: function(result) {
+                    alert("Failed! " + result);
+                }
+            });
+         }
+    }
+</script>
+
+    <p>Add server:</p>
+        <form role="form" class="form-horizontal" action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ render_field(form.docker_url) }}
+        {{ render_field(form.public_ip) }}
+        {{ submit_button("Add") }}
+    </form>
+
+    TODO (GS): edit server
+
+    <table class="table">
+        <tr>
+            <th>ID</th>
+            <th>Docker URL</th>
+            <th>Deployments</th>
+            <th>Actions</th>
+        </tr>
+        {% for server in servers %}
+            <tr id="row-{{ server.id }}">
+                <td>{{ server.id }}</td>
+                <td>{{ server.docker_url }}</td>
+                <td>
+                    <p>{{ server.deployments | length }} deployments on this server</p>
+                    {% for deployment in server.deployments %}
+                        {{ deployment.subdomain }}
+                    {% endfor %}
+                </td>
+                <td><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

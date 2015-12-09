@@ -83,6 +83,9 @@ class Customer(db.Model, TimeStampedMixin):
     # A customer may have at most one 'active', newest appliance
     appliances = db.relationship("Appliance", backref="customer", lazy="dynamic")
 
+    # A customer may have zero to many Hosted Private Cloud Appliances
+    hpc_appliances = db.relationship("HPCDeployment", backref="customer", lazy="dynamic")
+
     # A customer may have zero to many registered mail domains
     domains = db.relationship("Domain", backref="customer", lazy="dynamic")
 
@@ -303,9 +306,48 @@ class Domain(db.Model, TimeStampedMixin):
         return "<Domain '{}' '{}'>".format(self.mail_domain, self.verify_date is not None)
 
 
+class HPCDeployment(db.Model, TimeStampedMixin):
+    __tablename__ = "hpc_deployment"
+
+    # Subdomain on which this deployment is available
+    # ie: <subdomain>.aerofs.com
+    # Letters, numbers and dashes only. Can't start or end with a dash.
+    subdomain = db.Column(db.String(32), primary_key=True)
+
+    # To which customer does this deployment belong?
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+
+    # On which server is this running?
+    server_id = db.Column(db.Integer, db.ForeignKey('hpc_server.id'), nullable=False)
+
+    def __repr__(self):
+        return "<HPCDeployment '{}'>".format(self.subdomain)
+
+
+class HPCServer(db.Model, TimeStampedMixin):
+    __tablename__ = "hpc_server"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # URL of the Docker daemon HTTPS REST API on this server
+    # Typically this would be in the form https://<amazon_vpc_ip_address>:2376
+    docker_url = db.Column(db.String(256))
+
+    # Public IP address of this server
+    # This is what the DNS type A record will be set to for the deployment's subdomain
+    public_ip = db.Column(db.String(15))
+
+    # A server may have zero to many deployments on it
+    deployments = db.relationship("HPCDeployment", backref="server")
+
+    def __repr__(self):
+        return "<HPCServer '{}'>".format(self.docker_url)
+
 # Each class with create_date/modify_date autoupdate magic must register here
 Customer.register()
 Admin.register()
 License.register()
 Appliance.register()
 Domain.register()
+HPCDeployment.register()
+HPCServer.register()

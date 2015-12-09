@@ -3,7 +3,7 @@ import stripe
 import tarfile
 from StringIO import StringIO
 from aerofs_licensing import unicodecsv
-from lizard import db, csrf, appliance, notifications, forms, models
+from lizard import db, csrf, appliance, notifications, forms, models, hpc
 from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
     flash
 
@@ -361,3 +361,58 @@ def release():
             qcow_url=appliance.qcow_url(current_ver),
             vhd_url=appliance.vhd_url(current_ver),
             )
+
+
+@blueprint.route("/hpc_deployments", methods=["GET", "POST"])
+def hpc_deployments():
+    form = forms.CreateHostedDeployment()
+
+    if form.validate_on_submit():
+        customer = models.Customer.query.get(form.customer_id.data)
+        if customer is None:
+            flash("No such customer", 'error')
+        else:
+            try:
+                hpc.create_deployment(customer, form.subdomain.data)
+            except hpc.DeploymentAlreadExists:
+                flash("A deployment with this subdomain already exists", 'error')
+
+    # TODO (GS): filter & order query
+    deployments = models.HPCDeployment.query.all()
+    return render_template('hpc_deployments.html', deployments=deployments, form=form)
+
+
+@blueprint.route("/hpc_deployments/<string:subdomain>", methods=["GET"])
+def hpc_deployment(subdomain):
+    deployment = models.HPCDeployment.query.get_or_404(subdomain)
+    return render_template('hpc_deployment.html', deployment=deployment)
+
+
+@blueprint.route("/hpc_deployments/<string:subdomain>", methods=["DELETE"])
+def hpc_deployment_delete(subdomain):
+    deployment = models.HPCDeployment.query.get_or_404(subdomain)
+    hpc.delete_deployment(deployment)
+    return Response('ok', 200)
+
+
+@blueprint.route("/hpc_servers", methods=["GET", "POST"])
+def hpc_servers():
+    form = forms.AddHPCServer()
+
+    if form.validate_on_submit():
+        server = models.HPCServer()
+        server.docker_url = form.docker_url.data
+        server.public_ip = form.public_ip.data
+        db.session.add(server)
+        db.session.commit()
+
+    servers = models.HPCServer.query.all()
+
+    return render_template('hpc_servers.html', servers=servers, form=form)
+
+
+@blueprint.route("/hpc_servers/<int:server_id>", methods=["DELETE"])
+def hpc_server_delete(server_id):
+    server = models.HPCServer.query.get_or_404(server_id)
+    hpc.delete_server(server)
+    return Response('ok', 200)

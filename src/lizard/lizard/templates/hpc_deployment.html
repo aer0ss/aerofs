@@ -1,0 +1,12 @@
+{% extends "admin.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block title %}Hosted Private Cloud | Licensing Admin{% endblock %}
+
+{% block content %}
+    <h1>Hosted Private Cloud</h1>
+
+    <p><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></p>
+    <p>{{ deployment.subdomain }}</p>
+
+{% endblock %}

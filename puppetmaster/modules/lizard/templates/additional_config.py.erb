@@ -4,10 +4,6 @@ SQLALCHEMY_DATABASE_URI = 'mysql+oursql://lizard:<%= @mysql_password %>@privatec
 # Use real production Stripe keys
 STRIPE_PUBLISHABLE_KEY="<%= @stripe_publishable_key %>"
 STRIPE_SECRET_KEY="<%= @stripe_secret_key %>"
-# These are the credentials for the AWS user that lizard will use to make
-# route 53 dns settings.
-HPC_AWS_ACCESS_KEY="<%= @hpc_aws_access_key %>"
-HPC_AWS_SECRET_KEY="<%= @hpc_aws_secret_key %>"
 # Use Sendgrid to send emails
 MAIL_SERVER = "smtp.sendgrid.net"
 MAIL_PORT = 25
@@ -18,3 +14,27 @@ MAIL_USERNAME = "mXSiiSbCMMYVG38E"
 MAIL_PASSWORD = "6zovnhQuLMwNJlx8"
 #Feature flag for new design
 REBRAND_RELEASED = False
+
+
+#################################
+# Hosted Private Cloud settings
+#################################
+
+# Credentials for user 'hosted_private_cloud' on Amazon AWS.
+# This user can do only one thing: edit Route 53 subdomains for "aerofs.com".
+# https://console.aws.amazon.com/iam/home?#users/hosted_private_cloud
+HPC_AWS_ACCESS_KEY="<%= @hpc_aws_access_key %>"
+HPC_AWS_SECRET_KEY="<%= @hpc_aws_secret_key %>"
+
+# The Route 53 Hosted Zone on which we will create HPC subdomains.
+HPC_ROUTE_53_HOSTED_ZONE_ID = 'Z26RTL7MXQOS8Y'  # aerofs.com - https://console.aws.amazon.com/route53/home#resource-record-sets:Z26RTL7MXQOS8Y
+
+# The domain name that we will use for Hosted Private Cloud.
+# This domain must match HPC_ROUTE_53_HOSTED_ZONE_ID
+HPC_DOMAIN = 'aerofs.com'
+
+# Certificates used to communicate with the Docker daemon
+# TODO (GS): Replace with correct values
+HPC_PATH_TO_DOCKER_CA_CERT = '/path/to/ca.pem'
+HPC_PATH_TO_DOCKER_CLIENT_CERT = '/path/to/cert.pem'
+HPC_PATH_TO_DOCKER_CLIENT_KEY = '/path/to/key.pem'
