@@ -113,7 +113,7 @@ class JerseyResponseWriter implements ContainerResponseWriter
             // Jersey does not work well with async streaming, we need to take over...
             // NB: because we bypass jersey, we need to manually inhibit body writing for HEAD
             if (!_request.getMethod().equals(HttpMethod.HEAD)) {
-                _channel.write(new ChunkedContentStream((ContentStream)entity))
+                _channel.write(new ChunkedContentStream((ContentStream)entity, _channel.getId()))
                         .addListener(_trailer);
             }
 

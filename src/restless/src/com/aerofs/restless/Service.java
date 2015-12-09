@@ -5,6 +5,7 @@
 package com.aerofs.restless;
 
 import com.aerofs.restless.jersey.VersionFilterFactory;
+import com.aerofs.restless.netty.FairChunkedWriteHandler;
 import com.aerofs.restless.netty.JerseyHandler;
 import com.aerofs.restless.providers.ContentStreamProvider;
 import com.aerofs.restless.providers.GsonProvider;
@@ -33,7 +34,6 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpServerCodec;
-import org.jboss.netty.handler.stream.ChunkedWriteHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -93,6 +93,8 @@ public class Service
     protected final ChannelGroup _allChannels;
     protected final ServerSocketChannelFactory _serverChannelFactory;
 
+    protected final FairChunkedWriteHandler _chunkedWriteHandler;
+
     private final Executor _executor;
 
     private final Configuration _config;
@@ -109,14 +111,12 @@ public class Service
     public Service(String name, InetSocketAddress addr,
             Injector injector, @Nullable Executor executor)
     {
-        this._name = name;
-        this._listenAddress = addr;
-        this._allChannels = new DefaultChannelGroup(name);
-
-        this._serverChannelFactory = getServerSocketFactory();
-
-        this._bootstrap = new ServerBootstrap(this._serverChannelFactory);
-
+        _name = name;
+        _listenAddress = addr;
+        _allChannels = new DefaultChannelGroup(name);
+        _serverChannelFactory = getServerSocketFactory();
+        _bootstrap = new ServerBootstrap(this._serverChannelFactory);
+        _chunkedWriteHandler = new FairChunkedWriteHandler();
         _injector = injector;
         _executor = executor;
         _config = injector.getInstance(Configuration.class);
@@ -153,6 +153,7 @@ public class Service
 
         _serverChannelFactory.releaseExternalResources();
         _allChannels.clear();
+        _chunkedWriteHandler.stop();
 
         if (_executor != null && _executor instanceof ExecutorService) {
             ((ExecutorService)_executor).shutdown();
@@ -188,7 +189,7 @@ public class Service
     {
         ChannelPipeline p = Channels.pipeline(
                 new HttpServerCodec(),
-                new ChunkedWriteHandler());
+                _chunkedWriteHandler);
 
         // name the last handler to allow subclasses to insert handlers before it
         // e.g. an ExecutionHandler or some transaction logic
@@ -224,12 +225,6 @@ public class Service
 
     protected ChannelPipelineFactory getPipelineFactory()
     {
-        return new ChannelPipelineFactory() {
-            @Override
-            public ChannelPipeline getPipeline() throws Exception
-            {
-                return getSpecializedPipeline();
-            }
-        };
+        return Service.this::getSpecializedPipeline;
     }
 }
