@@ -304,7 +304,11 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
 
             _streamingChunks.set(response.isChunked());
-            if (!response.isChunked()) _expectedResponses.decrementAndGet();
+            if (!response.isChunked()) {
+                if (_expectedResponses.decrementAndGet() == 0) {
+                    _closeIfIdle.set(false);
+                }
+            }
         }
 
         private void updateExpectations(HttpChunk chunk)
@@ -315,7 +319,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
 
             if (chunk.isLast()) {
-                _expectedResponses.decrementAndGet();
+                if (_expectedResponses.decrementAndGet() == 0) {
+                    _closeIfIdle.set(false);
+                }
                 _streamingChunks.set(false);
             }
         }
@@ -344,6 +350,14 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             final boolean upstreamWritable = ctx.getChannel().isWritable();
             l.info("{} downstream {}", upstreamWritable ? "resume" : "suspend", _downstream);
             _downstream.setReadable(upstreamWritable);
+        }
+
+        @Override
+        public void setInterestOpsRequested(ChannelHandlerContext ctx, ChannelStateEvent cse) {
+            if (!_upstream.isReadable() && ((int)cse.getValue() & Channel.OP_READ) != 0) {
+                _closeIfIdle.set(false);
+            }
+            ctx.sendDownstream(cse);
         }
 
         @Override
@@ -383,7 +397,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
         {
             if (e.getState() == IdleState.READER_IDLE) {
-                l.info("read idle {}", _expectedResponses.get());
+                l.info("read idle {} {}", _expectedResponses.get(), _upstream);
                 if (_expectedResponses.get() > 0) {
                     // if we paused upstream to avoid overloading downstream we shouldn't fault
                     // upstream for being idle...
@@ -411,7 +425,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             } else if (e.getState() == IdleState.WRITER_IDLE) {
                 if (_expectedResponses.get() > 0) return;
 
-                l.info("write idle {}");
+                l.info("write idle {}", _upstream);
                 // close upstream connection if no requests have been forwarded during the last 30s
                 _upstream.close();
             }
