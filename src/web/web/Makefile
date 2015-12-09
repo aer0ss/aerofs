@@ -1,6 +1,5 @@
 SRC=static-src
 DEST=static
-DOCS_DEST=../../../docs/user-docs/api
 LESS=less
 JS=js
 
@@ -21,12 +20,8 @@ FILES_IN_JS = $(wildcard $(SRC)/$(JS)/*.js)
 # uglified js files, smaller, faster loading
 FILES_OUT_JS = $(subst /js/,/js/compiled/,$(subst static-src,static,$(FILES_IN_JS)))
 
-# A couple resources go in external folders, with special file paths.
-EXTERNAL_ASSETS_OUT = $(DOCS_DEST)/css/compiled/aerofs.min.css \
-	$(DOCS_DEST)/css/compiled/api.min.css
-
 # Compile the final targets
-all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(EXTERNAL_ASSETS_OUT) $(APP_TARGETS)
+all: $(FILES_OUT_JS) $(FILES_OUT_MINIFIED_CSS) $(APP_TARGETS)
 
 # Destroy the final targets
 ifneq ($(IS_WATCHMAN),)
@@ -46,12 +41,9 @@ clean-dirs:
 	rm -rf $(DEST)/css/compiled/
 	rm -rf node_modules/
 	rm -rf $(DEST)/js/compiled/
-	rm -rf $(DOCS_DEST)/css/compiled/
-	rm -f $(EXTERNAL_ASSETS_OUT)
 	rm -f $(DEST)/*.js
 	mkdir $(DEST)/css/compiled/
 	mkdir $(DEST)/js/compiled/
-	mkdir $(DOCS_DEST)/css/compiled/
 
 .ONESHELL:
 # set up npm install to run the tests
@@ -63,7 +55,7 @@ setup_test:
 # run karma tests
 test:
 	../jstest/run_tests.sh
- 
+
 # Watch the filesystem and recompile on file modification
 TARGS = $(SRC)/shelob $(SRC)/saruman $(SRC)/fellowship $(SRC)/strider $(SRC)/shadowfax
 
@@ -88,16 +80,6 @@ watch:
 	 	watchman -- trigger $$t remakeless_$$t '*.less' -- python $(shell pwd)/make.py $(shell pwd) ; \
 	 done
 
-
-
-# Special rules for things which get placed outside of the web project
-# API docs site files
-$(DOCS_DEST)/css/compiled/aerofs.min.css: $(DEST)/css/compiled/aerofs.min.css
-	mkdir -p $(@D)
-	cp $? $@
-$(DOCS_DEST)/css/compiled/api.min.css: $(DEST)/css/compiled/api.min.css
-	mkdir -p $(@D)
-	cp $? $@
 
 # .min.css files come from .css files...
 $(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css install

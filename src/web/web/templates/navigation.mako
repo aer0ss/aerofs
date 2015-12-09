@@ -27,8 +27,6 @@
     </a></li>
 </%def>
 
-<%def name="api_doc_url()">/docs/api</%def>
-
 <%!
     def sub_item(text):
         return '<span style="margin-left: 12px; font-size: 95%">' + text + '</span>'
