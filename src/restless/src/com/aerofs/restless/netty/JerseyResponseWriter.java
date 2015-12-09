@@ -16,16 +16,9 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
-import org.jboss.netty.handler.codec.http.DefaultHttpChunk;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,7 +111,11 @@ class JerseyResponseWriter implements ContainerResponseWriter
 
         if (entity instanceof ContentStream) {
             // Jersey does not work well with async streaming, we need to take over...
-            _channel.write(new ChunkedContentStream((ContentStream)entity)).addListener(_trailer);
+            // NB: because we bypass jersey, we need to manually inhibit body writing for HEAD
+            if (!_request.getMethod().equals(HttpMethod.HEAD)) {
+                _channel.write(new ChunkedContentStream((ContentStream)entity))
+                        .addListener(_trailer);
+            }
 
             // ContentStreamProvider should not try to write to the stream but just in case...
             return ByteStreams.nullOutputStream();
