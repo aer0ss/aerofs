@@ -104,6 +104,7 @@ def login_view(request):
 
     openid_enabled = _is_openid_enabled(request)
     disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
+    open_signup = str2bool(settings.get('open_signup', False))
     external_login_enabled = settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
     if not is_configuration_completed():
@@ -141,6 +142,7 @@ def login_view(request):
         'login': login,
         'disable_remember_me': disable_remember_me,
         'external_login_enabled': external_login_enabled,
+        'open_signup': open_signup,
     }
 
 def _is_restored_from_backup(conf):

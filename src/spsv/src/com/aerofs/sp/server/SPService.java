@@ -185,7 +185,7 @@ public class SPService implements ISPService
 
     // Whether to allow self sign-ups via RequestToSignUp()
     private final Boolean OPEN_SIGNUP =
-            getBooleanProperty("open_signup", true);
+            getBooleanProperty("open_signup", false);
 
     // If true, server will start a periodic job to sync groups with LDAP endpoint representation
     public final boolean LDAP_GROUP_SYNCING_ENABLED =
@@ -2281,7 +2281,7 @@ public class SPService implements ISPService
             // normalized.
             _requestToSignUpEmailer.sendRequestToSignUpEmail(user.id().getString(), signUpCode);
         } else {
-            // The user already exists. Don't return special messages (errrors, warnings, etc)
+            // The user already exists. Don't return special messages (errors, warnings, etc)
             // to avoid leaking email information to attackers.
             _requestToSignUpEmailer.sendAlreadySignedUpEmail(user.id().getString());
         }

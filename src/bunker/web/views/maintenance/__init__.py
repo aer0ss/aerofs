@@ -32,6 +32,7 @@ routes = [
     'identity',
     'monitoring',
     'json_regenerate_monitoring_cred',
+    'json_set_open_signup',
     'json_set_identity_options',
     'json_set_license',
     'backup_and_upgrade',

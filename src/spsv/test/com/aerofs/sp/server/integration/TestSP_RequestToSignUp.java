@@ -8,6 +8,7 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.user.User;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Properties;
@@ -21,6 +22,18 @@ import static org.mockito.Mockito.when;
 
 public class TestSP_RequestToSignUp extends AbstractSPTest
 {
+
+    static Properties defaultProps;
+
+    @BeforeClass
+    public static void setOpenSignup()
+    {
+        Properties props = new Properties();
+        props.put("open_signup", "true");
+        ConfigurationProperties.setProperties(props);
+        defaultProps = props;
+    }
+
     @Test
     public void shouldRequestToSignUpEmailForNonexistingUser() throws Exception
     {
@@ -51,8 +64,6 @@ public class TestSP_RequestToSignUp extends AbstractSPTest
         Properties props = new Properties();
         props.put("open_signup", "false");
         ConfigurationProperties.setProperties(props);
-
-        // reconstruct SP using the new shared folder rules
         rebuildSPService();
 
         try {
@@ -62,7 +73,7 @@ public class TestSP_RequestToSignUp extends AbstractSPTest
         } catch (ExNoPerm e) {}
 
         // Reset the property so subsequent tests can construct SP with the default properties.
-        ConfigurationProperties.setProperties(new Properties());
+        ConfigurationProperties.setProperties(defaultProps);
     }
 
     @Test

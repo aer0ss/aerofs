@@ -22,7 +22,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>Please check email</h4>
+                <h4>Please check your email</h4>
             </div>
             <div class="modal-body">
                 <p>A confirmation email has been sent to <strong id="email-sent-address"></strong>.

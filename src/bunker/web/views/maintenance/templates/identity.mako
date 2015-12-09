@@ -12,6 +12,38 @@
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
 
+<%
+    authenticator = conf['lib.authenticator']
+    open_signup = str2bool(conf['open_signup'])
+    # Use the local namespace so the method scripts() can access it
+    local.local_auth = authenticator == 'local_credential'
+%>
+
+<div class="page-block">
+    <h2>Allow Open Signup</h2>
+
+    <p>By default AeroFS restricts users from signing up unless they have an invitation. Here, you can allow anyone to sign up.</p>
+
+    <form id="signup-form" method="POST" onsubmit="submitSignupForm(); return false;">
+        ${csrf.token_input()}
+        <div class="row">
+            <div class="col-sm-12">
+                <label class="checkbox">
+                    <input type='hidden' name='open_signup' value='false'>
+                    <input type='checkbox' name='open_signup' value='true'
+                        %if open_signup:
+                            checked
+                        %endif
+                    >
+                    Allow anyone to sign up
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" id="save-btn" class="btn btn-primary">Save</button>
+    </form>
+</div>
+
 <div class="page-block">
     <h2>Identity Management</h2>
 
@@ -20,15 +52,9 @@
         Learn more</a>.</p>
 </div>
 
-<%
-    authenticator = conf['lib.authenticator']
-    # Use the local namespace so the method scripts() can access it
-    local.local_auth = authenticator == 'local_credential'
-%>
-
 ############################################
 ## Names of all the input fields in this file are identical to the names of
-## their corresponding external properties (as oppose to template properties).
+## their corresponding external properties (as opposed to template properties).
 ############################################
 
 <form id="identity-form" method="POST" onsubmit="submitForm(); return false;">
@@ -157,7 +183,6 @@
     </div>
     <%
         invitation_required = str2bool(conf['ldap.invitation.required_for_signup'])
-        if not invitation_required: invitation_required = False
     %>
     <div class="row">
         <div class="col-sm-12">
@@ -628,6 +653,32 @@
             }
         }
 
+        function submitSignupForm() {
+            var $progressModal = $('#${progress_modal.id()}');
+            $progressModal.modal('show');
+            var always = function() {
+                $progressModal.modal('hide');
+            };
+
+            $.post('${request.route_path('json_set_open_signup')}',
+                    $('#signup-form').serialize())
+            .done(function() {
+                reboot('current', function() {
+                    showSuccessMessage('Updated Open Signup Settings.');
+                    always();
+                },
+                ## fail
+                function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    always();
+                });
+            })
+            .error(function (xhr) {
+                showErrorMessageFromResponse(xhr);
+                always();
+            });
+        }
+
         function validateAndSubmitLDAPForm(always) {
             if (!validateLDAPForm(always)) return;
 
@@ -638,7 +689,7 @@
                 console.log("ldap opt changed. test new opts");
 
                 $.post('${request.route_path('json_verify_ldap')}',
-                        $('form').serialize())
+                        $('identity-form').serialize())
                 .done(function () {
                     post(always);
                 })
@@ -659,7 +710,7 @@
             $cert.val($.trim($cert.val()));
 
             $.post('${request.route_path('json_set_identity_options')}',
-                    $('form').serialize())
+                    $('#identity-form').serialize())
             .done(function() {
                 restartServices(always);
             })

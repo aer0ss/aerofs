@@ -89,6 +89,21 @@ def json_set_identity_options(request):
 
     return HTTPOk()
 
+@view_config(
+    route_name='json_set_open_signup',
+    permission='maintain',
+    renderer='json',
+    request_method='POST'
+)
+def json_set_open_signup(request):
+    log.info("set open signup")
+
+    open_signup = request.params['open_signup']
+    conf = get_conf_client(request)
+    conf.set_external_property('open_signup', open_signup)
+
+    return HTTPOk()
+
 def _is_identity_configurable(conf):
     """
     @return whether identity configuration support is included in the license
