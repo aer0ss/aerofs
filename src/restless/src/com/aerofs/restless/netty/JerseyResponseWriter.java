@@ -39,7 +39,6 @@ class JerseyResponseWriter implements ContainerResponseWriter
     private final HttpRequest _request;
 
     private ChannelBuffer _buffer;
-    private final ChannelFutureListener _trailer;
 
     private static final HttpChunk EMPTY = new DefaultHttpChunk(ChannelBuffers.EMPTY_BUFFER);
 
@@ -52,20 +51,6 @@ class JerseyResponseWriter implements ContainerResponseWriter
 
         _location = "https://" + request.headers().get(Names.HOST) + "/";
         _keepAlive = HttpHeaders.isKeepAlive(request);
-
-        _trailer = new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture cf)
-            {
-                l.debug("response trailer {} {} {}", _channel, cf.isSuccess(), _keepAlive);
-                if (cf.isSuccess()) {
-                    cf = cf.getChannel().write(EMPTY);
-                    if (!_keepAlive) cf.addListener(CLOSE);
-                } else {
-                    cf.getChannel().close();
-                }
-            }
-        };
     }
 
     @Override
@@ -114,8 +99,10 @@ class JerseyResponseWriter implements ContainerResponseWriter
             // NB: because we bypass jersey, we need to manually inhibit body writing for HEAD
             if (!_request.getMethod().equals(HttpMethod.HEAD)) {
                 _channel.write(new ChunkedContentStream((ContentStream)entity, _channel.getId()))
-                        .addListener(_trailer);
+                        .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             }
+            ChannelFuture cf = _channel.write(EMPTY);
+            if (!_keepAlive) cf.addListener(ChannelFutureListener.CLOSE);
 
             // ContentStreamProvider should not try to write to the stream but just in case...
             return ByteStreams.nullOutputStream();
@@ -128,6 +115,11 @@ class JerseyResponseWriter implements ContainerResponseWriter
     @Override
     public void finish() throws IOException
     {
-        if (_buffer != null) _channel.write(new DefaultHttpChunk(_buffer)).addListener(_trailer);
+        if (_buffer != null) {
+            _channel.write(new DefaultHttpChunk(_buffer))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+            ChannelFuture cf = _channel.write(EMPTY);
+            if (!_keepAlive) cf.addListener(ChannelFutureListener.CLOSE);
+        }
     }
 }
