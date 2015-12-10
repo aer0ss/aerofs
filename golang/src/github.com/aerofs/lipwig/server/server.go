@@ -110,6 +110,7 @@ func (s *Server) DumpStats(w io.Writer) {
 	fmt.Fprintf(w, "%5d named connections\n", len(s.connections))
 	for u, c := range s.connections {
 		fmt.Fprintf(w, "\t%p %v %s %s\n", c, c.c.RemoteAddr(), u, c.User)
+		// FIXME: synchronization to prevent race with SUB/UNSUB handling
 		for n, t := range c.sub {
 			fmt.Fprintf(w, "\t\t%s %p\n", n, t)
 		}
