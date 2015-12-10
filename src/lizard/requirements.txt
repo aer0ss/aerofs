@@ -4,6 +4,11 @@
 # env/bin/pip freeze | sort -f > requirements-exact.txt
 # rm -rf env
 # Our explicit dependencies:
+
+# Backports is required by boto3 and docker-py. Sadly, depending on your
+# version of pip, it may or may not be installed. Require it explicitly for
+# good measure.
+backports.ssl-match-hostname
 CherryPy
 Flask
 Flask-Login
