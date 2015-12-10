@@ -31,7 +31,10 @@ function dk-start-vm()
 {
     if [[ $# -eq 0 ]]
     then
-        ${DEV_DIR}/dk-start-vm.sh ${VM} && dk-env
+        # Filter out docker-machine env hint, as it's not relevant in this context, since we're
+        # doing a dk-env immediately after.
+        ${DEV_DIR}/dk-start-vm.sh ${VM} | grep -v "You may need to re-run the \`docker-machine env\` command."
+        dk-env
     else
         echo "dk-start-vm takes no arguments"
         return 1
@@ -82,6 +85,16 @@ function dk-halt()
         ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance
     else
         echo "dk-halt takes no arguments"
+        return 1
+    fi
+}
+function dk-halt-vm()
+{
+    if [[ $# -eq 0 ]]
+    then
+        docker-machine stop ${VM}
+    else
+        echo "dk-halt-vm takes no arguments"
         return 1
     fi
 }

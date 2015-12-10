@@ -22,6 +22,27 @@ then
         # this means change to most of /etc, and crucially to docker daemon
         # config, are lost on reboot
         THIS_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+        # Sadly, it takes a moment for the docker daemon to come up after docker-machine start
+        # returns. Wait for the docker-machine env command to return some same result before we
+        # move forward.
+        echo "Wait a moment for the docker-machine docker daemon to start..."
+        set +e
+        n=0
+        until [ $n -ge 10 ]
+        do
+            docker-machine env ${VM} 1>/dev/null 2>/dev/null
+            if [ $? -eq 0 ]
+            then
+                break
+            fi
+            n=$[$n+1]
+            sleep 1
+        done
+        set -e
+
+        echo "Configuring environment and package cache...."
+        eval "$(docker-machine env ${VM})"
         $THIS_DIR/../../tools/cache/start.sh
 
         # XXX
