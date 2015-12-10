@@ -91,6 +91,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
@@ -216,7 +217,7 @@ public class AbstractRestTest extends BaseAbstractRestTest
             tunnel.start().awaitUninterruptibly();
 
             // wait for connection to be established on gateway side (version handshake)
-            future.get();
+            future.get(10, TimeUnit.SECONDS);
         }
     }
 

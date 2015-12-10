@@ -5,6 +5,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -317,6 +318,7 @@ public class BaseAbstractRestTest extends AbstractTest
     public void tearDown() throws Exception
     {
         service.stop();
+        inj.getInstance(CoreScheduler.class).shutdown();
         if (useProxy) {
             havre.stop();
             tunnel.stop();

@@ -2,11 +2,7 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.TimerUtil;
-import com.aerofs.daemon.core.IContentVersionControl;
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.PolarisContentVersionControl;
-import com.aerofs.daemon.core.IVersionUpdater;
-import com.aerofs.daemon.core.VersionUpdater;
+import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -300,6 +296,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
     @After
     public void tearDown() throws Exception
     {
+        inj.getInstance(CoreScheduler.class).shutdown();
         dbcw.fini_();
     }
 
