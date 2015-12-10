@@ -8,9 +8,9 @@ If you have any questions about setting up the service, like how to launch the A
 
 {{ faqs_url }}
 
-If you can’t find the answer to your question there, feel free to contact our support team.
+If you can’t find the answer to your question there, feel free to contact our support desk.
 
 {{ contact_url }}
 
-Happy Syncing,
+Regards,
 The AeroFS Team

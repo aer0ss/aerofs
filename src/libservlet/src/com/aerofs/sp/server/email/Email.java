@@ -57,7 +57,7 @@ public class Email implements IEmail
 
     public void addDefaultSignature() throws IOException
     {
-        addSignature("Happy Syncing,", "The " + SPParam.BRAND + " Team", Email.DEFAULT_PS);
+        addSignature("Regards,", "The " + SPParam.BRAND + " Team", Email.DEFAULT_PS);
     }
 
     // A crappy linkifier
