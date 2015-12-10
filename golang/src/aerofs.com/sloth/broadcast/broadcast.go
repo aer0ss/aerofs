@@ -5,6 +5,11 @@
 // set of keys.
 package broadcast
 
+import (
+	"encoding/json"
+	"log"
+)
+
 type channelSet map[chan []byte]struct{}
 
 // This interface provides methods for subscribing and unsubscribing to a
@@ -21,6 +26,9 @@ type Broadcaster interface {
 
 	// Pass an object to send it to the channels indexed by the given keys
 	Multicast([]byte, []string)
+
+	// Logs a JSON string with debug info
+	Debug()
 }
 
 type subscription struct {
@@ -37,6 +45,7 @@ type broadcaster struct {
 	subs     chan subscription
 	unsubs   chan chan []byte
 	outbound chan outbound
+	debug    chan struct{}
 	channels map[string]channelSet
 }
 
@@ -56,6 +65,10 @@ func (b *broadcaster) Broadcast(obj []byte) {
 
 func (b *broadcaster) Multicast(obj []byte, keys []string) {
 	b.outbound <- outbound{payload: obj, keys: keys}
+}
+
+func (b *broadcaster) Debug() {
+	b.debug <- struct{}{}
 }
 
 func (b *broadcaster) selectLoop() {
@@ -95,6 +108,17 @@ func (b *broadcaster) selectLoop() {
 					}
 				}
 			}
+		case <-b.debug:
+			// log the number of websocket connections per key
+			count := make(map[string]int)
+			for key, set := range b.channels {
+				count[key] = len(set)
+			}
+			encoded, err := json.Marshal(count)
+			if err != nil {
+				panic(err)
+			}
+			log.Printf("debug ws %v\n", string(encoded))
 		}
 	}
 }
@@ -110,6 +134,7 @@ func NewBroadcaster() Broadcaster {
 		subs:     make(chan subscription, 1024),
 		unsubs:   make(chan chan []byte, 1024),
 		outbound: make(chan outbound, 1024),
+		debug:    make(chan struct{}, 1024),
 		channels: make(map[string]channelSet),
 	}
 	go b.selectLoop()

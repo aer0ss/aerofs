@@ -56,6 +56,20 @@ func authConnection(conn *websocket.Conn, verifier auth.TokenVerifier) string {
 	return uid
 }
 
+func unsubscribeOnClose(conn *websocket.Conn, broadcaster broadcast.Broadcaster, c chan []byte) {
+	for {
+		_, _, err := conn.NextReader()
+		if err != nil {
+			log.Printf("ws conn %v closed\n", conn.UnderlyingConn())
+			broadcaster.Unsubscribe(c)
+			if !isChanClosedErr(err) {
+				panic(err)
+			}
+			return
+		}
+	}
+}
+
 func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader, verifier auth.TokenVerifier, broadcaster broadcast.Broadcaster) {
 	// upgrade to websocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -65,6 +79,7 @@ func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket
 	// authenticate channel, and subscribe to broadcaster
 	uid := authConnection(conn, verifier)
 	events := broadcaster.Subscribe(uid)
+	go unsubscribeOnClose(conn, broadcaster, events)
 
 	// pass all events through the websocket connection
 	for {
