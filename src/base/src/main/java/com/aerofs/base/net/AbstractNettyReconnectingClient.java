@@ -41,6 +41,15 @@ public abstract class AbstractNettyReconnectingClient
     private int _reconnectDelay = MIN_RETRY_DELAY;
 
     private final ChannelFutureListener onConnect = cf -> {
+        // Since in TunnelClient, we could switch from one channel to another and we register
+        // listeners when we try to connect every new channel, the listeners still get notified for.
+        // unused channels. Handle that.
+        // Also relevant for onDisconnect listener.
+        if (_channel != null && !cf.getChannel().equals(_channel)) {
+            l.debug("{} open (obsoleted by {})", cf.getChannel(), _channel);
+            cf.getChannel().close();
+            return;
+        }
         if (cf.isSuccess()) {
             l.info("{} open", AbstractNettyReconnectingClient.this);
             _reconnectDelay = MIN_RETRY_DELAY;
@@ -52,6 +61,10 @@ public abstract class AbstractNettyReconnectingClient
     };
 
     private final ChannelFutureListener onDisconnect = cf -> {
+        if (_channel != null && !cf.getChannel().equals(_channel)) {
+            l.debug("{} closed (obsoleted by {})", cf.getChannel(), _channel);
+            return;
+        }
         if (_closeRequested) {
             l.info("{} closed", AbstractNettyReconnectingClient.this);
             _running = false;
@@ -78,7 +91,7 @@ public abstract class AbstractNettyReconnectingClient
         return tryConnect();
     }
 
-    private synchronized ChannelFuture tryConnect()
+    protected synchronized ChannelFuture tryConnect()
     {
         if (_closeRequested) return null;
         ChannelFuture f = connect();
@@ -126,6 +139,11 @@ public abstract class AbstractNettyReconnectingClient
     private static @Nonnull Throwable selfOrClosedChannelException(@Nullable Throwable t)
     {
         return t == null ? new ClosedChannelException() : t;
+    }
+
+    protected @Nullable Channel channel()
+    {
+        return _channel;
     }
 
     protected abstract ChannelPipelineFactory pipelineFactory();

@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +22,14 @@ public class EffectiveUserList {
     private final IMapSIndex2SID _sidx2sid;
     private final LocalACL _lacl;
     private final List<UserID> _users;
+    private final List<IUserListChangeListener> _listeners;
 
     @Inject
     public EffectiveUserList(IMapSIndex2SID sidx2sid, LocalACL lacl) {
         _sidx2sid = sidx2sid;
         _lacl = lacl;
         _users = new CopyOnWriteArrayList<>();
+        _listeners = Lists.newArrayList();
     }
 
     public List<UserID> getEffectiveList() {
@@ -42,6 +45,7 @@ public class EffectiveUserList {
         _users.add(user);
         l.info("Effective user added: {}", user);
         checkState(!users.hasNext());
+        _listeners.forEach(IUserListChangeListener::onUserListChanged);
     }
 
     public void storeRemoved_(SIndex sidx) throws SQLException {
@@ -54,8 +58,17 @@ public class EffectiveUserList {
             if (SID.rootSID(user).equals(sid)) {
                 _users.remove(user);
                 l.info("Effective user removed: {}", user);
+                _listeners.forEach(IUserListChangeListener::onUserListChanged);
                 break;
             }
         }
+    }
+
+    public void addListener(IUserListChangeListener listener) {
+        _listeners.add(listener);
+    }
+
+    public static interface IUserListChangeListener {
+        void onUserListChanged();
     }
 }

@@ -25,6 +25,8 @@ public class VirtualChannelProvider
     private final TunnelHandler _handler;
     private final @Nullable ChannelPipelineFactory _pipelineFactory;
     private final ConcurrentMap<Integer, VirtualChannel> _connections = Maps.newConcurrentMap();
+    private boolean _shutdownCalled = false;
+    private Runnable _onShutdownComplete;
 
     public VirtualChannelProvider(TunnelHandler handler,
             @Nullable ChannelPipelineFactory pipelineFactory)
@@ -42,7 +44,7 @@ public class VirtualChannelProvider
     public VirtualChannel get(int connectionId)
     {
         VirtualChannel c = _connections.get(connectionId);
-        if (c == null && _pipelineFactory != null) {
+        if (!_shutdownCalled && c == null && _pipelineFactory != null) {
             try {
                 c = new VirtualChannel(_handler, connectionId, _pipelineFactory.getPipeline());
             } catch (Exception e) {
@@ -66,11 +68,15 @@ public class VirtualChannelProvider
     public void remove(int connectionId)
     {
         _connections.remove(connectionId);
+        if (_connections.size() == 0 && _onShutdownComplete != null) {
+            _onShutdownComplete.run();
+            _onShutdownComplete = null;
+        }
     }
 
     public void foreach(Function<VirtualChannel, Void> f)
     {
-        for (VirtualChannel c : _connections.values()) f.apply(c);
+        _connections.values().forEach(f::apply);
     }
 
     public void clear()
@@ -81,5 +87,18 @@ public class VirtualChannelProvider
     public boolean isEmpty()
     {
         return _connections.isEmpty();
+    }
+
+    public void shutdown(Runnable onShutdownComplete) {
+        if (!_shutdownCalled) {
+            _shutdownCalled = true;
+            // This check is thread-safe as get/remove/shutdown are all called from the io thread
+            // of the physical tunnel channel.
+            if (_connections.isEmpty()) {
+                onShutdownComplete.run();
+            } else {
+                _onShutdownComplete = onShutdownComplete;
+            }
+        }
     }
 }

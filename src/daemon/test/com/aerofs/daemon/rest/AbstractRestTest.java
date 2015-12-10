@@ -6,6 +6,7 @@ import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.daemon.core.*;
+import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -211,9 +212,11 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 public void tunnelClosed(TunnelAddress addr, TunnelHandler handler) {}
             });
 
+            EffectiveUserList userList = mock(EffectiveUserList.class);
+            doNothing().when(userList).addListener(any());
             // open tunnel between gateway and rest service
             tunnel = new RestTunnelClient(localUser, localDID, getGlobalTimer(),
-                    clientSslEngineFactory, service);
+                    clientSslEngineFactory, service, userList);
             tunnel.start().awaitUninterruptibly();
 
             // wait for connection to be established on gateway side (version handshake)

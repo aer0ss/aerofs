@@ -3,21 +3,12 @@ package com.aerofs.tunnel;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.base.ssl.CNameVerificationHandler.CNameListener;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureNotifier;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.stream.ChunkedInput;
@@ -145,12 +136,23 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
         if (_channel != null && _channel.isConnected()) _channel.close();
     }
 
+    @Override
+    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
+    {
+        if (e instanceof ShutdownEvent) {
+            if (_channel != null && _channel.isConnected()) {
+                _provider.shutdown(() -> _channel.close());
+            }
+        } else {
+            super.handleUpstream(ctx, e);
+        }
+    }
+
     @SuppressWarnings("fallthrough")
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent me) throws IOException
     {
         ChannelBuffer buf = (ChannelBuffer)me.getMessage();
-
         if (buf.readableBytes() < TYPE_FIELD_SIZE) {
             throw new ProtocolException("tunnel message too small: " + buf.readableBytes());
         }
