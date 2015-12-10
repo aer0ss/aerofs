@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+type stringSet map[string]struct{}
+
 type GroupsResource struct {
 	broadcaster broadcast.Broadcaster
 	db          *sql.DB
@@ -105,6 +107,18 @@ func BuildGroupsRoutes(db *sql.DB, broadcaster broadcast.Broadcaster) *restful.W
 		Returns(401, "Invalid Authorization", nil).
 		Returns(403, "Forbidden", nil).
 		Returns(404, "Group not found", nil))
+
+	//
+	// path: /groups/{gid}/member_history
+	//
+
+	ws.Route(ws.GET("/{gid}/member_history").To(g.getMemberHistory).
+		Doc("Get group membership history").
+		Param(ws.PathParameter("gid", "Group id").DataType("string")).
+		Returns(200, "Group membership history", nil).
+		Returns(401, "Invalid Authorization", nil).
+		Returns(403, "Forbidden", nil).
+		Returns(404, "Group or user not found", nil))
 
 	//
 	// path: /groups/{gid}/messages
@@ -202,6 +216,7 @@ func (g GroupsResource) getAll(request *restful.Request, response *restful.Respo
 }
 
 func (g GroupsResource) createGroup(request *restful.Request, response *restful.Response) {
+	caller := request.Attribute(AuthorizedUser).(string)
 	// read body
 	params := new(GroupWritable)
 	err := request.ReadEntity(params)
@@ -222,6 +237,8 @@ func (g GroupsResource) createGroup(request *restful.Request, response *restful.
 	errors.PanicAndRollbackOnErr(err, tx)
 	for _, uid := range params.Members {
 		_, err = tx.Exec("INSERT INTO group_members (user_id,group_id) VALUES (?,?)", uid, gid)
+		errors.PanicAndRollbackOnErr(err, tx)
+		err = insertGroupMemberChange(tx, gid, uid, caller, createdTime, true)
 		errors.PanicAndRollbackOnErr(err, tx)
 	}
 	// end transaction
@@ -263,6 +280,7 @@ func (g GroupsResource) getById(request *restful.Request, response *restful.Resp
 
 func (g GroupsResource) updateGroup(request *restful.Request, response *restful.Response) {
 	gid := request.PathParameter("gid")
+	caller := request.Attribute(AuthorizedUser).(string)
 	// read the request body
 	params := new(GroupWritable)
 	err := request.ReadEntity(params)
@@ -278,14 +296,13 @@ func (g GroupsResource) updateGroup(request *restful.Request, response *restful.
 		return
 	}
 	// check that caller is in group or group is public
-	caller := request.Attribute(AuthorizedUser).(string)
 	if !group.IsPublic && !group.hasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
 		tx.Rollback()
 		return
 	}
 	// update db
-	group, err = updateGroup(tx, group, params)
+	group, err = updateGroup(tx, group, params, caller)
 	errors.PanicAndRollbackOnErr(err, tx)
 	// end transaction
 	CommitOrPanic(tx)
@@ -328,6 +345,7 @@ func (g GroupsResource) getMembers(request *restful.Request, response *restful.R
 func (g GroupsResource) addMember(request *restful.Request, response *restful.Response) {
 	gid := request.PathParameter("gid")
 	uid := request.PathParameter("uid")
+	caller := request.Attribute(AuthorizedUser).(string)
 	// start transaction
 	tx := BeginOrPanic(g.db)
 	// query db for group info
@@ -339,14 +357,13 @@ func (g GroupsResource) addMember(request *restful.Request, response *restful.Re
 		return
 	}
 	// check that caller is in group or group is public
-	caller := request.Attribute(AuthorizedUser).(string)
 	if !group.IsPublic && !group.hasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
 		tx.Rollback()
 		return
 	}
 	// update db
-	_, err = g.db.Exec("INSERT INTO group_members (group_id,user_id) VALUES (?,?)", gid, uid)
+	_, err = tx.Exec("INSERT INTO group_members (group_id,user_id) VALUES (?,?)", gid, uid)
 	// rely on MySQL constraints for error checks
 	if errors.ForeignKeyConstraintFailed(err) {
 		response.WriteHeader(404)
@@ -354,8 +371,12 @@ func (g GroupsResource) addMember(request *restful.Request, response *restful.Re
 		return
 	} else if errors.UniqueConstraintFailed(err) {
 		// user is already a member of the group, that's ok!
+		tx.Rollback()
 		return
 	}
+	errors.PanicAndRollbackOnErr(err, tx)
+	// edit member history
+	err = insertGroupMemberChange(tx, gid, uid, caller, time.Now(), true)
 	errors.PanicAndRollbackOnErr(err, tx)
 	// end transaction
 	CommitOrPanic(tx)
@@ -371,6 +392,7 @@ func (g GroupsResource) addMember(request *restful.Request, response *restful.Re
 func (g GroupsResource) removeMember(request *restful.Request, response *restful.Response) {
 	gid := request.PathParameter("gid")
 	uid := request.PathParameter("uid")
+	caller := request.Attribute(AuthorizedUser).(string)
 	// start transaction
 	tx := BeginOrPanic(g.db)
 	// query db for group info
@@ -382,14 +404,23 @@ func (g GroupsResource) removeMember(request *restful.Request, response *restful
 		return
 	}
 	// check that caller is in group or group is public
-	caller := request.Attribute(AuthorizedUser).(string)
 	if !group.IsPublic && !group.hasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
 		tx.Rollback()
 		return
 	}
-	// update db
-	_, err = g.db.Exec("DELETE FROM group_members WHERE group_id=? AND user_id=?", gid, uid)
+	// remove member
+	result, err := tx.Exec("DELETE FROM group_members WHERE group_id=? AND user_id=?", gid, uid)
+	errors.PanicAndRollbackOnErr(err, tx)
+	// exit early if uid was already not a member
+	rowsAffected, err := result.RowsAffected()
+	errors.PanicAndRollbackOnErr(err, tx)
+	if rowsAffected == 0 {
+		tx.Rollback()
+		return
+	}
+	// edit membership history
+	err = insertGroupMemberChange(tx, gid, uid, caller, time.Now(), false)
 	errors.PanicAndRollbackOnErr(err, tx)
 	// end transaction
 	CommitOrPanic(tx)
@@ -399,6 +430,27 @@ func (g GroupsResource) removeMember(request *restful.Request, response *restful
 		targets = group.Members
 	}
 	sendGroupEvent(g.broadcaster, gid, targets)
+}
+
+func (g GroupsResource) getMemberHistory(request *restful.Request, response *restful.Response) {
+	gid := request.PathParameter("gid")
+	caller := request.Attribute(AuthorizedUser).(string)
+	tx := BeginOrPanic(g.db)
+	group, err := getGroup(tx, gid)
+	if group == nil {
+		response.WriteHeader(404)
+		tx.Rollback()
+		return
+	}
+	if !group.IsPublic && !group.hasMember(caller) {
+		response.WriteErrorString(403, "Forbidden")
+		tx.Rollback()
+		return
+	}
+	history, err := getGroupMemberHistory(tx, gid)
+	errors.PanicAndRollbackOnErr(err, tx)
+	CommitOrPanic(tx)
+	response.WriteEntity(GroupMemberHistory{History: history})
 }
 
 func (g GroupsResource) getMessages(request *restful.Request, response *restful.Response) {
@@ -635,6 +687,22 @@ func (g *Group) hasMember(uid string) bool {
 	return false
 }
 
+func sliceToSet(s []string) stringSet {
+	m := make(stringSet)
+	for _, v := range s {
+		m[v] = struct{}{}
+	}
+	return m
+}
+
+func difference(a, b []string) stringSet {
+	s := sliceToSet(a)
+	for _, v := range b {
+		delete(s, v)
+	}
+	return s
+}
+
 //
 // Db Helpers
 //
@@ -677,7 +745,8 @@ func getGroup(tx *sql.Tx, gid string) (*Group, error) {
 // GroupWritable, and updates the db.
 // Returns the modified group
 // N.B. does not check for group's existence!
-func updateGroup(tx *sql.Tx, group *Group, params *GroupWritable) (*Group, error) {
+func updateGroup(tx *sql.Tx, group *Group, params *GroupWritable, caller string) (*Group, error) {
+	var membersAdded, membersRemoved stringSet
 	// patch group with params
 	if params.Name != nil {
 		group.Name = *params.Name
@@ -686,6 +755,8 @@ func updateGroup(tx *sql.Tx, group *Group, params *GroupWritable) (*Group, error
 		group.IsPublic = *params.IsPublic
 	}
 	if params.Members != nil {
+		membersAdded = difference(params.Members, group.Members)
+		membersRemoved = difference(group.Members, params.Members)
 		group.Members = params.Members
 	}
 	// update groups table
@@ -697,20 +768,67 @@ func updateGroup(tx *sql.Tx, group *Group, params *GroupWritable) (*Group, error
 	if err != nil {
 		return nil, err
 	}
-	// update group_members table
-	_, err = tx.Exec("DELETE FROM group_members WHERE group_id=?", group.Id)
-	if err != nil {
-		return nil, err
+	// exit early if no changes made to membership
+	if params.Members == nil || (len(membersAdded) == 0 && len(membersRemoved) == 0) {
+		return group, nil
 	}
-	for _, uid := range group.Members {
-		_, err = tx.Exec("INSERT INTO group_members (user_id, group_id) VALUES (?,?)",
-			uid,
-			group.Id,
-		)
+	// update group_members and group_member_history tables
+	updateTime := time.Now()
+	for uid := range membersRemoved {
+		_, err = tx.Exec("DELETE FROM group_members WHERE group_id=? AND user_id=?", group.Id, uid)
+		if err != nil {
+			return nil, err
+		}
+		err = insertGroupMemberChange(tx, group.Id, uid, caller, updateTime, false)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for uid := range membersAdded {
+		_, err = tx.Exec("INSERT INTO group_members (group_id, user_id) VALUES (?,?)", group.Id, uid)
+		if err != nil {
+			return nil, err
+		}
+		err = insertGroupMemberChange(tx, group.Id, uid, caller, updateTime, true)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// return updated group
 	return group, nil
+}
+
+func getGroupMemberHistory(tx *sql.Tx, gid string) ([]GroupMemberChange, error) {
+	rows, err := tx.Query("SELECT user_id,caller_id,time,added FROM group_member_history WHERE group_id=? ORDER BY time", gid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	changes := make([]GroupMemberChange, 0)
+	for rows.Next() {
+		c, err := parseGroupMemberHistoryRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		changes = append(changes, *c)
+	}
+	return changes, nil
+}
+
+func parseGroupMemberHistoryRow(row Scannable) (*GroupMemberChange, error) {
+	var c GroupMemberChange
+	var unixTimeNanos int64
+	err := row.Scan(&c.UserId, &c.CallerId, &unixTimeNanos, &c.Added)
+	if err != nil {
+		return nil, err
+	}
+	c.Time = time.Unix(0, unixTimeNanos)
+	return &c, nil
+}
+
+func insertGroupMemberChange(tx *sql.Tx, gid, uid, caller string, time time.Time, added bool) error {
+	_, err := tx.Exec("INSERT INTO group_member_history (group_id,user_id,caller_id,time,added) VALUES (?,?,?,?,?)",
+		gid, uid, caller, time.UnixNano(), added,
+	)
+	return err
 }

@@ -66,6 +66,13 @@ type LastReadReceipt struct {
 	Time      time.Time `json:"time"`
 }
 
+type GroupMemberChange struct {
+	UserId   string    `json:"userId"`
+	CallerId string    `json:"callerId"`
+	Time     time.Time `json:"time"`
+	Added    bool      `json:"added"`
+}
+
 //
 // FIXME: hack until I can figure out read-only keys
 //
@@ -124,6 +131,10 @@ type IdList struct {
 
 type LastReadReceiptList struct {
 	LastRead []LastReadReceipt `json:"lastRead"`
+}
+
+type GroupMemberHistory struct {
+	History []GroupMemberChange `json:"history"`
 }
 
 //
