@@ -38,6 +38,7 @@ dependencies {
 }
 
 jar {
+    from('resources') { include('logback.xml') }
     manifest.attributes(
         'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
     )

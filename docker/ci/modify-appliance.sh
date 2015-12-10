@@ -20,13 +20,17 @@ TAG="$(echo "${LINE}" | awk '{print $2}')"
 
 # Keep legacy sync as the default
 # necessary to cover legacy in CI until all customers are moved to Phoenix
+# Set log level to DEBUG for verbosity
 CONFIG="${REGISTRY}aerofs/config:${TAG}"
 echo "Modifying ${CONFIG} ..."
 true && {
     TMP="$(mktemp -d -t XXXXXX)"
     cat > "${TMP}/Dockerfile" <<END
 FROM ${CONFIG}
-RUN  sed -i s/enable_phoenix=true// /external.properties.default
+RUN  sed -i \
+     -e s/enable_phoenix=true// \
+     -e s/log_level=INFO/log_level=DEBUG/ \
+     /external.properties.default
 END
     docker build -t ${CONFIG} "${TMP}"
     rm -rf "${TMP}"

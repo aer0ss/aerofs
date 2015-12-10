@@ -4,12 +4,13 @@
 
 package com.aerofs.lib.configuration;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ex.ExBadArgs;
-import com.google.common.collect.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkState;
 
 public final class ServerConfigurationLoader
@@ -42,6 +44,12 @@ public final class ServerConfigurationLoader
         Properties merged = effectiveProperties(serviceName, extra);
         // Set properties in global registry.
         ConfigurationProperties.setProperties(merged);
+
+        // Set the log verbosity to the level as defined in config service
+        final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
+                .setLevel(Level.toLevel(getStringProperty("base.log.level", ""), Level.INFO));
+
         // Log that we have loaded config.
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             merged.store(stream, "Configuration initialized");

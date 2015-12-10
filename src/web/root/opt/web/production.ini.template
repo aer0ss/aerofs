@@ -57,18 +57,18 @@ keys = console, filelog
 keys = generic
 
 [logger_root]
-level = DEBUG
+level = {{ log_level }}
 handlers = console
 
 [logger_web]
-level = DEBUG
+level = {{ log_level }}
 handlers = filelog
 qualname = web
 
 [handler_filelog]
 class = FileHandler
 args = ('/var/log/web/web.log','a')
-level = DEBUG
+level = {{ log_level }}
 formatter = generic
 
 [handler_console]

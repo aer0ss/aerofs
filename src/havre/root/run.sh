@@ -4,6 +4,8 @@ set -e
 /container-scripts/copy-ca-cert /opt/havre
 /container-scripts/import-ca-cert-to-java
 
+LOG_LEVEL="$(/container-scripts/get-config-property base.log.level)"
+
 # Generate certificates
 #
 # The CNAME is the output of the following Java code:
@@ -13,5 +15,9 @@ set -e
 
 echo Starting Havre...
 cd /opt/havre
+
+sed -e "s/{{ log_level }}/$LOG_LEVEL/g" \
+    havre.properties.tmplt > havre.properties
+
 /container-scripts/restart-on-error java -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/var/log/havre -Xmx1536m -jar aerofs-havre.jar havre.properties

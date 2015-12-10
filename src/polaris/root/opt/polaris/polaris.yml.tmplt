@@ -25,7 +25,7 @@ sparta:
   maxConnections: 10
 
 logging:
-  level: DEBUG
+  level: LOG_LEVEL
 
   console:
     enabled: true

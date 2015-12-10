@@ -54,6 +54,8 @@ function render_production_ini() {
     ENC_KEY_FILE=/data/web/session_encrypt_key
     VLD_KEY_FILE=/data/web/session_validate_key
 
+    LOG_LEVEL="$(/container-scripts/get-config-property base.log.level)"
+
     # Generate session encrypt and validate keys if not exist.
     if [ ! -f $ENC_KEY_FILE ]; then
         echo Creating session encryption key...
@@ -71,6 +73,7 @@ function render_production_ini() {
         -e "s/{{ encrypt_key }}/$ENC_KEY/" \
         -e "s/{{ shelob_client_secret }}/$SHELOB_SECRET/" \
         -e "s/{{ settings_client_secret }}/$SETTINGS_SECRET/" \
+        -e "s/{{ log_level }}/$LOG_LEVEL/" \
         /opt/web/production.ini.template > /opt/web/production.ini
 }
 

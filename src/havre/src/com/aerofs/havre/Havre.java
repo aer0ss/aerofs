@@ -1,11 +1,10 @@
 package com.aerofs.havre;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.FileBasedKeyManagersProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
@@ -14,6 +13,9 @@ import com.aerofs.havre.auth.OAuthAuthenticator;
 import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelServer;
@@ -21,6 +23,7 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.FileInputStream;
@@ -103,6 +106,11 @@ public class Havre
         if (args.length > 0) extra.load(new FileInputStream(args[0]));
 
         ConfigurationProperties.setProperties(extra);
+
+        // Set the log verbosity to the level as defined in config service
+        final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
+                .setLevel(Level.toLevel(getStringProperty("havre.log.level", ""), Level.INFO));
 
         // dummy daemon-like identity for CName verification when establishing tunnel
         UserID tunnelUser = UserID.DUMMY;

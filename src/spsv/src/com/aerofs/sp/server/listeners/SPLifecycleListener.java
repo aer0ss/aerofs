@@ -1,11 +1,7 @@
 package com.aerofs.sp.server.listeners;
 
 import com.aerofs.ids.UserID;
-import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
-import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
-import com.aerofs.sp.server.session.SPSession;
-import com.aerofs.sp.server.session.SPSessionExtender;
-import com.aerofs.sp.server.session.SPSessionInvalidator;
+import com.aerofs.sp.server.session.*;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -13,9 +9,7 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
-import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
-import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
-import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
+import static com.aerofs.sp.server.lib.SPParam.*;
 
 public class SPLifecycleListener extends ConfigurationLifecycleListener
         implements ServletContextListener, HttpSessionListener
@@ -35,8 +29,7 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
     public SPLifecycleListener() {}
 
     @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent)
-    {
+    public void contextInitialized(ServletContextEvent servletContextEvent) {
         super.contextInitialized(servletContextEvent);
 
         ServletContext ctx = servletContextEvent.getServletContext();
