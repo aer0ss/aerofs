@@ -39,7 +39,9 @@ air-gapped anyhow, so phoning home is a no-no.
 
         ssh -i <your_pem_file> core@<private_ip>
         sudo su
+        rm -rf /home/core/.ssh/authorized_keys*
         wget https://raw.githubusercontent.com/aerofs/aerofs-docker/master/cloud-config.yml
+        mkdir -p /var/lib/coreos-install/
         mv cloud-config.yml /var/lib/coreos-install/user_data && shutdown now
 
 3. Make sure the instance is stopped and create an AMI using the Create Image command on the
