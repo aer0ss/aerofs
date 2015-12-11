@@ -32,7 +32,7 @@ class SignupForm(Form):
     demandramp_rm__session_id__c = HiddenField("demandramp_rm__session_id__c", validators=[Optional()])
 
 class CompleteSignupForm(Form):
-    password = PasswordField('Password', validators=[Length(min=6)])
+    password = PasswordField('Create Password', validators=[Length(min=6)])
 
 class AcceptInviteForm(Form):
     first_name = StringField('First Name', validators=[InputRequired()])
