@@ -100,9 +100,9 @@ cp -av $SERVER_RELEASE_DIR/aerofs/* debian/usr/share/$AEROFS_PRODUCT_UNIX/shared
 cp $SERVER_RELEASE_DIR/aerofs.linux/shared/$AEROFS_PRODUCT_UNIX.desktop debian/usr/share/applications/$AEROFS_PRODUCT_UNIX.desktop
 
 # Icons for platform integration
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/$AEROFS_PRODUCT_UNIX.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/$AEROFS_PRODUCT_UNIX.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/$AEROFS_PRODUCT_UNIX.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo_16x16.png $HICOLOR_DIR/16x16/apps/$AEROFS_PRODUCT_UNIX.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo_32x32.png $HICOLOR_DIR/32x32/apps/$AEROFS_PRODUCT_UNIX.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo_64x64.png $HICOLOR_DIR/64x64/apps/$AEROFS_PRODUCT_UNIX.png
 
 # Executables (links to copier, which will invoke launcher once set up)
 # pushd/popd is used to ensure we make relative links

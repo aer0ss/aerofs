@@ -3,7 +3,7 @@ import logging
 from pyramid.view import view_config
 from pyramid.security import authenticated_userid
 
-from web.util import get_rpc_stub, show_welcome_image_and_set_cookie
+from web.util import get_rpc_stub
 from web.oauth import get_bifrost_client
 
 log = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def get_new_shelob_token(request):
         request_method='GET',
 )
 def files(request):
-    return {'splash': show_welcome_image_and_set_cookie(request)}
+    return {}
 
 
 # map of userid -> access_token

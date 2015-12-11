@@ -25,10 +25,18 @@ import static java.lang.Math.*;
 
 public class Images {
 
-    public static final String ICON_LOGO16 = "logo16.png";
-    public static final String ICON_LOGO32 = "logo32.png";
-    public static final String ICON_LOGO48 = "logo48.png";
-    public static final String ICON_LOGO64 = "logo64.png";
+    public static final String ICON_LOGO16 = "logo_16x16.png";
+    public static final String ICON_LOGO16x2 = "logo_16x16@2x.png";
+    public static final String ICON_LOGO32 = "logo_32x32.png";
+    public static final String ICON_LOGO32x2 = "logo_32x32@2x.png";
+    public static final String ICON_LOGO48 = "logo_48x48.png";
+    public static final String ICON_LOGO48x2 = "logo_48x48@2x.png";
+    public static final String ICON_LOGO64 = "logo_64x64.png";
+    public static final String ICON_LOGO64x2 = "logo_64x64@2x.png";
+    public static final String ICON_LOGO256 = "logo_256x256.png";
+    public static final String ICON_LOGO256x2 = "logo_256x256@2x.png";
+    public static final String ICON_LOGO512 = "logo_512x512.png";
+    public static final String ICON_LOGO512x2 = "logo_512x512@2x.png";
     public static final String ICON_LOGO32_ERROR = "logo32err.png";
 
     public static final String ICON_FILE = "file.gif";

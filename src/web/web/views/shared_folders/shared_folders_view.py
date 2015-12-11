@@ -93,8 +93,7 @@ def _shared_folders(request, page_heading, data_url, has_pagination=False, can_a
         # defines a global variable using the same name.
         'page_heading': page_heading,
         'has_pagination': has_pagination,
-        'data_url': data_url,
-        'splash': util.show_welcome_image_and_set_cookie(request)
+        'data_url': data_url
     }
 
 
@@ -206,7 +205,7 @@ def _jsonable_group(group_perm):
     }
 
 def _jsonable_people(people_list, session_user):
-    """ Converts list of protobuf user objects to a list of dictionaries 
+    """ Converts list of protobuf user objects to a list of dictionaries
     that json can handle, then moves "me" to end of the list, if necessary"""
     json_people = (_jsonable_person(p) for p in people_list)
     return sorted(json_people, key=lambda x: x.get('email') == session_user)
@@ -225,9 +224,9 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
         # a workaround to filter folder.user_permissions_and_state into owners and members
         # due to Protobuf magic, you can't just use folder twice
         member_folder = folder
-        owners = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE in urs.permissions.permission, 
+        owners = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE in urs.permissions.permission,
             folder.user_permissions_and_state)
-        members = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE not in urs.permissions.permission, 
+        members = filter(lambda urs: urs.state in (JOINED, LEFT, PENDING) and MANAGE not in urs.permissions.permission,
             member_folder.user_permissions_and_state)
         group_perms = member_folder.group_permissions
 

@@ -251,7 +251,15 @@ public class OSUtilWindows implements IOSUtil
     {
         InjectableFile.Factory factFile = new InjectableFile.Factory();
         InjectableFile result = factFile.create(AppRoot.abs());
-        String suffix = icon.hasXPStyle ? (OSUtil.isWindowsXP() ? "XP" : "Vista") : "";
+
+        String suffix = "";
+        if (icon.hasXPStyle && OSUtil.isWindowsXP()) {
+            suffix = "XP";
+        }
+        if (OSUtil.isWindows10()) {
+            suffix = "10";
+        }
+
         result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
         if (!result.exists()) {
             newDefectWithLogs("gui.icon_path.windows")

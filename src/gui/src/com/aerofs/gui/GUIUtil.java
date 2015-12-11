@@ -101,13 +101,21 @@ public class GUIUtil
     public static void setShellIcon(Shell shell)
     {
         if (OSUtil.get().getOSFamily() == OSUtil.OSFamily.OSX) {
-            shell.setImage(Images.get(Images.ICON_LOGO64));
+            shell.setImage(Images.get(Images.ICON_LOGO256));
         } else {
             shell.setImages(new Image[] {
                     Images.get(Images.ICON_LOGO16),
+                    Images.get(Images.ICON_LOGO16x2),
                     Images.get(Images.ICON_LOGO32),
+                    Images.get(Images.ICON_LOGO32x2),
                     Images.get(Images.ICON_LOGO48),
+                    Images.get(Images.ICON_LOGO48x2),
                     Images.get(Images.ICON_LOGO64),
+                    Images.get(Images.ICON_LOGO64x2),
+                    Images.get(Images.ICON_LOGO256),
+                    Images.get(Images.ICON_LOGO256x2),
+                    Images.get(Images.ICON_LOGO512),
+                    Images.get(Images.ICON_LOGO512x2),
                 });
         }
     }

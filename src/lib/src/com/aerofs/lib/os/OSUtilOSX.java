@@ -57,7 +57,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         ArrayList<String> result = new ArrayList<String>();
         result.addAll(Arrays.asList(
                 AppRoot.abs().concat("/AeroFSsetup"),
-                "--icon=" + AppRoot.abs() + "/../AeroFS32.icns",
+                "--icon=" + AppRoot.abs() + "/../AeroFS.icns",
                 "--prompt=" + prompt,
                 "/bin/sh",
                 "-c"

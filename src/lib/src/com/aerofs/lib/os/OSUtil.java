@@ -186,4 +186,15 @@ public abstract class OSUtil
     {
         return isWindows() && getOSName().equals("Windows XP");
     }
+
+    /**
+     * @return true if Windows 10 - Kind of
+     * SPECIAL NOTE: We currently can't distinguish between versions of windows
+     * greater than 8. Once we upgrade our version of java this should work as expcted.
+     * TODO: Update our version of java.
+     */
+    public static boolean isWindows10()
+    {
+        return isWindows() && getOSName().equals("Windows 10");
+    }
 }
