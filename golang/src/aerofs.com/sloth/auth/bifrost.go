@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 // resource owner creds: base64(id:secret)
@@ -15,6 +16,10 @@ const BASIC_AUTH = "b2F1dGgtaGF2cmU6aS1hbS1ub3QtYS1yZXN0ZnVsLXNlY3JldA=="
 
 // token verification route
 const BIFROST_VERIFY_URL = "http://sparta.service:8700/tokeninfo"
+
+// bifrost response cache params
+const TOKEN_CACHE_TIME = time.Minute
+const TOKEN_CACHE_SIZE = 1000
 
 //
 // error type for unexpected errors communicating with Bifrost
@@ -46,9 +51,33 @@ type BifrostVerifyResponse struct {
 // implementation of the TokenVerifier interface
 //
 
-type bifrostTokenVerifier struct{}
+type bifrostTokenVerifier struct {
+	cache *TokenCache
+}
 
 func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
+	log.Printf("verify token: %v\n", token)
+	// check cache
+	uid, ok := v.cache.Get(token)
+	if ok {
+		if uid == "" {
+			return "", TokenNotFoundError{Token: token}
+		} else {
+			return uid, nil
+		}
+	}
+	// ask bifrost and set cache
+	log.Printf("verify token against bifrost: %v\n", token)
+	uid, err := requestVerify(token)
+	if err == nil {
+		v.cache.Set(token, uid)
+	} else if _, notFound := err.(TokenNotFoundError); notFound {
+		v.cache.Set(token, "")
+	}
+	return uid, err
+}
+
+func requestVerify(token string) (string, error) {
 	// compose request
 	url := BIFROST_VERIFY_URL + "?access_token=" + token
 	req, err := http.NewRequest("GET", url, nil)
@@ -89,5 +118,7 @@ func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
 }
 
 func NewBifrostTokenVerifier() TokenVerifier {
-	return new(bifrostTokenVerifier)
+	return &bifrostTokenVerifier{
+		cache: NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE),
+	}
 }
