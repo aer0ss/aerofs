@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,6 @@ import java.util.Set;
 
 import static com.aerofs.dryad.DryadProperties.SERVER_HOSTNAME;
 import static com.aerofs.dryad.DryadProperties.SERVER_PORT;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class DryadServer extends Service
 {
@@ -30,7 +30,7 @@ public class DryadServer extends Service
     private DryadServer(Injector injector, DryadProperties properties)
     {
         super("dryad-upload", getServerAddressFromProperties(properties), injector,
-                newCachedThreadPool());
+                new OrderedMemoryAwareThreadPoolExecutor(8, 0, 0));
 
         addResource(LogsResource.class);
         addResource(HealthCheckResource.class);

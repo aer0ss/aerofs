@@ -20,6 +20,8 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.execution.ChannelEventRunnable;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +49,9 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
         _config = config;
         _executor = executor;
         _application = application;
+        if (executor != null & !(executor instanceof OrderedMemoryAwareThreadPoolExecutor)) {
+            l.warn("unordered thread pool: race between pipelined requests may cause problems");
+        }
     }
 
     @Override
@@ -86,9 +91,9 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
             }
 
             if (_executor != null) {
-                _executor.execute(new Runnable() {
+                _executor.execute(new ChannelEventRunnable(ctx, me, _executor) {
                     @Override
-                    public void run()
+                    public void doRun()
                     {
                         handleRequest(me.getChannel(), request, content);
                     }

@@ -1,6 +1,7 @@
 package com.aerofs.restless.providers;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
 import com.google.gson.*;
 import com.google.gson.stream.JsonWriter;
 import org.slf4j.Logger;
@@ -92,14 +93,12 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
             MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException
     {
-        JsonWriter jsw = new JsonWriter(new OutputStreamWriter(entityStream, Charsets.UTF_8));
-        try {
+        try (JsonWriter jsw = new JsonWriter(new OutputStreamWriter(entityStream, Charsets.UTF_8))) {
             _gson.toJson(t, type, jsw);
-        } catch (JsonIOException e) {
+        } catch (Throwable e) {
             l.warn("serialization failed", e);
-            throw e;
-        } finally {
-            jsw.close();
+            Throwables.propagateIfInstanceOf(e, IOException.class);
+            throw Throwables.propagate(e);
         }
     }
 }

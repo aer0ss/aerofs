@@ -21,13 +21,13 @@ import com.google.inject.Injector;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class RestService extends Service
 {
@@ -43,7 +43,8 @@ public class RestService extends Service
     RestService(Injector injector, CfgKeyManagersProvider kmgr, Set<AbstractResource> resources)
     {
         // use a cached thread pool to free-up I/O threads while the requests sit in the core queue
-        super("rest", new InetSocketAddress(PORT), injector, newCachedThreadPool());
+        super("rest", new InetSocketAddress(PORT), injector,
+                new OrderedMemoryAwareThreadPoolExecutor(4, 0, 0));
 
         _sslHandlerFactory = SSLEngineFactory.newServerFactory(kmgr, null);
 
