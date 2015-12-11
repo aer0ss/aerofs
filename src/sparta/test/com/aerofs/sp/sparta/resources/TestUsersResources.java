@@ -6,11 +6,7 @@ package com.aerofs.sp.sparta.resources;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.path.json.JsonPath.from;
-import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -88,6 +84,7 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("first_name", equalTo("User"))
                 .body("last_name", equalTo("Foo"))
                 .body("shares", emptyIterable())
+                .body("invitations", emptyIterable())
         .when().log().everything()
                 .get(RESOURCE, "me");
     }
@@ -102,6 +99,7 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("first_name", equalTo("User"))
                 .body("last_name", equalTo("Foo"))
                 .body("shares", emptyIterable())
+                .body("invitations", emptyIterable())
         .when().log().everything()
                 .get(RESOURCE, user.getString());
     }
@@ -111,8 +109,12 @@ public class TestUsersResources extends AbstractResourceTest
     {
         givenOtherAccess()
         .expect()
-                .statusCode(404)
-                .body("type", equalTo("NOT_FOUND"))
+                .statusCode(200)
+                .body("email", equalTo(user.getString()))
+                .body("first_name", equalTo("User"))
+                .body("last_name", equalTo("Foo"))
+                .body("shares", nullValue())
+                .body("invitations", nullValue())
         .when().log().everything()
                 .get(RESOURCE, user.getString());
     }
@@ -406,16 +408,6 @@ public class TestUsersResources extends AbstractResourceTest
                 .body("message", equalTo("No such user"))
         .when().log().everything()
                 .delete(RESOURCE + "/invitations/{sid}", other.getString(), sid.toStringFormal());
-    }
-
-    @Test
-    public void list_shouldReturn403WhenNotAdmin() {
-        givenOtherAccess()
-        .expect()
-                .statusCode(403)
-                .body("type", equalTo("FORBIDDEN"))
-        .when().log().everything()
-                .get(RESOURCE_V13_BASE);
     }
 
     @Test
