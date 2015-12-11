@@ -138,6 +138,7 @@ public class UsersResource extends AbstractSpartaResource
     public Response list(@Auth IAuthToken token, @Context Version version,
             @QueryParam("limit") @DefaultValue("20") int limit, @QueryParam("after") String after,
             @QueryParam("before") String before) throws ExInvalidID, SQLException, ExNotFound {
+        requirePermission(Scope.READ_USER, token);
         List<UserID> userIDs = _factUser.listUsers(limit > 0 ? limit + 1 : 0,
                 after != null ? UserID.fromExternal(after) : null,
                 before != null ? UserID.fromExternal(before) : null);
