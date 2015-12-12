@@ -117,7 +117,7 @@ write_files:
       while [[ ! -f {{ tag_file }} ]]; do sleep 1; done
 
       IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
-      docker run --rm -v {{ loader_getty }}:/host "${IMAGE}" install-getty /host
+      docker run --rm -v {{ loader_getty }}:/host -v /var/run/docker.sock:/var/run/docker.sock "${IMAGE}" install-getty /host
       {# Don't rely on systemd's Restart= directive as the user may ^C in quick succession causing systemd to #}
       {# disable the service. #}
       while true; do {{ loader_getty }}/run; done
@@ -159,12 +159,12 @@ write_files:
 
       {# Write tag file. getty_run assumes it's created _after_ Loader image is pulled and repo file is created. #}
       [[ -f {{ tag_file }} ]] || {
-        TAG=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} tag)
+        TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $(cat {{ repo_file }})/{{ loader_image }} tag)
         echo ${TAG} > {{ tag_file }}
       }
 
       {# Pull any images that don't exist locally #}
-      IMAGES=$(docker run --rm $(cat {{ repo_file }})/{{ loader_image }} images)
+      IMAGES=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $(cat {{ repo_file }})/{{ loader_image }} images)
       TOTAL=$(wc -w <<< "${IMAGES}")
       DONE=0
       write_status_json ${DONE} ${TOTAL}

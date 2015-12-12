@@ -2,7 +2,7 @@
 set -e
 
 LOADER_IMAGE=$1
-TAG="$(docker run --rm ${LOADER_IMAGE} tag)"
+TAG="$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} tag)"
 THIS_DIR="$(dirname ${BASH_SOURCE[0]})"
 SHIP_YML="$(mktemp -t ship-aerofs-XXX)"
 

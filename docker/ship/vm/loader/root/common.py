@@ -54,8 +54,9 @@ def my_container_name():
     """
     global _container_name
     if not _container_name:
-        _container_name = subprocess.check_output(['docker', 'inspect', '-f', '{{ .Name }}',
-                                                   my_container_id()]).strip('/ \n\t\r')
+        _container_name = subprocess.check_output(['docker', 'inspect',
+            '-f', '{{ .Name }}',
+            my_container_id()]).strip('/ \n\t\r')
 
     return _container_name
 

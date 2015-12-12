@@ -41,8 +41,8 @@ pull_image() {
 # Fetch and verify image list
 LOADER="${PRELOAD_REPO}/${LOADER_IMAGE}"
 pull_image "${LOADER}"
-IMAGES=$(docker run --rm "${LOADER}" images)
-TAG=$(docker run --rm "${LOADER}" tag)
+IMAGES=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "${LOADER}" images)
+TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "${LOADER}" tag)
 if [ x"$(echo "${IMAGES}" | grep "${LOADER_IMAGE}")" = x ]; then
     echo "ERROR: ${LOADER_IMAGE} not found in its own image list."
     exit 22

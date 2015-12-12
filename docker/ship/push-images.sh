@@ -14,7 +14,7 @@ yml() {
 }
 
 LOADER_IMAGE=$(yml 'loader')
-TAG=$(docker run --rm ${LOADER_IMAGE} tag)
+TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} tag)
 
 PUSH_REPO=$(yml 'push-repo')
 if [ -z "${PUSH_REPO}" ]; then
@@ -43,7 +43,7 @@ push() {
     )
 }
 
-for i in $(docker run --rm ${LOADER_IMAGE} images); do
+for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
     echo "============================================================"
     echo " Pushing ${i}:${TAG} to ${PUSH_REPO}..."
     echo "============================================================"

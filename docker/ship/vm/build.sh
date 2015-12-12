@@ -105,7 +105,7 @@ setup_preload_registry() {
 
     if [ ${PUSH} = 1 ]; then
         # Push images to the preload registry
-        for i in $(docker run --rm ${LOADER_IMAGE} images); do
+        for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
             (set +x
                 echo "============================================================"
                 echo " Pushing ${i} to local preload registry..."
@@ -128,7 +128,7 @@ teardown_preload_registry() {
 
 build_cloud_config_and_vdi() {
     local LOADER_IMAGE=$1
-    local TAG=$(docker run --rm ${LOADER_IMAGE} tag)
+    local TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} tag)
 
     if [ -z "${TAG}" ]; then
         (set +x; cecho ${RED} "ERROR: couldn't read tag from Loader")
