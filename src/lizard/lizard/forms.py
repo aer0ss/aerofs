@@ -19,6 +19,7 @@ class SignupForm(Form):
     company_size = StringField("Company Size", validators=[Optional()])
     current_fss = StringField("Current file sharing solution", validators=[Optional()])
     country = StringField("Country", validators=[Optional()])
+    price_plan = HiddenField("price_plan", validators=[Optional()])
     demandramp_rm__utm_medium__c = HiddenField("demandramp_rm__utm_medium__c", validators=[Optional()])
     demandramp_rm__utm_source__c = HiddenField("demandramp_rm__utm_source__c", validators=[Optional()])
     demandramp_rm__utm_campaign__c = HiddenField("demandramp_rm__utm_campaign__c", validators=[Optional()])

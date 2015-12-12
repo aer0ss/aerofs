@@ -133,6 +133,7 @@ def signup_request_page():
             'company_size': form.company_size.data.encode('utf-8'),
             'current_fss': form.current_fss.data.encode('utf-8'),
             'country': form.country.data.encode('utf-8'),
+            'price_plan': form.price_plan.data.encode('utf-8'),
             'demandramp_rm__utm_medium__c': form.demandramp_rm__utm_medium__c.data.encode('utf-8'),
             'demandramp_rm__utm_source__c': form.demandramp_rm__utm_source__c.data.encode('utf-8'),
             'demandramp_rm__utm_campaign__c': form.demandramp_rm__utm_campaign__c.data.encode('utf-8'),
