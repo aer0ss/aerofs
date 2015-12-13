@@ -8,7 +8,8 @@
 
 <h2>Customization</h2>
 
-<p class="page-block">As an admin, you can customize your Private Cloud Web Portal to make it unique to your organization.</p>
+<p class="page-block">As an admin, you can customize your Private Cloud Web Portal to make it unique
+to your organization.</p>
 
 <div class="page-block">
     ${customize_banner_form()}
@@ -16,13 +17,14 @@
 
 <%def name="customize_banner_form()">
     <form method="POST" class="form-horizontal" enctype="multipart/form-data" onsubmit="submitForm(); return false;">
-##     <form method="POST" class="form-horizontal" role="form">
         ${csrf.token_input()}
 
         <h4>Banner Customization</h4>
-        <p>Banner customization allows admins to display custom messages that will be visible to all organization
-            members from the AeroFS Web Interface. Simply enter your message in the textbox below to specify the content
-            of your banner. The textbox also accepts raw HTML.</p>
+        <p>Banner customization allows admins to display custom messages that will be visible to all
+            organization members from the AeroFS Web Interface. Simply enter your message in the
+            textbox below to specify the content of your banner.</p>
+        <p>The textbox also accepts HTML &lta&gt tags for linking to other pages. All
+            other HTML tags will be ignored (i.e. escaped).</p>
 
         <div class="form-group">
             <div class="col-sm-12">
@@ -36,9 +38,11 @@
 
         <h4>White label</h4>
 
-        <p>You may optionally upload a custom 144x44 logo for AeroFS. Changes will be reflected on the main AeroFS web portal. </p>
+        <p>You may optionally upload a custom 144x44 logo for AeroFS. Changes will be reflected on
+            the main AeroFS web portal. </p>
+        <br/>
 
-        <div class="col-sm-4 col-sm-offset-4" id="white-label-container">
+        <div class="col-sm-3" id="white-label-container">
             <p>Current logo:</p>
             %if request.registry.settings.get('customization.logo'):
                 <img src="/static/img/logo_custom.png" width="144" height="40" alt="AeroFS"/>

@@ -1,7 +1,6 @@
 from pyramid.view import view_config
 from web.views.maintenance.maintenance_util import get_conf, get_conf_client
 from web.util import str2bool
-import base64
 import logging
 
 log = logging.getLogger(__name__)
