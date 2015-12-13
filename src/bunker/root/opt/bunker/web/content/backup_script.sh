@@ -28,13 +28,13 @@ COOKIE=$(echo "$GET_RESPONSE" | grep "Set-Cookie")
 # Curl with silence, and provide the cookie.
 function DoGet
 {
-    curl --silent --cookie "$COOKIE" $@ > /dev/null
+    curl --silent -H "Cache-Control: no-cache" --cookie "$COOKIE" $@ > /dev/null
     return $?
 }
 
 function DoPost
 {
-    curl -X POST --silent --cookie "$COOKIE" $@ > /dev/null
+    curl -X POST --silent -H "Cache-Control: no-cache" --cookie "$COOKIE" $@ > /dev/null
     return $?
 }
 
