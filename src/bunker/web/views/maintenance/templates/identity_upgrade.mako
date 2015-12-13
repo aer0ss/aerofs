@@ -1,12 +1,6 @@
 <%inherit file="maintenance_layout.mako"/>
 <%! page_title = "Identity" %>
 
-<%! from web.views.maintenance.maintenance_util import unformat_pem %>
-
-<%namespace name="csrf" file="csrf.mako"/>
-<%namespace name="bootstrap" file="bootstrap.mako"/>
-<%namespace name="modal" file="modal.mako"/>
-
 <div class="page-block">
     <h2>Identity Management</h2>
 
@@ -17,7 +11,7 @@
     <div class="alert">
     <p>AeroFS for Business includes support for ActiveDirectory and other existing identity providers
        that use LDAP. <a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to upgrade
-       your appliance</a>.</p>
+       your account</a>.</p>
     </div>
 </div>
 

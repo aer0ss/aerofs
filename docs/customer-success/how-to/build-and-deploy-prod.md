@@ -43,7 +43,7 @@ version, use `--release-version` in step 4 below.
    provided in the execution output. Then run `top -d 0.1` to speed up the
    docker pull.
 
-5. *QA the VMs* (exact process documentation coming soon).
+5. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
 
 6. When you are ready to release,
 

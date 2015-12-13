@@ -14,13 +14,14 @@
         <%
             non_maintenance_links = ['status','registered_apps']
 
-            #Please make alphabetical by display name
+            # Please make alphabetical by display name.
             links = [
                 ('auditing', _("Auditing")),
                 ('backup_and_upgrade', _("Backup and upgrade")),
                 ('collect_logs', _("Collect logs")),
                 ('customization', _("Customization")),
                 ('device_restriction', _("Device restriction")),
+                ('email_integration', _("Email integration")),
                 ('identity', _("Identity")),
                 ('link_settings', _("Link Sharing")),
                 ('password_restriction', _("Password restriction")),

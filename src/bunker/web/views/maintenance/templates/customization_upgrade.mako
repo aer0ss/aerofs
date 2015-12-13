@@ -11,8 +11,8 @@
     <h2>Customization</h2>
 
     <div class="alert">
-    <p>AeroFS for Business includes support for customization, including white-labeling and custom banner text. <br/><a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to upgrade
-       your appliance</a>.</p>
+    <p>AeroFS for Business includes support for customization, including white-labeling and custom
+        banner text. <br/><a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to
+       upgrade your account</a>.</p>
     </div>
 </div>
-

@@ -64,6 +64,7 @@ routes = [
     'autocomplete',
     'json_upload_additional_users',
     'customization',
+    'email_integration',
     'session_management',
     'link_settings',
     'json_set_require_login',

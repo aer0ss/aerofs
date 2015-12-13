@@ -12,5 +12,5 @@
 
 <p class="alert">The auditing service is a feature of AeroFS for Business.
     <a href="https://www.aerofs.com/pricing/" target="_blank">Contact us to upgrade
-    your appliance</a>.</p>
+    your account</a>.</p>
 
