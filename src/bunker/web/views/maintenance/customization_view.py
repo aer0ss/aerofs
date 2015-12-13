@@ -10,9 +10,8 @@ def _is_customization_allowed(conf):
     @return whether customization is allowed with this license
     """
 
-    # is_trial is true on the free license, false on the other license.
-    # need to return the opposite of is_trial
-    return not str2bool(conf.get('license_is_trial', True))
+    # FIXME change to license_allow_enterprise_features. ENG-3372.
+    return str2bool(conf.get('license_allow_auditing', True))
 
 @view_config(
     route_name='customization',

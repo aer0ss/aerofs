@@ -34,6 +34,7 @@ def _is_audit_allowed(conf):
     """
     @return whether auditing support is included in the license
     """
+    # FIXME change to license_allow_enterprise_features. ENG-3372.
     return str2bool(conf.get('license_allow_auditing', False))
 
 

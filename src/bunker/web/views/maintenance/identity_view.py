@@ -108,7 +108,8 @@ def _is_identity_configurable(conf):
     """
     @return whether identity configuration support is included in the license
     """
-    return str2bool(conf.get('license_allow_identity', True))
+    # FIXME change to license_allow_enterprise_features. ENG-3372.
+    return str2bool(conf.get('license_allow_auditing', True))
 
 def _write_ldap_options(conf, request_params):
     for key in _get_ldap_specific_options(request_params):

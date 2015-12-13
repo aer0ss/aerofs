@@ -69,7 +69,7 @@ to your organization.</p>
                      />Custom Logo:
                         <input type="file" name="white-label-logo-selector" id="white-label-logo-selector">
                     <input type="hidden" name="white-label-logo" id ="white-label-logo">
-                    <p class="help-block">Please upload a 151x37 proportionally sized image. Leave blank to use existing logo.</p>
+                    <p class="help-block">Please upload a 151x37 proportionally sized image.</p>
                 </label>
             </div>
         </div>

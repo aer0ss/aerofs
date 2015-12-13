@@ -88,11 +88,13 @@ def _is_device_restriction_allowed(conf):
     @return whether device restriction support is included in the license. We use
     a default of 'true' so that legacy licenses are correctly supported.
     """
-    return str2bool(conf.get('license_allow_device_restriction', True))
+    # FIXME change to license_allow_enterprise_features. ENG-3372.
+    return str2bool(conf.get('license_allow_auditing', True))
 
 def _is_mdm_allowed(conf):
     """
     @return whether MDM support is included in the license. We use
     a default of 'true' so that legacy licenses are correctly supported.
     """
-    return str2bool(conf.get('license_allow_mdm', True))
+    # FIXME change to license_allow_enterprise_features. ENG-3372.
+    return str2bool(conf.get('license_allow_auditing', True))
