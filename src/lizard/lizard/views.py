@@ -253,7 +253,7 @@ def signup_completion_page():
 
         return redirect(url_for(".index"))
 
-    return render_template("complete_signup_legacy.html",
+    return render_template("complete_signup.html",
         form=form,
         record=signup,
     )
