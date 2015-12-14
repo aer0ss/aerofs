@@ -21,7 +21,7 @@ def upload_license(driver, selector, wait):
 
 def login(driver, wait, selector, host, user, password):
     wait_and_get(driver, "https://{}/files".format(host))
-    wait.until(EC.title_contains('Sign In | AeroFS'))
+    wait.until(EC.title_contains('Log In | AeroFS'))
     selector.get_and_clear('#input_email').send_keys(user)
     selector.get_and_clear('#input_passwd').send_keys(password)
     selector.get('#signin_button').click()
