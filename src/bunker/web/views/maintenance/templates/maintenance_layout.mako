@@ -23,7 +23,7 @@
                 ('device_restriction', _("Device restriction")),
                 ('email_integration', _("Email integration")),
                 ('identity', _("Identity")),
-                ('link_settings', _("Link Sharing")),
+                ('link_settings', _("Link sharing")),
                 ('password_restriction', _("Password restriction")),
                 ('registered_apps', _("Registered apps")),
                 ('status', _("Service status")),
