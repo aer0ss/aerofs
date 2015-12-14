@@ -24,7 +24,7 @@ def login(driver, wait, selector, host, user, password):
     wait.until(EC.title_contains('Log In | AeroFS'))
     selector.get_and_clear('#input_email').send_keys(user)
     selector.get_and_clear('#input_passwd').send_keys(password)
-    selector.get('#signin_button').click()
+    selector.get('#login_button').click()
 
 
 def login_as_admin_at_syncfs_dot_com(driver, wait, selector, host):
