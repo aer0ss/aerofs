@@ -157,8 +157,9 @@ def delete_containers(deployment):
     docker = get_docker_client(deployment)
 
     # Find all containers whose name start with the subdomain
-    # Note: docker-py treats link aliases as names so some containers have multiple names. We only test the first one.
-    containers = [c for c in docker.containers(all=True) if c['Names'][0].startswith('/{}-'.format(deployment.subdomain))]
+    containers = [c for c in docker.containers(
+        all=True,  # include non-running containers
+        filters={'name': '^/{}-hpc-*'.format(deployment.subdomain)})]
 
     # Sanity check: make sure that we didn't get an unreasonably large number of containers. This number is arbitrary.
     # If a typical AeroFS appliance grows to more than 40 containers, just update the number here accordingly.
