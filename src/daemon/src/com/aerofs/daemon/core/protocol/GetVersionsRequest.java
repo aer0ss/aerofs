@@ -24,6 +24,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
 import com.aerofs.daemon.lib.db.ver.NativeTickRow;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -82,15 +83,17 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
     private final TokenManager _tokenManager;
     private final LocalACL _lacl;
     private final CfgLocalUser _cfgLocalUser;
+    private final ProgressIndicators _pi;
 
     @Inject
     public GetVersionsRequest(Metrics m,
             TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
-            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb,
+            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, ProgressIndicators pi,
             IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, TokenManager tokenManager,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
     {
         _m = m;
+        _pi = pi;
         _trl = trl;
         _nvc = nvc;
         _ivc = ivc;
@@ -383,6 +386,7 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
                 } finally {
                     tcb.pseudoResumed_();
                 }
+                _pi.incrementMonotonicProgress();
             }
         }
 

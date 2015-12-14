@@ -24,6 +24,7 @@ import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.id.SOKID;
 
 import java.sql.SQLException;
@@ -59,7 +60,8 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     public final RemoteContentDatabase _rcdb = mock(RemoteContentDatabase.class);
     private final PrefixVersionControl _pvc = mock(PrefixVersionControl.class);
     private final CoreScheduler _sched = mock(CoreScheduler.class);
-    private final ContentReceiver _rc = new ContentReceiver(_pvc, _ps, mock(DownloadState.class), _iss, _tm, _sched);
+    private final ContentReceiver _rc = new ContentReceiver(_pvc, _ps, mock(DownloadState.class),
+            _iss, _tm, _sched, mock(ProgressIndicators.class));
     private final ContentProvider _provider = new DaemonContentProvider(_ds, _ps, _ccdb, mock(Analytics.class));
 
     public final LegacyCausality _legacyCausality = new LegacyCausality(_ds, _nvc, _bd);

@@ -515,6 +515,7 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
                     }
                     // FIXME: delay removal until last reader is closed
                     _uploadDir.newChild(c).deleteIgnoreError();
+                    _pi.incrementMonotonicProgress();
                 }
             } finally {
                 tcb.pseudoResumed_();

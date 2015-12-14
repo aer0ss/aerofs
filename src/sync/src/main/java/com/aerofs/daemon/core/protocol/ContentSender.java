@@ -19,10 +19,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.fs.FileChunker;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
-import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;
@@ -52,6 +49,7 @@ public class ContentSender
     private final UploadState _ulstate;
     protected final TokenManager _tokenManager;
     private final CoreScheduler _sched;
+    private final ProgressIndicators _pi;
 
     private final Set<OngoingTransfer> _ongoing = new HashSet<>();
     private final CfgStorageType _cfgStorageType;
@@ -59,11 +57,11 @@ public class ContentSender
     @Inject
     public ContentSender(UploadState ulstate, CoreScheduler sched,
                          TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
-                         CfgStorageType cfgStorageType)
+                         ProgressIndicators pi, CfgStorageType cfgStorageType)
     {
         _sched = sched;
         _ulstate = ulstate;
-
+        _pi = pi;
         _trl = trl;
         _m = m;
         _tokenManager = tokenManager;
@@ -222,6 +220,7 @@ public class ContentSender
                 outgoing.write(buf);
                 if (md != null) md.update(buf);
                 done += buf.length;
+                _pi.incrementMonotonicProgress();
             }
 
             checkState(done == c.length);

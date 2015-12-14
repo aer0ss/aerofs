@@ -12,10 +12,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgStorageType;
 import com.aerofs.proto.Core.PBCore;
@@ -37,9 +34,9 @@ public class LegacyContentSender extends ContentSender
     @Inject
     public LegacyContentSender(UploadState ulstate, CoreScheduler sched,
                                TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
-                               CfgStorageType cfgStorageType)
+                               CfgStorageType cfgStorageType, ProgressIndicators pi)
     {
-        super(ulstate, sched, trl, m, tokenManager, cfgStorageType);
+        super(ulstate, sched, trl, m, tokenManager, pi, cfgStorageType);
         // TODO: abort ongoing download on hash change
     }
 

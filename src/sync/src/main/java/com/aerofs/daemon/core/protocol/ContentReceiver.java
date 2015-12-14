@@ -24,6 +24,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.*;
 import com.google.common.io.ByteStreams;
@@ -54,12 +55,14 @@ public class ContentReceiver
     private final IncomingStreams _iss;
     protected final TransManager _tm;
     private final CoreScheduler _sched;
+    private final ProgressIndicators _pi;
 
     protected final Set<OngoingTransfer> _ongoing = new HashSet<>();
 
     @Inject
     public ContentReceiver(PrefixVersionControl pvc, IPhysicalStorage ps, DownloadState dlState,
-                           IncomingStreams iss, TransManager tm, CoreScheduler sched)
+                           IncomingStreams iss, TransManager tm, CoreScheduler sched,
+                           ProgressIndicators pi)
     {
         _pvc = pvc;
         _ps = ps;
@@ -67,6 +70,7 @@ public class ContentReceiver
         _iss = iss;
         _tm = tm;
         _sched = sched;
+        _pi = pi;
     }
 
     private void updatePrefixVersion_(SOKID k, Version vRemote, boolean isStreaming)
@@ -213,11 +217,13 @@ public class ContentReceiver
                 _iss.end_(rs.streamKey());
 
                 try {
+                    // release core lock to avoid blocking while copying a large prefix
                     TCB tcb = tk.pseudoPause_("cp-prefix");
                     try (InputStream is = matchingContent.newInputStream()) {
-                        // release core lock to avoid blocking while copying a large prefix
+                        _pi.startSyscall();
                         ByteStreams.copy(is, prefixStream);
                     } finally {
+                        _pi.endSyscall();
                         tcb.pseudoResumed_();
                     }
                 } catch (FileNotFoundException e) {
@@ -289,6 +295,7 @@ public class ContentReceiver
             int n = is.read(buf, 0, (int) Math.min(buf.length, remaining));
             if (n == -1) throw new EOFException();
             remaining -= n;
+            _pi.incrementMonotonicProgress();
             prefixStream.write(buf, 0, n);
             l.trace("written {}>{}", n, remaining);
         }

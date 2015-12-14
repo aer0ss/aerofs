@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -64,6 +65,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
     private final IPulledDeviceDatabase _pulleddb;
     private final LocalACL _lacl;
     private final TokenManager _tokenManager;
+    private final ProgressIndicators _pi;
 
     @Inject
     public GetVersionsResponse(
@@ -76,7 +78,8 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             IMapSID2SIndex sid2sidx,
             IPulledDeviceDatabase pddb,
             LocalACL lacl,
-            TokenManager tokenManager)
+            TokenManager tokenManager,
+            ProgressIndicators pi)
     {
         _tm = tm;
         _nvc = nvc;
@@ -88,6 +91,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         _pulleddb = pddb;
         _lacl = lacl;
         _tokenManager = tokenManager;
+        _pi = pi;
     }
 
     @Override
@@ -324,6 +328,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             }
             qblocks.add(block);
             last = block.getIsLastBlock();
+            _pi.incrementMonotonicProgress();
         }
         return last;
     }

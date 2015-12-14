@@ -47,18 +47,20 @@ public final class CoreProgressWatcher implements HealthCheckService.ScheduledRu
     private void checkProgress_()
     {
         if (!hasMadeProgress_() && !isIdle()) {
-            l.warn("no progress after n:" + _prevNumExecutedEvents + " ev:" + _disp.getCurrentEventNullable());
+            l.warn("no progress after n:" + _prevNumExecutedEvents + " ev:" + _disp.getCurrentEvents());
 
-            // dump thread stacks three times so we can see which thread is not making progress.
-            for (int i = 0; i < 3; i++) {
-                if (i != 0) ThreadUtil.sleepUninterruptable(3 * C.SEC);
-                Util.logAllThreadStackTraces();
+            if (!_pi.hasInProgressSyscall()) {
+                // dump thread stacks three times so we can see which thread is not making progress.
+                for (int i = 0; i < 3; i++) {
+                    if (i != 0) ThreadUtil.sleepUninterruptable(3 * C.SEC);
+                    Util.logAllThreadStackTraces();
+                }
+
+                newDefectWithLogs("core.progress")
+                        .setMessage("stuck daemon")
+                        .sendSyncIgnoreErrors();
+                SystemUtil.fatal("stuck daemon");
             }
-
-            newDefectWithLogs("core.progress")
-                    .setMessage("stuck daemon")
-                    .sendSyncIgnoreErrors();
-            SystemUtil.fatal("stuck daemon");
         }
 
         _prevNumExecutedEvents = _disp.getExecutedEventCount();
@@ -70,13 +72,12 @@ public final class CoreProgressWatcher implements HealthCheckService.ScheduledRu
      */
     private boolean hasMadeProgress_()
     {
-        return _disp.getExecutedEventCount() != _prevNumExecutedEvents ||
-                _pi.getMonotonicProgress() != _prevNumWalkedObjects ||
-                _pi.hasInProgressSyscall();
+        return _disp.getExecutedEventCount() > _prevNumExecutedEvents ||
+                _pi.getMonotonicProgress() > _prevNumWalkedObjects;
     }
 
     private boolean isIdle()
     {
-        return _disp.getCurrentEventNullable() == null;
+        return _disp.getCurrentEvents().isEmpty();
     }
 }

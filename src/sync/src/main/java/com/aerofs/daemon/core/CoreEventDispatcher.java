@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -7,13 +9,15 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
-import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CoreEventDispatcher extends EventDispatcher
 {
     private volatile long _executedEventCount;
-    private volatile @Nullable IEvent _evCurrent;
+
+    private ConcurrentHashMap<TCB, IEvent> _evCurrent = new ConcurrentHashMap<>();
 
     @Inject
     public CoreEventDispatcher(Set<ICoreEventHandlerRegistrar> registrars)
@@ -45,17 +49,19 @@ public class CoreEventDispatcher extends EventDispatcher
     {
         _executedEventCount++;
 
-        _evCurrent = ev;
-
-        super.dispatch_(ev, prio);
-
-        _evCurrent = null;
+        final TCB tcb = TC.tcb();
+        if (tcb != null)_evCurrent.put(tcb, ev);
+        try {
+            super.dispatch_(ev, prio);
+        } finally {
+            if (tcb != null) _evCurrent.remove(tcb);
+        }
     }
 
     /**
-     * @return the current event being dispatched. Null otherwise.
+     * @return events being executed on active core threads
      */
-    public @Nullable IEvent getCurrentEventNullable()
+    public Map<TCB, IEvent> getCurrentEvents()
     {
         return _evCurrent;
     }
