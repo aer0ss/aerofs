@@ -33,8 +33,16 @@ version, use `--release-version` in step 4 below.
    select the `aerofs.keychain` file which you just mounted. Press the little
    unlock button and enter the keychain password (which is _not_ the same as
    the mount password). For this, also ask Matt.
+   
+4. Make and push messaging images to the Registry:
+	
+	Run the following command in the repos:
+	 ~/repos/aerofs/golang/src/aerofs.com/sloth and 
+	 ~/repos/aeroim-client
+	
+		make image push
 
-4. Build using:
+5. Build using:
 
         invoke --signed clean proto build_client package_clients build_docker_images build_vm
 
@@ -43,9 +51,9 @@ version, use `--release-version` in step 4 below.
    provided in the execution output. Then run `top -d 0.1` to speed up the
    docker pull.
 
-5. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
+6. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
 
-6. When you are ready to release,
+7. When you are ready to release,
 
         invoke push_docker_images push_vm tag_release
 
@@ -55,7 +63,7 @@ version, use `--release-version` in step 4 below.
    manually by updating the version on the
    [Private Cloud Admin Portal](http://enterprise.aerofs.com:8000/release).
 
-7. [OPTIONAL] Reset your docker-dev RAM.
+8. [OPTIONAL] Reset your docker-dev RAM.
 
         dk-halt
         # Stop the VM in the VirtualBox GUI, and adjust RAM to 3 GB.
