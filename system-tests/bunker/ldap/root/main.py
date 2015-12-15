@@ -26,7 +26,7 @@ def disable_ldap(w, e):
 
 
 def save_ldap_settings(w, e):
-    e.get('#save-btn').click()
+    e.get('#save-ldap').click()
     w.until_display('#success-modal', timeout=5 * 60)
 
 

@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <button type="submit" id="save-btn" class="btn btn-primary">Save</button>
+        <button type="submit" id="save-opensignup" class="btn btn-primary">Save</button>
     </form>
 </div>
 
@@ -100,7 +100,7 @@
                 </div>
             </div>
 
-            <button type="submit" id="save-btn" class="btn btn-primary">Save</button>
+            <button type="submit" id="save-ldap" class="btn btn-primary">Save</button>
         </div>
     </div>
 </form>
@@ -689,7 +689,7 @@
                 console.log("ldap opt changed. test new opts");
 
                 $.post('${request.route_path('json_verify_ldap')}',
-                        $('identity-form').serialize())
+                        $('#identity-form').serialize())
                 .done(function () {
                     post(always);
                 })
