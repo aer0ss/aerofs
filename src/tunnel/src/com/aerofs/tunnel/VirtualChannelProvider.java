@@ -43,13 +43,13 @@ public class VirtualChannelProvider
     {
         VirtualChannel c = _connections.get(connectionId);
         if (c == null && _pipelineFactory != null) {
-            l.info("creating virtual channel for {}", connectionId);
             try {
                 c = new VirtualChannel(_handler, connectionId, _pipelineFactory.getPipeline());
             } catch (Exception e) {
-                l.error("channel creation failed", e);
+                l.error("failed to create virtual channel for {}", connectionId, e);
                 return null;
             }
+            l.info("created virtual channel {}:{}", connectionId, c.getId());
             Preconditions.checkNotNull(c);
             Preconditions.checkState(_connections.put(connectionId, c) == null);
             Channels.fireChannelOpen(c);

@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Netty's ChunkedWriteHandler will happily start an unbounded write loop from an io thread.
@@ -36,7 +35,6 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
 
         MessageEvent current;
 
-        final AtomicBoolean skip;
         final Queue<MessageEvent> q;
         final ChannelHandlerContext ctx;
 
@@ -44,13 +42,11 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
         S() {
             q = null;
             ctx = null;
-            skip = null;
         }
 
         S(ChannelHandlerContext ctx) {
             this.ctx = ctx;
             this.q = new ConcurrentLinkedQueue<>();
-            skip = new AtomicBoolean();
         }
 
         public boolean flushOne() {
@@ -142,49 +138,48 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
 
     private void run() {
         S c = head;
+        boolean atLeastOneWritable = false;
         while (!stopped) {
             // round-robin among flushable channels
             synchronized (head) {
                 if (c == null || c.next == null) {
                     // wait for flushable channels
-                    while (head.next == null) {
-                        if (stopped) return;
-                        try {
-                            l.debug("wait");
-                            head.wait();
-                        } catch (InterruptedException e) {
-                            throw new AssertionError(e);
-                        }
+                    if (!atLeastOneWritable || head.next == null) {
+                        do {
+                            if (stopped) return;
+                            try {
+                                l.debug("wait");
+                                head.wait();
+                            } catch (InterruptedException e) {
+                                throw new AssertionError(e);
+                            }
+                        } while (head.next == null);
                     }
+                    atLeastOneWritable = false;
                     c = head.next;
                 } else {
                     c = c.next;
                 }
-                assert c.q != null && c.ctx != null;
+            }
 
-                Channel channel = c.ctx.getChannel();
-                if (!channel.isConnected()) {
-                    l.debug("closed {}", channel);
-                    _m.remove(channel);
-                    discard(c);
-                    c = hold(c);
-                    continue;
-                } else if (!channel.isWritable()) {
-                    // delay removal of channel from linked list to mitigate the adverse impact of
-                    // frequent writability change (when bandwidth is maxed out)
-                    // repeatedly shuffling the list of channels would hurt fairness as the order
-                    // in which channels are marked as writable will skew the bandwidth distribution
-                    // and may go as far as starving some channels long enough that the downstream
-                    // end times out
-                    if (!c.skip.compareAndSet(false, true)) {
-                        c = hold(c);
-                    }
-                    continue;
-                }
+            assert c.q != null && c.ctx != null;
+
+            Channel channel = c.ctx.getChannel();
+            if (!channel.isConnected()) {
+                l.debug("closed {}", channel);
+                S cc = c;
+                c = hold(c);
+                discard(cc);
+                _m.remove(channel);
+                continue;
+            } else if (!channel.isWritable()) {
+                continue;
             }
 
             // propagate non-chunked message
-            if (!c.flushOne()) {
+            if (c.flushOne()) {
+                atLeastOneWritable = true;
+            } else {
                 c = hold(c);
             }
         }
@@ -198,10 +193,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
                 case INTEREST_OPS: {
                     if (ctx.getChannel().isWritable()) {
                         S s = _m.get(ctx.getChannel());
-                        if (s != null) {
-                            s.skip.set(false);
-                            flush(s);
-                        }
+                        if (s != null) flush(s);
                     }
                     break;
                 }
@@ -230,6 +222,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
         if (s == null) {
             s = new S(ctx);
             s = Objects.firstNonNull(_m.putIfAbsent(channel, s), s);
+            l.debug("open {}", channel);
         }
 
         s.q.offer((MessageEvent)e);
