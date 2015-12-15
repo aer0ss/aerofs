@@ -97,7 +97,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
             if (newSoid == null) return;
 
             applyPrefix_(pf, newSoid, out.digest());
-            ev.setResult_(Response.ok()
+            ev.setResult_(Response.noContent()
                     .tag(_etags.etagForContent(newSoid)));
         } catch (Exception e) {
             l.warn("upload failed", e);
@@ -165,7 +165,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
                         .entity(new Error(Type.BAD_ARGS, "Invalid upload identifier"));
             }
             return withRange(prefixLength,
-                    Response.ok()
+                    Response.noContent()
                             .header("Upload-ID", uploadId.toStringFormal()));
         }
 
@@ -216,7 +216,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
         if (len == null || prefixLength < len) {
             // ack chunk
             return withRange(prefixLength,
-                    Response.ok()
+                    Response.noContent()
                             .header("Upload-ID", uploadId.toStringFormal()));
         }
 
