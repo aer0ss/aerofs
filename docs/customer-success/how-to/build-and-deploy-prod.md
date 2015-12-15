@@ -62,8 +62,17 @@ version, use `--release-version` in step 4 below.
    available to the public immediately. The S3 artifacts need to be released
    manually by updating the version on the
    [Private Cloud Admin Portal](http://enterprise.aerofs.com:8000/release).
+   
+8. After releasing, write the 
+[Release Notes](https://support.aerofs.com/hc/en-us/articles/201439644-AeroFS-Release-Notes), 
+the Internal Release notes for product updates released only to the AeroFS team 
+(Slack channel "Internal Releases"), and go through the JIRA ENG sprint report to take note of 
+the bug fixes going out in the release. The ENG tickets for the bug fixes should be mapped to 
+Zendesk tickets with their respective asignees. Notify members of the Customer Success Team who 
+should follow-up with their customers to inform them of the bug fix. 
 
-8. [OPTIONAL] Reset your docker-dev RAM.
+
+9. [OPTIONAL] Reset your docker-dev RAM.
 
         dk-halt
         # Stop the VM in the VirtualBox GUI, and adjust RAM to 3 GB.
