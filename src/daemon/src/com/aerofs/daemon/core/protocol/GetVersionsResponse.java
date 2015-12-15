@@ -65,7 +65,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
     private final IPulledDeviceDatabase _pulleddb;
     private final LocalACL _lacl;
     private final TokenManager _tokenManager;
-    private final ProgressIndicators _pi;
+    private final ProgressIndicators _pi = ProgressIndicators.get();
 
     @Inject
     public GetVersionsResponse(
@@ -78,8 +78,7 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
             IMapSID2SIndex sid2sidx,
             IPulledDeviceDatabase pddb,
             LocalACL lacl,
-            TokenManager tokenManager,
-            ProgressIndicators pi)
+            TokenManager tokenManager)
     {
         _tm = tm;
         _nvc = nvc;
@@ -91,7 +90,6 @@ public class GetVersionsResponse implements CoreProtocolReactor.Handler
         _pulleddb = pddb;
         _lacl = lacl;
         _tokenManager = tokenManager;
-        _pi = pi;
     }
 
     @Override

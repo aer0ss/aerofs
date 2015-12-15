@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.*;
 import com.google.inject.Inject;
@@ -39,9 +38,9 @@ public class LegacyContentReceiver extends ContentReceiver implements IDirectory
     public LegacyContentReceiver(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
                                  IPhysicalStorage ps, DownloadState dlState, CfgUsePolaris usePolaris,
                                  IncomingStreams iss, BranchDeleter bd, TransManager tm,
-                                 CoreScheduler sched, ProgressIndicators pi)
+                                 CoreScheduler sched)
     {
-        super(pvc, ps, dlState, iss, tm, sched, pi);
+        super(pvc, ps, dlState, iss, tm, sched);
         _ds = ds;
         _nvc = nvc;
         _bd = bd;

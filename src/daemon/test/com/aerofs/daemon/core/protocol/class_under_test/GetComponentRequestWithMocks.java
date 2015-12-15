@@ -18,7 +18,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgStorageType;
 
 import static org.mockito.Mockito.mock;
@@ -45,8 +44,7 @@ public class GetComponentRequestWithMocks extends AbstractClassUnderTestWithMock
     private final CoreScheduler _sched = mock(CoreScheduler.class);
 
     public final LegacyContentSender _gccContentSender =
-            new LegacyContentSender(_ulstate, _sched, _trl, _m, _tokenManager, new CfgStorageType(),
-                    mock(ProgressIndicators.class));
+            new LegacyContentSender(_ulstate, _sched, _trl, _m, _tokenManager, new CfgStorageType());
     public final GetComponentRequest _gcc = new GetComponentRequest();
 
     public GetComponentRequestWithMocks()

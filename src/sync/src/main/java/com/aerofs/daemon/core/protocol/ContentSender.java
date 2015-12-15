@@ -49,7 +49,7 @@ public class ContentSender
     private final UploadState _ulstate;
     protected final TokenManager _tokenManager;
     private final CoreScheduler _sched;
-    private final ProgressIndicators _pi;
+    private final ProgressIndicators _pi = ProgressIndicators.get();
 
     private final Set<OngoingTransfer> _ongoing = new HashSet<>();
     private final CfgStorageType _cfgStorageType;
@@ -57,11 +57,10 @@ public class ContentSender
     @Inject
     public ContentSender(UploadState ulstate, CoreScheduler sched,
                          TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
-                         ProgressIndicators pi, CfgStorageType cfgStorageType)
+                         CfgStorageType cfgStorageType)
     {
         _sched = sched;
         _ulstate = ulstate;
-        _pi = pi;
         _trl = trl;
         _m = m;
         _tokenManager = tokenManager;

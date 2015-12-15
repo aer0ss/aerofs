@@ -55,14 +55,13 @@ public class ContentReceiver
     private final IncomingStreams _iss;
     protected final TransManager _tm;
     private final CoreScheduler _sched;
-    private final ProgressIndicators _pi;
+    private final ProgressIndicators _pi = ProgressIndicators.get();
 
     protected final Set<OngoingTransfer> _ongoing = new HashSet<>();
 
     @Inject
     public ContentReceiver(PrefixVersionControl pvc, IPhysicalStorage ps, DownloadState dlState,
-                           IncomingStreams iss, TransManager tm, CoreScheduler sched,
-                           ProgressIndicators pi)
+                           IncomingStreams iss, TransManager tm, CoreScheduler sched)
     {
         _pvc = pvc;
         _ps = ps;
@@ -70,7 +69,6 @@ public class ContentReceiver
         _iss = iss;
         _tm = tm;
         _sched = sched;
-        _pi = pi;
     }
 
     private void updatePrefixVersion_(SOKID k, Version vRemote, boolean isStreaming)

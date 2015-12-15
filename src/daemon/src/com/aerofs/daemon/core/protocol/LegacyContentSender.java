@@ -34,9 +34,9 @@ public class LegacyContentSender extends ContentSender
     @Inject
     public LegacyContentSender(UploadState ulstate, CoreScheduler sched,
                                TransportRoutingLayer trl, Metrics m, TokenManager tokenManager,
-                               CfgStorageType cfgStorageType, ProgressIndicators pi)
+                               CfgStorageType cfgStorageType)
     {
-        super(ulstate, sched, trl, m, tokenManager, pi, cfgStorageType);
+        super(ulstate, sched, trl, m, tokenManager, cfgStorageType);
         // TODO: abort ongoing download on hash change
     }
 

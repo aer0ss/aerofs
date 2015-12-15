@@ -83,17 +83,16 @@ public class GetVersionsRequest implements CoreProtocolReactor.Handler
     private final TokenManager _tokenManager;
     private final LocalACL _lacl;
     private final CfgLocalUser _cfgLocalUser;
-    private final ProgressIndicators _pi;
+    private final ProgressIndicators _pi = ProgressIndicators.get();
 
     @Inject
     public GetVersionsRequest(Metrics m,
             TransportRoutingLayer trl, NativeVersionControl nvc, ImmigrantVersionControl ivc,
-            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb, ProgressIndicators pi,
+            MapSIndex2Store sidx2s, IPulledDeviceDatabase pddb,
             IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid, TokenManager tokenManager,
             MapSIndex2Contributors sidx2contrib, LocalACL lacl, CfgLocalUser cfgLocalUser)
     {
         _m = m;
-        _pi = pi;
         _trl = trl;
         _nvc = nvc;
         _ivc = ivc;

@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * and recursive file I/O operations.
  *
  * Unfortunately, some long running tasks do not necessarily provide feedback on their progress. For
- * instance copying a large file accross file systems, or shelling out to an external program may
+ * instance copying a large file across file systems, or shelling out to an external program may
  * span more than on progress check interval. To work around this we use a second counter, which we
  * dub the "in-progress syscall" counter. It is incremented/decremented around potentially long
  * running tasks and CoreProgressWatcher will not kill a daemon when this counter is non-zero.
