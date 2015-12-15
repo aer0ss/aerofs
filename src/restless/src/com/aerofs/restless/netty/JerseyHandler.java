@@ -114,21 +114,18 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
                 request.getMethod().getName(), Service.DUMMY_BASE_URI, requestUri, getHeaders(request),
                 content);
 
+        JerseyResponseWriter w = new JerseyResponseWriter(c, request, _config);
         try {
-            _application.handleRequest(cRequest, new JerseyResponseWriter(c, request, _config));
+            _application.handleRequest(cRequest, w);
         } catch (Exception e) {
             // When a WebApplicationException (or really any exception whatsoever) is thrown
             // after the response is committed (i.e. the first byte has been written on a Netty
             // channel), it is no longer possible to send an error response because HTTP does
             // not have any mechanism to say 'wait, I cannot actually service this request'
             //
-            // This case is most likely to occur when a large download is interrupted because,
-            // the underlying file changed.
-            //
-            // In any case, the only correct way to treat such an exception is to forcefully
-            // close the connection which the client which the client will interpret as an
-            // unspecified error.
-            l.warn("exception after response committed: ",
+            // The only correct way to treat such an exception is to forcefully close the connection
+            // which the client which the client will interpret as an unspecified error.
+            l.warn("exception after response committed: {}", w.partialResponse(),
                     suppress(e, ClosedChannelException.class));
             c.close();
         }

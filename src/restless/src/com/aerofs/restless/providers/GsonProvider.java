@@ -30,7 +30,7 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
 {
     private final static Logger l = LoggerFactory.getLogger(GsonProvider.class);
 
-    private final Gson _gson = new GsonBuilder()
+    private static final Gson _gson = new GsonBuilder()
             .registerTypeAdapter(Date.class, new DateTypeAdapter())
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
@@ -40,21 +40,20 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
      */
     public static class DateTypeAdapter implements JsonSerializer<Date>
     {
-        private final DateFormat dateFormat;
-
-        private DateTypeAdapter() {
-            dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        }
+        // DateFormat is not thread-safe
+        private final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<>();
 
         @Override
-        public synchronized JsonElement serialize(Date date, Type type,
+        public JsonElement serialize(Date date, Type type,
                 JsonSerializationContext jsonSerializationContext) {
-            synchronized (dateFormat) {
-                // DateFormat is not thread-safe
-                String dateFormatAsString = dateFormat.format(date);
-                return new JsonPrimitive(dateFormatAsString);
+            DateFormat fmt = dateFormat.get();
+            if (fmt == null) {
+                fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+                dateFormat.set(fmt);
             }
+            String dateFormatAsString = fmt.format(date);
+            return new JsonPrimitive(dateFormatAsString);
         }
     }
 

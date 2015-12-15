@@ -120,12 +120,12 @@ public class TokenVerificationClient extends IdleStateAwareChannelHandler
             }
         }
 
-        l.info("connect");
+        l.debug("connect");
 
         _bootstrap.connect(new InetSocketAddress(_endpoint.getHost(), _endpoint.getPort()))
                 .addListener(cf -> {
                     if (cf.isSuccess()) {
-                        l.info("connected");
+                        l.debug("connected");
                         onConnect(cf.getChannel(), req);
                     } else {
                         l.info("failed to connect");
@@ -145,7 +145,7 @@ public class TokenVerificationClient extends IdleStateAwareChannelHandler
 
         c.getCloseFuture().addListener(channelFuture -> {
             synchronized (TokenVerificationClient.this) {
-                l.info("closed");
+                l.debug("closed");
                 _channel = null;
             }
         });
@@ -153,7 +153,7 @@ public class TokenVerificationClient extends IdleStateAwareChannelHandler
 
     private void write(final VerifyTokenRequest<VerifyTokenResponse> req)
     {
-        l.info("write {}", req);
+        l.debug("write {}", req.accessToken);
         _lastWrite = System.nanoTime();
         _channel.write(req).addListener(cf -> {
             if (!cf.isSuccess()) {
@@ -177,7 +177,7 @@ public class TokenVerificationClient extends IdleStateAwareChannelHandler
                 _channel = null;
             }
         }
-        l.info("timeout");
+        l.debug("timeout");
         ctx.getChannel().close();
     }
 }

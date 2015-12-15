@@ -22,8 +22,10 @@ import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -121,5 +123,9 @@ class JerseyResponseWriter implements ContainerResponseWriter
             ChannelFuture cf = _channel.write(EMPTY);
             if (!_keepAlive) cf.addListener(ChannelFutureListener.CLOSE);
         }
+    }
+
+    @Nullable String partialResponse() {
+        return _buffer != null ? _buffer.toString(StandardCharsets.UTF_8) : null;
     }
 }
