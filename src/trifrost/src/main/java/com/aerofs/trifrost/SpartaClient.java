@@ -85,6 +85,7 @@ public class SpartaClient implements ISpartaClient {
                         .add("client_id", oauthId)
                         .add("client_secret", oauthSecret)
                         .add("grant_type", "delegated")
+                        .add("scope", "files.read,files.write,files.appdata,acl.write")
                         .build())
                 .execute().returnContent();
 
