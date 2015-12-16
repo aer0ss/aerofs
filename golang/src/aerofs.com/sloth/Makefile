@@ -14,7 +14,7 @@ all: image
 sloth: **/*.go
 	go build
 
-image: sloth
+image:
 	$(GOCKERIZE_DIR)/gockerize $(IMAGE_NAME) $(GO_PKG_NAME) $(GOCKERIZE_CTX)
 
 push:

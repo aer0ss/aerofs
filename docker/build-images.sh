@@ -13,6 +13,7 @@ DIRS="
 
     aeroim
     ../golang/src/aerofs.com/auditor
+    ../src/blurber
     ../src/bunker
     ../golang/src/aerofs.com/ca-server
     ../packaging/config
@@ -32,6 +33,7 @@ DIRS="
     redis
     ../packaging/repackaging
     ../packaging/sanity
+    ../golang/src/aerofs.com/sloth
     ../src/sparta
     ../src/spsv
     ../src/trifrost

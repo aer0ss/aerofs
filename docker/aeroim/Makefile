@@ -11,9 +11,7 @@ image: pull_images
 REGISTRY=registry.aerofs.com
 TAG=latest
 
-IMAGES += aeroim/blurber
 IMAGES += aeroim/nginx
-IMAGES += aeroim/sloth
 
 .PHONY: $(IMAGES)
 
@@ -24,8 +22,6 @@ $(IMAGES):
 pull_images: $(IMAGES)
 
 build:
-	make -C ../../../blurber image
-	make -C ../../../sloth image
 	make -C ../../../aeroim-client image
 
 .PHONY: pull_images build image
