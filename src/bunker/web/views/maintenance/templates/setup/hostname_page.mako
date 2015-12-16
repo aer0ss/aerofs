@@ -89,7 +89,6 @@
 </%def>
 
 <%def name="scripts()">
-    <script src="${request.static_path('web:static/js/purl.js')}"></script>
     <script>
         $(document).ready(function() {
             disableEscapingFromModal($('div.modal'));
@@ -98,9 +97,9 @@
 
         function populateAndFocusHostname() {
             var current = "${current_config.get('base.host.unified', '')}";
-            if (!current) {
+            if (!current || current == "share.domain.name") {
                 ## Use the current page's hostname
-                current = $.url().attr('host');
+                current = window.location.hostname;
             }
 
             ## Set the value, select the whole text, and place focus.
