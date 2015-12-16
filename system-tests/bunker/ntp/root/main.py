@@ -5,7 +5,7 @@ from aerofs_webdriver_util import upload_license
 
 
 driver, wait, selector = init()
-driver.get("http://{}:8484/timekeeping".format(argv[1]))
+driver.get("https://{}/admin/timekeeping".format(argv[1]))
 
 # Log in
 upload_license(driver, selector, wait)

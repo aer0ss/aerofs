@@ -52,7 +52,7 @@ Now you're ready to configure the Appliance to use ActiveDirectory/LDAP.
 
 ## Configuring the Appliance to Use Active Directory/LDAP
 
-1. Go to the "Identify Management" page (`<appliance_hostname:8484/identity`)
+1. Go to the "Identify Management" page (`<appliance_hostname>/admin/identity`)
 2. Select the "Use ActiveDirectory or LDAP" option
 3. For "Server host" enter your device's IP address
 4. For "Server port", look at the OpenDJ Control Panel's "Connection Handlers" section to see which

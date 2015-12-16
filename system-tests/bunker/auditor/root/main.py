@@ -34,7 +34,7 @@ def main():
     userid = argv[4] if len(argv) > 4 else "admin@syncfs.com"
     passwd = argv[5] if len(argv) > 5 else "temp123"
 
-    url = "http://{}:8484/auditing".format(argv[1])
+    url = "https://{}/admin/auditing".format(argv[1])
     wait_and_get(driver, url)
     upload_license(driver, selector, waiter)
     enable_downstream(waiter, selector, argv[2], argv[3])

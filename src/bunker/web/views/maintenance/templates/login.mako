@@ -73,7 +73,7 @@
         $(document).ready(function() {
             $('#license-file').change(onLicenseFileChange);
 
-            if (location.port == 8484) {
+            if (window.location.protocol != "https:") {
                 ## Can't use config, as it might not have been initialized.
                 var secure = "https://" + window.location.hostname + "/admin";
 

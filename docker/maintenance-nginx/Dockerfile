@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lis
 # Import files _after_ apt-get to improve image cache hits
 COPY root buildroot /
 
-EXPOSE 80 443 8484
+EXPOSE 80 443
 
 ENTRYPOINT [ "/container-scripts/service-barrier" ]
 

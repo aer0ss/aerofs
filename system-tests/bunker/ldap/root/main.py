@@ -50,7 +50,7 @@ def main():
         exit(11)
     driver, waiter, selector = init()
     invite_user(driver, waiter, selector, argv[1], USER)
-    url = "http://{}:8484/identity".format(argv[1])
+    url = "https://{}/admin/identity".format(argv[1])
     wait_and_get(driver, url)
     upload_license(driver, selector, waiter)
     enable_ldap(waiter, selector, argv[2])

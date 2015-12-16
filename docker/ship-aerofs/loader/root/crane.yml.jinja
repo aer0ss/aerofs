@@ -81,7 +81,6 @@ containers:
         - "80:80"
         - "443:443"
         - "5222:5222"
-        - "8484:8484"
       {% endif %}
         - "{{ get_port('nginx', 4433) }}:4433"
       volumes-from:
@@ -385,7 +384,6 @@ containers:
         - "80:80"
         - "443:443"
         - "4433:4433"
-        - "8484:8484"
       {% endif %}
       link:
         - ca-server:ca.service

@@ -129,7 +129,7 @@ def run_all(d, wait, e, hostname, create_first_user):
     with open('/setup.yml') as f:
         y = yaml.load(f)
 
-    url = "http://" + hostname + ':8484'
+    url = "http://" + hostname
     print "Interacting with {}...".format(url)
     d.get(url)
 

@@ -5,6 +5,7 @@ IMAGE_NAME = aerofs/maintenance-nginx
 
 RUN_COMMON = buildroot/run-common.sh
 SITES_CONFIG = buildroot/etc/nginx/sites/config
+SITES_BUNKER = buildroot/etc/nginx/sites/bunker
 
 FILES_HOME = root
 FILES = $(shell find -L $(FILES_HOME) -type f)
@@ -13,7 +14,7 @@ BUILD_ROOT = buildroot
 SYNC_ROOT = syncroot
 SYNC_DIR = syncroot
 
-image: $(BUILD_ROOT) $(RUN_COMMON) $(SITES_CONFIG)
+image: $(BUILD_ROOT) $(RUN_COMMON) $(SITES_CONFIG) $(SITES_BUNKER)
 	$(MAKE) -f ../container-scripts/Makefile
 	docker build -t $(IMAGE_NAME) .
 
@@ -22,6 +23,10 @@ $(RUN_COMMON): ../nginx/root/run-common.sh
 	cp $< $@
 
 $(SITES_CONFIG): ../nginx/root/etc/nginx/sites/config
+	mkdir -p $(@D)
+	cp $< $@
+
+$(SITES_BUNKER): ../nginx/root/etc/nginx/sites/bunker
 	mkdir -p $(@D)
 	cp $< $@
 
