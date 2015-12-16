@@ -81,7 +81,6 @@ public class CoreModule extends AbstractModule
         bind(AuditParam.class).toInstance(auditParam);
 
         bind(IPathResolver.class).to(DirectoryServiceImpl.class);
-        bind(Causality.class).to(TransitionalCausality.class);
         bind(ContentSender.class).to(LegacyContentSender.class);
         bind(ContentReceiver.class).to(LegacyContentReceiver.class);
         bind(ContentProvider.class).to(DaemonContentProvider.class);
@@ -141,11 +140,13 @@ public class CoreModule extends AbstractModule
             // client/SA behavioral differences
             bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
             bind(IContentDownloads.class).to(Downloads.class);
+            bind(Causality.class).to(PolarisCausality.class);
             bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
 
             multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
             multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
         } else {
+            bind(Causality.class).to(LegacyCausality.class);
             bind(Store.Factory.class).to(LegacyStore.Factory.class);
             bind(NewUpdates.Impl.class).to(LegacyNewUpdates.class);
             bind(IContentVersionControl.class).to(LegacyContentVersionControl.class);
