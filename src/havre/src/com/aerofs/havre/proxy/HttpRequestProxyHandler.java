@@ -253,7 +253,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     {
         private final AtomicBoolean _closeIfIdle = new AtomicBoolean();
         private final AtomicLong _expectedResponses = new AtomicLong();
-        private final AtomicBoolean _streamingChunks = new AtomicBoolean();
+        private final AtomicBoolean _expectingResponseChunks = new AtomicBoolean();
+        private final AtomicBoolean _expectingRequestChunks = new AtomicBoolean();
 
         @Override
         public void writeRequested(ChannelHandlerContext ctx, MessageEvent me)
@@ -261,6 +262,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             Object msg = me.getMessage();
             if (msg instanceof HttpRequest) {
                 _expectedResponses.incrementAndGet();
+                _expectingRequestChunks.set(((HttpRequest)msg).isChunked());
+            } else if (msg instanceof HttpChunk) {
+                if (((HttpChunk)msg).isLast()) _expectingRequestChunks.set(false);
+                _closeIfIdle.set(false);
             }
             ctx.sendDownstream(me);
         }
@@ -294,7 +299,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         private void updateExpectations(HttpResponse response)
         {
-            if (_streamingChunks.get()) {
+            if (_expectingResponseChunks.get()) {
                 l.warn("new response before end of previous chunk stream");
             }
 
@@ -303,7 +308,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 return;
             }
 
-            _streamingChunks.set(response.isChunked());
+            _expectingResponseChunks.set(response.isChunked());
             if (!response.isChunked()) {
                 if (_expectedResponses.decrementAndGet() == 0) {
                     _closeIfIdle.set(false);
@@ -313,7 +318,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         private void updateExpectations(HttpChunk chunk)
         {
-            if (_expectedResponses.get() <= 0 || !_streamingChunks.get()) {
+            if (_expectedResponses.get() <= 0 || !_expectingResponseChunks.get()) {
                 l.warn("unexpected upstream chunk {}", chunk.getContent().readableBytes());
                 return;
             }
@@ -322,7 +327,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 if (_expectedResponses.decrementAndGet() == 0) {
                     _closeIfIdle.set(false);
                 }
-                _streamingChunks.set(false);
+                _expectingResponseChunks.set(false);
             }
         }
 
@@ -382,7 +387,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             // If a partial response was written we have no choice but to abruptly close the
             // connection. Otherwise we can do slightly better by returning a 502 for each
             // pipelined request.
-            if (!_streamingChunks.get()) {
+            if (!_expectingResponseChunks.get()) {
                 // if no response body was being streamed, send a 504 for each pipelined requests
                 do {
                     sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
@@ -397,12 +402,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
         {
             if (e.getState() == IdleState.READER_IDLE) {
+                if (_expectingRequestChunks.get() && _expectedResponses.get() == 1) {
+                    return;
+                }
                 l.info("read idle {} {}", _expectedResponses.get(), _upstream);
                 if (_expectedResponses.get() > 0) {
                     // if we paused upstream to avoid overloading downstream we shouldn't fault
                     // upstream for being idle...
                     if (!_upstream.isReadable()) {
-                        l.warn("lingering idle upstream {} [down: {} {}]",
+                        l.warn("lingering unreadable upstream {} [down: {} {}]",
                                 _upstream, _downstream.isWritable(), _downstream);
                         return;
                     }
@@ -423,9 +431,18 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                     _closeIfIdle.set(false);
                 }
             } else if (e.getState() == IdleState.WRITER_IDLE) {
-                if (_expectedResponses.get() > 0) return;
+                if (_expectedResponses.get() > 0 && !_expectingRequestChunks.get()) return;
 
                 l.info("write idle {}", _upstream);
+
+                // if we paused downstream to avoid overloading upstream we shouldn't fault
+                // downstream for being idle...
+                if (!_upstream.isWritable()) {
+                    l.warn("lingering unwritable upstream {} [down: {} {}]",
+                            _upstream, _downstream.isReadable(), _downstream);
+                    return;
+                }
+
                 // close upstream connection if no requests have been forwarded during the last 30s
                 _upstream.close();
             }
