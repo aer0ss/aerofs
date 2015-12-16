@@ -577,7 +577,6 @@ func (g GroupsResource) getReceipts(request *restful.Request, response *restful.
 	}
 	CommitOrPanic(tx)
 	// compose response
-	response.WriteHeader(200)
 	response.WriteEntity(LastReadReceiptList{LastRead: receipts})
 }
 
