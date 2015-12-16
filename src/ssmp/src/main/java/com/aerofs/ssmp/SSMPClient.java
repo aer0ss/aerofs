@@ -139,7 +139,7 @@ public class SSMPClient {
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
             if (!(e instanceof ClosedChannelException || e instanceof UnresolvedAddressException)) {
-                L.warn("uncaught exception {}", e.getCause());
+                L.warn("uncaught exception", e.getCause());
             }
             ctx.getChannel().close();
         }
