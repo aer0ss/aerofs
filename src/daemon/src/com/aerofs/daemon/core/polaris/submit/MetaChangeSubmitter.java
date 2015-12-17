@@ -311,6 +311,9 @@ public class MetaChangeSubmitter implements Submitter
                     try (Trans t = _tm.begin_()) {
                         ackSubmission_(c.get(i), lc.type, or.updated, t);
                         t.commit_();
+                    } catch (Exception e) {
+                        l.warn("failed to ack {} {}", lc, c.get(i));
+                        throw e;
                     }
                     if (or.updated.size() > 0) {
                         if (sidx == null) {
@@ -454,17 +457,25 @@ public class MetaChangeSubmitter implements Submitter
         _mbdb.remove_(c.sidx, c.oid, t);
 
         switch (transformType) {
-        case INSERT_CHILD:
+        case INSERT_CHILD: {
             checkState(acks.size() == 1);
-            _rpdb.insertParent_(c.sidx, c.oid, c.newParent, c.newName,
-                    acks.get(0).transformTimestamp, t);
+            // on unlink/reinstall, races between submission, buffered inserts and historical SHARE
+            // can lead to cases where the remote link is present when an INSERT is ack'd
+            if (_rpdb.getParent_(c.sidx, c.oid) != null) {
+                _rpdb.updateParent_(c.sidx, c.oid, c.newParent, c.newName,
+                        acks.get(0).transformTimestamp, t);
+            } else {
+                _rpdb.insertParent_(c.sidx, c.oid, c.newParent, c.newName,
+                        acks.get(0).transformTimestamp, t);
+            }
 
             OA oa = _ds.getOANullable_(new SOID(c.sidx, c.oid));
             if (oa != null && !oa.isExpelled() && oa.isFile()) {
                 // fast retry content submission
-                ((DaemonPolarisStore)_sidx2s.get_(c.sidx)).contentSubmitter().startOnCommit_(t);
+                ((DaemonPolarisStore) _sidx2s.get_(c.sidx)).contentSubmitter().startOnCommit_(t);
             }
             break;
+        }
         case MOVE_CHILD:
             // IMPORTANT: this relies on the new parent being first in the list of updated objects
             // returned by Polaris
