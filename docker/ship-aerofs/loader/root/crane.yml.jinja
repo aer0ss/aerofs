@@ -350,6 +350,7 @@ containers:
         - loader:loader.service
         - ca-server:ca.service
         - charlie:charlie.service
+        - config:config.service
         - lipwig:lipwig.service
         - havre:havre.service
         - openid:openid.service
@@ -363,9 +364,6 @@ containers:
         - sparta:sparta.service
         - verification:verification.service
         - web:web.service
-      {% if not hpc %}
-        - zephyr:zephyr.service
-      {% endif %}
 
   logrotator:
     image: aerofs/logrotator
@@ -430,6 +428,9 @@ groups:
     - enforcer
     - lipwig
     - logrotator
+    {% if not hpc %}
+    - zephyr
+    {% endif %}
 
   # Bunker relies on this group's name to detect if the system is in maintenance mode.
   maintenance:
