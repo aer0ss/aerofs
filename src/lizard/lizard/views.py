@@ -9,6 +9,7 @@ import markupsafe
 import stripe
 import flask_scrypt as scrypt
 import flask_login as login
+import flask_api.status
 
 from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, \
     url_for, Response, session
@@ -72,11 +73,13 @@ def login_page():
     return render_template("login.html",
             form=form)
 
+
 @blueprint.route("/logout", methods=["POST"])
 def logout():
     login_helper.logout_user_this_session()
     flash(u"You have logged out successfully", 'success')
     return redirect(url_for(".index"))
+
 
 @csrf.exempt
 @blueprint.route("/request_signup", methods=["GET", "POST"])
@@ -86,85 +89,78 @@ def signup_request_page():
     POST /request_signup
     """
     form = forms.SignupForm(csrf_enabled=False)
-    email_address = request.args.get("email_address", None)
-    if email_address:
-        form.email.data = email_address
-
     if form.validate_on_submit():
-        # If email already in Admin table, noop (but return success).
-        # We don't want to leak that an account bound to an email exists by
-        # returning an error.
-        if models.Admin.query.filter_by(email=form.email.data).first():
-            return redirect(url_for(".signup_request_done"))
-        # If email already in UnboundSignup, just fetch that record.
-        record = models.UnboundSignup.query.filter_by(email=form.email.data).first()
-        # Otherwise:
-        if not record:
-            # create random signup code
-            # 30 bytes (240 bits) of randomness.
-            # could do 32, but using a multiple of 3 means we avoid having
-            # base64 padding (==) in urls
-            # Note: email verification codes probably shouldn't be typed in
-            # manually.  If you're typing links out by hand, you deserve the
-            # pain you're in.
-            signup_code = base64.urlsafe_b64encode(os.urandom(30))
-            # insert code/email pair into UnboundSignup
-            record = models.UnboundSignup()
-            record.email=form.email.data
-            record.signup_code=signup_code
-            record.first_name = form.first_name.data.capitalize()
-            record.last_name = form.last_name.data.capitalize()
-            record.company_name = form.company_name.data
-            record.phone_number = form.phone_number.data
-            record.job_title = form.job_title.data
-            db.session.add(record)
-            db.session.commit()
-        notifications.send_verification_email(form.email.data, record.signup_code)
-
-        # can post to pardot directly now that we cookie the user earlier
-        # in the process on the marketing site itself
-        pardot_params = {
-            'first_name': record.first_name.encode('utf-8'),
-            'last_name': record.last_name.encode('utf-8'),
-            'email': record.email.encode('utf-8'),
-            'company': record.company_name.encode('utf-8'),
-            'phone': record.phone_number.encode('utf-8'),
-            'job_title': record.job_title.encode('utf-8'),
-            'company_size': form.company_size.data.encode('utf-8'),
-            'current_fss': form.current_fss.data.encode('utf-8'),
-            'country': form.country.data.encode('utf-8'),
-            'price_plan': form.price_plan.data.encode('utf-8'),
-            'demandramp_rm__utm_medium__c': form.demandramp_rm__utm_medium__c.data.encode('utf-8'),
-            'demandramp_rm__utm_source__c': form.demandramp_rm__utm_source__c.data.encode('utf-8'),
-            'demandramp_rm__utm_campaign__c': form.demandramp_rm__utm_campaign__c.data.encode('utf-8'),
-            'demandramp_rm__utm_content__c': form.demandramp_rm__utm_content__c.data.encode('utf-8'),
-            'demandramp_rm__utm_term__c': form.demandramp_rm__utm_term__c.data.encode('utf-8'),
-            'demandramp_rm__referring_url__c': form.demandramp_rm__referring_url__c.data.encode('utf-8'),
-            'demandramp_rm__destination_url__c': form.demandramp_rm__destination_url__c.data.encode('utf-8'),
-            'demandramp_rm__form_fill_out_url__c': form.demandramp_rm__form_fill_out_url__c.data.encode('utf-8'),
-            'demandramp_rm__landing_page_url__c': form.demandramp_rm__landing_page_url__c.data.encode('utf-8'),
-            'demandramp_rm__person_id__c': form.demandramp_rm__person_id__c.data.encode('utf-8'),
-            'demandramp_rm__session_id__c': form.demandramp_rm__session_id__c.data.encode('utf-8')
-        }
-        r = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
-
-        #Set a cookie on the user email - this is used for the verification page
-        #Consider replacing with session, or setting appropriate expiration date
-        response = current_app.make_response(redirect(url_for(".signup_request_done")))
-        response.set_cookie('sign_up_email', record.email)
-        return response
-
+        request_signup(form)
+        return redirect(url_for(".signup_request_done"))
     return render_template("request_signup.html", form=form)
+
+
+@csrf.exempt
+@blueprint.route("/request_signup_headless", methods=["POST"])
+def signup_request_headless_page():
+    form = forms.SignupForm(csrf_enabled=False)
+    if form.validate_on_submit():
+        request_signup(form)
+        return '', flask_api.status.HTTP_204_NO_CONTENT
+    return '', flask_api.status.HTTP_400_BAD_REQUEST
+
+
+def request_signup(form):
+    # If email already in Admin table, noop (but return success). We don't want to leak that an
+    # account bound to an email exists by returning an error.
+    print(form.email.data)
+    if models.Admin.query.filter_by(email=form.email.data).first():
+        return
+    # If email already in UnboundSignup, just fetch that record.
+    record = models.UnboundSignup.query.filter_by(email=form.email.data).first()
+    if not record:
+        # Create random signup code. 30 bytes (240 bits) of randomness. Could do 32, but using a
+        # multiple of 3 means we avoid having base64 padding (==) in urls. Note email verification
+        # codes probably shouldn't be typed in  manually. If you're typing links out by hand, you
+        # deserve the pain you're in.
+        signup_code = base64.urlsafe_b64encode(os.urandom(30))
+        # Insert code/email pair into UnboundSignup.
+        record = models.UnboundSignup()
+        record.email=form.email.data
+        record.signup_code=signup_code
+        record.first_name = form.first_name.data.capitalize()
+        record.last_name = form.last_name.data.capitalize()
+        record.company_name = form.company_name.data
+        record.phone_number = form.phone_number.data
+        record.job_title = form.job_title.data
+        db.session.add(record)
+        db.session.commit()
+
+    notifications.send_verification_email(form.email.data, record.signup_code)
+    pardot_params = {
+        'first_name': record.first_name.encode('utf-8'),
+        'last_name': record.last_name.encode('utf-8'),
+        'email': record.email.encode('utf-8'),
+        'company': record.company_name.encode('utf-8'),
+        'phone': record.phone_number.encode('utf-8'),
+        'job_title': record.job_title.encode('utf-8'),
+        'company_size': form.company_size.data.encode('utf-8'),
+        'current_fss': form.current_fss.data.encode('utf-8'),
+        'country': form.country.data.encode('utf-8'),
+        'price_plan': form.price_plan.data.encode('utf-8'),
+        'demandramp_rm__utm_medium__c': form.demandramp_rm__utm_medium__c.data.encode('utf-8'),
+        'demandramp_rm__utm_source__c': form.demandramp_rm__utm_source__c.data.encode('utf-8'),
+        'demandramp_rm__utm_campaign__c': form.demandramp_rm__utm_campaign__c.data.encode('utf-8'),
+        'demandramp_rm__utm_content__c': form.demandramp_rm__utm_content__c.data.encode('utf-8'),
+        'demandramp_rm__utm_term__c': form.demandramp_rm__utm_term__c.data.encode('utf-8'),
+        'demandramp_rm__referring_url__c': form.demandramp_rm__referring_url__c.data.encode('utf-8'),
+        'demandramp_rm__destination_url__c': form.demandramp_rm__destination_url__c.data.encode('utf-8'),
+        'demandramp_rm__form_fill_out_url__c': form.demandramp_rm__form_fill_out_url__c.data.encode('utf-8'),
+        'demandramp_rm__landing_page_url__c': form.demandramp_rm__landing_page_url__c.data.encode('utf-8'),
+        'demandramp_rm__person_id__c': form.demandramp_rm__person_id__c.data.encode('utf-8'),
+        'demandramp_rm__session_id__c': form.demandramp_rm__session_id__c.data.encode('utf-8')
+    }
+    requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
+
 
 @blueprint.route("/request_signup_done", methods=["GET"])
 def signup_request_done():
-
-    # TODO: This route is openly accessible
-    # This should probably not be the case (MB)
-    user_email = request.cookies.get('sign_up_email')
-    if not user_email:
-        flash(u"This page does not exist.", "error")
-    return render_template("request_signup_complete.html", user_email=user_email)
+    return render_template("request_signup_complete.html")
 
 
 @blueprint.route("/signup", methods=["GET", "POST"])

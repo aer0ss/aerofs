@@ -11,6 +11,7 @@
 backports.ssl-match-hostname
 CherryPy
 Flask
+Flask-API
 Flask-Login
 Flask-KVSession
 Flask-SQLAlchemy

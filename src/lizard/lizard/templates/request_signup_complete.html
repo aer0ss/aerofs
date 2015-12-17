@@ -7,14 +7,16 @@
 {% block content %}
     <div id="email-verification-container">
         <div class="text-center col-sm-8">
-            {% if user_email %}
-                <h1 class="email-verification-container__heading">Verify Your Email Address</h1>
-                <p class="email-verification-container__body">
-                    To ensure your privacy and security, we sent an email to {{ user_email }}.
-                    Please click the link in that email to continue. If you don't see a message in your inbox
-                    right away, check your spam filter. For assistance, contact <a href="mailto:support@aerofs.com">support@aerofs.com</a>.
-                </p>
-            {% endif %}
+            <h1 class="email-verification-container__heading">Verify Your Email Address</h1>
+            <p class="email-verification-container__body">
+                To ensure your privacy and security, we sent you an email with a confirmation link.
+                Please click the link in that email to continue. If you don't see a message in your
+                inbox right away, check your spam filter.
+            </p>
+            <p>
+                For assistance, please contact
+                <a href="mailto:support@aerofs.com">support@aerofs.com</a>.
+            </p>
         </div>
         <div class="col-sm-2"></div>
     </div>
