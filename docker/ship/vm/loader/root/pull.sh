@@ -35,7 +35,7 @@ docker pull ${LOADER_FULL_NAME}
     exit 11
 }
 
-IMAGES="$(docker run --rm ${LOADER_FULL_NAME} images)"
+IMAGES="$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_FULL_NAME} images)"
 [[ -n "${IMAGES}" ]] || {
     write_error "Could't list images from ${LOADER_FULL_NAME}"
     exit 22
