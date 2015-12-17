@@ -1,4 +1,5 @@
 import logging
+import os
 
 from pyramid.response import Response
 from pyramid.view import view_config
@@ -29,6 +30,11 @@ _DONE_FILE = '/backup-or-restore-done'
 
 _WRAPPER = '/backup-restore-wrapper.sh'
 
+# As of right now (1/2016) our containers use roughly 1.5G-2G of disk space.
+# Give a conservative limit of needing 10G to upgrade. (in KB)
+_REQ_UPGRADE_DF = 10485760
+
+
 @view_config(
     route_name='backup_and_upgrade',
     permission='maintain',
@@ -37,6 +43,20 @@ _WRAPPER = '/backup-restore-wrapper.sh'
 def backup_and_upgrade(request):
     return {
         'current_version': get_private_version(request.registry.settings)
+    }
+
+@view_config(
+    route_name='json-has-disk-space',
+    permission='maintain',
+    request_method='GET',
+    renderer='json'
+)
+def json_has_disk_space(request):
+    s = os.statvfs('/')
+    df_kb = (s.f_bavail * s.f_frsize) / 1024
+    log.info("has_disk_space {} {}".format(df_kb, _REQ_UPGRADE_DF))
+    return {
+        'has_disk_space': df_kb >= _REQ_UPGRADE_DF
     }
 
 @view_config(

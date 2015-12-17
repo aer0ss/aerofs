@@ -123,7 +123,9 @@ def post_images_pull(repo, tag):
         pulling = False
     else:
         with open(PULL_JSON) as f:
-            pulling = json.load(f)['status'] == 'pulling'
+            pull_status = json.load(f)
+            pulling = pull_status.get("bootid", None) == BOOT_ID and \
+                pull_status.get("status", "error") == 'pulling'
 
     if pulling:
         return '"Pulling is already in progress."', 409
@@ -132,7 +134,9 @@ def post_images_pull(repo, tag):
         # N.B. there is a small chance of race condition that this path is called again before
         # pull.sh updates PULL_JSON. Maintenance cost of the full solution due to its complexity
         # overweighs the benefit.
-        subprocess.Popen(['/pull.sh', repo, my_image_name(), tag, PULL_JSON])
+        # Pass in BOOT_ID so that if container is killed while pulling new images, new restarted
+        # container can compare BOOT_ID.
+        subprocess.Popen(['/pull.sh', repo, my_image_name(), tag, PULL_JSON, BOOT_ID])
         return '"Pulling started successfully."'
 
 
@@ -140,9 +144,15 @@ def post_images_pull(repo, tag):
 def get_images_pull():
     if exists(PULL_JSON):
         with open(PULL_JSON) as f:
-            return jsonify(**json.load(f))
-    else:
-        return jsonify(status='done')
+            pull_status = json.load(f)
+            # If pull.json exists but bootid is different than current bootid
+            # this would mean while pull was in progress loader was restarted for some reason.
+            # In this case whatever is in pull.json is useless and just return status=done
+            # because that would mean a new pull can be started.
+            if pull_status.get("bootid", None) == BOOT_ID:
+                return jsonify(**pull_status)
+
+    return jsonify(status='done')
 
 
 @app.route(PREFIX + "/switch/<repo>/<tag>/<target>", methods=["POST"])
@@ -224,12 +234,37 @@ def switch(repo, tag, target):
     return restart_to(target)
 
 
+GC_JSON = '/gc.json'
+
 @app.route(PREFIX + "/gc", methods=["POST"])
-def gc():
+def post_gc():
+    if not exists(GC_JSON):
+        cleaning = False
+    else:
+        with open(GC_JSON) as f:
+            clean_status = json.load(f)
+            cleaning = clean_status.get("bootid", None) == BOOT_ID and \
+                clean_status.get("status", "error") == 'cleaning'
+
+    if cleaning:
+        return '"Cleaning is already in progress."', 409
+
     # TODO currently GC don't perform cleaning for loader images of the same tag but different repo names than the
     # current loader.
-    subprocess.check_call(print_args(['/gc.sh', my_image_name(), _tag]))
-    return ''
+    subprocess.Popen(print_args(['/gc.sh', my_image_name(), _tag, GC_JSON, BOOT_ID]))
+    return '"gc started"', 200
+
+
+@app.route(PREFIX + "/gc", methods=["GET"])
+def get_gc():
+    if exists(GC_JSON):
+        with open(GC_JSON) as f:
+            clean_status = json.load(f)
+            # See get_images_pull for why we do this.
+            if clean_status.get("bootid", None) == BOOT_ID:
+                return jsonify(**clean_status)
+
+    return jsonify(status='done')
 
 
 @app.route(PREFIX + "/port/<port_name>/<default_value>", methods=["GET"])

@@ -10,16 +10,18 @@ REPO=$1
 LOADER=$2
 TAG=$3
 PULL_JSON=$4
+BOOT_ID=$5
+
 
 write_pulling() {
     local PULLED=$1
     local TOTAL=$2
-    echo "{\"status\":\"pulling\", \"pulled\":${PULLED}, \"total\":${TOTAL}}" > ${PULL_JSON}
+    echo "{\"status\":\"pulling\", \"pulled\":${PULLED}, \"total\":${TOTAL}, \"bootid\":\"${BOOT_ID}\"}" > ${PULL_JSON}
 }
 
 write_error() {
     local MESSAGE=$1
-    echo "{\"status\":\"error\", \"message\":\"${MESSAGE}\"}" > ${PULL_JSON}
+    echo "{\"status\":\"error\", \"bootid\":\"${BOOT_ID}\", \"message\":\"${MESSAGE}\"}" > ${PULL_JSON}
 }
 
 write_done() {

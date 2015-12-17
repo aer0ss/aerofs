@@ -6,6 +6,9 @@ set -e
 
 LOADER_IMAGE=$1
 CUR_TAG=$2
+GC_JSON=$3
+BOOT_ID=$4
+
 
 clean() {
     local REPO="$1"
@@ -25,19 +28,32 @@ clean() {
     (set -x; docker rmi -f ${LOADER_FQIN})
 }
 
+write_clean_progress() {
+    echo "{\"status\":\"cleaning\", \"bootid\":\"${BOOT_ID}\"}" > ${GC_JSON}
+}
+
+write_done() {
+    echo "{\"status\":\"done\"}" > ${GC_JSON}
+}
+
 main() {
     # Find all the loaders that aren't at the current version. Note that they may have different repo names than the
     # current loader.
     #
     # First, list image names ending with $LOADER_IMAGE. `sort` & `uniq` to dedup identical image names with diff tags.
+    write_clean_progress
     local IMAGES=$(docker images | awk '{print $1}' | grep -e "/${LOADER_IMAGE}$" | sort | uniq)
+    CLEANED=0
+
     for IMAGE in ${IMAGES}; do
         local REPO=$(sed -e "s./${LOADER_IMAGE}$.." <<< ${IMAGE})
         # Second, list image tags. `tail` to skip header
         for TAG in $(docker images ${IMAGE} | tail -n +2 | awk '{print $2}'); do
             [[ ${TAG} = ${CUR_TAG} ]] || clean "${REPO}" ${TAG}
         done
+        CLEANED=$((CLEANED+1))
     done
+    write_done
 }
 
 main
