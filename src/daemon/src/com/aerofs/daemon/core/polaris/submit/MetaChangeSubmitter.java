@@ -183,6 +183,7 @@ public class MetaChangeSubmitter implements Submitter
                 if (_mbdb.isBuffered_(new SOID(sidx, c.oid))) {
                     if (ops.isEmpty()) {
                         cb.onFailure_(new ExRetryLater("buffered"));
+                        return;
                     }
                     break;
                 }
