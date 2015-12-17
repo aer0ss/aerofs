@@ -5,4 +5,5 @@ MarkupSafe==0.23
 Werkzeug==0.9.6
 itsdangerous==0.24
 pygpgme==0.3
+requests==2.8.1
 wsgiref==0.1.2

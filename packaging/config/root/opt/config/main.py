@@ -9,6 +9,7 @@ import os
 import re
 import tempfile
 import datetime
+import requests
 
 # ----------------------------------------------------------------------
 # Statics
@@ -115,21 +116,48 @@ def write_dict_to_file(d, tmpfilename, dstfilename):
             f.write(str(key) + "=" + str(d[key]) + '\n')
     os.rename(tmpfilename, dstfilename)
 
-def get_external_variables():
-    return read_dict_from_file(PROPERTIES_EXTERNAL)
+def update_properties_file(props):
+    d = read_dict_from_file(PROPERTIES_EXTERNAL)
+    d.update(props)
+    d[MODIFIED_TIME_KEY] = datetime.datetime.utcnow().isoformat()
+    write_dict_to_file(d, PROPERTIES_EXTERNAL_TMP, PROPERTIES_EXTERNAL)
 
 def get_template_kv_pairs():
     # Get explicit user-provided properties
-    d = get_external_variables()
+    d = read_dict_from_file(PROPERTIES_EXTERNAL)
+
     # Add properties from license file
     d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
     for k, v in current_license_info.iteritems():
         d[k] = v
     return d
 
+def get_port(port_name, default_value):
+    r = requests.get('http://loader.service/v1/port/{}/{}'.format(port_name, default_value))
+    r.raise_for_status()
+    return int(r.text)
+
+
 # ----------------------------------------------------------------------
 # Routes
 # ----------------------------------------------------------------------
+
+@app.before_first_request
+def write_port_numbers():
+    app.logger.info("Querying the loader for port numbers")
+
+    # This list must be kept in sync with `crane.yml.jinja` (in the loader)
+    ports = {'nginx': 4433,
+             'nginx_mut_auth': 5222,
+             'havre': 8084,
+             'lipwig': 29438}
+
+    results = {'{}_port'.format(name): get_port(name, default_value)
+               for name, default_value in ports.iteritems()}
+
+    app.logger.info("Got ports: {}".format(results))
+    update_properties_file(results)
+
 
 # No authentication, this route is public
 @app.route("/client")
@@ -150,10 +178,7 @@ def server_properties():
 def set_external_variable():
     key = request.form['key']
     value = request.form['value']
-    d = read_dict_from_file(PROPERTIES_EXTERNAL)
-    d[key] = value
-    d[MODIFIED_TIME_KEY] = datetime.datetime.utcnow().isoformat()
-    write_dict_to_file(d, PROPERTIES_EXTERNAL_TMP, PROPERTIES_EXTERNAL)
+    update_properties_file({key: value})
     return ""
 
 # No authentication required

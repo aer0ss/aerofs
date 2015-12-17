@@ -1,19 +1,19 @@
 base.host.unified={{ base_host }}
 
 config.loader.is_private_deployment=true
-config.loader.configuration_service_url=https://{{ base_host }}:4433/config/client
+config.loader.configuration_service_url=https://{{ base_host }}:{{ nginx_port }}/config/client
 config.loader.base_ca_certificate={{ base_ca_cert }}
 
 base.www.url=https://{{ base_host }}
 base.installers.url=https://{{ base_host }}/static/installers
-base.sp.url=https://{{ base_host }}:5222/sp/
-base.ssmp.address={{ base_host }}:29438
+base.sp.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/sp/
+base.ssmp.address={{ base_host }}:{{ lipwig_port }}
 base.zephyr.address={{ base_host }}:8888
-base.charlie.url=https://{{ base_host }}:5222/checkin
+base.charlie.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/checkin
 
-api.url=https://{{ base_host }}:4433/api/
+api.url=https://{{ base_host }}:{{ nginx_port }}/api/
 api.tunnel.host={{ base_host }}
-api.tunnel.port=8084
+api.tunnel.port={{ havre_port }}
 api.daemon.port=0
 
 base.www.support_email_address={{ support_address }}
@@ -41,7 +41,7 @@ openid.service.session.interval={{ openid_service_session_interval }}
 openid.service.realm={{ openid_service_realm }}
 
 base.audit.enabled={{ audit_enabled }}
-base.audit.public.url=https://{{ base_host }}:5222/audit/event
+base.audit.public.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/audit/event
 
 base.triks.enabled=false
 

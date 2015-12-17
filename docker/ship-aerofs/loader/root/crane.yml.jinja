@@ -80,9 +80,9 @@ containers:
       {% if not hpc %}
         - "80:80"
         - "443:443"
-        - "5222:5222"
       {% endif %}
         - "{{ get_port('nginx', 4433) }}:4433"
+        - "{{ get_port('nginx_mut_auth', 5222) }}:5222"
       volumes-from:
         - data
       link:
@@ -153,6 +153,8 @@ containers:
       detach: true
       volumes-from:
         - data
+      link:
+        - loader:loader.service
 
   # Use 'ca-server' not 'ca' to avoid conflicts with 'ca*' container ids
   ca-server:

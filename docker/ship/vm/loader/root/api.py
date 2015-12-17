@@ -1,9 +1,9 @@
-from flask import Flask, json, jsonify, request
+from flask import Flask, json, jsonify, request, make_response
 from uuid import uuid4
 from os.path import exists
 from os import devnull
 from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
-    MODIFIED_YML_PATH, my_container_prefix
+    MODIFIED_YML_PATH, my_container_prefix, my_subdomain
 import yaml, requests, subprocess
 from traceback import print_exc
 
@@ -230,6 +230,21 @@ def gc():
     # current loader.
     subprocess.check_call(print_args(['/gc.sh', my_image_name(), _tag]))
     return ''
+
+
+@app.route(PREFIX + "/port/<port_name>/<default_value>", methods=["GET"])
+def get_port(port_name, default_value):
+    """
+    On HPC, relays a request for port numbers to the port allocator service.
+    On PC, simply returns the default port.
+    This route is called by the config service upon start.
+    """
+    subdomain = my_subdomain()
+    if subdomain:  # HPC
+        r = requests.get('http://hpc-port-allocator.service/ports/{}/{}'.format(subdomain, port_name))
+        return make_response((r.text, r.status_code, None))
+    else:  # PC
+        return str(default_value)
 
 
 def has_container(container):

@@ -1,12 +1,12 @@
 {% include "common.tmplt" %}
 
-updater.version.url=https://{{ base_host }}:4433/static/installers/current.ver
-updater.installer.url=https://{{ base_host }}:4433/static/installers
+updater.version.url=https://{{ base_host }}:{{ nginx_port }}/static/installers/current.ver
+updater.installer.url=https://{{ base_host }}:{{ nginx_port }}/static/installers
 
 gui.tray.enable_defect_dialogue=false
 
-daemon.oauth.url=https://{{ base_host }}:4433/auth/tokeninfo
-daemon.polaris.url=https://{{ base_host }}:5222/polaris
+daemon.oauth.url=https://{{ base_host }}:{{ nginx_port }}/auth/tokeninfo
+daemon.polaris.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/polaris
 
 lib.anchor.default_location_windows={{ anchor_default_location_windows }}
 lib.anchor.default_location_linux={{ anchor_default_location_linux }}
