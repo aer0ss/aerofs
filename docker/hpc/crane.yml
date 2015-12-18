@@ -23,8 +23,8 @@ containers:
 
   hpc-port-allocator:
     image: aerofs/hpc-port-allocator
-    restart: always
     run:
       detach: true
+      restart: always
       volume:
         - /var/hpc-port-allocator:/state

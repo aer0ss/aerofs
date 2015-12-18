@@ -22,7 +22,7 @@ def get_docker_client(deployment):
         verify=current_app.config['HPC_PATH_TO_DOCKER_CA_CERT'],
         assert_hostname=False)
 
-    return Client(base_url=deployment.server.docker_url, tls=tls_config, version='auto')
+    return Client(base_url=deployment.server.docker_url, tls=tls_config, version='auto', timeout=5)
 
 
 def create_deployment(customer, subdomain):
