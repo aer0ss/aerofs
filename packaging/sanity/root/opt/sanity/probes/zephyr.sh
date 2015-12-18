@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Note: we can't use Docker links to resolve Zephyr's address like we do for other probes because on
 # Hosted Private Cloud Zephyr will be running on a separate machine so Docker links won't work.
