@@ -1,11 +1,8 @@
-FROM aerofs/base.python2.7
+FROM alpine:3.2
 
 MAINTAINER AeroFS "support@aerofs.com"
 
-RUN mkdir -p \
-    /data/bunker \
-    /data/web \
-    /data/redis
+RUN apk --update add bash
 
 VOLUME /data
 
