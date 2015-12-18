@@ -27,7 +27,7 @@ AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )"
 PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster/
 
 # rsync - recursuve/follow symlinks - use kssh - exclude ./local (used for vm testing only).
-rsync -v -rl -e "ssh" --exclude "local" --exclude ".swp" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
+rsync -v -rl --delete -e "ssh" --exclude "local" --exclude ".swp" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
 
 echo "Success"
 exit 0
