@@ -187,19 +187,19 @@ PAGE_SIZE = 10
 def all_accounts():
     # URL Parameters.
 
-    search_terms = request.args.get('search_terms', None).encode('utf-8')
-
-    # InnoDB tables don't support full text search on the "@" character, because it is reserved
-    # so we replace the @ with a space
-    search_terms_sanitized = request.args.get('search_terms', None).encode('utf-8').replace("@"," ")
+    search_terms = request.args.get('search_terms', None)
 
     page = int(request.args.get('page', 1))
     # Form.
     form = forms.AllAccountsSearchForm()
     form.search_terms.data = search_terms
     # Search.
-    if search_terms_sanitized:
-        query = models.Customer.query.filter(
+    if search_terms:
+       # InnoDB tables don't support full text search on the "@" character, because it is reserved
+       # so we replace the @ with a space
+       search_terms_sanitized = request.args.get('search_terms', None).encode('utf-8').replace("@"," ")
+
+       query = models.Customer.query.filter(
             models.Customer.name.match(search_terms_sanitized) |
             models.Customer.admins.any(models.Admin.email.match(search_terms_sanitized)))
     else:
