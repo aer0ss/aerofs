@@ -6,7 +6,6 @@ from aerofs_licensing import unicodecsv
 from lizard import db, csrf, appliance, notifications, forms, models, hpc
 from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
     flash
-
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 @blueprint.route("/", methods=["GET"])
@@ -187,16 +186,22 @@ PAGE_SIZE = 10
 @blueprint.route("/all_accounts", methods=["GET"])
 def all_accounts():
     # URL Parameters.
-    search_terms = request.args.get('search_terms', None)
+
+    search_terms = request.args.get('search_terms', None).encode('utf-8')
+
+    # InnoDB tables don't support full text search on the "@" character, because it is reserved
+    # so we replace the @ with a space
+    search_terms_sanitized = request.args.get('search_terms', None).encode('utf-8').replace("@"," ")
+
     page = int(request.args.get('page', 1))
     # Form.
     form = forms.AllAccountsSearchForm()
     form.search_terms.data = search_terms
     # Search.
-    if search_terms:
+    if search_terms_sanitized:
         query = models.Customer.query.filter(
-            models.Customer.name.ilike("%" + search_terms + "%") |
-            models.Customer.admins.any(models.Admin.email.ilike("%" + search_terms + "%")))
+            models.Customer.name.match(search_terms_sanitized) |
+            models.Customer.admins.any(models.Admin.email.match(search_terms_sanitized)))
     else:
         query = models.Customer.query
     # Ordering.

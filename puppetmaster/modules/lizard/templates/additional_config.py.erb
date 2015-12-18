@@ -1,6 +1,6 @@
 SEGMENTIO_WRITE_KEY="DXiiCHhPnCb0IhkSy0BcGSe1UQBCAbNS"
-# Use RDS database in production
-SQLALCHEMY_DATABASE_URI = 'mysql+oursql://lizard:<%= @mysql_password %>@privatecloud.mysql.aws.aerofs.com/lizard'
+# Use RDS database in production, don't treat mysql warnings as errors, as mysql causes warnings on a variety of queries
+SQLALCHEMY_DATABASE_URI = 'mysql+oursql://lizard:<%= @mysql_password %>@privatecloud.mysql.aws.aerofs.com/lizard?raise_on_warnings=False'
 # Use real production Stripe keys
 STRIPE_PUBLISHABLE_KEY="<%= @stripe_publishable_key %>"
 STRIPE_SECRET_KEY="<%= @stripe_secret_key %>"

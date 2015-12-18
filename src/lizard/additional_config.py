@@ -14,9 +14,7 @@ STRIPE_SECRET_KEY="sk_test_vEjpSRt2LE4jgfxB709l8NCG"
 STRIPE_PUBLISHABLE_KEY="pk_test_LL4hvnijboGKs7CJLA6CUh15"
 
 # local dev: use sqlite db
-basedir = os.path.abspath(os.path.dirname(__file__))
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'state', 'database.db')
-
+SQLALCHEMY_DATABASE_URI = 'mysql+oursql://root@localhost/lizard?raise_on_warnings=False'
 # Email: in development use svmail
 # In production, prefer sendgrid
 MAIL_SERVER = "devmail.aerofs.com"
