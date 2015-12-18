@@ -10,7 +10,7 @@ host=$1
 port=$2
 desc=$3
 
-nc -z $host $port
+nc -z -w 1 $host $port
 
 if [ $? -ne 0 ]
 then

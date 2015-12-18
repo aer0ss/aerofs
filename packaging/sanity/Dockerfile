@@ -3,7 +3,11 @@ FROM aerofs/base.python2.7
 MAINTAINER AeroFS "support@aerofs.com"
 
 # TODO (WW) use bash rather than nc. See container-scripts/service-barrier
-RUN apt-get update && apt-get install -y netcat && rm -rf /var/lib/apt/lists/*
+RUN apt-get update &&\
+    apt-get install -y \
+        iproute2 \
+        netcat &&\
+    rm -rf /var/lib/apt/lists/*
 
 ADD root/opt/sanity/requirements-exact.txt /
 
