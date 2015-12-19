@@ -14,22 +14,18 @@ import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.DeviceResolver;
+import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
 import com.google.common.cache.CacheBuilder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.junit.rules.ExternalResource;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 
 import java.io.IOException;
-import java.net.URI;
 
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -87,11 +83,11 @@ public final class PolarisTestServer extends ExternalResource {
     }
 
     public static String getApiFoldersURL() {
-        return String.format("%s/v1.2/folders/", getServiceURL());
+        return String.format("%s/v1.3/folders/", getServiceURL());
     }
 
     public static String getApiFilesURL() {
-        return String.format("%s/v1.2/files/", getServiceURL());
+        return String.format("%s/v1.3/files/", getServiceURL());
     }
 
     public static String getApiChildrenURL() {
@@ -112,6 +108,7 @@ public final class PolarisTestServer extends ExternalResource {
         private final ManagedAccessManager accessManager = Mockito.mock(ManagedAccessManager.class);
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
         private final DeviceResolver deviceResolver = Mockito.mock(DeviceResolver.class);
+        private final FolderSharer folderSharer = Mockito.mock(FolderSharer.class);
 
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
@@ -124,6 +121,7 @@ public final class PolarisTestServer extends ExternalResource {
                     bind(publisher).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).ranked(1);
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
                     bind(deviceResolver).to(DeviceResolver.class).ranked(1);
+                    bind(folderSharer).to(FolderSharer.class).ranked(1);
                 }
             });
         }
@@ -161,6 +159,11 @@ public final class PolarisTestServer extends ExternalResource {
     public DeviceResolver getDeviceResolver()
     {
         return server.deviceResolver;
+    }
+
+    public FolderSharer getFolderSharer()
+    {
+        return server.folderSharer;
     }
 
     @Override

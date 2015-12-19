@@ -18,6 +18,7 @@ import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
 import com.aerofs.polaris.external_api.rest.util.Version;
 import com.aerofs.polaris.logical.DAO;
+import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.logical.Migrator;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
@@ -107,8 +108,11 @@ public class TestMetadataBuilder
         when(principal.getDID()).thenReturn(DEVICE);
         when(principal.scope()).thenReturn(OAuthScopeParsingUtil.parseScopes(ImmutableSet.of("files.read", "files.write")));
 
+        FolderSharer fs = mock(FolderSharer.class);
+        when(fs.shareFolder(any(), any(), any())).thenReturn(true);
+
         this.objects = new ObjectStore(mock(AccessManager.class), dbi, mock(Migrator.class));
-        this.metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(), mock(Notifier.class), dbi);
+        this.metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(), mock(Notifier.class), dbi, fs);
     }
 
     @After

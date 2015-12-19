@@ -108,7 +108,8 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
-                bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class).to(DeviceResolver.class).in(Singleton.class);
+                bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
+                        .to(DeviceResolver.class).to(FolderSharer.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);

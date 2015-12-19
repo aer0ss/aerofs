@@ -16,9 +16,12 @@ import org.junit.Test;
 
 import static com.aerofs.polaris.PolarisTestServer.getApiFoldersURL;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyCollectionOf;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyVararg;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 public class TestFolderResource extends AbstractRestTest
 {
@@ -902,5 +905,79 @@ public class TestFolderResource extends AbstractRestTest
                 .body("path.folders[0].is_shared", equalTo(true))
                 .body("parent", equalTo(new RestObject(sid, OID.ROOT).toStringFormal()))
         .when().get(getApiFoldersURL() + oid);
+    }
+
+    @Test
+    public void shouldShareExitingFolder() throws Exception
+    {
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
+        RestObject restFolder1 = new RestObject(rootSID, folder1);
+        OID sid1 = SID.folderOID2convertedAnchorOID(folder1);
+        RestObject expected = new RestObject(rootSID, sid1);
+
+        doReturn(true).when(polaris.getFolderSharer()).shareFolder(any(), any(), any());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(expected.toStringFormal()))
+                .body("name", equalTo("folder1"))
+                .body("is_shared", equalTo(true))
+                .body("sid", equalTo(sid1.toStringFormal()))
+        .when()
+                .put(getApiFoldersURL() + restFolder1.toStringFormal() + "/is_shared");
+    }
+
+    @Test
+    public void should400WhenTryingToShareChildFolderOfSharedFolder() throws Exception
+    {
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED,
+                PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
+        SID sid1 = SID.folderOID2convertedStoreSID(folder1);
+
+        OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, sid1, "folder2");
+        RestObject restFolder2 = new RestObject(sid1, folder2);
+        givenAccess()
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put(getApiFoldersURL() + restFolder2.toStringFormal() + "/is_shared");
+    }
+
+    @Test
+    public void should400WhenTryingToShareParentFolderOfSharedFolder() throws Exception
+    {
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
+        OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder2");
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED,
+                PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder2).jobID, 5);
+        RestObject restFolder1 = new RestObject(rootSID, folder1);
+        givenAccess()
+        .expect()
+                .statusCode(400)
+                .body("type", equalTo("BAD_ARGS"))
+        .when()
+                .put(getApiFoldersURL() + restFolder1.toStringFormal() + "/is_shared");
+    }
+
+    @Test
+    public void shouldStillCallSpartaForExitingSharedFolder() throws Exception
+    {
+        OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED,
+                PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
+        OID sid1 = SID.folderOID2convertedAnchorOID(folder1);
+        RestObject anchor = new RestObject(rootSID, sid1);
+
+        doReturn(true).when(polaris.getFolderSharer()).shareFolder(any(), any(), any());
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+        .when()
+                .put(getApiFoldersURL() + anchor.toStringFormal() + "/is_shared");
+        verify(polaris.getFolderSharer()).shareFolder(any(), any(), any());
     }
 }

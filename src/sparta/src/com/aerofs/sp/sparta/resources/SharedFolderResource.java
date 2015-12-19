@@ -12,7 +12,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.lib.injectable.TimeSource;
-import com.aerofs.rest.auth.IAuthToken;
+import com.aerofs.rest.auth.*;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
@@ -26,7 +26,6 @@ import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.oauth.Scope;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -182,13 +181,24 @@ public class SharedFolderResource extends AbstractSpartaResource
         checkArgument(share.name != null, "Request body missing required field: name");
         User caller = _factUser.create(token.user());
 
-        // in the unlikely event that we generate a UUID that's already taken,
-        // retry up to 10 times before returning a 5xx
-        int attempts = 10;
         SharedFolder sf;
-        do {
-            sf = _factSF.create(SID.generate());
-        } while (sf.exists() && --attempts > 0);
+        // Use this if condition as a way to ensure only services(specifically Polaris)
+        // can share an existing folder via the Public API. Block users from directly making
+        // this call.
+        if (token instanceof DelegatedUserDeviceToken && share.id != null) {
+            // Check if folder already exists. If it does use the SID passed in.
+            sf = _factSF.create(new SID(share.id));
+            if (sf.exists()) {
+                return Response.status(Status.NO_CONTENT).build();
+            }
+        } else {
+            // in the unlikely event that we generate a UUID that's already taken,
+            // retry up to 10 times before returning a 5xx
+            int attempts = 10;
+            do {
+                sf = _factSF.create(SID.generate());
+            } while (sf.exists() && --attempts > 0);
+        }
 
         ImmutableCollection<UserID> affected = sf.save(share.name, caller);
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);

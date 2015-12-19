@@ -3,7 +3,7 @@ package com.aerofs.rest.auth;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 
-class DelegatedUserDeviceToken extends ServiceToken implements IUserAuthToken
+public class DelegatedUserDeviceToken extends ServiceToken implements IUserAuthToken
 {
     private final UserID user;
     private final UniqueID did;

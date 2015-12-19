@@ -95,4 +95,13 @@ public class FoldersResource
     {
         return metadataBuilder.path(principal, object);
     }
+
+    @Since("1.3")
+    @PUT
+    @Path("/{folder_id}/is_shared")
+    public Response share(@Context AeroOAuthPrincipal principal,
+            @PathParam("folder_id") RestObject object)
+    {
+        return metadataBuilder.share(principal, object);
+    }
 }

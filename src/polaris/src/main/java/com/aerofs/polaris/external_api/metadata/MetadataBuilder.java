@@ -13,6 +13,7 @@ import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
 import com.aerofs.polaris.external_api.rest.util.Version;
 import com.aerofs.polaris.logical.DAO;
+import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.logical.NotFoundException;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
@@ -20,7 +21,10 @@ import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.util.MimeTypeDetector;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.SettableFuture;
 import org.skife.jdbi.v2.DBI;
 import org.slf4j.Logger;
 
@@ -44,11 +48,13 @@ import static com.aerofs.polaris.api.types.ObjectType.FILE;
 import static com.aerofs.polaris.api.types.ObjectType.FOLDER;
 import static com.aerofs.polaris.external_api.Constants.APPDATA_FOLDER_NAME;
 import static com.aerofs.polaris.external_api.Constants.EXTERNAL_API_LOCATION;
-import static com.aerofs.polaris.external_api.metadata.RestObjectResolver.toRestObject;
 import static com.aerofs.polaris.external_api.metadata.RestObjectResolver.fromRestObject;
+import static com.aerofs.polaris.external_api.metadata.RestObjectResolver.toRestObject;
 import static com.aerofs.polaris.logical.ObjectStore.AccessToken;
 import static com.aerofs.rest.api.File.ContentState;
-import static org.skife.jdbi.v2.TransactionIsolationLevel.*;
+import static com.google.common.base.Preconditions.checkState;
+import static javax.ws.rs.core.Response.Status.*;
+import static org.skife.jdbi.v2.TransactionIsolationLevel.READ_COMMITTED;
 
 @Singleton
 public class MetadataBuilder
@@ -59,15 +65,17 @@ public class MetadataBuilder
     private final ObjectStore objectStore;
     private final Notifier notifier;
     private final DBI dbi;
+    private final FolderSharer fs;
 
     @Inject
     public MetadataBuilder(@Context ObjectStore objectStore, @Context MimeTypeDetector detector,
-            @Context Notifier notifier, @Context DBI dbi)
+            @Context Notifier notifier, @Context DBI dbi, @Context FolderSharer fs)
     {
         this.objectStore = objectStore;
         this.detector = detector;
         this.notifier = notifier;
         this.dbi = dbi;
+        this.fs = fs;
     }
 
     private boolean hasUnrestrictedPermission(Map<Scope, Set<RestObject>> scopes, Scope scope)
@@ -110,7 +118,7 @@ public class MetadataBuilder
     {
         if (!isObjectInTokenScope(principal, oid, scope, parentFolders)) {
             throw new WebApplicationException(Response
-                    .status(Response.Status.FORBIDDEN)
+                    .status(FORBIDDEN)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(new Error(Error.Type.FORBIDDEN, "Token lacks required scope"))
                     .build());
@@ -298,7 +306,7 @@ public class MetadataBuilder
             // If at this stage parent = null, this would mean that it is an external store.
             // Handle it differently from other cases since its a shared folder yet not in the
             // mount points table.
-            Preconditions.checkState(Identifiers.isSharedFolder(oid), "Cannot resolve object's parent.");
+            checkState(Identifiers.isSharedFolder(oid), "Cannot resolve object's parent.");
             // TODO(AS): Name for external root.
             name = "";
             parentSID = new SID(oid.getBytes());
@@ -460,7 +468,7 @@ public class MetadataBuilder
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, parentOID);
         throwIfInSufficientTokenScope(principal, parentOID, Scope.WRITE_FILES, parentFolders);
         if (objectStore.isFile(dao.objectTypes.get(parentOID))) {
-            return new ApiOperationResult(Lists.newArrayList(), Response.status(Response.Status.BAD_REQUEST)
+            return new ApiOperationResult(Lists.newArrayList(), Response.status(BAD_REQUEST)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(new Error(Error.Type.BAD_ARGS, "Cannot create an object under a file"))
                     .build());
@@ -652,6 +660,76 @@ public class MetadataBuilder
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
         throwIfInSufficientTokenScope(principal, oid, Scope.READ_FILES, parentFolders);
         return Response.ok().entity(parentPath(parentFolders.values())).build();
+    }
+
+    public Response share(AeroOAuthPrincipal principal, RestObject object)
+    {
+        UniqueID oid = restObject2OID(principal, object);
+        // If SID of the passed in object is not root SID throw. However, only do this when
+        // passed in object is not a shared folder because we still want to make a sparta call
+        // in the case that earlier sparta call might have failed.
+        if (!Identifiers.isSharedFolder(oid) &&
+                !SID.rootSID(principal.getUser()).toStringFormal().equals(object.getSID().toStringFormal())) {
+            throw new IllegalArgumentException("Cannot share a child of a shared folder");
+        }
+
+        ParentAndStores ps = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            UniqueID parentOID = getParentOID(dao, principal.getUser(), oid);
+            if (parentOID == null) {
+                throw new NotFoundException(oid);
+            }
+            return new ParentAndStores(parentOID,
+                    Sets.newHashSet(objectStore.getStore(dao, parentOID)));
+        });
+
+        // TODO(AS): I wish we didn't have to create ANOTHER trans here.
+        String folderName = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            return new String(dao.children.getActiveChildName(ps.parent, oid));
+        });
+
+        // If oid is shared folder, then directly make sparta call.
+        if (Identifiers.isSharedFolder(oid)) {
+            if (!fs.shareFolder(principal, SID.anchorOID2storeSID(new OID(oid)), folderName)) {
+                return Response.status(INTERNAL_SERVER_ERROR).build();
+            }
+            return Response.status(OK).build();
+        }
+
+        AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
+                ps.stores, READ, WRITE);
+
+        Lock l = objectStore.lockObject(ps.parent);
+        try {
+            ApiOperationResult result = dbi.inTransaction((conn, status) ->
+                    share(new DAO(conn), principal, accessToken, ps.parent, object, oid));
+            checkState(result.updated.size() == 0, "Create share folder. No updated stores");
+
+            if (!fs.shareFolder(principal, SID.folderOID2convertedStoreSID(new OID(oid)), folderName)) {
+                return Response.status(INTERNAL_SERVER_ERROR).build();
+            }
+            return result.response;
+        } finally {
+            l.unlock();
+        }
+    }
+
+    private ApiOperationResult share(DAO dao, AeroOAuthPrincipal principal, AccessToken accessToken,
+            UniqueID parentOID, RestObject object, UniqueID oid)
+    {
+        if (!isStoreConsistent(principal, dao, oid, object)) {
+            throw new NotFoundException(oid);
+        }
+
+        l.info("Share folder: {}", object.toStringFormal());
+        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
+                parentOID, new Share(oid));
+        l.info("Result for sharing object {}: {}", oid.toStringFormal(), result);
+
+        OID anchorOID = SID.folderOID2convertedAnchorOID(new OID(oid));
+        return new ApiOperationResult(result.updated, Response.ok()
+                .entity(getObjectMetadata(dao, principal, anchorOID, null, null)).build());
     }
 
     // POJO to store parent OID and store OID for later use within an API operation since both are
