@@ -57,7 +57,7 @@ DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 ARCHIVE_DIR = '~/archive'
 
 # CI Server Connection Settings
-CODE_URL = "http://" + DEFAULT_HOST + " :21337/get_code"
+CODE_URL = "http://" + DEFAULT_HOST + ":21337/get_code"
 POOL_URL = "http://ci.arrowfs.org:8040"
 CI_SP_URL = "https://" + DEFAULT_HOST + ":4433/sp"
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
