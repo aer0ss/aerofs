@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Note: we can't use Docker links to resolve Zephyr's address like we do for other probes because on
 # Hosted Private Cloud Zephyr will be running on a separate machine so Docker links won't work.
@@ -17,9 +18,3 @@ ZEPHYR_HOST=${TMP[0]}
 ZEPHYR_PORT=${TMP[1]}
 
 /opt/sanity/probes/tools/port.sh $ZEPHYR_HOST $ZEPHYR_PORT
-
-# In some cases the container may not be able to resolve the appliance hostname
-# When this happens, try to access zephyr through the docker bridge instead
-if [[ $? -ne 0 ]] ; then
-    /opt/sanity/probes/tools/port.sh `ip route list  | awk '/default/ { print $3 }'` 8888
-fi

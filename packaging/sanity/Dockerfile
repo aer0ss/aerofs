@@ -5,7 +5,6 @@ MAINTAINER AeroFS "support@aerofs.com"
 # TODO (WW) use bash rather than nc. See container-scripts/service-barrier
 RUN apt-get update &&\
     apt-get install -y \
-        iproute2 \
         netcat &&\
     rm -rf /var/lib/apt/lists/*
 
