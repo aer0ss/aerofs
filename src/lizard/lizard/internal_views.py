@@ -186,7 +186,6 @@ PAGE_SIZE = 10
 @blueprint.route("/all_accounts", methods=["GET"])
 def all_accounts():
     # URL Parameters.
-
     search_terms = request.args.get('search_terms', None)
 
     page = int(request.args.get('page', 1))
@@ -195,11 +194,14 @@ def all_accounts():
     form.search_terms.data = search_terms
     # Search.
     if search_terms:
-       # InnoDB tables don't support full text search on the "@" character, because it is reserved
-       # so we replace the @ with a space
-       search_terms_sanitized = request.args.get('search_terms', None).encode('utf-8').replace("@"," ")
+        search_terms_sanitized = request.args.get('search_terms', None).encode('utf-8')
+        # InnoDB tables don't support full text search on the "@" character, because it is reserved
+        # so we replace the @ with a space.
+        search_terms_sanitized = search_terms_sanitized.replace("@"," ")
+        # Add the star postfix for prefix matching.
+        search_terms_sanitized = ' '.join([t + '*' for t in search_terms_sanitized.split(' ')])
 
-       query = models.Customer.query.filter(
+        query = models.Customer.query.filter(
             models.Customer.name.match(search_terms_sanitized) |
             models.Customer.admins.any(models.Admin.email.match(search_terms_sanitized)))
     else:
