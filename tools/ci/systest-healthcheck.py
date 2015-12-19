@@ -7,14 +7,14 @@ import os
 import requests
 import sys
 
+SP_URL = "https://" + os.getenv('APPLIANCE_HOST', 'ci.syncfs.com') + ":4433/sp"
 POOL_URL = "http://ci.arrowfs.org:8040"
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 
 if __name__ == "__main__":
     print "check appliance..."
-    requests.get("https://share.syncfs.com:4433/sp",
-            verify=False, timeout=10)
+    requests.get(SP_URL, verify=False, timeout=10)
 
     print "check actor pool..."
     r = requests.get('{}'.format(POOL_URL), headers=JSON_HEADERS)

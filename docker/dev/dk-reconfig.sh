@@ -14,15 +14,20 @@ info() { cecho ${CYAN} "$@"; }
 success() { cecho ${GREEN} "$@"; }
 error() { cecho ${RED} "$@"; }
 
-[[ $# = 1 ]] || {
-    error "Usage: $0 create-first-user|no-create-first-user"
+[[ $# = 1 || $# = 2 ]] || {
+    error "usage: $0 create-first-user|no-create-first-user [hostname]"
     exit 11
 }
-if [ $1 = create-first-user ]; then
+if [[ $1 = create-first-user ]]; then
     CREATE_FIRST_USER=true
-else
+elif [[ $1 = no-create-first-user ]] ; then
     CREATE_FIRST_USER=false
+else
+    error "usage: $0 create-first-user|no-create-first-user [hostname]"
+    exit 11
 fi
+
+HOST=${2:-share.syncfs.com}
 
 DEVMAIL=devmail.aerofs.com
 echo "Testing connection to ${DEVMAIL} ..."
@@ -55,17 +60,15 @@ else
 fi
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
-"${THIS_DIR}/../../tools/wait-for-url.sh" ${IP}
+"${THIS_DIR}/../../tools/wait-for-url.sh" ${HOST}
 
-info "Configuring AeroFS..."
-
-"${THIS_DIR}/../../system-tests/bunker/setup/test.sh" ${IP} ${CREATE_FIRST_USER}
+"${THIS_DIR}/../../system-tests/bunker/setup/test.sh" ${HOST} ${CREATE_FIRST_USER}
 
 if [ ${CREATE_FIRST_USER} = true ]; then
     success 'Services is up and running.'
 else
     success 'Services is up and running. You may create the first user with:'
     echo
-    success '   open http://share.syncfs.com'
+    success "   open http://$HOST"
 fi
 echo

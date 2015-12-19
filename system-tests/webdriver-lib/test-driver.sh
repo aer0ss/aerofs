@@ -8,7 +8,7 @@ set -e
 #
 
 if [ $# -lt 2 ]; then
-    echo "Usage: $0 <caller-dir> <ip> [<extra-docker-args> [-- <extra-python-args>]]"
+    echo "Usage: $0 <caller-dir> <host> [<extra-docker-args> [-- <extra-python-args>]]"
     echo "       <caller-dir> the path where the test code resides. A Dockerfile is assumed present in this path."
     echo "       <extra-docker-args> additional arguments to pass to the docker command."
     echo "       <extra-python-args> additional arguments to pass to main.py."
@@ -17,7 +17,7 @@ fi
 
 # Parse args
 CALLER_DIR="$1"; shift
-IP="$1"; shift
+HOST="$1"; shift
 while [ $# != 0 ] && [ "$1" != -- ]; do
     EXTRA_DOCKER_ARGS="${EXTRA_DOCKER_ARGS} $1"
     shift
@@ -59,11 +59,8 @@ rm -rf "${SCREEN_SHOTS}"/*
 # Get canonical path for prettier screen output
 SCREEN_SHOTS="$(cd "${SCREEN_SHOTS}" && pwd)"
 
-HOST=share.syncfs.com
-
 (set +e
     (set -x; docker run --rm --name "${CONTAINER_NAME}" \
-        --add-host "${HOST}:${IP}" \
         -v "${SCREEN_SHOTS}":/screenshots \
         ${EXTRA_DOCKER_ARGS} \
         "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS})

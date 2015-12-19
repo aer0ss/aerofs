@@ -50,16 +50,16 @@ from aerofs_sp.param import SP_PROTO_VERSION
 DEFAULT_LOGIN = 'aerofstest'
 DEFAULT_PASSWORD = 'temp123'
 DEFAULT_ROOT = '~/syncdet'
-DEFAULT_HOST = 'share.syncfs.com'
+DEFAULT_HOST = os.getenv('APPLIANCE_HOST', 'ci.syncfs.com')
 DEFAULT_RSH = 'ssh'
 DEFAULT_USERID_FMT = getpass.getuser() + '+syncdet+{}@aerofs.com'
 
 ARCHIVE_DIR = '~/archive'
 
 # CI Server Connection Settings
-CODE_URL = "http://share.syncfs.com:21337/get_code"
+CODE_URL = "http://" + DEFAULT_HOST + " :21337/get_code"
 POOL_URL = "http://ci.arrowfs.org:8040"
-CI_SP_URL = "https://share.syncfs.com:4433/sp"
+CI_SP_URL = "https://" + DEFAULT_HOST + ":4433/sp"
 JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
 # Allowed Teamserver storage types

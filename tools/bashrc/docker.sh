@@ -129,11 +129,11 @@ function dk-ps()
 }
 function dk-reconfig()
 {
-    if [[ $# -eq 0 ]]
+    if [[ $# -eq 0 || $# -eq 1 ]]
     then
-        dk-start-vm && ${DEV_DIR}/dk-reconfig.sh no-create-first-user
+        dk-start-vm && ${DEV_DIR}/dk-reconfig.sh no-create-first-user $@
     else
-        echo "dk-reconfig takes no arguments"
+        echo "dk-reconfig takes at most one argument"
         return 1
     fi
 }
