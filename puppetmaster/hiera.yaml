@@ -1,0 +1,13 @@
+:backends:
+    - yaml
+
+:logger:
+    - console
+
+:hierarchy:
+    - %{hostname}
+    - users
+    - common
+
+:yaml:
+    :datadir: '/data/hieradata'

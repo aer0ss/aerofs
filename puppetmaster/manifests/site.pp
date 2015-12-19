@@ -1,4 +1,5 @@
-include mkfs
+# FIXME mkfs module went missing. Disable for now.
+#include mkfs
 
 node default {
     Exec {

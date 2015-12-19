@@ -1,5 +1,6 @@
 class lizard::nginx {
-    include nginx-package
+    # FIXME dep lost. Comment out for now.
+    #include nginx-package
     service { "nginx":
         ensure     => running,
         enable     => true,
@@ -38,7 +39,8 @@ class lizard::nginx {
         group   => "root",
         mode    => "0400",
         source  => "puppet:///aerofs_ssl/ssl.key",
-        require => File["/etc/nginx/certs"],
+        # FIXME dep lost. Comment out for now.
+        #require => File["/etc/nginx/certs"],
         notify  => Service["nginx"],
     }
     file {"/etc/nginx/certs/browser.cert":
@@ -47,7 +49,8 @@ class lizard::nginx {
         group   => "root",
         mode    => "0644",
         source  => "puppet:///aerofs_ssl/ssl.cert",
-        require => File["/etc/nginx/certs"],
+        # FIXME dep lost. Comment out for now.
+        #require => File["/etc/nginx/certs"],
         notify  => Service["nginx"],
     }
 

@@ -16,5 +16,6 @@ node "enterprise.aerofs.com" inherits default {
 
 
     # Include mysql (for mysql client)
-    include mysql
+    # FIXME dep lost. Comment out for now.
+    #include mysql
 }

@@ -2,10 +2,11 @@ class common::log_mount(
     $partition
 ) {
 
-    mkfs::create{$partition:
-        type        => "ext4",
-        partition   => $partition,
-    }
+    # FIXME mkfs module went missing. Disable this for now.
+    #mkfs::create{$partition:
+    #    type        => "ext4",
+    #    partition   => $partition,
+    #}
 
     file {"/data":
         ensure  => directory,
@@ -13,19 +14,20 @@ class common::log_mount(
         group   => root,
     }
 
-    mount {"/data":
-        atboot  => true,
-        device  => $partition,
-        ensure  => mounted,
-        fstype  => "ext4",
-        options => "defaults",
-        dump    => "0",
-        pass    => "0",
-        require => [
-            Mkfs::Create[$partition],
-            File["/data"]
-        ],
-    }
+    # FIXME mkfs module went missing. Disable this for now.
+    #mount {"/data":
+    #    atboot  => true,
+    #    device  => $partition,
+    #    ensure  => mounted,
+    #    fstype  => "ext4",
+    #    options => "defaults",
+    #    dump    => "0",
+    #    pass    => "0",
+    #    require => [
+    #        Mkfs::Create[$partition],
+    #        File["/data"]
+    #    ],
+    #}
 
     file {"/data/var":
         ensure => directory,
