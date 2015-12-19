@@ -34,13 +34,11 @@ version, use `--release-version` in step 4 below.
    unlock button and enter the keychain password (which is _not_ the same as
    the mount password). For this, also ask Matt.
    
-4. Make and push messaging images to the Registry:
-	
-	Run the following command in the repos:
-	 ~/repos/aerofs/golang/src/aerofs.com/sloth and 
-	 ~/repos/aeroim-client
-	
-		make image push
+4. Make and push messaging images to the Registry. To do this, run the
+   following command in the repo:
+
+        ~/repos/aeroim-client
+        make image push
 
 5. Build using:
 
