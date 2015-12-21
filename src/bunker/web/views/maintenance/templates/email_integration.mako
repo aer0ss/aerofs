@@ -20,6 +20,6 @@
 
 <ul>
     <li><a href="/static/AttachmentManager2007.zip">Plugin for Microsoft Exchange 2007</a></li>
-    <li>Plugin for Microsoft Exchange 2010 coming 12/28/15...</li>
-    <li>Plugin for Microsoft Exchange 2013 coming 12/28/15...</li>
+    <li><a href="/static/AttachmentManager2010.zip">Plugin for Microsoft Exchange 2010</a></li>
+    <li><a href="/static/AttachmentManager2013.zip">Plugin for Microsoft Exchange 2013</a></li>
 </ul>
