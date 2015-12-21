@@ -1,24 +1,34 @@
 Getting Started
+===============
+
+#### MySQL configuration
+
+```
+$ mysql -u root
+(check that you're no version 5.6 *NOT* 5.7)
+mysql> create database lizard;
+mysql> exit
+```
+
+#### Python environment
 
 ```bash
 cd ~/repos/aerofs/src/lizard
 virtualenv env
 env/bin/pip install -r requirements-exact.txt
 env/bin/pip install --editable ../licensing
-./rundebug.py
 ```
 
-To run the lizard administrative interface locally, do a
+#### Run lizard locally
 
-```
-./rundebug.py internal
-```
+- `./rundebug.py` to run the user front-end (ie: what you see at https://privatecloud.aerofs.com)
+- `./rundebug.py internal` to run the administrative interface (http://privatecloud.aerofs.com:8000 - only accessible from the VPN)
 
 Now you should be able to hit the instance on localhost:4444 in your browser.
 
 
-Note
-====
+Notes
+=====
 
 On some versions of OS X, compiling the module pygpgme fails because clang
 won't search the standard include paths (`/usr/local/include`).

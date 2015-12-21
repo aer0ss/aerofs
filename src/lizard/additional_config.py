@@ -13,7 +13,7 @@ SEGMENTIO_DEBUG=True
 STRIPE_SECRET_KEY="sk_test_vEjpSRt2LE4jgfxB709l8NCG"
 STRIPE_PUBLISHABLE_KEY="pk_test_LL4hvnijboGKs7CJLA6CUh15"
 
-# local dev: use sqlite db
+# local mysql. Make sure to `CREATE DATABASE lizard;`
 SQLALCHEMY_DATABASE_URI = 'mysql+oursql://root@localhost/lizard?raise_on_warnings=False'
 # Email: in development use svmail
 # In production, prefer sendgrid
