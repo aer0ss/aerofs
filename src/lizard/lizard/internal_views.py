@@ -381,7 +381,7 @@ def hpc_deployments():
         else:
             try:
                 hpc.create_deployment(customer, form.subdomain.data)
-            except hpc.DeploymentAlreadExists:
+            except hpc.DeploymentAlreadyExists:
                 flash("A deployment with this subdomain already exists", 'error')
 
     # TODO (GS): filter & order query

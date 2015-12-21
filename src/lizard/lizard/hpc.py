@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 import botocore.exceptions
 
 
-class DeploymentAlreadExists(Exception):
+class DeploymentAlreadyExists(Exception):
     pass
 
 
@@ -51,7 +51,7 @@ def create_deployment(customer, subdomain):
     except IntegrityError as ex:
         db.session.rollback()
         # Parse the error message... yes it's dirty but it's the only way
-        raise DeploymentAlreadExists() if re.match('UNIQUE.*subdomain', ex.orig.message) else ex
+        raise DeploymentAlreadyExists() if re.match('UNIQUE.*subdomain', ex.orig.message) else ex
 
     # Step 2. Create the loader container.
 
