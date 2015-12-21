@@ -13,13 +13,13 @@
     configuration is needed.</p>
 
 <p>To configure the plugin, please consult our
-    <a href="https://support.aerofs.com/hc/en-us/articles/207222613" target="_blank">support documentation</a>.
+    <a href="https://support.aerofs.com/hc/en-us/articles/207000886" target="_blank">support documentation</a>.
     Relevant plugin downloads are available below.</p>
 
 <h3>Plugin Downloads</h3>
 
 <ul>
     <li><a href="/static/AttachmentManager2007.zip">Plugin for Microsoft Exchange 2007</a></li>
-    <li>Plugin for Microsoft Exchange 2010 coming 12/21/15...</li>
-    <li>Plugin for Microsoft Exchange 2013 coming 12/21/15...</li>
+    <li>Plugin for Microsoft Exchange 2010 coming 12/28/15...</li>
+    <li>Plugin for Microsoft Exchange 2013 coming 12/28/15...</li>
 </ul>
