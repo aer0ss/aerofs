@@ -633,7 +633,6 @@ func (g GroupsResource) updateReceipt(request *restful.Request, response *restfu
 	errors.PanicAndRollbackOnErr(err, tx)
 	CommitOrPanic(tx)
 	// write response
-	response.WriteHeader(200)
 	response.WriteEntity(receipt)
 	sendGroupMessageReadEvent(g.broadcaster, gid, group.Members)
 }
