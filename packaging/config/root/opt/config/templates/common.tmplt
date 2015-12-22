@@ -52,4 +52,4 @@ base.lansync.enabled={{ enable_lansync }}
 
 base.phoenix.enabled={{ enable_phoenix }}
 
-base.log.level={{ log_level }}
+base.log.level=INFO

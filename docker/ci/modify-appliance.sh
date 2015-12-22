@@ -29,8 +29,10 @@ true && {
 FROM ${CONFIG}
 RUN  sed -i \
      -e s/enable_phoenix=true// \
-     -e s/log_level=INFO/log_level=DEBUG/ \
      /external.properties.default
+RUN sed -i \
+    -e s/base.log.level=INFO/base.log.level=DEBUG/ \
+    /opt/config/templates/common.tmplt
 END
     docker build -t ${CONFIG} "${TMP}"
     rm -rf "${TMP}"

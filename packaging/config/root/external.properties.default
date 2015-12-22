@@ -3,5 +3,4 @@ ldap_server_security=tls
 authenticator=local_credential
 url_sharing_enabled=true
 base_host=share.domain.name
-log_level=INFO
 enable_phoenix=true
