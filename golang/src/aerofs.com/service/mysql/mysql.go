@@ -41,8 +41,19 @@ func CreateDatabaseIfNeeded(url, database string) {
  * Migrations from /migration are applied automatically as needed.
  */
 func CreateConnection(url, database string) *sql.DB {
+	return CreateConnectionWithParams(url, database, "")
+}
+
+/**
+ * @params: comma-separated connection params, e.g. "charset=utf8mb4"
+ */
+func CreateConnectionWithParams(url, database, params string) *sql.DB {
+	var dsn = url + database
+	if params != "" {
+		dsn = dsn + "?" + params
+	}
 	CreateDatabaseIfNeeded(url, database)
-	db, err := sql.Open("mysql", url+database)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err)
 	}

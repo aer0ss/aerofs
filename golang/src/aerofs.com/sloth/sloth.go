@@ -211,7 +211,9 @@ func main() {
 	restUrlStr := "http://" + host + portStr
 
 	// connect and run migrations
-	db := mysql.CreateConnection(fmt.Sprintf("root@tcp(%v:3306)/", dbHost), dbName)
+	dbDSN := fmt.Sprintf("root@tcp(%v:3306)/", dbHost)
+	dbParams := "charset=utf8mb4"
+	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
 	defer db.Close()
 
 	// REST routes
