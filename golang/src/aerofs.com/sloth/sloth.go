@@ -24,6 +24,8 @@ import (
 
 const AuthorizedUser = "Authorized-User"
 const BROADCAST_TIMEOUT_SECONDS = 30
+const TOKEN_CACHE_TIME = time.Minute
+const TOKEN_CACHE_SIZE = 1000
 
 //
 // Definitions
@@ -199,11 +201,14 @@ func main() {
 	flag.StringVar(&verifier, "verifier", "bifrost", "Token verifier to use. Currently \"bifrost\" or \"echo\"")
 	flag.Parse()
 
+	// create token cache
+	tokenCache := auth.NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE)
+
 	// initialize token verifier
 	if verifier == "echo" {
 		tokenVerifier = auth.NewEchoTokenVerifier()
 	} else {
-		tokenVerifier = auth.NewBifrostTokenVerifier()
+		tokenVerifier = auth.NewBifrostTokenVerifier(tokenCache)
 	}
 
 	// format url strings
@@ -221,6 +226,7 @@ func main() {
 	restful.Add(BuildUsersRoutes(db, broadcaster))
 	restful.Add(BuildGroupsRoutes(db, broadcaster))
 	restful.Add(BuildKeepaliveRoutes())
+	restful.Add(BuildTokenRoutes(tokenCache))
 
 	// COOOOOOOORRRRRRRRSSSSSSSSS
 	restful.Filter(AddCORSHeaders)

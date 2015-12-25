@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 // resource owner creds: base64(id:secret)
@@ -16,10 +15,6 @@ const BASIC_AUTH = "b2F1dGgtaGF2cmU6aS1hbS1ub3QtYS1yZXN0ZnVsLXNlY3JldA=="
 
 // token verification route
 const BIFROST_VERIFY_URL = "http://sparta.service:8700/tokeninfo"
-
-// bifrost response cache params
-const TOKEN_CACHE_TIME = time.Minute
-const TOKEN_CACHE_SIZE = 1000
 
 //
 // error type for unexpected errors communicating with Bifrost
@@ -117,8 +112,6 @@ func requestVerify(token string) (string, error) {
 	return jsonResponse.Principal.Name, nil
 }
 
-func NewBifrostTokenVerifier() TokenVerifier {
-	return &bifrostTokenVerifier{
-		cache: NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE),
-	}
+func NewBifrostTokenVerifier(cache *TokenCache) TokenVerifier {
+	return &bifrostTokenVerifier{cache: cache}
 }

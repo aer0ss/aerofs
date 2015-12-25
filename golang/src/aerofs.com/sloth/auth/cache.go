@@ -48,6 +48,12 @@ func (c *TokenCache) Set(token string, uid string) {
 	c.cache[token] = cacheEntry{uid: uid, time: time.Now()}
 }
 
+func (c *TokenCache) Delete(token string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	delete(c.cache, token)
+}
+
 // Only call this with the lock held!
 func (c *TokenCache) evict() {
 	// Go purposefully iterates through maps in a random (not just arbitrary)
