@@ -1063,6 +1063,11 @@ public final class ObjectStore {
         return object;
     }
 
+    public boolean doesExist(DAO dao, UniqueID oid)
+    {
+        return dao.objects.get(oid) != null;
+    }
+
     private LockableLogicalObject getUnlockedParent(DAO dao, UniqueID oid) throws ObjectLockedException {
         LockableLogicalObject parent = getParent(dao, oid);
         if (parent.locked != LockStatus.UNLOCKED) {

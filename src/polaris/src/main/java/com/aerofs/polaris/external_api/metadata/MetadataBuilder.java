@@ -40,6 +40,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
@@ -178,7 +179,7 @@ public class MetadataBuilder
         if (object.isAppData()) {
             List<Updated> updated = Lists.newArrayList();
             SID rootSID = SID.rootSID(principal.getUser());
-            Lock l = objectStore.lockObject(rootSID);
+            Lock lock = objectStore.lockObject(rootSID);
             try {
                 oid = dbi.inTransaction((conn, status) ->
                         createAppDataIfNecessary(new DAO(conn), principal, rootSID, updated));
@@ -186,7 +187,7 @@ public class MetadataBuilder
                         .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
                 updatedStores.forEach(notifier::notifyStoreUpdated);
             } finally {
-                l.unlock();
+                lock.unlock();
             }
         } else {
             oid = fromRestObject(principal, object);
@@ -444,7 +445,7 @@ public class MetadataBuilder
         AccessToken accessToken = checkAccess(principal, Lists.newArrayList(parentOID),
                 READ, WRITE);
 
-        Lock l = objectStore.lockObject(parentOID);
+        Lock lock = objectStore.lockObject(parentOID);
         try {
             ApiOperationResult result = dbi.inTransaction((conn, status) ->
                     create(new DAO(conn), principal, restParent, parentOID, name, version, accessToken,
@@ -454,7 +455,7 @@ public class MetadataBuilder
             updatedStores.forEach(notifier::notifyStoreUpdated);
             return result.response;
         } finally {
-            l.unlock();
+            lock.unlock();
         }
     }
 
@@ -515,7 +516,7 @@ public class MetadataBuilder
         AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(), ps.stores,
                 READ, WRITE);
 
-        Lock l = objectStore.lockObject(ps.parent);
+        Lock lock = objectStore.lockObject(ps.parent);
         try {
             ApiOperationResult result = dbi.inTransaction((conn, status) ->
                     move(new DAO(conn), principal, object, RestObject.fromString(parent), oid,
@@ -525,7 +526,7 @@ public class MetadataBuilder
             updatedStores.forEach(notifier::notifyStoreUpdated);
             return result.response;
         } finally {
-            l.unlock();
+            lock.unlock();
         }
     }
 
@@ -569,7 +570,7 @@ public class MetadataBuilder
             return new ParentAndStores(parent, Sets.newHashSet(objectStore.getStore(dao, parent)));
         });
 
-        Lock l = objectStore.lockObject(ps.parent);
+        Lock lock = objectStore.lockObject(ps.parent);
         try {
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     ps.stores, READ, WRITE);
@@ -580,7 +581,7 @@ public class MetadataBuilder
             updatedStores.forEach(notifier::notifyStoreUpdated);
             return result.response;
         } finally {
-            l.unlock();
+            lock.unlock();
         }
     }
 
@@ -662,20 +663,41 @@ public class MetadataBuilder
         return Response.ok().entity(parentPath(parentFolders.values())).build();
     }
 
-    public Response share(AeroOAuthPrincipal principal, RestObject object)
+    // Check if folder has already been shared by checking if the oid passed in is a shared folder
+    // id itself or the folder id of an already existing shared folder.
+    private boolean isAlreadyShared(DAO dao, UniqueID oid)
+    {
+        return Identifiers.isSharedFolder(oid) ||
+                objectStore.doesExist(dao, SID.folderOID2convertedAnchorOID(new OID(oid)));
+    }
+
+    /**
+     * Share an existing folder. If the object passed in already shared, then just make the
+     * corresponding call to sparta without making any polaris db changes. This is done because
+     * it is possible that a previous shared operation on the same object might have made the
+     * necessary polaris db changes (which is how we would know the object passed in is already
+     * shared) but the sparta call might have failed. So regardless of the kind of
+     * object being passed in, make the necessary sparta call.
+     */
+    public Response share(AeroOAuthPrincipal principal, RestObject  object)
     {
         UniqueID oid = restObject2OID(principal, object);
-        // If SID of the passed in object is not root SID throw. However, only do this when
-        // passed in object is not a shared folder because we still want to make a sparta call
-        // in the case that earlier sparta call might have failed.
-        if (!Identifiers.isSharedFolder(oid) &&
-                !SID.rootSID(principal.getUser()).toStringFormal().equals(object.getSID().toStringFormal())) {
-            throw new IllegalArgumentException("Cannot share a child of a shared folder");
-        }
 
         ParentAndStores ps = dbi.inTransaction((conn, Status) -> {
             DAO dao = new DAO(conn);
-            UniqueID parentOID = getParentOID(dao, principal.getUser(), oid);
+            UniqueID parentOID;
+            // If SID of the passed in object is not root SID throw. However, only do this when
+            // passed in object is not a shared folder because we still want to make a sparta call
+            // in the case that earlier sparta call might have failed.
+            if (isAlreadyShared(dao, oid)) {
+                UniqueID sid = Identifiers.isSharedFolder(oid) ? oid :
+                        SID.folderOID2convertedAnchorOID(new OID(oid));
+                parentOID = getParentOID(dao, principal.getUser(), sid);
+            } else {
+                Preconditions.checkArgument(SID.rootSID(principal.getUser()).equals(object.getSID()),
+                        "Cannot share a child of a shared folder");
+                parentOID = getParentOID(dao, principal.getUser(), oid);
+            }
             if (parentOID == null) {
                 throw new NotFoundException(oid);
             }
@@ -683,52 +705,48 @@ public class MetadataBuilder
                     Sets.newHashSet(objectStore.getStore(dao, parentOID)));
         });
 
-        // TODO(AS): I wish we didn't have to create ANOTHER trans here.
-        String folderName = dbi.inTransaction((conn, Status) -> {
-            DAO dao = new DAO(conn);
-            return new String(dao.children.getActiveChildName(ps.parent, oid));
-        });
-
-        // If oid is shared folder, then directly make sparta call.
-        if (Identifiers.isSharedFolder(oid)) {
-            if (!fs.shareFolder(principal, SID.anchorOID2storeSID(new OID(oid)), folderName)) {
-                return Response.status(INTERNAL_SERVER_ERROR).build();
-            }
-            return Response.status(OK).build();
-        }
-
+        SettableFuture<String> future = SettableFuture.create();
         AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                 ps.stores, READ, WRITE);
 
-        Lock l = objectStore.lockObject(ps.parent);
+        Lock lock = objectStore.lockObject(ps.parent);
         try {
             ApiOperationResult result = dbi.inTransaction((conn, status) ->
-                    share(new DAO(conn), principal, accessToken, ps.parent, object, oid));
+                    share(new DAO(conn), principal, accessToken, ps.parent, object, oid, future));
             checkState(result.updated.size() == 0, "Create share folder. No updated stores");
 
-            if (!fs.shareFolder(principal, SID.folderOID2convertedStoreSID(new OID(oid)), folderName)) {
+            OID resultOID = RestObject.fromString(((CommonMetadata)result.response.getEntity()).id).getOID();
+            if (!fs.shareFolder(principal, new SID(resultOID.getBytes()), future.get())) {
                 return Response.status(INTERNAL_SERVER_ERROR).build();
             }
             return result.response;
+        } catch (InterruptedException|ExecutionException e) {
+            l.error("Unable to compute name of folder to be shared: {} ", e);
+            return Response.status(INTERNAL_SERVER_ERROR).build();
         } finally {
-            l.unlock();
+            lock.unlock();
         }
     }
 
     private ApiOperationResult share(DAO dao, AeroOAuthPrincipal principal, AccessToken accessToken,
-            UniqueID parentOID, RestObject object, UniqueID oid)
+            UniqueID parentOID, RestObject object, UniqueID oid, SettableFuture<String> future)
     {
         if (!isStoreConsistent(principal, dao, oid, object)) {
             throw new NotFoundException(oid);
         }
+        List<Updated> updated = Lists.newArrayList();
+        OID anchorOID =  SID.folderOID2convertedAnchorOID(new OID(oid));
 
-        l.info("Share folder: {}", object.toStringFormal());
-        OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
-                parentOID, new Share(oid));
-        l.info("Result for sharing object {}: {}", oid.toStringFormal(), result);
-
-        OID anchorOID = SID.folderOID2convertedAnchorOID(new OID(oid));
-        return new ApiOperationResult(result.updated, Response.ok()
+        if (isAlreadyShared(dao, oid)) {
+            future.set(new String(dao.children.getActiveChildName(parentOID, anchorOID)));
+        } else {
+            future.set(new String(dao.children.getActiveChildName(parentOID, oid)));
+            l.info("Share folder: {}", object.toStringFormal());
+            updated = objectStore.performTransform(dao, accessToken, principal.getDID(),
+                    parentOID, new Share(oid)).updated;
+            l.info("Shared object {} updated {}", oid.toStringFormal(), updated);
+        }
+        return new ApiOperationResult(updated, Response.ok()
                 .entity(getObjectMetadata(dao, principal, anchorOID, null, null)).build());
     }
 

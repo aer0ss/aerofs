@@ -908,7 +908,7 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldShareExitingFolder() throws Exception
+    public void shouldShareExistingFolder() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         RestObject restFolder1 = new RestObject(rootSID, folder1);
@@ -963,13 +963,11 @@ public class TestFolderResource extends AbstractRestTest
     }
 
     @Test
-    public void shouldStillCallSpartaForExitingSharedFolder() throws Exception
+    public void shouldStillCallSpartaForExistingSharedFolder() throws Exception
     {
         OID folder1 = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED,
                 PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder1).jobID, 5);
-        OID sid1 = SID.folderOID2convertedAnchorOID(folder1);
-        RestObject anchor = new RestObject(rootSID, sid1);
 
         doReturn(true).when(polaris.getFolderSharer()).shareFolder(any(), any(), any());
 
@@ -977,7 +975,7 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
         .when()
-                .put(getApiFoldersURL() + anchor.toStringFormal() + "/is_shared");
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal() + "/is_shared");
         verify(polaris.getFolderSharer()).shareFolder(any(), any(), any());
     }
 }

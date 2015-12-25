@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -219,7 +220,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
     public boolean shareFolder(AeroOAuthPrincipal principal, SID sid, String name)
     {
         HttpPost post = new HttpPost(spartaUrl + String.format("/%s/shares", SPARTA_API_VERSION));
-        post.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        post.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         post.addHeader(HttpHeaders.AUTHORIZATION, getHeaderValue(serviceName, deploymentSecret,
                 principal.getUser().getString(), principal.getDID().toStringFormal()));
 
