@@ -405,6 +405,28 @@ def _check_existing_certificate_matches_hostname(conf, hostname):
 
 
 # ------------------------------------------------------------------------
+# Hosted Private Cloud setup
+# ------------------------------------------------------------------------
+
+@view_config(
+    route_name='json_setup_hpc',
+    permission='maintain',
+    renderer='json',
+    request_method='POST'
+)
+def json_setup_hpc(request):
+    """
+    This is called by lizard when setting up a new Hosted Private Cloud deployment.
+    """
+    zephyr_address = request.params['zephyr.address']
+
+    conf_client = get_conf_client(request)
+    conf_client.set_external_property('zephyr_address', zephyr_address)
+
+    return {}
+
+
+# ------------------------------------------------------------------------
 # Restore from backup data
 # ------------------------------------------------------------------------
 

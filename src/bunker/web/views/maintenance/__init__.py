@@ -10,6 +10,7 @@ routes = [
     'json_setup_email',
     'json_verify_smtp',
     'json_setup_certificate',
+    'json_setup_hpc',
     'json_verify_ldap',
     'json_upload_backup',
     'json_setup_finalize',

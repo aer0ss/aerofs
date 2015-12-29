@@ -8,7 +8,7 @@ base.www.url=https://{{ base_host }}
 base.installers.url=https://{{ base_host }}/static/installers
 base.sp.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/sp/
 base.ssmp.address={{ base_host }}:{{ lipwig_port }}
-base.zephyr.address={{ base_host }}:8888
+base.zephyr.address={{ zephyr_address or base_host + ':8888' }}
 base.charlie.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/checkin
 
 api.url=https://{{ base_host }}:{{ nginx_port }}/api/
