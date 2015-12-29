@@ -48,7 +48,7 @@ public final class ServerConfigurationLoader
         // Set the log verbosity to the level as defined in config service
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
-                .setLevel(Level.toLevel(getStringProperty("base.log.level", ""), Level.INFO));
+                .setLevel(Level.toLevel(getStringProperty("base.log.level"), Level.INFO));
 
         // Log that we have loaded config.
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {

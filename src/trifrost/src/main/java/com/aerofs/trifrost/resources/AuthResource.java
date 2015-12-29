@@ -1,5 +1,6 @@
 package com.aerofs.trifrost.resources;
 
+import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.trifrost.ISpartaClient;
 import com.aerofs.trifrost.api.DeviceAuthentication;
@@ -38,7 +39,7 @@ public final class AuthResource {
     private ISpartaClient sparta;
 
     private final String MAIL_FROM_NAME = getStringProperty("labeling.brand", "AeroFS");
-    private final String MAIL_FROM_ADDR = getStringProperty("base.www.support_email_address", "");
+    private final String MAIL_FROM_ADDR = WWW.SUPPORT_EMAIL_ADDRESS;
 
     public AuthResource(@Context DBI dbi,
                         @Context AbstractEmailSender mailSender,

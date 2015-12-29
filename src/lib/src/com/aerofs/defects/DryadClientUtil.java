@@ -4,14 +4,14 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.FileBasedCertificateProvider;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.AppRoot;
 
 import javax.net.ssl.SSLContext;
@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static java.lang.String.format;
 
 /**
@@ -36,7 +35,7 @@ public class DryadClientUtil
             throws IOException, GeneralSecurityException
     {
         return new DryadClient(
-                getStringProperty("lib.dryad.url", "https://dryad.aerofs.com"),
+                "https://dryad.aerofs.com",
                 createPublicDryadSSLContext());
     }
 

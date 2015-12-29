@@ -29,6 +29,10 @@ public class BaseProperties
         return _properties.getProperty(key, defaultValue);
     }
 
+    public String getStringProperty(String key)
+    {
+        return _properties.getProperty(key);
+    }
     // necessary when you want to get a string property with a default value, using getStringProperty
     // will return an empty string for any values in *.tmplt that do not have a value set in
     // external.properties

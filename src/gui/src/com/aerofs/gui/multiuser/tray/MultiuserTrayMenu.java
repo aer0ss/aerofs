@@ -4,7 +4,6 @@
 
 package com.aerofs.gui.multiuser.tray;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
@@ -13,12 +12,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.multiuser.preferences.MultiuserDlgPreferences;
-import com.aerofs.gui.tray.AbstractTrayMenu;
-import com.aerofs.gui.tray.ITrayMenu;
-import com.aerofs.gui.tray.ITrayMenuComponentListener;
-import com.aerofs.gui.tray.RebuildDisposition;
-import com.aerofs.gui.tray.TrayIcon;
-import com.aerofs.gui.tray.TrayMenuPopulator;
+import com.aerofs.gui.tray.*;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.Cfg;
@@ -27,6 +21,8 @@ import com.aerofs.ui.update.Updater.Status;
 import com.google.common.base.Preconditions;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
+
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
@@ -117,13 +113,15 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
 
     private void addManageTeamMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
+        String organizationUsersUrl = getStringProperty("base.www.organization_users_url");
+
         trayMenuPopulator.addMenuItem("Manage Organization", new AbstractListener(
                 MANAGE_ORGANIZATION_CLICKED)
         {
             @Override
             protected void handleEventImpl(Event event)
             {
-                GUIUtil.launch(WWW.ORGANIZATION_USERS_URL);
+                GUIUtil.launch(organizationUsersUrl);
             }
         });
     }

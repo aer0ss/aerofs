@@ -34,7 +34,7 @@ public class License
         // We only accept normal licenses for the time being
         if (!type.isPresent() || !type.get().equals("normal")) return;
 
-        String validUntil = getStringProperty(LicenseProperties.VALID_UNTIL, "");
+        String validUntil = getStringProperty(LicenseProperties.VALID_UNTIL);
 
         try {
             _expireTimestamp = new SimpleDateFormat("yyyy-MM-dd").parse(validUntil).getTime();

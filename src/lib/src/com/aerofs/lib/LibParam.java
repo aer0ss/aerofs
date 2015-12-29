@@ -13,11 +13,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Optional;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.*;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 
 /**
@@ -245,7 +241,7 @@ public class LibParam extends BaseParam
         // jedisConnectionPool doesn't treat an empty string the same as having no password,
         // so we convert an empty property to null
         public static final String PASSWORD =
-                Util.returnNullIfEmpty(getStringProperty("redis.password", ""));
+                Util.returnNullIfEmpty(getStringProperty("redis.password"));
     }
 
     public static class MYSQL
@@ -260,7 +256,7 @@ public class LibParam extends BaseParam
                 getNonEmptyStringProperty("mysql.user", "aerofsdb");
 
         public static final String MYSQL_PASS =
-                getStringProperty("mysql.password", "");
+                getStringProperty("mysql.password");
     }
 
     public static class LicenseProperties
@@ -386,11 +382,11 @@ public class LibParam extends BaseParam
 
         /** URL of the Identity service */
         public static final String                      IDENTITY_URL =
-                getStringProperty(                      "openid.service.url", "");
+                getStringProperty(                      "openid.service.url");
 
         /** The security realm for which we are requesting authorization */
         public static final String                      IDENTITY_REALM =
-                getStringProperty(                      "openid.service.realm", "");
+                getStringProperty(                      "openid.service.realm");
 
         /** The auth request path to append to the identity server URL. */
         public static final String                      IDENTITY_REQ_PATH = "/oa";
@@ -417,7 +413,7 @@ public class LibParam extends BaseParam
 
         /** Endpoint URL used if discovery is not enabled for this OpenID Provider */
         public static final String                      ENDPOINT_URL =
-                getStringProperty(                      "openid.idp.endpoint.url", "");
+                getStringProperty(                      "openid.idp.endpoint.url");
 
         /** If enabled, use Diffie-Helman association and a MAC to verify the auth result */
         public static final Boolean                     ENDPOINT_STATEFUL =
@@ -438,7 +434,7 @@ public class LibParam extends BaseParam
          * NOTE: capture groups are numbered starting at _1_.
          */
         public static final String                      IDP_USER_PATTERN =
-                getStringProperty(                      "openid.idp.user.uid.pattern",   "");
+                getStringProperty(                      "openid.idp.user.uid.pattern");
 
 
         /**
@@ -449,7 +445,7 @@ public class LibParam extends BaseParam
          * "sreg" for simple registration (an OpenID 1.0 extension)
          */
         public static final String                      IDP_USER_EXTENSION =
-                getStringProperty(                      "openid.idp.user.extension", "");
+                getStringProperty(                      "openid.idp.user.extension");
 
         /**
          * Name of an openid parameter that contains the user's email address; or a pattern that
@@ -498,8 +494,7 @@ public class LibParam extends BaseParam
     public static class DeploymentConfig
     {
         public static final String                      BASE_CA_CERTIFICATE =
-                getStringProperty(                      PROPERTY_BASE_CA_CERT,
-                                                        "");
+                getStringProperty(                      PROPERTY_BASE_CA_CERT);
     }
 
     public static class MobileDeviceManagement {
@@ -508,8 +503,7 @@ public class LibParam extends BaseParam
                                                         false);
 
         public static String                            MDM_PROXIES =
-                getStringProperty(                      "mobile.device.management.proxies",
-                                                        "");
+                getStringProperty(                      "mobile.device.management.proxies");
     }
 
     public static class ShellextLinkSharing {

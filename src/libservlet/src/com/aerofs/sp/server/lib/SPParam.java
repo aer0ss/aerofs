@@ -60,8 +60,6 @@ public class SPParam
     // SP Constants go here
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
 
-    // Also see URLs defined in BaseParam.WWW
-    public static final String STATIC_ASSETS =
-            getStringProperty("sp.param.static_assets", "https://d37fxzwppxbuun.cloudfront.net");
+    public static final String STATIC_ASSETS = "https://d37fxzwppxbuun.cloudfront.net";
 
 }

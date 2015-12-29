@@ -13,15 +13,18 @@ import com.aerofs.sp.server.lib.SPParam;
 import javax.mail.MessagingException;
 import java.io.IOException;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+
 public class PasswordResetEmailer
 {
     private static final AsyncEmailSender _emailSender = AsyncEmailSender.create();
+    private static final String _passwordResetUrl = getStringProperty("base.www.password_reset_url");
 
     public void sendPasswordResetEmail(UserID userId, String resetToken)
             throws IOException, MessagingException
     {
         String subject = SPParam.BRAND + " password request";
-        String url = WWW.PASSWORD_RESET_URL + "?" +
+        String url = _passwordResetUrl + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +
@@ -68,7 +71,7 @@ public class PasswordResetEmailer
             throws IOException, MessagingException
     {
         String subject = SPParam.BRAND + " password request";
-        String url = WWW.PASSWORD_RESET_URL + "?" +
+        String url = _passwordResetUrl + "?" +
                 "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + resetToken;
         String body = "\nAn administrator in your organization has changed the password for your "

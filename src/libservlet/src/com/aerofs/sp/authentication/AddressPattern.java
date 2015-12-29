@@ -18,8 +18,8 @@ public class AddressPattern
 {
     public AddressPattern()
     {
-        _internalAddressPattern = StringUtils.isNotEmpty(getStringProperty(PATTERN_PARAM, ""))
-                ? Pattern.compile(getStringProperty(PATTERN_PARAM, ""))
+        _internalAddressPattern = StringUtils.isNotEmpty(getStringProperty(PATTERN_PARAM))
+                ? Pattern.compile(getStringProperty(PATTERN_PARAM))
                 : null;
     }
 

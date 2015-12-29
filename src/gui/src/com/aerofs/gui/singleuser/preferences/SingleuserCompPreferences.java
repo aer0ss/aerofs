@@ -17,7 +17,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.*;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBaseHost;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.gui.preferences.PreferencesHelper.createSeparator;
@@ -73,13 +72,15 @@ public class SingleuserCompPreferences extends Composite
 
     private void createApplianceRow(Composite parent)
     {
+        String baseHost = getStringProperty("base.host.unified");
+
         final Label lblAppliance = createLabel(parent, SWT.RIGHT);
         lblAppliance.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
         lblAppliance.setText("Appliance:");
 
         final Label lblApplianceValue = createLabel(parent, SWT.NONE);
         lblApplianceValue.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
-        lblApplianceValue.setText(getBaseHost());
+        lblApplianceValue.setText(baseHost);
     }
 
     private void createNotificationsRow(Composite parent, final PreferencesHelper helper)

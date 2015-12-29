@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
@@ -20,6 +19,8 @@ import org.slf4j.Logger;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class SharedFolderNotificationEmailer
 {
@@ -45,6 +46,8 @@ public class SharedFolderNotificationEmailer
             throws IOException, MessagingException, SQLException, ExNotFound
 
     {
+        String sharedFolderUrl = getStringProperty("base.www.shared_folders_url");
+
         NameFormatter nfInvitee = new NameFormatter(invitee);
 
         String quotedFolderName = Util.quote(sf.getName(inviter));
@@ -58,7 +61,7 @@ public class SharedFolderNotificationEmailer
                 "To view or manage the members of your shared folders, please go to " +
                 // For autolinker to work, either leave a whitespace between the URL and the period
                 // for the end of sentence, or don't add periods at all. TODO (WW) fix this!
-                WWW.SHARED_FOLDERS_URL;
+                sharedFolderUrl;
 
                 Email email = new Email();
         email.addSection(subject, body);

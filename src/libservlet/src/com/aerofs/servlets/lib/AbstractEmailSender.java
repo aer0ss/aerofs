@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 /**
  * This class allows you to send emails (either through local or remote SMTP).
@@ -65,11 +64,9 @@ public abstract class AbstractEmailSender
     }
 
     // SMTP command timeout, expressed in milliseconds.
-    private static String TIMEOUT =
-            getStringProperty("email.sender.timeout", String.valueOf(10 * C.SEC));
+    private static String TIMEOUT = String.valueOf(10 * C.SEC);
     // SMTP connection timeout, expressed in milliseconds.
-    private static String CONNECTION_TIMEOUT =
-            getStringProperty("email.sender.connection_timeout", String.valueOf(60 * C.SEC));
+    private static String CONNECTION_TIMEOUT = String.valueOf(60 * C.SEC);
 
     private static final String CHARSET = "UTF-8";
 

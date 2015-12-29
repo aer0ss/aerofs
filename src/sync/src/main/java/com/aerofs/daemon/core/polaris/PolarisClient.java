@@ -94,7 +94,7 @@ public class PolarisClient
     public PolarisClient(CoreExecutor executor, CfgLocalDID localDID, CfgLocalUser localUser,
             Timer timer, ClientSocketChannelFactory channelFactory, ClientSSLEngineFactory sslEngineFactory)
     {
-        this(URI.create(getStringProperty("daemon.polaris.url", "")),
+        this(URI.create(getStringProperty("daemon.polaris.url")),
                 executor,
                 new Auth(localUser.get(), localDID.get()), timer, channelFactory, sslEngineFactory);
     }

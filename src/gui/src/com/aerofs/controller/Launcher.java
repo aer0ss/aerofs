@@ -4,7 +4,6 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
@@ -40,6 +39,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
@@ -215,13 +215,15 @@ public class Launcher
     {
         UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(LAST_VER)));
 
+        String downloadUrl = getStringProperty("base.www.download_url");
+
         // After an update, verify that all checksums match
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
             String msg = L.product() + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
-                            WWW.DOWNLOAD_URL) +
+                            downloadUrl) +
                     " to download and install " + L.product() + " again. " +
                     "All your data will be intact during re-installation.";
 
@@ -232,7 +234,7 @@ public class Launcher
                     .sendAsync();
             UI.get().show(MessageType.ERROR, msg);
 
-            if (UI.isGUI()) GUIUtil.launch(WWW.DOWNLOAD_URL);
+            if (UI.isGUI()) GUIUtil.launch(downloadUrl);
 
             throw new ExLaunchAborted();
         }

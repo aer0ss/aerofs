@@ -41,13 +41,13 @@ public class LdapConfiguration
      * No default.
      */
     public String                                   SERVER_CA_CERT =
-            getStringProperty(                      "ldap.server.ca_certificate", "");
+            getStringProperty(                      "ldap.server.ca_certificate");
 
     /**
      * Host name of the LDAP server.
      */
     public String                                   SERVER_HOST =
-            getStringProperty("ldap.server.host", "");
+            getStringProperty("ldap.server.host");
 
     /**
      * Port on which to connect to the LDAP server. Default is 389 for ldap protocol,
@@ -92,20 +92,20 @@ public class LdapConfiguration
      * Principal on the LDAP server to use for the initial user search.
      */
     public String                                   SERVER_PRINCIPAL =
-            getStringProperty(                      "ldap.server.principal", "");
+            getStringProperty(                      "ldap.server.principal");
 
     /**
      * Credential on the LDAP server for the search principal.
      */
     public String                                   SERVER_CREDENTIAL =
-            getStringProperty(                      "ldap.server.credential", "");
+            getStringProperty(                      "ldap.server.credential");
 
     /**
      * Distinguished Name (dn) of the root of the tree within the LDAP server in which
      * user accounts are found. More specific DNs are preferred.
      */
     public String                                   USER_BASE =
-            getStringProperty(                      "ldap.server.schema.user.base", "");
+            getStringProperty(                      "ldap.server.schema.user.base");
 
     /**
      * The scope to search for user records. Valid values are "base", "one", or "subtree".
@@ -119,51 +119,51 @@ public class LdapConfiguration
      * The field name in the LDAP record of the user's first name.
      */
     public String                                   USER_FIRSTNAME =
-            getStringProperty(                      "ldap.server.schema.user.field.firstname", "");
+            getStringProperty(                      "ldap.server.schema.user.field.firstname");
 
     /**
      * The name of the field in the LDAP record of the user's surname (last name).
      */
     public String                                   USER_LASTNAME =
-            getStringProperty(                      "ldap.server.schema.user.field.lastname", "");
+            getStringProperty(                      "ldap.server.schema.user.field.lastname");
 
     /**
      * The name of the field in the LDAP record of the user's email address. This will
      * used in the user search.
      */
     public String                                   USER_EMAIL =
-            getStringProperty(                      "ldap.server.schema.user.field.email", "");
+            getStringProperty(                      "ldap.server.schema.user.field.email");
 
     /**
      * The required object class of the user record. This will be used in the user search.
      */
     public String                                   USER_OBJECTCLASS =
-            getStringProperty(                      "ldap.server.schema.user.class", "");
+            getStringProperty(                      "ldap.server.schema.user.class");
 
     /**
      * An extra LDAP filter used only when authenticating users, any user who passes all the other
      * requirements but fails this one will be unable to sign up for or sign into AeroFS
      */
     public String                                   USER_ADDITIONALFILTER =
-            getStringProperty(                      "ldap.server.schema.user.filter", "");
+            getStringProperty(                      "ldap.server.schema.user.filter");
 
     /**
      * A space-separated list of object classes which correspond to groups in the LDAP tree
      */
     public List<String>                             GROUP_OBJECTCLASSES =
-            splitIntoList(getStringProperty(        "ldap.server.schema.group.class", ""));
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.class"));
 
     /**
      * The name of the field that will contain the group's name as displayed by AeroFS
      */
     public String                                   GROUP_NAME =
-            getStringProperty(                      "ldap.server.schema.group.name", "");
+            getStringProperty(                      "ldap.server.schema.group.name");
 
     /**
      * The Distinguished Name of the base of the subtree in LDAP which AeroFS will sync groups from
      */
     public String                                   GROUP_BASE =
-            getStringProperty(                      "ldap.server.schema.group.base", "");
+            getStringProperty(                      "ldap.server.schema.group.base");
 
     /**
      * The scope from the GROUP_BASE within which we sync groups
@@ -176,27 +176,27 @@ public class LdapConfiguration
      * A space-separated list of group member attribute names whose value is the DN of that member
      */
     public List<String>                             GROUP_STATIC_MEMBERS =
-            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.static", ""));
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.static"));
 
     /**
      * A space-separated list of group member attribute names whose value is a LDAP search which
      * defines members of the group
      */
     public List<String>                             GROUP_DYNAMIC_MEMBERS =
-            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.dynamic", ""));
+            splitIntoList(getStringProperty(        "ldap.server.schema.group.member.dynamic"));
 
     /**
      * The name of the member attribute which has as its value a unique value found on the member
      */
     public String                                   GROUP_UID_MEMBER =
-            getStringProperty(                      "ldap.server.schema.group.member.unique", "");
+            getStringProperty(                      "ldap.server.schema.group.member.unique");
 
     /**
      * The name of the attribute that uniquely specifies group members, and whose value is specified
      * by the GROUP_UID_MEMBER attribute on the LDAP group entry
      */
     public String                                   COMMON_UID_ATTRIBUTE =
-            getStringProperty(                      "ldap.server.schema.user.uid", "");
+            getStringProperty(                      "ldap.server.schema.user.uid");
 
     private List<String> splitIntoList(String serialized)
     {

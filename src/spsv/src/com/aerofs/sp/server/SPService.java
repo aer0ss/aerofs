@@ -25,7 +25,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.ExNotAuthenticated;
@@ -54,8 +53,11 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.lib.ssl.CertificateAuthenticator;
-import com.aerofs.sp.authentication.*;
+import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
+import com.aerofs.sp.authentication.IAuthority;
+import com.aerofs.sp.authentication.LdapConfiguration;
+import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
@@ -69,7 +71,6 @@ import com.aerofs.sp.server.email.*;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.group.Group;
@@ -123,9 +124,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.*;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
@@ -259,7 +258,6 @@ public class SPService implements ISPService
         _factUrlShare = factUrlShare;
         _factUserSettingsToken = factUserSettingsToken;
         _factGroup = factGroup;
-
         _deviceRegistrationEmailer = deviceRegistrationEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
         _twoFactorEmailer = twoFactorEmailer;
@@ -2060,9 +2058,10 @@ public class SPService implements ISPService
         String to = WWW.SUPPORT_EMAIL_ADDRESS;
         String header = format("%s Support", SPParam.BRAND);
         String body;
+        String collectLogsUrl = getStringProperty("base.collect_logs.url");
 
         String link = format("%s?defect_id=%s&email=%s&users=%s&subject=%s&message=%s#client",
-                WWW.COLLECT_LOGS_URL,
+                collectLogsUrl,
                 urlEncode(defectID),
                 urlEncode(contactEmail),
                 urlEncode(userID.getString()),

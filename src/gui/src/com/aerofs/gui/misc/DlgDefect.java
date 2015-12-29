@@ -1,6 +1,5 @@
 package com.aerofs.gui.misc;
 
-import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.defects.PriorityDefect;
 import com.aerofs.defects.UIPriorityDefect.Factory;
 import com.aerofs.gui.AeroFSJFaceDialog;
@@ -18,6 +17,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.gui.GUIUtil.createLabel;
 import static com.aerofs.lib.cfg.ICfgStore.CONTACT_EMAIL;
 
@@ -117,7 +117,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                GUIUtil.launch(WWW.TOS_URL);
+                GUIUtil.launch(getStringProperty("tos_url"));
             }
         });
     }

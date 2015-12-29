@@ -12,6 +12,17 @@ base.zephyr.address={{ base_host }}:8888
 base.charlie.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/checkin
 
 api.url=https://{{ base_host }}:{{ nginx_port }}/api/
+base.www.marketing_host_url=https://www.aerofs.com
+reset.request.url=https://{{ base_host }}/request_password_reset
+base.www.password_reset_url=https://{{ base_host }}/password_reset
+base.www.shared_folders_url=https://{{ base_host }}/shared_folders
+base.www.organization_users_url=https://{{ base_host }}/users
+base.www.devices_url=https://{{ base_host }}/devices
+base.www.team_server_devices_url=https://{{ base_host }}/team_servers
+base.www.download_url=https://{{ base_host }}/download
+base.www.two_factor_setup_url=https://{{ base_host }}/settings/two_factor_authentication/intro
+tos_url=https://www.aerofs.com/terms-of-service/privacy/
+
 api.tunnel.host={{ base_host }}
 api.tunnel.port={{ havre_port }}
 api.daemon.port=0

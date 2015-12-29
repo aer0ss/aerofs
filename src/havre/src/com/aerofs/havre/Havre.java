@@ -110,7 +110,7 @@ public class Havre
         // Set the log verbosity to the level as defined in config service
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME)
-                .setLevel(Level.toLevel(getStringProperty("havre.log.level", ""), Level.INFO));
+                .setLevel(Level.toLevel(getStringProperty("havre.log.level"), Level.INFO));
 
         // dummy daemon-like identity for CName verification when establishing tunnel
         UserID tunnelUser = UserID.DUMMY;
@@ -126,8 +126,8 @@ public class Havre
         checkNotNull(cacert.getCert());
 
         Timer timer = new HashedWheelTimer();
-        TokenVerifier verifier = new TokenVerifier(getStringProperty("havre.oauth.id", ""),
-                getStringProperty("havre.oauth.secret", ""),
+        TokenVerifier verifier = new TokenVerifier(getStringProperty("havre.oauth.id"),
+                getStringProperty("havre.oauth.secret"),
                 URI.create("http://sparta.service:8700/tokeninfo"),
                 timer, cacert, new NioClientSocketChannelFactory());
 

@@ -262,8 +262,8 @@ public class Sparta extends Service
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
-                        getStringProperty("sparta.oauth.id", ""),
-                        getStringProperty("sparta.oauth.secret", ""),
+                        getStringProperty("sparta.oauth.id"),
+                        getStringProperty("sparta.oauth.secret"),
                         URI.create(bifrostUrl + "/tokeninfo"),
                         timer,
                         null,
