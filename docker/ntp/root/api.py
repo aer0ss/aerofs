@@ -38,11 +38,8 @@ def reload_ntp():
     call(['timedatectl', 'set-ntp', 'false'])
 
     if server:
-        # Perform a possibly-large time adjustment, since set-ntp will only skew the clock, rather than forcing it to
-        # skip. "ntpdate" has been deprecate for "sntp" but the latter is not available in Debian.
-        # https://support.ntp.org/bin/view/Dev/DeprecatingNtpdate).
         print "Skipping clock..."
-        call(['ntpdate', '-b', server])
+        call(['sntpc', '-b', server])
 
     print "Starting NTP client..."
     call(['timedatectl', 'set-ntp', 'true'])

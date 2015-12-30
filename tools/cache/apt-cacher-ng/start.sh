@@ -19,7 +19,7 @@ fi
 
 if [[ -z "$(docker ps -aq -f 'name=cache-apt')" ]] ; then
     echo "creating apt cache volume"
-    docker create -v /var/cache/apt-cacher-ng --name cache-apt debian:sid /bin/true
+    docker create -v /var/cache/apt-cacher-ng --name cache-apt alpine:3.3 /bin/true
 fi
 
 echo "starting apt-cacher-ng"

@@ -11,17 +11,18 @@ WORKDIR /opt/bunker
 CMD [ "/run.sh" ]
 
 # mysql-client for backup scripts
-RUN apt-get update && apt-get install -y mysql-client libmysqlclient-dev && rm -rf /var/lib/apt/lists/*
+# py-* to avoid having to pull temporary compiler infra
+RUN apk --update add \
+        mariadb-client \
+        py-crypto \
+        py-mysqldb \
+        py-psutil &&\
+    rm -rf /var/cache/apk/*
 
 COPY root/requirements-exact.txt /
 
-ENV BUILD_PKGS gcc python-dev
-
-RUN \
-    apt-get update && apt-get install -y $BUILD_PKGS &&\
-    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
-        -r /requirements-exact.txt &&\
-    apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/*
+RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
+        -r /requirements-exact.txt
 
 # Add source files last
 COPY root buildroot /

@@ -6,7 +6,8 @@ EXPOSE 80
 
 CMD [ "/run.sh" ]
 
-RUN apt-get update && apt-get install -y ntpdate && rm -rf /var/lib/apt/lists/*
+RUN apk --update add sntpc &&\
+    rm -rf /var/cache/apk/*
 
 RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
         Flask

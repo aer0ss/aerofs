@@ -12,14 +12,13 @@ CMD [ "/run.sh" ]
 
 COPY root/requirements-exact.txt /
 
-ENV BUILD_PKGS gcc python-dev
-
 RUN \
-    apt-get update && apt-get install -y zlib1g-dev $BUILD_PKGS &&\
+    apk --update add \
+        py-crypto \
+        py-pillow &&\
     pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
         --requirement /requirements-exact.txt &&\
-    rm /requirements-exact.txt &&\
-    apt-get purge -y $BUILD_PKGS && rm -rf /var/lib/apt/lists/* &&\
+    rm -rf /var/cache/apk/* &&\
     #
     # PREDOCKER forward logs to docker log collector
     #

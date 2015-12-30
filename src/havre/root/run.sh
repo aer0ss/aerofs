@@ -2,7 +2,6 @@
 set -e
 
 /container-scripts/copy-ca-cert /opt/havre
-/container-scripts/import-ca-cert-to-java
 
 LOG_LEVEL="$(/container-scripts/get-config-property base.log.level)"
 

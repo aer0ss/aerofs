@@ -13,7 +13,7 @@ echoerr() { echo "$@" 1>&2; }
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
 # detect docker bridge IP
-BRIDGE=$(docker run --rm debian:sid ip route | grep default | cut -d ' ' -f 3)
+BRIDGE=$(docker run --rm alpine:3.3 ip route | grep default | cut -d ' ' -f 3)
 
 # check if rawdns config was modified since the image was created
 config=$PWD/root/rawdns.json
@@ -61,7 +61,7 @@ else
             rawdns
 fi
 
-if docker run --rm debian:sid ping -c 1 rawdns.docker &>/dev/null ; then
+if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns already configured"
     exit 0
 fi
@@ -117,7 +117,7 @@ else
 fi
 
 # sanity check
-if docker run --rm debian:sid ping -c 1 rawdns.docker &>/dev/null ; then
+if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns successfully configured"
 else
     echoerr "invalid dns configuration"

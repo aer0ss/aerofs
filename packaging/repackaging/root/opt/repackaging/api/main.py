@@ -11,6 +11,11 @@ DONE_FILE = DIST + '/.repackage-done'
 
 app = Flask(__name__)
 
+@app.errorhandler(Exception)
+def all_exception_handler(error):
+   print error
+   return 'Error', 500
+
 @app.route("/", methods=["GET"])
 def get():
     """

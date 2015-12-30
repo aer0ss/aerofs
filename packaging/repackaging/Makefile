@@ -1,7 +1,12 @@
 IMAGE_NAME = aerofs/repackaging
 ROOT = buildroot
 
+RSYNC = rsync -a --delete --delete-excluded
+PYLIB_SRC = ../../src/python-lib/aerofs_common
+
 image: .copy-packages
+	$(MAKE) -f ../../docker/container-scripts/Makefile
+	$(RSYNC) --exclude '*.pyc' --exclude '_gen' $(PYLIB_SRC) buildroot/opt/repackaging/api/
 	docker build -t $(IMAGE_NAME) .
 
 # Copy client packages

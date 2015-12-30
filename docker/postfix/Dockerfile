@@ -1,4 +1,5 @@
-FROM aerofs/base
+# TODO: switch to alpine
+FROM ubuntu:15.04
 
 MAINTAINER AeroFS "support@aerofs.com"
 
