@@ -220,6 +220,7 @@
 
     <script>
         $(document).ready(function() {
+            disableEscapingFromModal($('div.modal'));
             $('#verify-modal-email-input').on('shown.bs.modal', function() {
                 $('#verification-to-email').focus();
                 setEnabled($('#send-verification-code-button'), true);
