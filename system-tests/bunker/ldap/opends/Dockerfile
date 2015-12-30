@@ -10,6 +10,6 @@ COPY root /
 
 RUN /configure-opends.sh
 
-EXPOSE 4444 389
+EXPOSE 4444 389 636
 
 CMD /OpenDS-2.2.1/bin/start-ds && sleep infinity

@@ -12,10 +12,6 @@ Goals:
 - Validate Windows installer repackaging - properly signed
 - Validate Windows repackaging - configuration & cert
 
-- Validate LDAP setup
-  - Web signin works
-  - Verification servlet works
-
 - Validate SMTP setup
   - Local smtp works
   - External smtp works
@@ -115,15 +111,6 @@ Test new appliance setup flow using latest build
 
 Basic tests that cover major product features. For this test pass, use the same appliance as Pass
 3.
-
-#### Identity Management
-
-- Enter the **Identity** flow from Appliance Management Interface
-- [Configure TLS LDAP](../../engineering/testing/opendj-ldap-setup.html)
-    IP, bind DN, certificate info
-    (an OpenDS server is probably a-ok)
-- Verify 'Plaintext', 'StartTLS' and 'SSL' options work
-- Verify sign-in with LDAP creds works
 
 #### External Mail Relay
 

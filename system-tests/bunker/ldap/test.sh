@@ -11,7 +11,7 @@ IMAGE=aerofs/test.opends
 CONTAINER=aerofs-test.opends
 docker build -t ${IMAGE} "${THIS_DIR}/opends"
 docker rm -vf ${CONTAINER} 2>/dev/null || true
-docker run --name ${CONTAINER} -d -p 389:389 ${IMAGE}
+docker run --name ${CONTAINER} -d -p 389:389 -p 636:636 ${IMAGE}
 
 # Find OpenDS's IP. TODO (WW) use docker-machine for both CI and dev environment
 if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
@@ -25,8 +25,14 @@ fi
 
 wait_port ${OPENDS_IP} 389
 
+# Find OpenDS's server cert
+docker-machine ssh ${DOCKER_MACHINE_NAME} "docker cp aerofs-test.opends:/server-cert.pem ."
+docker-machine scp ${DOCKER_MACHINE_NAME}:/home/docker/server-cert.pem ${THIS_DIR}/root
+
+OPENDS_SERVER_CERT="server-cert.pem"
+
 # Run the tests
-${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} "$1" -- ${OPENDS_IP}
+${THIS_DIR}/../../webdriver-lib/test-driver.sh ${THIS_DIR} "$1" -- ${OPENDS_IP} ${OPENDS_SERVER_CERT} 
 
 # Kill OpenDS server
 docker rm -vf ${CONTAINER}
