@@ -185,8 +185,6 @@ containers:
   zephyr:
     image: aerofs/zephyr
     run:
-      # ulimit requires privilege
-      privileged: true
       detach: true
       publish:
         - "8888:8888"
