@@ -1,14 +1,15 @@
-package main
+package keepalive
 
 import (
+	"aerofs.com/sloth/filters"
 	"github.com/emicklei/go-restful"
 )
 
-func BuildKeepaliveRoutes() *restful.WebService {
+func BuildRoutes(checkUser restful.FilterFunction, updateLastOnline restful.FilterFunction) *restful.WebService {
 	ws := new(restful.WebService)
-	ws.Filter(CheckUser)
-	ws.Filter(UpdateLastOnline)
-	ws.Filter(LogRequest)
+	ws.Filter(checkUser)
+	ws.Filter(updateLastOnline)
+	ws.Filter(filters.LogRequest)
 
 	ws.Path("/keepalive").Doc("Update last-online time")
 	ws.Route(ws.POST("").To(noop).

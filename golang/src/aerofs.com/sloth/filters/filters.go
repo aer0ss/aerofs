@@ -1,14 +1,17 @@
-package main
+package filters
 
 import (
 	"aerofs.com/sloth/auth"
+	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
-	"encoding/json"
+	"aerofs.com/sloth/lastOnline"
+	. "aerofs.com/sloth/structs"
 	"github.com/emicklei/go-restful"
 	"log"
 	"strings"
-	"time"
 )
+
+const AUTHORIZED_USER = "Authorized-User"
 
 // log request, caller, and path params
 func LogRequest(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
@@ -16,7 +19,7 @@ func LogRequest(request *restful.Request, response *restful.Response, chain *res
 		request.Request.Method,
 		request.SelectedRoutePath(),
 		request.PathParameters(),
-		request.Attribute(AuthorizedUser),
+		request.Attribute(AUTHORIZED_USER),
 	)
 	chain.ProcessFilter(request, response)
 }
@@ -37,34 +40,36 @@ func AddCORSHeaders(request *restful.Request, response *restful.Response, chain 
 //
 // Expects "Authorization: Bearer <token>"
 //		OR "query param: authorization=<token>" (GET only)
-func CheckUser(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
-	// get token from cookie or Authorization header
-	// return 401 if neither is present
-	token := getTokenFromAuthHeader(request)
-	if token == "" && request.Request.Method == "GET" {
-		token = getTokenFromQueryParam(request)
+func CheckUser(tokenVerifier auth.TokenVerifier) restful.FilterFunction {
+	return func(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
+		// get token from cookie or Authorization header
+		// return 401 if neither is present
+		token := getTokenFromAuthHeader(request)
+		if token == "" && request.Request.Method == "GET" {
+			token = getTokenFromQueryParam(request)
+		}
+		if token == "" {
+			response.WriteErrorString(401, "Invalid authorization token")
+			return
+		}
+		// verify token's validity
+		owner, err := tokenVerifier.VerifyToken(token)
+		_, ok := err.(auth.TokenNotFoundError)
+		if ok {
+			response.WriteErrorString(401, "Invalid authorization token")
+			return
+		}
+		errors.PanicOnErr(err)
+		// set the Authorized-User attribute
+		request.SetAttribute(AUTHORIZED_USER, owner)
+		chain.ProcessFilter(request, response)
 	}
-	if token == "" {
-		response.WriteErrorString(401, "Invalid authorization token")
-		return
-	}
-	// verify token's validity
-	owner, err := tokenVerifier.VerifyToken(token)
-	_, ok := err.(auth.TokenNotFoundError)
-	if ok {
-		response.WriteErrorString(401, "Invalid authorization token")
-		return
-	}
-	errors.PanicOnErr(err)
-	// set the Authorized-User attribute
-	request.SetAttribute(AuthorizedUser, owner)
-	chain.ProcessFilter(request, response)
 }
 
 // Returns 403 if the target uid does not match the Authorized-User attribute
 func UserIsTarget(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
 	target := request.PathParameter("uid")
-	owner := request.Attribute(AuthorizedUser)
+	owner := request.Attribute(AUTHORIZED_USER)
 	if owner == nil {
 		response.WriteHeader(500)
 		return
@@ -77,25 +82,15 @@ func UserIsTarget(request *restful.Request, response *restful.Response, chain *r
 	chain.ProcessFilter(request, response)
 }
 
-// Keep track of the last time each user's presence was broadcasted.
-// Broadcast at most once per BROADCAST_TIMEOUT_SECONDS (defined in sloth.go)
-var lastBroadcastTimes = make(map[string]time.Time)
-
 // Keep track of the last time each user interacted with the server
-func UpdateLastOnline(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
-	caller := request.Attribute(AuthorizedUser).(string)
-	lastOnlineTimesMutex.Lock()
-	now := time.Now()
-	lastOnlineTimes[caller] = now
-	lastBroadcastTime, ok := lastBroadcastTimes[caller]
-	if !ok || now.Sub(lastBroadcastTime).Seconds() > BROADCAST_TIMEOUT_SECONDS {
-		lastBroadcastTimes[caller] = now
-		lastOnlineTimesMutex.Unlock()
-		broadcastUpdateLastOnline(caller)
-	} else {
-		lastOnlineTimesMutex.Unlock()
+func UpdateLastOnline(lastOnlineTimes *lastOnline.Times, broadcaster broadcast.Broadcaster) restful.FilterFunction {
+	return func(request *restful.Request, response *restful.Response, chain *restful.FilterChain) {
+		caller := request.Attribute(AUTHORIZED_USER).(string)
+		if lastOnlineTimes.Set(caller) {
+			broadcast.SendLastOnlineEvent(broadcaster, caller)
+		}
+		chain.ProcessFilter(request, response)
 	}
-	chain.ProcessFilter(request, response)
 }
 
 //
@@ -115,15 +110,4 @@ func getTokenFromAuthHeader(request *restful.Request) string {
 // if no token is given
 func getTokenFromQueryParam(request *restful.Request) string {
 	return request.QueryParameter("authorization")
-}
-
-// Relies on a global "broadcaster" var, because filters don't take args
-func broadcastUpdateLastOnline(uid string) {
-	log.Println("broadcast online", uid)
-	bytes, err := json.Marshal(Event{
-		Resource: "LAST_ONLINE",
-		Id:       uid,
-	})
-	errors.PanicOnErr(err)
-	broadcaster.Broadcast(bytes)
 }

@@ -5,6 +5,13 @@ import (
 	"aerofs.com/service/mysql"
 	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
+	"aerofs.com/sloth/filters"
+	"aerofs.com/sloth/lastOnline"
+	"aerofs.com/sloth/resource/bots"
+	"aerofs.com/sloth/resource/groups"
+	"aerofs.com/sloth/resource/keepalive"
+	"aerofs.com/sloth/resource/token"
+	"aerofs.com/sloth/resource/users"
 	"flag"
 	"fmt"
 	"github.com/emicklei/go-restful"
@@ -14,7 +21,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -22,162 +28,8 @@ import (
 // Constants
 //
 
-const AuthorizedUser = "Authorized-User"
-const BROADCAST_TIMEOUT_SECONDS = 30
 const TOKEN_CACHE_TIME = time.Minute
 const TOKEN_CACHE_SIZE = 1000
-
-//
-// Definitions
-//
-
-type User struct {
-	Id             string  `json:"id"`
-	FirstName      string  `json:"firstName"`
-	LastName       string  `json:"lastName"`
-	TagId          string  `json:"tagId,omitempty"`
-	AvatarPath     string  `json:"avatarPath,omitempty"`
-	LastOnlineTime *uint64 `json:"lastOnlineTime,omitempty"`
-}
-
-type Bot struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	GroupId string `json:"groupId"`
-}
-
-type Group struct {
-	Id          string    `json:"id"`
-	CreatedTime time.Time `json:"createdTime"`
-	Name        string    `json:"name"`
-	IsPublic    bool      `json:"isPublic"`
-	Members     []string  `json:"members"`
-}
-
-type Message struct {
-	Id   int64     `json:"id"`
-	Time time.Time `json:"time"`
-	Body string    `json:"body"`
-	From string    `json:"from"`
-	To   string    `json:"to"`
-}
-
-type LastReadReceipt struct {
-	UserId    string    `json:"userId"`
-	MessageId int64     `json:"messageId"`
-	Time      time.Time `json:"time"`
-}
-
-type GroupMemberChange struct {
-	UserId   string    `json:"userId"`
-	CallerId string    `json:"callerId"`
-	Time     time.Time `json:"time"`
-	Added    bool      `json:"added"`
-}
-
-//
-// FIXME: hack until I can figure out read-only keys
-//
-
-type UserWritable struct {
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	TagId     string `json:"tagId"`
-}
-
-type BotWritable struct {
-	Name    string `json:"name"`
-	GroupId string `json:"groupId"`
-}
-
-type GroupWritable struct {
-	Name     *string  `json:"name"`
-	IsPublic *bool    `json:"isPublic"`
-	Members  []string `json:"members"`
-}
-
-type MessageWritable struct {
-	Body string `json:"body"`
-}
-
-type LastReadReceiptWritable struct {
-	MessageId int64 `json:"messageId"`
-}
-
-//
-// FIXME: hack because array types seem to be borked
-//
-// go-restful has problems returning an array of structs.
-// Returning a struct containing an array of structs is a workaround.
-//
-
-type GroupList struct {
-	Groups []Group `json:"groups"`
-}
-
-type UserList struct {
-	Users []User `json:"users"`
-}
-
-type BotList struct {
-	Bots []Bot `json:"bots"`
-}
-
-type MessageList struct {
-	Messages []Message `json:"messages"`
-}
-
-type IdList struct {
-	Ids []string `json:"ids"`
-}
-
-type LastReadReceiptList struct {
-	LastRead []LastReadReceipt `json:"lastRead"`
-}
-
-type GroupMemberHistory struct {
-	History []GroupMemberChange `json:"history"`
-}
-
-//
-// These Events are serialized as json and sent over webscocket connections
-//
-
-type Event struct {
-	// valid resource values:
-	// - "USER"
-	// - "USER_AVATAR"
-	// - "USER_MESSAGE"
-	// - "USER_MESSAGE_READ"
-	// - "GROUP"
-	// - "GROUP_MESSAGE"
-	// - "GROUP_MESSAGE_READ"
-	// - "LAST_ONLINE"
-	// - "BOT"
-	// - "TYPING"
-	Resource string `json:"resource"`
-
-	// ID of the modified user or group
-	Id string `json:"id"`
-
-	// Optional payload for transmitting additional info
-	Payload string `json:"payload,omitempty"`
-}
-
-//
-// Global variables shared by modules
-// TODO: closures for filters which wrap these args
-//
-
-// Map of user id to the time they last made a network request
-var lastOnlineTimes = make(map[string]time.Time)
-var lastOnlineTimesMutex = sync.RWMutex{}
-
-// Shared broadcaster between REST/WS
-var broadcaster = broadcast.NewBroadcaster()
-
-// OAuth token verifier
-var tokenVerifier auth.TokenVerifier
 
 //
 // Main
@@ -201,16 +53,6 @@ func main() {
 	flag.StringVar(&verifier, "verifier", "bifrost", "Token verifier to use. Currently \"bifrost\" or \"echo\"")
 	flag.Parse()
 
-	// create token cache
-	tokenCache := auth.NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE)
-
-	// initialize token verifier
-	if verifier == "echo" {
-		tokenVerifier = auth.NewEchoTokenVerifier()
-	} else {
-		tokenVerifier = auth.NewBifrostTokenVerifier(tokenCache)
-	}
-
 	// format url strings
 	portStr := ":" + strconv.Itoa(port)
 	restUrlStr := "http://" + host + portStr
@@ -221,15 +63,32 @@ func main() {
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
 	defer db.Close()
 
+	// create shared variables
+	tokenCache := auth.NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE)
+	lastOnlineTimes := lastOnline.New()
+	broadcaster := broadcast.NewBroadcaster()
+
+	// initialize token verifier
+	var tokenVerifier auth.TokenVerifier
+	if verifier == "echo" {
+		tokenVerifier = auth.NewEchoTokenVerifier()
+	} else {
+		tokenVerifier = auth.NewBifrostTokenVerifier(tokenCache)
+	}
+
+	// intitialize shared filters
+	checkUserFilter := filters.CheckUser(tokenVerifier)
+	updateLastOnlineFilter := filters.UpdateLastOnline(lastOnlineTimes, broadcaster)
+
 	// REST routes
-	restful.Add(BuildBotsRoutes(db, broadcaster))
-	restful.Add(BuildUsersRoutes(db, broadcaster))
-	restful.Add(BuildGroupsRoutes(db, broadcaster))
-	restful.Add(BuildKeepaliveRoutes())
-	restful.Add(BuildTokenRoutes(tokenCache))
+	restful.Add(bots.BuildRoutes(db, broadcaster, checkUserFilter))
+	restful.Add(users.BuildRoutes(db, broadcaster, lastOnlineTimes, checkUserFilter, updateLastOnlineFilter))
+	restful.Add(groups.BuildRoutes(db, broadcaster, checkUserFilter, updateLastOnlineFilter))
+	restful.Add(keepalive.BuildRoutes(checkUserFilter, updateLastOnlineFilter))
+	restful.Add(token.BuildRoutes(tokenCache))
 
 	// COOOOOOOORRRRRRRRSSSSSSSSS
-	restful.Filter(AddCORSHeaders)
+	restful.Filter(filters.AddCORSHeaders)
 	restful.Filter(restful.OPTIONSFilter())
 
 	// Swagger API doc config

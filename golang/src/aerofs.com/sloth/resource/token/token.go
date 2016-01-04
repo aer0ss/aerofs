@@ -1,4 +1,4 @@
-package main
+package token
 
 import (
 	"aerofs.com/sloth/auth"
@@ -14,7 +14,7 @@ type TokenResource struct {
 	tokenCache *auth.TokenCache
 }
 
-func BuildTokenRoutes(tokenCache *auth.TokenCache) *restful.WebService {
+func BuildRoutes(tokenCache *auth.TokenCache) *restful.WebService {
 	ws := new(restful.WebService)
 	r := TokenResource{tokenCache: tokenCache}
 
