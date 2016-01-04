@@ -1,0 +1,12 @@
+Your AeroFS is Ready
+Please click the link below to access your AeroFS and create your first user account.
+
+{{ subdomain }}
+
+Your 30-day trial begins today. Get started now and move AeroFS onto your own infrastructure when the trial expires.
+
+Questions? Check out our frequently asked questions at {{ faqs_url }} or reply
+directly to this email for technical support.
+
+Regards,
+The AeroFS Team

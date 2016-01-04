@@ -4,36 +4,43 @@
 {% block title %}My Team | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
-    <h1>My team</h1>
-    <table class="table">
-        <thead>
-        <tr>
-            <th class="name">Name</th>
-            <th class="email">Email</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for admin in user.customer.admins %}
+    <h1>My Team</h1>
+    <div id="users-container">
+        <table class="table col-sm-12">
+            <thead>
+            <tr>
+                <th class="name col-sm-6">Admin Name</th>
+                <th class="email col-sm-6">Email</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for admin in user.customer.admins %}
             <tr class="user">
                 <td class="name">{{ admin.first_name }} {{ admin.last_name }}</td>
                 <td class="email">{{ admin.email }}</td>
             </tr>
-        {% endfor %}
-        {% for invite in user.customer.pending_invites %}
+            {% endfor %}
+            {% for invite in user.customer.pending_invites %}
             <tr class="invite">
                 <td class="name"></td>
                 <td class="email">{{ invite.email }}</td>
             </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    <h4>Invite another admin</h4>
-
-    <form class="form-inline" action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
-        {{ form.hidden_tag() }}
-        {{ render_field(form.email, with_label=False, no_divs=True) }}
-        {{ submit_button("Send Invite", horizontal=False) }}
-    </form>
-    {# TODO: add invite button/form here that POSTs? #}
-
+            {% endfor %}
+            </tbody>
+        </table>
+        <h4>Invite Another Admin</h4>
+        <div class="row">
+            <form class="form-inline col-sm-6" action="{{ url_for('.invite_to_organization') }}" method="post" name="invite">
+                <div class="row">
+                    {{ form.hidden_tag() }}
+                    <div class="col-sm-10">
+                        {{ render_field(form.email, with_label=False, no_divs=True) }}
+                    </div>
+                    <div class="col-sm-2">
+                        {{ submit_button("Send", horizontal=False) }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}

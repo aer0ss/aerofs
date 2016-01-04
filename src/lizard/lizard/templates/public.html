@@ -3,7 +3,9 @@
 {% set marketing_url="http://www.aerofs.com" %}
 
 {% block footer_links %}
-    <footer>
+    {% set footer_class = 'with-pre' if self.pre_footer() else '' %}
+    <footer class="{{ footer_class }}">
+        {% block pre_footer %}{% endblock %}
         <div class="container">
             <div class="row">
                 <div class="col-sm-12" id="footer-span">

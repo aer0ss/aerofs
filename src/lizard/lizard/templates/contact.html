@@ -5,16 +5,21 @@
 
 {% block content %}
 <h1>Contact</h1>
-<p>Questions about the AeroFS Private Cloud? Drop us a line and we would be
-happy to help.</p>
+<div class="row">
+    <div id="contact" class="full-width-form logged-in col-sm-7">
+        <p>
+            Questions about the AeroFS Private Cloud?
+            Drop us a line and we would be happy to help.
+        </p>
+        <br />
+        <form role="form" class="" action="" method="post">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.contact, class_="dropdown") }}
+            {{ render_field(form.subject, rows=1, autofocus=true, type="textarea") }}
+            {{ render_field(form.message, rows=8, autofocus=false, type="textarea") }}
+            {{ submit_button("Send", horizontal=false) }}
+        </form>
+    </div>
+</div>
 
-<form role="form" class="form-horizontal" action="" method="post">
-    {{ form.hidden_tag() }}
-    {{ render_field(form.contact) }}
-    {{ render_field(form.subject, rows=1, autofocus=true, type="textarea",
-        class="form-control") }}
-    {{ render_field(form.message, rows=8, autofocus=false, type="textarea",
-        class="form-control") }}
-    {{ submit_button("Send", horizontal=true) }}
-</form>
 {% endblock %}

@@ -6,12 +6,24 @@
 {% block content %}
     <h1>All Accounts</h1>
 
-    <p>Search accounts (by account name or by admin email address).</p>
-    <form role="form" class="form-horizontal" action="" method="get">
-        {{ render_field(form.search_terms, autofocus=true) }}
-        {{ submit_button("Search") }}
-    </form>
+    <div class="row">
+        <div class="col-sm-6">
+            <p>Search accounts (by account name or by admin email address).</p>
+            <form role="form-inline" class="form-inline" action="" method="get">
+                <div class="row">
+                    {{ form.hidden_tag() }}
+                    <div class="col-sm-10">
+                        {{ render_field(form.search_terms, with_label=false, no_divs=true, autofocus=true) }}
+                    </div>
+                    <div class="col-sm-2">
+                        {{ submit_button("Search", horizontal=False) }}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
+    <br />
     <table class="table">
         <tr>
             <th>Name</th>

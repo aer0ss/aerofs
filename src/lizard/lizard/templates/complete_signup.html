@@ -1,5 +1,6 @@
 {% extends "public.html" %}
-{% from "_formhelpers.html" import render_field, submit_button, render_disabled_field %}
+{% from "_formhelpers.html" import render_field, submit_button, render_pw_strength_script %}
+{% from "steps.html" import render_steps %}
 
 {% block title %}Complete Signup | AeroFS Private Cloud{% endblock %}
 
@@ -7,26 +8,27 @@
     <link href="{{ url_for('static', filename='css/password.css') }}" rel="stylesheet" />
 {% endblock %}
 
+
 {% block content %}
-    <div id="complete-signup-container">
-        <div class="text-center col-sm-8">
-            <h1>Complete Your Account Signup</h1>
-            <p>Choose an account password to grant you access to your Dashboard.</p>
-            <form class="form-horizontal" action="" method="post" name="login">
-                {{ form.hidden_tag() }}
-                {{ render_field(form.password, autofocus=true, type="password") }}
-                {{ submit_button("Complete Sign Up", horizontal=True) }}
-            </form>
-        </div>
-         <div class="col-sm-2"></div>
+    <div id="complete-signup-container" class="col-sm-6 col-sm-offset-3 full-width-form">
+        <h1>Complete Your Account Setup</h1>
+        <p>
+            Choose an account password to grant you access to your Dashboard
+            where you can manage your account. Later, you will add users and invite
+            them to collaborate.
+        </p>
+        <form class="form-horizontal with-password" action="" method="post" name="login">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.password, with_label=false, autofocus=true, type="password", class_="") }}
+            {{ submit_button("Submit", horizontal=False) }}
+        </form>
     </div>
 {% endblock %}
 
-{% block scripts %}
-    <script>
-        (function completeSignup() {
-            $(':password').pwstrength();
-        })();
-    </script>
+{% block pre_footer %}
+    {{ render_steps(3) }}
 {% endblock %}
 
+{% block scripts %}
+    {{ render_pw_strength_script() }}
+{% endblock %}

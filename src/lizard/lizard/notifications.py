@@ -109,6 +109,19 @@ def _password_reset_email_for(admin, link):
     return _make_email_message(admin.email, "AeroFS Private Cloud password reset",
             text_body, html_body)
 
+def _hpc_trial_setup_email_for(admin, subdomain):
+    text_body = render_template("emails/hpc_trial_setup_email.txt",
+            admin=admin,
+            subdomain=subdomain,
+            faqs_url=FAQS_URL)
+    html_body = render_template("emails/hpc_trial_setup_email.html",
+            admin=admin,
+            subdomain=subdomain,
+            faqs_url=FAQS_URL)
+    return _make_email_message(admin.email, "AeroFS 30-day Trial Setup Complete",
+            text_body,
+            html_body)
+
 def _get_mail_connection():
     host = current_app.config["MAIL_SERVER"]
     port = current_app.config["MAIL_PORT"]
@@ -158,6 +171,10 @@ def send_license_available_email(admin):
 
 def send_password_reset_email(admin, link):
     msg = _password_reset_email_for(admin, link)
+    _send_email(admin.email, msg)
+
+def send_hpc_trial_setup_email(admin, subdomain):
+    msg = _hpc_trial_setup_email_for(admin, subdomain)
     _send_email(admin.email, msg)
 
 def send_private_cloud_question_email(requester, to_contact, subject, message):

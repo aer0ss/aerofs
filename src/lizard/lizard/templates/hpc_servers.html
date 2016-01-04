@@ -28,15 +28,19 @@
     }
 </script>
 
-    <p>Add server:</p>
-        <form role="form" class="form-horizontal" action="" method="post">
-        {{ form.hidden_tag() }}
-        {{ render_field(form.docker_url) }}
-        {{ render_field(form.public_ip) }}
-        {{ submit_button("Add") }}
-    </form>
+    <h4>Add server:</h4>
+    <div class="row">
+        <div class="col-sm-6">
+            <form role="form" class="full-width-form logged-in" action="" method="post">
+                {{ form.hidden_tag() }}
+                {{ render_field(form.docker_url) }}
+                {{ render_field(form.public_ip) }}
+                {{ submit_button("Add", horizontal=false) }}
+            </form>
+        </div>
+    </div>
 
-
+    <br />
     <table class="table">
         <tr>
             <th>ID</th>

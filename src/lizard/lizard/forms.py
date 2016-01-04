@@ -13,8 +13,8 @@ class SignupForm(Form):
     first_name = StringField('First Name', validators=[InputRequired()])
     last_name = StringField('Last Name', validators=[InputRequired()])
     email = StringField('Email', validators = [InputRequired(), Email()])
-    company_name = StringField('Organization Name', validators=[InputRequired()])
-    phone_number = StringField("Phone Number", validators=[InputRequired()])
+    company_name = StringField('Company', validators=[InputRequired()])
+    phone_number = StringField("Phone", validators=[InputRequired()])
     job_title = StringField("Job Title", validators=[InputRequired()])
     company_size = StringField("Company Size", validators=[Optional()])
     current_fss = StringField("Current file sharing solution", validators=[Optional()])
@@ -98,12 +98,12 @@ class ReleaseForm(Form):
     release_version = StringField('Version', validators = [InputRequired()])
 
 class ContactForm(Form):
-    contact = SelectField(u'Contact', choices=[
+    contact = SelectField(u'Department', choices=[
         ('SALES', 'Sales'),
         ('SUPPORT', 'Support')
     ], validators=[InputRequired()])
     subject = TextAreaField("Subject", validators=[InputRequired()])
-    message = TextAreaField("Message", validators=[InputRequired()])
+    message = TextAreaField("Your Message", validators=[InputRequired()])
 
 class AllAccountsSearchForm(Form):
     search_terms = StringField('Search Terms')

@@ -10,6 +10,10 @@
 # 3) Edit models.py (A) into (B) on the filesystem.
 # 4) Run this script with a description of the changes as argv[1].
 
+# Note that this script does not work properly - there is an issue
+# with Boolean vs Tinyint schema types in sqlalchemy and mysql.
+# http://stackoverflow.com/questions/20250901/python-sql-alchemy-migrate-valueerror-too-many-values-to-unpack-when-migrat
+
 import imp
 import os.path
 import sys

@@ -9,7 +9,12 @@ from hpc_config import configure_deployment, reboot, repackage
 
 
 class DeploymentAlreadyExists(Exception):
-    pass
+    def __init__(self):
+        self.msg =  "Sorry, that name is already taken. Please try another name."
+        Exception.__init__(self)
+
+    def __str__(self):
+        return repr(self.msg)
 
 
 def get_docker_client(deployment):
@@ -41,6 +46,7 @@ def create_deployment(customer, subdomain):
     deployment.customer = customer
     deployment.subdomain = subdomain
     deployment.server = server
+    deployment.set_days_until_expiry(30)
 
     db.session.add(deployment)
 
@@ -194,7 +200,8 @@ def delete_deployment(deployment):
 
 def pick_server():
     """
-    Returns a server suitable to create a new deployment on. Currently picks the less crowded server.
+    Returns a server suitable to create a new deployment on.
+    Currently picks the least crowded server.
     Throws an exceptions if there are no servers available.
     """
     count_deployments = db.func.count(HPCDeployment.subdomain)

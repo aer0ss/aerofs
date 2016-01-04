@@ -124,20 +124,25 @@ function showErrorMessageFromResponse(xhr) {
   var data;
   var status = xhr.status;
   if (xhr.responseText) {
-    data = $.parseJSON(xhr.responseText);
+    try {
+      data = $.parseJSON(xhr.responseText);
+    } catch (e) {
+      console.log('non-json response returned.');
+    }
   }
   showErrorMessageWith(data, status);
 }
 
 function showErrorMessageWith(data, status) {
   'use strict';
+
   if (status === 403) {
     // See error_view.py:_force_login on generation of 403
     // Note that both web and bunker uses 'login' as the login route
     window.location.assign('/login?next=' +
       encodeURIComponent(window.location.pathname +
         window.location.search + window.location.hash));
-  } else if (status === 400 && data && data.hasOwnProperty('message')) {
+  } else if (400 <= status < 500 && data && data.hasOwnProperty('message')) {
     showErrorMessage(data.message);
   } else {
     showErrorMessageUnsafe(getInternalErrorText());

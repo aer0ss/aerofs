@@ -14,11 +14,14 @@
 
 {% block sidebar %}
     <ul class="nav nav-list left-nav">
-        <li class="nav-header">Private Cloud</li>
-        {{ render_menu_item('.edit_preferences', 'My account') }}
-        {{ render_menu_item('.users', 'My team') }}
+        <li class="nav-header">Dashboard</li>
+        {{ render_menu_item('.edit_preferences', 'My Account') }}
+        {{ render_menu_item('.users', 'My Team') }}
         {{ render_menu_item('.billing', 'Billing')}}
         {{ render_menu_item('.contact', 'Contact') }}
-        {{ render_menu_item('.dashboard', 'Download on-premises') }}
+        {{ render_menu_item('.mobile', 'Mobile')}}
+        {{ render_menu_item('.dashboard', 'Upgrade') }}
+        {# TODO: Enable this when we release the 30-day trial #}
+        {# {{ render_menu_item('.get_hpc', 'Free 30-Day Trial')}} #}
     </ul>
 {% endblock %}

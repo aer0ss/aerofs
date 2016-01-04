@@ -40,12 +40,27 @@ make -C ../web/web
 
 Now you should be able to hit the instance on localhost:4444 in your browser.
 
+
 #### Run Celery (for Hosted Private Cloud)
 
 If you're working on Hosted Private Cloud, you need to run the Celery worker to process the tasks.
 
 1. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG`
 
+
+#### Create test user with real license
+
+This will be needed to test the HPC Deployment flow locally. When you run the
+`create_test_user_and_license.py` script, a user is created with a fake license file.
+
+To attach a real license file, open up your local mysql server as root: `mysql -uroot`
+
+Switch into the lizard database with `use lizard;`
+
+Then run the following:
+  `UPDATE license
+  SET license.blob=LOAD_FILE('~/repos/aerofs/system-tests/webdriver-lib/root/test.license') 
+  WHERE license.customer_id=<test_user_id>;`
 
 Notes
 =====

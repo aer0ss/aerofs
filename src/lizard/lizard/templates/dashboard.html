@@ -5,11 +5,12 @@
 {% block title %}Dashboard | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
-    <h1>Dashboard</h1>
+    <h1>Upgrade</h1>
+    <h2>Download AeroFS on Your Own Infrastructure</h2>
     {% if active_license %}
         <div class="row">
             <div class="col-sm-6">
-                <h4>Active license</h4>
+                <h3>Active License</h3>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
                     <dd>{% if active_license.allow_audit or active_license.allow_identity or active_license.allow_mdm or active_license.allow_device_restriction %}Business{% else %}Team{% endif %}</dd>
@@ -19,7 +20,7 @@
                     <dd>{{ active_license.expiry_date | date }}</dd>
                 </dl>
             {% if newest_license.state == newest_license.states.PENDING %}
-                <h4>Pending license</h4>
+                <h3>Pending license</h3>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
                     <dd>{% if newest_license.allow_audit or newest_license.allow_identity or newest_license.allow_mdm or newest_license.allow_device_restriction %}Business{% else %}Team{% endif %}</dd>
@@ -30,7 +31,7 @@
                 </dl>
             {% endif %}
             {% if not active_license.is_trial and renewal_seats < active_license.seats %}
-                <h4>Renewal information</h4>
+                <h3>Renewal information</h3>
                 <dl class="well well-sm dl-horizontal">
                     <dt>Seats:</dt>
                     <dd>{{ renewal_seats }}</dd>
@@ -38,78 +39,87 @@
                     <dd>{{ active_license.expiry_date | date }}</dd>
                 </dl>
             {% endif %}
-                <h4>Purchase Business Licenses</h4>
-
-                    <p>You can purchase or upgrade your <a href="https://www.aerofs.com/pricing" target="_blank">business</a> licenses at any time. If you need more than 1,000 seats,
-                    please <a href="/contact">contact</a>.</p>
-                    <form role="form" class="form-inline" action="" method="post" name="seats">
+                <h3>Purchase Business Licenses</h3>
+                    <p>
+                        You can purchase or upgrade your <a href="https://www.aerofs.com/pricing" target="_blank">business</a>
+                        licenses at any time. If you need more than 1,000 seats,
+                        please <a href="/contact">contact us</a>.
+                    </p>
+                    <form role="form" id="license-form" class="form-inline" action="" method="post" name="seats">
                         {{ form.hidden_tag() }}
-                        <p>
-                            {{ render_field(form.count, type="number", no_divs=True, label_width=5, class="form-control")}}
-                            {% if active_license.is_trial %}
-                        </p>
-                        <p>
-                            <button type="submit" class="btn btn-primary btn-block">Purchase licenses</button>
-                            {% else %}
-                            <button type="submit" class="btn btn-primary btn-block">Change license count</button>
-                            {% endif %}
-                        </p>
+                        <div class="field-container">
+                            {{ render_field(form.count, type="number", no_divs=True, class="form-control")}}
+                        </div>
+
+                        {% if active_license.is_trial %}
+                            <button type="submit" class="btn btn-primary btn-block">Purchase Licenses</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary btn-block">Change License Count</button>
+                        {% endif %}
                     </form>
-                <br><br>
             </div>
-            <div class="col-sm-6">
-                <h4>AeroFS Private Cloud</h4>
-
-                <p>Current version: <b>{{ appliance_version }}</b></p>
-                <p>Visit our <a href="https://support.aerofs.com/hc/en-us/articles/201439644">release notes</a> for more information.</p>
-
-                <p><a class="btn btn-default btn-block" href="{{ url_for('.download_latest_license') }}">
-                    Download your latest license file</a>
+            <div id="download" class="col-sm-6 full-width-form">
+                <p>
+                    Current Version: {{ appliance_version }}
+                    <br />
+                    Visit our <a href="https://support.aerofs.com/hc/en-us/articles/201439644">Release Notes</a> for more information.
                 </p>
-
-                <p><a class="btn btn-default btn-block" href="{{ url_for('.download_ova') }}">
-                    Download OVA (for VirtualBox, VMware)</a>
+                <p>
+                    <a class="btn btn-default btn-block" href="{{ url_for('.download_latest_license') }}">
+                        Download Your License
+                    </a>
                 </p>
-                <p><a class="btn btn-default btn-block" href="{{ url_for('.download_qcow') }}">
-                    Download QCow2 (for OpenStack, EC2)</a>
+                <hr />
+                <p>
+                    Choose your hypervisor and a download for the AeroFS appliance
+                    in the correct format will be available below.
                 </p>
-                <p><a class="btn btn-default btn-block" href="{{ url_for('.download_vhd') }}">
-                    Download VHD (for Hyper-V)</a>
+                <p>
+                    <select class="dropdown">
+                        <option disabled selected>Choose Your Hypervisor</option>
+                        <option value="ova">VirtualBox or VMWare</option>
+                        <option value="qcow2">OpenStack or EC2</option>
+                        <option value="vhd">Hyper-V</option>
+                    </select>
                 </p>
-
-                <br/>
-                <p>You may also choose to launch your AeroFS Private Cloud directly via docker and
-                   cloud-init. See our
-                   <a href="https://github.com/aerofs/aerofs-docker">github page</a> for detailed
-                   instructions.</p>
-
-                <br/>
-
-                <h4>AeroFS for MobileIron</h4>
-
-                <p><a class="btn btn-default btn-block" href="{{ mi_android_download }}">
-                    Download Android Application</a>
+                <p>
+                    <a class="btn btn-default btn-block download ova" href="{{ url_for('.download_ova') }}">
+                        Download OVA
+                    </a>
+                    <a class="btn btn-default btn-block download qcow2 hidden" href="{{ url_for('.download_qcow') }}">
+                        Download QCow2
+                    </a>
+                    <a class="btn btn-default btn-block download vhd hidden" href="{{ url_for('.download_vhd') }}">
+                        Download VHD
+                    </a>
                 </p>
-
-                <p><a class="btn btn-default btn-block" target="_blank" href="{{ mi_ios_app_store }}">
-                    iOS App on the App Store</a>
+                <p>
+                    You may also choose to launch your AeroFS Private Cloud directly via docker and
+                    cloud-init. See our <a href="https://github.com/aerofs/aerofs-docker">Github page</a>
+                    for detailed instructions.
+                </p>
+                <p>
+                    For instructions on how to launch AeroFS, please see our
+                    <a href="https://support.aerofs.com/hc/en-us/articles/204970404">support docs.</a>
                 </p>
             </div>
         </div>
-
-        <h4>How To Install AeroFS Private Cloud</h4>
-        <p>AeroFS is provided in the industry standard OVF, QCow2, and VHD formats. It is also
-        shipped in docker containers via cloud-init. Therefore, AeroFS will run in any virtual
-        environment that supports Linux. This includes VirtualBox, VMWare, Hyper-V, Amazon AWS,
-        DigitalOcean, Azure, and many others. For more details, check out our
-        <a href="https://support.aerofs.com/hc/en-us/articles/204592794">FAQ</a> or
-        <a href="{{ url_for('.contact') }}">contact us</a>.
-        </p>
-        <iframe width="640" height="390" src="//www.youtube.com/embed/pVqpobLdoHk" frameborder="0"
-                allowfullscreen></iframe>
-
     {% else %}
-        <p class="alert alert-info">Your license request is being processed. We'll send you an email when it's
-            ready.</p>
+        <p class="alert alert-info">
+            Your license request is being processed.
+            We'll send you an email when it's ready.
+        </p>
     {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        (function downloadSelect () {
+            $("select.dropdown").change(function () {
+                var value = $(this).val();
+                $("a.download").not('.hidden').addClass('hidden');
+                $("a.download." + value).removeClass('hidden');
+            });
+        })();
+    </script>
 {% endblock %}

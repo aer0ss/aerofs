@@ -5,9 +5,13 @@
 
 {% block content %}
     <h1>Upload License Bundle</h1>
-    <form action="" method="post" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        {{ render_field(form.license_bundle) }}
-        {{ submit_button("Upload bundle") }}
-    </form>
+    <div class="row">
+        <div class="col-sm-6">
+            <form class="full-width-form logged-in" action="" method="post" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    {{ render_field(form.license_bundle, with_label=false, no_divs=true, autofocus=true) }}
+                    {{ submit_button("Upload Bundle", horizontal=False) }}
+            </form>
+        </div>
+    </div>
 {% endblock %}

@@ -1,6 +1,6 @@
 import re
 import requests
-from lizard import celery
+from lizard import celery, db, notifications
 from datetime import datetime, timedelta
 import time
 import models
@@ -173,6 +173,16 @@ def repackage(self, subdomain):
         wait_for_services_ready(session)
         do_repackaging(session)
         session.post("/admin/json-set-configuration-completed")
+
+        # Consider the appliance set up and running
+        session.deployment.appliance_setup_date = datetime.today()
+        session.deployment.set_days_until_expiry(30)
+        db.session.commit()
+
+        #Let them know they have an appliance
+        admin = models.Admin.query.get(session.deployment.customer_id)
+        notifications.send_hpc_trial_setup_email(admin, session.base_url)
+
         return subdomain  # so that this task can be chained with other tasks
 
     except Exception as e:

@@ -3,6 +3,7 @@ import time
 import os
 import json
 import requests
+import datetime
 from itsdangerous import TimestampSigner
 import itsdangerous
 import markupsafe
@@ -10,12 +11,13 @@ import stripe
 import flask_scrypt as scrypt
 import flask_login as login
 import flask_api.status
+from werkzeug.datastructures import MultiDict
 
 from flask import Blueprint, abort, current_app, render_template, flash, redirect, request, \
     url_for, Response, session
 
 from lizard import analytics_client, db, login_manager, csrf, login_helper, password_reset_helper, \
-    appliance, notifications, forms, models, promotions
+    appliance, notifications, forms, models, promotions, hpc
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
 
@@ -37,6 +39,8 @@ def load_user(userid):
 @blueprint.route('/', methods=['GET'])
 @blueprint.route('/index', methods=['GET'])
 def index():
+    # TODO: Enable this when we release the 30-day trial
+    # return redirect(url_for(".get_hpc"))
     return redirect(url_for(".dashboard"))
 
 @blueprint.route('/login', methods=['GET', 'POST'])
@@ -82,7 +86,7 @@ def logout():
 
 
 @csrf.exempt
-@blueprint.route("/request_signup", methods=["GET", "POST"])
+@blueprint.route("/request_signup", methods=["POST"])
 def signup_request_page():
     """
     GET /request_signup - shows form for signing up
@@ -92,7 +96,8 @@ def signup_request_page():
     if form.validate_on_submit():
         request_signup(form)
         return redirect(url_for(".signup_request_done"))
-    return render_template("request_signup.html", form=form)
+    else:
+        return '', flask_api.status.HTTP_400_BAD_REQUEST
 
 
 @csrf.exempt
@@ -180,7 +185,7 @@ def signup_completion_page():
     if not user_signup_code:
         # return to the "enter your email so we can verify it" page
         flash("That link didn't include a signup code.", "error")
-        return redirect(url_for(".signup_request_page"))
+        return redirect("http://www.aerofs.com/signup-continue/")
 
     signup = models.UnboundSignup.query.filter_by(signup_code=user_signup_code).first()
     if not signup:
@@ -327,6 +332,9 @@ def invite_to_organization():
         notifications.send_invite_email(bound_invite, customer)
 
         flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
+        return redirect(url_for('.users'))
+    else:
+        flash(form.email.errors[0], "error")
         return redirect(url_for('.users'))
 
 @blueprint.route('/users/accept', methods=["GET", "POST"])
@@ -711,9 +719,7 @@ def dashboard():
         active_license=customer.newest_filled_license(),
         newest_license=newest_license,
         renewal_seats=(customer.renewal_seats or newest_license.seats),
-        appliance_version=appliance.latest_appliance_version(),
-        mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
-        mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
+        appliance_version=appliance.latest_appliance_version()
     )
 
 @blueprint.route("/users", methods=["GET"])
@@ -727,6 +733,77 @@ def users():
 @blueprint.route("/version", methods=["GET"])
 def version():
     return appliance.latest_appliance_version()
+
+@blueprint.route("/hosted_private_cloud", methods=["GET"])
+@login.login_required
+def get_hpc():
+    customer = login.current_user.customer
+    hpc = models.HPCDeployment.query.filter_by(customer_id=customer.id).first()
+    setup_timeout_in_minutes = 60;
+    template_data = {
+        "hpc_started": False,
+        "appliance_up": False,
+        "appliance_error": False,
+        "hpc_days_left": 30,
+        "hpc_url": '',
+    }
+
+    if hpc is not None:
+        now = datetime.datetime.today()
+        template_data["hpc_started"] = True
+        template_data["hpc_url"] += 'https://' + hpc.full_hostname()
+        template_data["hpc_days_left"] = hpc.get_days_until_expiry()
+
+        if hpc.appliance_setup_date is not None:
+            template_data["appliance_up"] = True
+        else:
+            template_data["appliance_error"] = now > hpc.create_date + datetime.timedelta(minutes=setup_timeout_in_minutes)
+
+    analytics_client.track(customer.id, "Visited Trial Page", {
+        'email': markupsafe.escape(login.current_user.email),
+        'started': template_data["hpc_started"],
+        'days_left': template_data["hpc_days_left"]
+    })
+
+    return render_template("hpc.html", **template_data)
+
+@blueprint.route("/hosted_private_cloud", methods=["POST"])
+@login.login_required
+def submit_subdomain():
+    customer = login.current_user.customer
+
+    # We already have the customer data
+    # Just add it to the form directly
+    data = MultiDict(mapping=request.form)
+    data.add("customer_id", str(customer.id))
+    form = forms.CreateHostedDeployment(data)
+
+    status = 200
+    message = ''
+
+    analytics_client.track(customer.id, "Submitted Subdomain", {
+        'email': markupsafe.escape(login.current_user.email),
+        'subdomain': form.subdomain
+    })
+
+    if form.validate():
+        try:
+            hpc.create_deployment(customer, form.subdomain.data)
+        except hpc.DeploymentAlreadyExists as e:
+            analytics_client.track(customer.id, "Existing Subdomain Error", {
+                'email': markupsafe.escape(login.current_user.email),
+                'subdomain': form.subdomain
+            })
+            status = 409
+            message = e.msg
+    else:
+        status = 400
+        message = form.subdomain.errors[0]
+
+    return Response(
+        response=json.dumps({"message": message}),
+        status=status
+    )
 
 @blueprint.route("/aerofs-appliance.ova", methods=["GET"])
 def download_ova():
@@ -898,3 +975,11 @@ def contact():
         return redirect(url_for(".dashboard"))
 
     return render_template("contact.html", form=form)
+
+@blueprint.route("/mobile", methods=["GET"])
+@login.login_required
+def mobile():
+    return render_template("mobile.html",
+        mi_android_download="https://s3.amazonaws.com/aerofs.mobile/android/AeroFSAndroidMobileIron.p.apk",
+        mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
+    )

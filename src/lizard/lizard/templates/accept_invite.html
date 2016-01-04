@@ -1,5 +1,5 @@
 {% extends "public.html" %}
-{% from "_formhelpers.html" import render_field, submit_button, eula_notice %}
+{% from "_formhelpers.html" import render_field, submit_button, eula_notice, render_pw_strength_script %}
 
 {% block title %}Create Account | AeroFS Private Cloud{% endblock %}
 
@@ -8,25 +8,24 @@
 {% endblock %}
 
 {% block content %}
-    <h1>Accept the invitation to manage {{ customer.name }}</h1>
-    <div class="text-center col-sm-8">
-        <form role="form" class="form-horizontal" action="" method="post" name="login">
+    <div id="accept-invitation" class="col-sm-6 col-sm-offset-3 full-width-form signup-form">
+        <h1 class="text-center">Accept Invitation to Manage {{ customer.name }}</h1>
+        <form role="form" class="form-horizontal with-password" action="" method="post" name="login">
             {{ form.hidden_tag() }}
-            {{ render_field(form.first_name) }}
-            {{ render_field(form.last_name) }}
-            {{ render_field(form.phone_number) }}
-            {{ render_field(form.job_title) }}
-            {{ render_field(form.password, autofocus=true, type="password") }}
-            {{ eula_notice() }}
-            {{ submit_button("Accept Invitation") }}
+            {{ render_field(form.first_name, no_divs=true, with_label=false, type="text", autofocus=true) }}
+            {{ render_field(form.last_name, no_divs=true, with_label=false, type="text") }}
+            <div class="clearfix"></div>
+            {{ render_field(form.phone_number, no_divs=true, with_label=false, type="text") }}
+            {{ render_field(form.job_title, no_divs=true, with_label=false, type="text") }}
+            {{ render_field(form.password, no_divs=true, with_label=false, autofocus=true, type="password", class_="") }}
+            {{ submit_button("Accept Invitation", horizontal=false) }}
         </form>
+    </div>
+    <div class="eula col-sm-6 col-sm-offset-3">
+        {{ eula_notice(horizontal=False) }}
     </div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        (function acceptInvitation() {
-            $(':password').pwstrength();
-        })();
-    </script>
+    {{ render_pw_strength_script() }}
 {% endblock %}

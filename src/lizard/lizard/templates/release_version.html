@@ -6,24 +6,31 @@
 {% block content %}
 <h1>Release Appliance Images</h1>
     <p>The currently-available appliance is version {{ current_version }}.</p>
-    <p>Download links:<p>
+    <h4>Download links:</h4>
     <ul>
         <li><a href="{{ ova_url }}">OVA</a></li>
         <li><a href="{{ qcow_url }}">QCow2</a></li>
         <li><a href="{{ vhd_url }}">VHD</a></li>
     </ul>
-    <p>
-        To release a newer appliance, make sure the images are in
-        the aerofs.privatecloud S3 bucket with public ACLs and filenames
-        <code>aerofs-appliance-&lt;version&gt;.ova</code>,
-        <code>aerofs-appliance-&lt;version&gt;.qcow2</code> and
-        <code>aerofs-appliance-&lt;version&gt;.vhd.gz</code>.
-    </p>
-
-    <form role="form" class="form-horizontal" action="" method="post">
-        {{ form.hidden_tag() }}
-        {{ render_field(form.release_version, autofocus=true) }}
-        {{ submit_button("Release new appliance") }}
-    </form>
+    <div class="row">
+        <div class="col-sm-6">
+            <p>
+                To release a newer appliance, make sure the images are in
+                the aerofs.privatecloud S3 bucket with public ACLs and filenames
+                <code>aerofs-appliance-&lt;version&gt;.ova</code>,
+                <code>aerofs-appliance-&lt;version&gt;.qcow2.gz</code> and
+                <code>aerofs-appliance-&lt;version&gt;.vhd.gz</code>.
+            </p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <form role="form" class="full-width-form logged-in" action="" method="post">
+                {{ form.hidden_tag() }}
+                {{ render_field(form.release_version, autofocus=true) }}
+                {{ submit_button("Release new appliance", horizontal=false) }}
+            </form>
+        </div>
+    </div>
 
 {% endblock %}

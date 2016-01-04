@@ -1,0 +1,15 @@
+{% extends "logged_in.html" %}
+
+{% block title %}MobileIron| AeroFS Private Cloud{% endblock %}
+
+{% block content %}
+    <h1>AeroFS for Mobile</h1>
+    <div class="row">
+        <div class="full-width-form col-sm-6">
+            <a class="btn btn-default download btn-block" href="{{ mi_android_download }}">
+                Download Android Application</a>
+            <a class="btn btn-default download btn-block" target="_blank" href="{{ mi_ios_app_store }}">
+                iOS App on the App Store</a>
+        </div>
+    </div>
+{% endblock %}

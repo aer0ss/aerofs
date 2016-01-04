@@ -2,24 +2,176 @@
 // This file contains styles specific to Lizard
 //
 @import "includes/aerofs-variables.less";
+@import "includes/aerofs-mixins.less";
 
-#messages {
-    background-color: #ffff00;
-    border-bottom: 1px solid #000000;
-}
+
+////////
+//General
 
 h1 {
-  margin-bottom: 30px;
+  margin-bottom: @standard-margin;
 }
 
-// Use this on a div to removes the left sidebar
+hr {
+  border-bottom: none;
+}
+
+select option[disabled] {
+  display: none;
+}
+
+.left-nav {
+  margin-top: @standard-margin/2;
+}
+
 .no-sidebar {
   margin-left: -130px;
 }
 
+.subtext {
+  .subtext;
+}
+
+.btn {
+  &:not(.btn-lg) {
+    height: 38px;
+  }
+  &:not(.btn-default) {
+    color: white;
+  }
+  &:not(.btn-plain) {
+    font-weight: 400!important;
+  }
+}
+
+.table thead > tr > th {
+  padding: 0 0 2px 0;
+  border-bottom: 1px solid darken(@aero-gray, 40%);
+}
+
+.table tbody > tr > td {
+  padding-left: 0;
+  border-bottom: 1px solid @aero-gray;
+}
+
+.table tbody > tr:last-of-type > td {
+  border-bottom: none;
+}
+
+.form-inline input {
+  height: @button-height; //Height of regular submit button
+}
+
+.form-inline input.form-control {
+  width: 100%;
+}
+
+.form-inline .btn.btn-primary,
+.form-inline .btn.btn-default {
+  margin-top: 0;
+}
+
+.form-group .field-label.control-label {
+  margin-bottom: 0;
+}
+
+.required-star {
+  color: red;
+}
+
+.full-width-form .btn-default,
+.full-width-form .btn-primary {
+  .hpc-btn-large;
+  margin-top: @standard-padding;
+}
+
+.full-width-form.logged-in .btn-default,
+.full-width-form.logged-in .btn-primary {
+  margin-top: @standard-padding/2;
+}
+
+.full-width-form .form-group + .btn-primary {
+  margin-top: @standard-padding - 15px; //Form-group bottom margin
+}
+
+.full-width-form input,
+.full-width-form select {
+  .hpc-input;
+  margin-top: @standard-padding;
+  width: 100%;
+}
+
+.full-width-form.logged-in input,
+.full-width-form.logged-in select,
+.full-width-form.logged-in textarea {
+  margin-top: @standard-padding/2;
+  width: 100%;
+}
+
+.full-width-form:not(.logged-in) .btn-default,
+.full-width-form:not(.logged-in) .btn-primary {
+  width: 100%;
+}
+
+.full-width-form:not(.logged-in) input {
+  height: 50px;
+}
+
+.full-width-form:not(.logged-in) .with-password .progress {
+  margin-top: -17px;
+  width: 100%;
+}
+
+.eula {
+  text-align: right;
+  margin-top: @standard-margin;
+}
+
+.steps ul li {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin: 0 @standard-margin;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+  opacity: .65;
+  &.blue {
+    background: @aero-blue;
+  }
+  &.gray {
+    background: darken(@aero-gray, 10%);
+  }
+}
+footer.with-pre {
+  margin-top: 0;
+}
+
+.modal-dialog {
+  padding-top: 15%;
+  z-index: 1050;
+}
+
+ul.list-unstyled.with-image {
+  padding-left: 0px;
+  li {
+    margin-bottom: @standard-margin;
+    img {
+      float: left;
+    }
+    p {
+      padding-left: @standard-padding;
+      overflow: hidden;
+    }
+  }
+}
+
+
+////////
+//Top Nav
 #dark-blue-header {
   background-color: @aero-navyblue;
-  margin-bottom: 20px;
+  margin-bottom: @standard-margin;
   padding: 0;
   color: @aero-white;
   height: 90px;
@@ -52,11 +204,174 @@ h1 {
   }
 }
 
-.btn {
-  &:not(.btn-lg) {
-    height: 38px;
+////////
+// Login
+#login-container .btn {
+  margin-bottom: @standard-padding/2;
+}
+
+////////
+//Accept invitation
+@media screen and (min-width: 767px) {
+  // Put First Name and Last Name next to each other
+  // This includes their respective error spans.
+  // The markup for this is auto generated with forms
+  // so it requires some jiggery-pokery to make right :/
+  .signup-form #first_name, #first_name + span.help-block,
+  .signup-form #last_name, #last_name + span.help-block {
+    width: 48%;
+    display: inline;
   }
-  &:not(.btn-default) {
-    color: white;
+
+  .signup-form #first_name, #first_name + span.help-block {
+    float: left
   }
+
+  .signup-form #last_name, #last_name + span.help-block {
+    float: right;
+  }
+
+  #first_name + span.help-block {
+    margin-left: -48%;
+    margin-top: 85px;
+  }
+
+  //With the clearfix there is too much margin now, so fix that
+  span.help-block + .clearfix + input {
+    margin-top: @standard-margin/2;
+  }
+}
+
+////////
+// Users
+@media screen and (max-width: 767px) {
+  #users-container .form-inline .btn {
+    margin-top: @standard-margin/2;
+    width: 100%;
+  }
+}
+
+////////
+//Dashboard
+#download {
+  margin-top: @standard-padding;
+}
+
+#contact .dropdown,
+#download .dropdown {
+  background-color: @aero-gray;
+}
+
+#download .dropdown,
+#download .btn-default,
+#download .btn-primary{
+  margin-top: @standard-padding/2;
+  height: 50px;
+}
+
+#license-form .field-container {
+  display: table;
+  width: 100%;
+}
+
+#license-form label {
+  display: table-cell;
+  padding-right: 22px;
+}
+
+#license-form input {
+  display: table-cell;
+}
+
+#license-form input,
+#license-form .btn {
+  height: 50px;
+}
+
+#license-form .btn {
+  .hpc-btn-large;
+  margin-top: @standard-padding/2;
+  width: 100%;
+}
+
+////////
+//HPC Demo Flow
+#trial-container .btn-primary {
+  .hpc-btn-large;
+}
+
+#trial-container .info-section {
+  margin-top: @standard-padding;
+}
+
+#trial-container .big-link-container {
+  margin-bottom: @standard-padding;
+  padding-top: @standard-padding;
+  padding-bottom: @standard-padding;
+}
+
+#trial-container .big-link-container a {
+  padding: @standard-padding;
+  background-color: @aero-lightblue;
+  border-color: @aero-lightblue;
+  border-radius: 5px;
+  color: @aero-blue !important;
+  .title-3;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+#start-trial .checklist ul{
+  margin-top: 48px;
+  margin-left: @standard-margin;
+  li p a {
+    line-height: inherit;
+  }
+}
+
+#subdomain-input {
+  width: 60%;
+  display: inline;
+}
+
+#appliance-error img {
+  margin-right: @standard-padding/2;
+  margin-top: -5px;
+}
+
+.expires .modal-body img,
+.expires .modal-body h2 {
+  margin-top:@standard-padding;
+  margin-bottom: 0;
+}
+
+.expires .modal-footer {
+  margin-top: 0;
+  padding-top:0;
+  border: none;
+  text-align: center;
+  p {
+    margin-bottom: @standard-padding;
+  }
+}
+
+////////
+//Mixins  & variables
+@standard-margin: 30px;
+@button-height: 38px;
+
+.hpc-input(){
+  height: 40px;
+  padding-left: @standard-padding/2;
+  border-radius: 5px;
+  border: 1px solid @aero-gray;
+  outline: none;
+}
+
+.hpc-btn-large(){
+  height: 50px;
+  width: 68%;
+  font-size: 18px;
+  line-height: 35px;
 }

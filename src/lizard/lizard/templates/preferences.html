@@ -4,17 +4,16 @@
 {% block title %}My Account | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
-    <h1>My account</h1>
-    <form role="form" class="form-horizontal" action="" method="post" name="prefs">
-        {{ form.hidden_tag() }}
-        {{ render_disabled_field('Organization:', current_user.customer.name) }}
-        {{ render_field(form.first_name, type="text", class="form-control") }}
-        {{ render_field(form.last_name, type="text", class="form-control") }}
-        {# DF: these fields disabled until we figure out our plans regarding emails
-        {{ render_field(form.security_emails) }}
-        {{ render_field(form.release_emails) }}
-        {{ render_field(form.maintenance_emails) }}
-        #}
-        {{ submit_button("Save changes", horizontal=true) }}
-    </form>
+    <h1>My Account</h1>
+    <div class="row">
+        <div class="full-width-form logged-in col-sm-6">
+            <form role="form" class="" action="" method="post" name="prefs">
+                {{ form.hidden_tag() }}
+                {{ render_disabled_field('Organization', current_user.customer.name) }}
+                {{ render_field(form.first_name, type="text", class="form-control") }}
+                {{ render_field(form.last_name, type="text", class="form-control") }}
+                {{ submit_button("Save changes", horizontal=false) }}
+            </form>
+        </div>
+    </div>
 {% endblock %}

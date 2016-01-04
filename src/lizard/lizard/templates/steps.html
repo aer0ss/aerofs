@@ -1,0 +1,14 @@
+{% macro render_steps(current_step, total=3) %}
+    <div class="steps">
+        <ul class="list-unstyled text-center">
+            {% for i in range(total) %}
+                {% if (current_step - 1) == i %}
+                    {% set class = 'blue' %}
+                {% else %}
+                    {% set class = 'gray' %}
+                {% endif%}
+                <li class="{{class}}">&nbsp;</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endmacro %}

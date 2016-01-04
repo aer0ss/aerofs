@@ -17,58 +17,51 @@
 {% macro render_field(field) %}
     {# Use labels instead of placeholders by default since placeholders aren't supported before IE10. #}
     {# Do not use labels on checkboxes however, since this would be redundant with the checkbox text. #}
+
     {% set with_label = kwargs.pop('with_label', True) and not field.type == 'BooleanField' %}
-    {% set label_width = kwargs.pop('label_width', 3) %}
     {% set with_divs = not kwargs.pop('no_divs', False) %}
-    {% set placeholder = '' %}
-    {% if not with_label %}{% set placeholder = field.label.text %}{% endif %}
+    {% set placeholder = field.label.text if not with_label else ''%}
+    {% set class_ = kwargs.pop('class_', 'form-control') %}
+
     {% if with_divs %}
         <div class="form-group {% if field.errors %}error{% endif %}">
     {% endif %}
         {% if with_label %}
-            <label for="{{ field.id }}" class="col-sm-{{label_width}} control-label">
-                {{ field.label.text }}:{% if field.flags.required %} *{% endif %}
+            <label for="{{ field.id }}" class="field-label control-label">
+                {{ field.label.text }} {% if field.flags.required %}<span class="required-star">*</span>{% endif %}
             </label>
         {% endif %}
-        {% if with_divs %}
-            <div class="col-sm-{{ 12 - label_width }}">
+        {% if field.flags.required %}
+            {% set class_ = class_ + ' required' %}
         {% endif %}
-            {% set class_ = kwargs.pop('class_', '') %}
-            {% set type_ = "text" %}
-            {% if field.flags.required %}
-                {% set class_ = class_ + ' required' %}
+        {% if field.type == 'BooleanField' %}
+            <label class="checkbox control-label">
+                {{ field(class_=class_, **kwargs) }}
+                {{ field.label.text|safe }}
+            </label>
+        {% else %}
+            {% if field.type == 'TextAreaField' %}
+                {% set class_ = class_ + ' ' %}
+            {% elif field.type == 'FileField' %}
+                {% set class_ = class_ + ' input-file' %}
             {% endif %}
-            {% if field.type == 'BooleanField' %}
-                <label class="checkbox control-label">
-                    {{ field(class_=class_, **kwargs) }}
-                    {{ field.label.text|safe }}
-                </label>
-            {% else %}
-                {% if field.type == 'TextAreaField' %}
-                    {% set class_ = class_ + ' ' %}
-                {% elif field.type == 'FileField' %}
-                    {% set class_ = class_ + ' input-file' %}
-                {% endif %}
-                {{ field(class_=class_, placeholder=placeholder, **kwargs) }}
-            {% endif %}
-            {% if field.errors %}
-                <span class="error help-block">{{ field.errors|join(' ') }}</span>
-            {% endif %}
-            {% if field.description %}
-                <p class="help-block">{{ field.description|safe }}</p>
-            {% endif %}
-        {% if with_divs %}
-            </div>
-        </div>
+            {{ field(class_=class_, placeholder=placeholder, **kwargs) }}
         {% endif %}
+        {% if field.errors %}
+            <span class="error help-block">{{ field.errors|join(' ') }}</span>
+        {% endif %}
+        {% if field.description %}
+            <p class="help-block">{{ field.description|safe }}</p>
+        {% endif %}
+    {% if with_divs %}
+    </div>
+    {% endif %}
 {% endmacro %}
 
 {% macro render_disabled_field(label, value) %}
     <div class="form-group">
-        <label class="col-sm-3 control-label">{{ label }}</label>
-        <div class="col-sm-9">
-            <input class="form-control" type="text" disabled value="{{ value }}"/>
-        </div>
+        <label class="field-label control-label">{{ label }}</label>
+        <input class="form-control" type="text" disabled value="{{ value }}"/>
     </div>
 {% endmacro %}
 
@@ -82,12 +75,33 @@
     {% endif %}
 {% endmacro %}
 
-{% macro eula_notice() %}
-    <div class="form-group">
-        <div class="">
-            <p>By submitting this form you are agreeing <br/>to the
-                <a href="https://www.aerofs.com/terms/#privatecloud">AeroFS Private Cloud License Agreement</a>.
+{% macro eula_notice(horizontal=True) %}
+    {% if horizontal %}
+        <div class="form-group"><div class="">
+    {% endif %}
+            <p>
+                By submitting this form you are agreeing <br/>to the
+                <a href="https://www.aerofs.com/terms/#privatecloud">AeroFS Private Cloud License Agreement</a>
             </p>
-        </div>
-    </div>
+    {% if horizontal %}
+        </div></div>
+    {% endif %}
+{% endmacro %}
+
+{% macro render_pw_strength_script() %}
+    {# We don't use this at the top-level because it
+       applies to everything with a type password - which affects
+       password entry. #}
+    <script type="text/javascript">
+        (function configurePWStrength () {
+            var state = ["Weak", "Normal", "Medium", "Strong", "Very Strong"];
+            var verdicts = state.map(function (s) { return 'Password Strength: ' + s});
+
+            $(':password').pwstrength({
+                ui: {
+                    verdicts: verdicts
+                }
+            });
+        })();
+    </script>
 {% endmacro %}

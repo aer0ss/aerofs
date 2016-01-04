@@ -1,0 +1,27 @@
+{% macro render_expired_modal(show=false) %}
+    {% if show %}
+        {% set display="block" %}
+    {% else %}
+        {% set display="none" %}
+    {% endif %}
+
+    <div class="modal expires" tabindex="-1" role="dialog" style="display:{{display}}">
+        <div class="modal-backdrop fade in"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <img src="static/img/alert_icon.png" width="80" height="80" />
+                    <h2> Your trial has expired. </h2>
+                </div>
+                <div class="modal-footer text-center">
+                    <p>
+                        <a href="{{url_for('.dashboard')}}">Download AeroFS </a>
+                        on your infrastructure now.
+                        <br />
+                        Need Help? Contact our <a href="mailto:support@aerofs.com">Support Team</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}

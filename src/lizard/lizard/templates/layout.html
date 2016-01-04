@@ -53,18 +53,18 @@
                 <div class="row">
                     <div id="error-wrap" class="col-sm-12">
                         <div id="flash-msg-success" class="alert alert-success alert-dismissable" style="display: none">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" aria-hidden="true">&times;</button>
                             <span id="flash-msg-success-body"></span>
                         </div>
                         <div id="flash-msg-error" class="alert alert-danger alert-dismissable" style="display: none">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <button type="button" class="close" aria-hidden="true">&times;</button>
                             <span id="flash-msg-error-body"></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-           {% block body %}{% endblock %}
+            {% block body %}{% endblock %}
 
             <div id="footer-push"></div>
         </div>
@@ -77,6 +77,16 @@
         <script src="{{ url_for('static', filename='js/compiled/aerofs.js') }}" ></script>
         <script src="{{ url_for('static', filename='js/compiled/csrf.js') }}" ></script>
         <script src="{{ url_for('static', filename='js/pwstrength-bootstrap-1.2.9.min.js') }}" ></script>
+
+        <script type="text/javascript">
+            //Override bootstraps behavior of removing the alert
+            //from the dom on close
+            $(document).ready(function (){
+                $(".close").on('click', function() {
+                    $(this).parent().hide();
+                });
+            });
+        </script>
 
         {% with messages = get_flashed_messages(with_categories=True) %}
         {# TODO: this could use some cleaning up.  In particular, it would be

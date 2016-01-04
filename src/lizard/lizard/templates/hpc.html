@@ -1,0 +1,233 @@
+{% extends "logged_in.html" %}
+{% from "_modalhelpers.html" import render_expired_modal %}
+
+{% block title %}Dashboard | AeroFS Private Cloud {% endblock %}
+
+{% block content %}
+    <h1>Free 30-Day Trial</h1>
+
+    {% if hpc_started %}
+
+        {% set day_string = "day" if hpc_days_left == 1 else "days" %}
+        <div id="trial-container">
+
+        {% if appliance_up and not appliance_error %}
+
+            <div id="trial-started" class="trial-page">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Your AeroFS URL</h2>
+                        <div class="info-section big-link-container">
+                            <a href="{{hpc_url}}">{{hpc_url}}</a>
+                        </div>
+                        <p class="info-section">
+                            You have {{hpc_days_left}} {{day_string}} left in this trial.
+                            This is a hosted version of your AeroFS.
+                        </p>
+                        <p class="info-section">
+                            Ready to move AeroFS to your own infrastructure?
+                            <br />
+                            Click <a href="{{ url_for('.dashboard')}}">Upgrade</a> on the left
+                            navigation menu to download AeroFS at anytime or
+                            <a href="mailto:support@aerofs.com">contact</a> our Sales Team for help.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {% if hpc_days_left < 0 %}
+                {{ render_expired_modal(true) }}
+            {% endif %}
+
+        {% elif not appliance_up and not appliance_error %}
+
+            {{ render_setup_page(is_hidden=false) }}
+
+        {% else %}
+
+            {# Then we know that there was an error #}
+            <div id="appliance-error" class="trial-page">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2><span><img src="static/img/alert_icon.png" width="34" height="34" /></span> Appliance Setup Error</h2>
+                        <p class="info-section">
+                            Oops, it looks like there was an error setting up your account.
+                        </p>
+                        {{ render_contact_us_message() }}
+                    </div>
+                </div>
+            </div>
+
+        {% endif %}
+        </div>
+    {% else %}
+
+        <div id="trial-container">
+            <div id="start-trial" class="trial-page">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2 >Start Your Trial Now</h2>
+                        <p class="info-section">
+                            Try AeroFS hosted by us before deploying on
+                            your own infrastructure.
+                        </p>
+                        <div class="info-section">
+                             <!--On click handler switches to next page in setup flow-->
+                            <a id="start-trial-url" class="btn btn-primary">
+                                Start Trial
+                            </a>
+                        </div>
+                        {{ render_download_message() }}
+                    </div>
+                    <div class="checklist col-sm-6">
+                        <ul class="list-unstyled with-image">
+                          <li>
+                              <img src="static/img/hpc_check_icon_36px.png" width="18" height="18" />
+                              <p>No credit card or setup required.</p>
+                          </li>
+                          <li>
+                              <img src="static/img/hpc_check_icon_36px.png" width="18" height="18" />
+                              <p>Move to your own infrastructure at any time.</p>
+                          </li>
+                          <li>
+                              <img src="static/img/hpc_check_icon_36px.png" width="18" height="18" />
+                              <p>See our <a href="https://www.aerofs.com/terms-of-service/privacy/">privacy</a> page for information.</p>
+                          </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="choose-subdomain" class="trial-page hidden">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h2>Choose Your AeroFS URL</h2>
+                        <p>
+                            This url will be seen by all users that you invite to your account.
+                        </p>
+                        <div class="info-section">
+                            <span>https://</span>
+                            <input class="form-control" id="subdomain-input" type="text" placeholder="subdomain" autofocus="true" />
+                            <span>.aerofs.com</span>
+                        </div>
+                        <div class="info-section">
+                            <a id="submit-subdomain" class="btn btn-primary" data-url="{{ url_for('.submit_subdomain') }}">
+                                Next
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{ render_setup_page(is_hidden=true) }}
+
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% macro render_download_message() %}
+    <div class="info-section">
+        <p>Or <a href="{{ url_for('.dashboard')}}">download AeroFS</a> now to deploy on your own infrastructure.</p>
+    </div>
+{% endmacro %}
+
+{% macro render_contact_us_message() %}
+    <div class="info-section">
+        <p>For assistance, please contact <a href="mailto:support@aerofs.com">support@aerofs.com</a></p>
+    </div>
+{% endmacro %}
+
+{% macro render_setup_page(is_hidden=true) %}
+    {% set hidden_class = 'hidden' if is_hidden else '' %}
+    <div id="setup" class="trial-page {{hidden_class}}">
+        <div class="row">
+            <div class="col-sm-6">
+                <h2>Please wait while we set up your AeroFS</h2>
+                <p class="info-section">
+                    In less than 5 minutes, you'll receive an email with a link to access your AeroFS.
+                </p>
+                <p class="info-section">
+                    Soon, you'll be easily and securely collaborating, sharing files from the and your desktop, and more.
+                </p>
+                {{ render_contact_us_message() }}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% block scripts %}
+    {% if hpc_started and not appliance_up and not appliance_error %}
+        <script type="text/javascript">
+            (function reloadPage () {
+                setTimeout(function () {
+                    window.location.reload();
+                }, 60000);
+            })();
+        </script>
+    {% endif %}
+
+    <script type="text/javascript">
+        $(document).ready(function trialPage () {
+            var errorMessageTimeout;
+
+            //Pages
+            var startTrialPage = $("#start-trial");
+            var chooseUrlPage = $("#choose-subdomain");
+            var setupPage = $("#setup");
+
+            //Event handlers
+            $('#start-trial-url').click(function (e) {
+                e.preventDefault();
+
+                startTrialPage.addClass('hidden');
+                chooseUrlPage.removeClass('hidden');
+            });
+
+            $("#submit-subdomain").click(function (e) {
+                //Submit the url & start trial
+                //It may fail if the domain is taken
+                e.preventDefault();
+                var url = $(this).data('url');
+                var chosen_subdomain = getSubdomainFromInput();
+                var submitSubdomain = $.post(url, {subdomain: chosen_subdomain});
+
+                submitSubdomain.done(function () {
+                    chooseUrlPage.addClass('hidden');
+                    setupPage.removeClass('hidden');
+                    reloadPageInAMinute();
+                });
+
+                submitSubdomain.fail(function (xhr) {
+                    subdomainErrorMessage(xhr);
+                    clearSubdomainInput();
+                });
+            });
+
+            //Helpers
+            function subdomainErrorMessage (xhr) {
+                if (errorMessageTimeout) {
+                    clearTimeout(errorMessageTimeout);
+                }
+                showErrorMessageFromResponse(xhr);
+
+                errorMessageTimeout = setTimeout(function() {
+                    $("#flash-msg-error").fadeOut();
+                }, 8000);
+            }
+
+            function getSubdomainFromInput () {
+                return $("#subdomain-input").val();
+            }
+
+            function clearSubdomainInput () {
+                $("#subdomain-input").val("");
+            }
+
+            function reloadPageInAMinute () {
+                setTimeout(function () {
+                    window.location.reload();
+                }, 60000);
+            }
+        });
+    </script>
+{% endblock %}

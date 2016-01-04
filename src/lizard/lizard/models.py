@@ -317,18 +317,39 @@ class HPCDeployment(db.Model, TimeStampedMixin):
     # Letters, numbers and dashes only. Can't start or end with a dash.
     subdomain = db.Column(db.String(32), primary_key=True)
 
-    # Returns the full host name for this deployment. E.g.: 'foobar.aerofs.com'
-    def full_hostname(self):
-        return '{}.{}'.format(self.subdomain, current_app.config['HPC_DOMAIN'])
-
     # To which customer does this deployment belong?
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
 
     # On which server is this running?
     server_id = db.Column(db.Integer, db.ForeignKey('hpc_server.id'), nullable=False)
 
+    # When the deployment expires
+    expiry_date = db.Column(db.DateTime, nullable=True)
+
+    # When the appliance was set up
+    appliance_setup_date = db.Column(db.DateTime, nullable=True)
+
+    # Returns the full host name for this deployment. E.g.: 'foobar.aerofs.com'
+    def full_hostname(self):
+        return '{}.{}'.format(self.subdomain, current_app.config['HPC_DOMAIN'])
+
+    def set_days_until_expiry(self, d):
+        e = datetime.datetime.today().date() + datetime.timedelta(days=d)
+        self.expiry_date = datetime.datetime.combine(e, datetime.time.min)
+
+    def get_days_until_expiry(self):
+        today = datetime.datetime.today().date()
+        start_of_today = datetime.datetime(year=today.year, month=today.month, day=today.day)
+        days = (self.expiry_date - start_of_today).days
+        return -1 if days < 0 else days
+
+    def has_expired(self):
+        today = datetime.datetime.today().date()
+        start_of_today = datetime.datetime(year=today.year, month=today.month, day=today.day)
+        return start_of_today >= self.expiry_date
+
     def __repr__(self):
-        return "<HPCDeployment '{}'>".format(self.subdomain)
+        return "<HPCDeployment '{}' expires: '{}'>".format(self.subdomain, self.expiry_date.strftime('%Y-%m-%d'))
 
 
 class HPCServer(db.Model, TimeStampedMixin):
