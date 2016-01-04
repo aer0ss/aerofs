@@ -15,7 +15,6 @@ def get_docker_client(deployment):
     """
     Returns a docker client that will communicate with the Docker daemon at the given deployment's server
     """
-
     tls_config = tls.TLSConfig(
         client_cert=(current_app.config['HPC_PATH_TO_DOCKER_CLIENT_CERT'],
                      current_app.config['HPC_PATH_TO_DOCKER_CLIENT_KEY']),
@@ -72,7 +71,7 @@ def create_route53_change(deployment, delete=False):
             {
                 'Action': 'CREATE' if not delete else 'DELETE',
                 'ResourceRecordSet': {
-                    'Name': '{}.{}.'.format(deployment.subdomain, current_app.config['HPC_DOMAIN']),
+                    'Name': deployment.full_hostname(),
                     'Type': 'A',
                     'TTL': 300,
                     'ResourceRecords': [{'Value': deployment.server.public_ip}]

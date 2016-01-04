@@ -1,6 +1,8 @@
 import datetime
 import flask_scrypt as scrypt
 from lizard import db
+from flask import current_app
+
 
 # Maximum length of a valid email address, in bytes, including null terminator
 # "restricts the entire email address to be no more than 254 characters"
@@ -313,6 +315,10 @@ class HPCDeployment(db.Model, TimeStampedMixin):
     # ie: <subdomain>.aerofs.com
     # Letters, numbers and dashes only. Can't start or end with a dash.
     subdomain = db.Column(db.String(32), primary_key=True)
+
+    # Returns the full host name for this deployment. E.g.: 'foobar.aerofs.com'
+    def full_hostname(self):
+        return '{}.{}'.format(self.subdomain, current_app.config['HPC_DOMAIN'])
 
     # To which customer does this deployment belong?
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
