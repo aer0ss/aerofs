@@ -10,11 +10,10 @@
     NSString* rootAnchor = [[AeroClient instance] rootAnchor];
     if(rootAnchor) {
         NSLog(@"Info: initialized with root anchor: %@.", rootAnchor);
-        [FIFinderSyncController defaultController].directoryURLs = [NSSet setWithObject:
-            [NSURL fileURLWithPath:rootAnchor]];
+        [[FIFinderSyncController defaultController] setDirectoryURLs:[NSSet setWithObject:
+            [NSURL fileURLWithPath:rootAnchor]]];
     }
 }
-
 
 + (void)refreshBadgeImageWithStatus:(Overlay)status :(NSURL*) url {
     [[FIFinderSyncController defaultController] setBadgeIdentifier:[@(status) stringValue] forURL:url];
@@ -88,15 +87,27 @@
                              [[NSBundle bundleForClass:[self class]] pathForResource:@"menu" ofType:@"icns"]]];
             }
         }
-//    } else if ([[AeroClient instance] rootAnchor] && ![[AeroClient instance] isUnderRootAnchor:
-//                [[[FIFinderSyncController defaultController] targetedURL].filePathURL path]]){
-//        NSMenuItem* openRootAnchor = [menu addItemWithTitle:@"Open AeroFS Folder" action:@selector(openRootAnchor:) keyEquivalent:@""];
-//        [openRootAnchor setTarget:self];
+    } else if ([self isOSXElCapOrNewer] && [[AeroClient instance] rootAnchor] &&
+               ![[AeroClient instance] isUnderRootAnchor: [[[FIFinderSyncController defaultController] targetedURL]
+                .filePathURL path]]){
+        NSMenuItem* openRootAnchor = [menu addItemWithTitle:@"Open AeroFS Folder" action:@selector(openRootAnchor:) keyEquivalent:@""];
+        [openRootAnchor setTarget:self];
     } else {
         [menu addItemWithTitle:@"No Available Actions" action:nil keyEquivalent:@""];
         [[menu itemAtIndex:0] setEnabled:NO];
     }
     return menu;
+}
+
+- (BOOL) isOSXElCapOrNewer {
+    @try {
+        NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
+        //NSLog([NSString stringWithFormat:@"%ld.%ld.%ld", version.majorVersion, version.minorVersion, version.patchVersion]);
+        return version.majorVersion > 10 || (version.majorVersion == 10 && version.minorVersion >= 11);
+    }
+    @catch (NSException *exception) {
+        return false;
+    }
 }
 
 - (IBAction)showShareFolderDialog:(id)sender {
@@ -135,17 +146,10 @@
 }
 
 - (IBAction)openRootAnchor:(id)sender {
-//    NSLog(@"Info: openRootAnchor1: %@.", [[AeroClient instance] rootAnchor]);
-//    BOOL result1 =[[NSWorkspace sharedWorkspace] openFile:[[AeroClient instance] rootAnchor]];
-//    NSLog((result1) ? @"result1: True" : @"result1: False");
-//
-//    NSLog(@"Info: openRootAnchor2: %@.", [[AeroClient instance] rootAnchor]);
-//    BOOL result2 = [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:[[AeroClient instance] rootAnchor]]];
-//    NSLog((result2) ? @"result2: True" : @"result2: False");
-//
-//    NSLog(@"Info: openRootAnchor3: %@.", [[AeroClient instance] rootAnchor]);
-//    BOOL result3 = [[NSWorkspace sharedWorkspace] selectFile:nil inFileViewerRootedAtPath:[[AeroClient instance] rootAnchor]];
-//    NSLog((result3) ? @"result3: True" : @"result3: False");
+    BOOL result = [[NSWorkspace sharedWorkspace] selectFile:nil inFileViewerRootedAtPath:[[AeroClient instance] rootAnchor]];
+    if (result == NO) {
+        NSLog(@"AeroFS: Error opening root anchor");
+    }
 }
 
 @end
