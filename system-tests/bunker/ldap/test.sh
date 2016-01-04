@@ -26,8 +26,7 @@ fi
 wait_port ${OPENDS_IP} 389
 
 # Find OpenDS's server cert
-docker-machine ssh ${DOCKER_MACHINE_NAME} "docker cp aerofs-test.opends:/server-cert.pem ."
-docker-machine scp ${DOCKER_MACHINE_NAME}:/home/docker/server-cert.pem ${THIS_DIR}/root
+docker cp aerofs-test.opends:/server-cert.pem ${THIS_DIR}/root 
 
 OPENDS_SERVER_CERT="server-cert.pem"
 
