@@ -5,10 +5,13 @@ Getting Started
 
 ```
 $ mysql -u root
-(check that you're no version 5.6 *NOT* 5.7)
+(check that you're on version 5.6 *NOT* 5.7)
 mysql> create database lizard;
 mysql> exit
 ```
+
+Either change the mysql user root@localhost to use no password or update the
+connection string in additional\_config.py.
 
 #### Python environment
 
@@ -17,6 +20,13 @@ cd ~/repos/aerofs/src/lizard
 virtualenv env
 env/bin/pip install -r requirements-exact.txt
 env/bin/pip install --editable ../licensing
+```
+
+#### Web static content
+
+```bash
+ln -s ../web/web/static .
+make -C ../web/web
 ```
 
 #### Run lizard locally
