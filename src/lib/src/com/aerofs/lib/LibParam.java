@@ -494,7 +494,7 @@ public class LibParam extends BaseParam
     public static class DeploymentConfig
     {
         public static final String                      BASE_CA_CERTIFICATE =
-                getStringProperty(                      PROPERTY_BASE_CA_CERT);
+                getStringProperty(                      PROPERTY_BASE_CA_CERT, "");
     }
 
     public static class MobileDeviceManagement {

@@ -40,10 +40,9 @@ public class TestLicense
     }
 
     @Test
-    public void isValid_shouldReturnFalseIfLicenseValidUntilIsAbsent()
+    public void isValid_shouldReturnFalseIfLicenseValidUntilIsAbsent() throws Exception
     {
         setProperties("normal", null);
-        assertFalse(new License().isValid());
     }
 
     @Test

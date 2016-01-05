@@ -9,6 +9,7 @@ import com.unboundid.ldap.sdk.SearchScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -200,6 +201,11 @@ public class LdapConfiguration
 
     private List<String> splitIntoList(String serialized)
     {
+        if (serialized == null)
+        {
+            return new ArrayList<String>();
+        }
+
         return Splitter.on(LDAP_SEPARATOR)
                 .trimResults()
                 .omitEmptyStrings()

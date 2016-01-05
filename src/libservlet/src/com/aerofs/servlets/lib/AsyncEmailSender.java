@@ -53,12 +53,12 @@ public class AsyncEmailSender extends AbstractEmailSender
         // so that the email will always fail to send by default but it will trip exception only
         // when we send e-mail and we ignore those exceptions.
         //
-        String host = getStringProperty("email.sender.public_host");
-        String port = getStringProperty("email.sender.public_port");
-        String username = getStringProperty("email.sender.public_username");
-        String password = getStringProperty("email.sender.public_password");
+        String host = getStringProperty("email.sender.public_host", "");
+        String port = getStringProperty("email.sender.public_port", "");
+        String username = getStringProperty("email.sender.public_username", "");
+        String password = getStringProperty("email.sender.public_password", "");
         boolean useTls = getBooleanProperty("email.sender.public_enable_tls", true);
-        String cert = getStringProperty("email.sender.public_cert");
+        String cert = getStringProperty("email.sender.public_cert", "");
 
         return new AsyncEmailSender(host, port, username, password, useTls, cert);
     }
