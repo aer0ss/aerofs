@@ -66,8 +66,8 @@ VPN to complete this step, since it'll pull some packages from an internal repos
     cd $HOME/repos/aerofs/
     ./invoke clean proto
     gradle clean dist
-    ./invoke --product CLIENT
-    setupenv approot/run ~/rtroot/user1 gui
+    ./invoke --product CLIENT setupenv
+    approot/run ~/rtroot/user1 gui
 
 Running gradle will compile the Java source code and create the class files needed to run the
 client. Running invoke will create a directory called approot and populate it with all environment-
