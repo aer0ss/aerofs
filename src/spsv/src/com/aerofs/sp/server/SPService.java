@@ -2353,7 +2353,6 @@ public class SPService implements ISPService
         _auditClient.event(AuditTopic.USER, "user.org.invite")
                 .add("inviter", inviter.id())
                 .add("invitee", invitee.id())
-                .add("organization", org.id())
                 .publish();
 
         return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
@@ -2777,7 +2776,6 @@ public class SPService implements ISPService
                 .add("user", user.id())
                 .add("first_name", firstName)
                 .add("last_name", lastName)
-                .add("organization", orgID)
                 .add("is_admin", !joinExistingOrg) // TODO: this is incorrect if the user already exists
                 .publish();
 
