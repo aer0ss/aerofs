@@ -256,7 +256,7 @@ public class AbstractResourceTest extends AbstractBaseTest
 
         createAccessToken(client, inj, RW_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write",
-                        "acl.invitations", "groups.read"));
+                        "acl.invitations", "groups.read", "user.password"));
         createAccessToken(client, inj, RO_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
                 ImmutableSet.of("user.read", "acl.read", "acl.invitations", "groups.read"));
         createAccessToken(client, inj, ADMIN,

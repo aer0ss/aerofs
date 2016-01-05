@@ -613,7 +613,7 @@ public class TestUsersResources extends AbstractResourceTest
     // tests for updatePassword(..)
 
     @Test
-    public void updatePassword_shouldSucceed() throws Exception
+    public void updatePassword_shouldSucceedAsAdmin() throws Exception
     {
         User u = createApiUser();
         givenAdminAccess()
@@ -625,6 +625,20 @@ public class TestUsersResources extends AbstractResourceTest
                 .put(RESOURCE + "/password", u.id().getString());
 
         verify(passwordManagement).setPassword(eq(u.id()), any(byte[].class));
+    }
+
+    @Test
+    public void updatePassword_shouldSucceedAsSelf() throws Exception
+    {
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body("\"new password\"")
+        .expect()
+                .statusCode(204)
+        .when()
+                .put(RESOURCE + "/password", user.getString());
+
+        verify(passwordManagement).setPassword(eq(user), any(byte[].class));
     }
 
     @Test
@@ -685,7 +699,7 @@ public class TestUsersResources extends AbstractResourceTest
     // tests for deletePassword(..)
 
     @Test
-    public void deletePassword_shouldSucceed() throws Exception
+    public void deletePassword_shouldSucceedAsAdmin() throws Exception
     {
         User u = createApiUser();
         givenAdminAccess()
@@ -694,6 +708,17 @@ public class TestUsersResources extends AbstractResourceTest
         .when()
                 .delete(RESOURCE + "/password", u.id().getString());
         verify(passwordManagement).revokePassword(eq(u.id()));
+    }
+
+    @Test
+    public void deletePassword_shouldSucceedAsSelf() throws Exception
+    {
+        givenWriteAccess()
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete(RESOURCE + "/password", user.getString());
+        verify(passwordManagement).revokePassword(eq(user));
     }
 
     @Test
