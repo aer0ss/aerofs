@@ -274,6 +274,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent me)
         {
             if (!_downstream.isConnected()) return;
+            _closeIfIdle.set(false);
 
             final Channel upstream = me.getChannel();
 
@@ -310,9 +311,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
             _expectingResponseChunks.set(response.isChunked());
             if (!response.isChunked()) {
-                if (_expectedResponses.decrementAndGet() == 0) {
-                    _closeIfIdle.set(false);
-                }
+                _expectedResponses.decrementAndGet();
             }
         }
 
@@ -324,9 +323,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
 
             if (chunk.isLast()) {
-                if (_expectedResponses.decrementAndGet() == 0) {
-                    _closeIfIdle.set(false);
-                }
+                _expectedResponses.decrementAndGet();
                 _expectingResponseChunks.set(false);
             }
         }

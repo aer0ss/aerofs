@@ -37,7 +37,7 @@ public class NioChannelFactories
                         getGlobalTimer(),
                         (current, proposed) -> "cb" + THREAD_ID_COUNTER.getAndIncrement());
 
-                NioWorkerPool workerPool = new NioWorkerPool(newCachedThreadPool(), 2,
+                NioWorkerPool workerPool = new NioWorkerPool(newCachedThreadPool(), 4,
                         (current, proposed) -> "cw" + THREAD_ID_COUNTER.getAndIncrement());
 
                 return new NioClientSocketChannelFactory(bossPool, workerPool);
