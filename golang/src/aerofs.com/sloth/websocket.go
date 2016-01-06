@@ -3,7 +3,6 @@ package main
 import (
 	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
-	"aerofs.com/sloth/errors"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -44,14 +43,21 @@ func (h *websocketMultiplexingHandler) ServeHTTP(w http.ResponseWriter, r *http.
 // Get and return the auth'd uid from `verifier`
 func authConnection(conn *websocket.Conn, verifier auth.TokenVerifier) string {
 	mtype, data, err := conn.ReadMessage()
-	errors.PanicOnErr(err)
+	if err != nil {
+		log.Print("ws conn %v read err %v\n", conn.UnderlyingConn(), err)
+		return ""
+	}
 	s := string(data)
 	if mtype != websocket.TextMessage || !strings.HasPrefix(s, "AUTH ") {
-		panic("websocket message not AUTH")
+		log.Printf("ws conn %v message not AUTH\n", conn.UnderlyingConn())
+		return ""
 	}
 	token := strings.TrimPrefix(s, "AUTH ")
 	uid, err := verifier.VerifyToken(token)
-	errors.PanicOnErr(err)
+	if err != nil {
+		log.Print("err: failed to verify token ", err)
+		return ""
+	}
 	log.Printf("ws conn %v auth by %v\n", conn.UnderlyingConn(), uid)
 	return uid
 }
@@ -63,7 +69,7 @@ func unsubscribeOnClose(conn *websocket.Conn, broadcaster broadcast.Broadcaster,
 			log.Printf("ws conn %v closed\n", conn.UnderlyingConn())
 			broadcaster.Unsubscribe(c)
 			if !isChanClosedErr(err) {
-				panic(err)
+				log.Printf("ws conn %v closed err %v\n", conn.UnderlyingConn(), err)
 			}
 			return
 		}
@@ -73,11 +79,17 @@ func unsubscribeOnClose(conn *websocket.Conn, broadcaster broadcast.Broadcaster,
 func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader, verifier auth.TokenVerifier, broadcaster broadcast.Broadcaster) {
 	// upgrade to websocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
-	errors.PanicOnErr(err)
+	if err != nil {
+		log.Print("websocket upgrade err ", err)
+		return
+	}
 	log.Printf("new ws conn %v\n", conn.UnderlyingConn())
 
 	// authenticate channel, and subscribe to broadcaster
 	uid := authConnection(conn, verifier)
+	if uid == "" {
+		return
+	}
 	events := broadcaster.Subscribe(uid)
 	go unsubscribeOnClose(conn, broadcaster, events)
 
@@ -88,11 +100,12 @@ func handleWebsocket(w http.ResponseWriter, r *http.Request, upgrader *websocket
 			return
 		}
 		err = conn.WriteMessage(websocket.TextMessage, bytes)
-		if isChanClosedErr(err) {
+		if err != nil {
 			broadcaster.Unsubscribe(events)
+			if !isChanClosedErr(err) {
+				log.Printf("ws conn %v write err %v\n", conn.UnderlyingConn(), err)
+			}
 			return
-		} else {
-			errors.PanicOnErr(err)
 		}
 	}
 }
