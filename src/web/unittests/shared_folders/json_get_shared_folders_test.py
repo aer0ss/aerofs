@@ -12,7 +12,7 @@ class GetSharedFoldersTest(TestBase):
     def setUp(self):
         self.setup_common()
         self._mock_list_organization_shared_folders()
-        self._mock_list_user_shared_folders()
+        self._mock_list_user_joined_shared_folders()
 
         # TestBase.setup_common() mocks global methods. Therefore, reload the
         # module under test to reset its references to these methods, in case
@@ -29,13 +29,13 @@ class GetSharedFoldersTest(TestBase):
 
         self.sp_rpc_stub.list_organization_shared_folders = Mock(return_value=reply)
 
-    def _mock_list_user_shared_folders(self):
+    def _mock_list_user_joined_shared_folders(self):
         reply = ListSharedFoldersReply()
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 
         # TODO (WW) use create_autospec? also see JsonAddSharedFolderPermTest
-        self.sp_rpc_stub.list_user_shared_folders = Mock(return_value=reply)
+        self.sp_rpc_stub.list_user_joined_shared_folders = Mock(return_value=reply)
 
     def _add_shared_folder(self, reply):
         folder = reply.shared_folder.add()

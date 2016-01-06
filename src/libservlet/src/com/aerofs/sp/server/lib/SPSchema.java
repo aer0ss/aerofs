@@ -95,6 +95,8 @@ public final class SPSchema
             C_SFV_SID                       = "sfv_sid",
             C_SFV_USER_ID                   = "sfv_user_id",
             C_SFV_NAME                      = "sfv_name",
+            C_SFV_STATE                     = "sfv_state",
+            C_SFV_ROLE                      = "sfv_role",
 
             T_ES                            = "sp_email_subscriptions",
             C_ES_EMAIL                      = "es_email",

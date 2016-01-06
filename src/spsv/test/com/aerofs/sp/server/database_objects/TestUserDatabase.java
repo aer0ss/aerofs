@@ -53,54 +53,54 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
     }
 
     @Test
-    public void countSharedFolders_shouldCoutUserSharedFolders()  throws Exception
+    public void countJoinedSharedFolders_shouldCoutUserSharedFolders()  throws Exception
     {
-        assertEquals(0, udb.countSharedFolders(user1));
+        assertEquals(0, udb.countJoinedSharedFolders(user1));
         addSharedFolder(user1, user2, "lalala");
-        assertEquals(1, udb.countSharedFolders(user1));
+        assertEquals(1, udb.countJoinedSharedFolders(user1));
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
             throws Exception
     {
-        assertEquals(0, udb.countSharedFolders(user1));
-        assertEquals(0, udb.countSharedFolders(user2));
+        assertEquals(0, udb.countJoinedSharedFolders(user1));
+        assertEquals(0, udb.countJoinedSharedFolders(user2));
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, udb.countSharedFoldersWithPrefix(user1, "tes"));
-        assertEquals(0, udb.countSharedFoldersWithPrefix(user2, "a"));
+        assertEquals(2, udb.countJoinedSharedFoldersWithPrefix(user1, "tes"));
+        assertEquals(0, udb.countJoinedSharedFoldersWithPrefix(user2, "a"));
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
             throws Exception
     {
-        assertEquals(0, udb.countSharedFolders(user1));
-        assertEquals(0, udb.countSharedFolders(user2));
+        assertEquals(0, udb.countJoinedSharedFolders(user1));
+        assertEquals(0, udb.countJoinedSharedFolders(user2));
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, udb.countSharedFoldersWithPrefix(user1, "foo"));
-        assertEquals(5, udb.countSharedFoldersWithPrefix(user1, null));
-        assertEquals(5, udb.countSharedFoldersWithPrefix(user2, null));
+        assertEquals(2, udb.countJoinedSharedFoldersWithPrefix(user1, "foo"));
+        assertEquals(5, udb.countJoinedSharedFoldersWithPrefix(user1, null));
+        assertEquals(5, udb.countJoinedSharedFoldersWithPrefix(user2, null));
     }
 
     @Test
-    public void getSharedFolders_shouldListInAlphabeticalOrder() throws Exception
+    public void getJoinedSharedFolders_shouldListInAlphabeticalOrder() throws Exception
     {
         createSharedFolders(user1, user2);
 
         List<String> orderedNames = Lists.newArrayList("FooBar", "fooBar", "sf", "Test Folder", "test Folder");
-        Collection<SID> result = udb.getSharedFolders(user1, null, null, null);
+        Collection<SID> result = udb.getJoinedSharedFolders(user1, null, null, null);
         List<String> resultNames = getResultNames(result, user1);
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
     }
 
     @Test
-    public void getSharedFolders_shouldListAllNamesAlphabetically() throws Exception
+    public void getJoinedSharedFolders_shouldListAllNamesAlphabetically() throws Exception
     {
         //Create some shared folders and change their names
         SID folder1 = addSharedFolder(user1, user2, "alpha");
@@ -112,8 +112,8 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
 
         List<SID> ordered1Ids = Lists.newArrayList(folder2, folder3, folder1);
         List<SID> ordered2Ids = Lists.newArrayList(folder1, folder2, folder3);
-        Collection<SID> result1 = udb.getSharedFolders(user1, null, null, null);
-        Collection<SID> result2 = udb.getSharedFolders(user2, null, null, null);
+        Collection<SID> result1 = udb.getJoinedSharedFolders(user1, null, null, null);
+        Collection<SID> result2 = udb.getJoinedSharedFolders(user2, null, null, null);
 
         Assert.assertArrayEquals(ordered1Ids.toArray(), result1.toArray());
         Assert.assertArrayEquals(ordered2Ids.toArray(), result2.toArray());
@@ -121,52 +121,52 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
     }
 
     @Test
-    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
     {
         createSharedFolders(user1, user2);
 
         //Page 1
         List<String> orderedNames = Lists.newArrayList("FooBar", "fooBar", "sf");
-        Collection<SID> result = udb.getSharedFolders(user1, 3, 0, null);
+        Collection<SID> result = udb.getJoinedSharedFolders(user1, 3, 0, null);
         List<String> resultNames = getResultNames(result, user1);
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
 
         //Page 2
         orderedNames = Lists.newArrayList("Test Folder","test Folder");
-        result = udb.getSharedFolders(user1, 3, 3, null);
+        result = udb.getJoinedSharedFolders(user1, 3, 3, null);
         resultNames = getResultNames(result, user1);
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
     }
 
     @Test
-    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
     {
         createSharedFolders(user1, user2);
 
         //Page 1
         List<String> orderedNames = Lists.newArrayList("FooBar", "fooBar");
-        Collection<SID> result = udb.getSharedFolders(user1, 2, 0, "foo");
+        Collection<SID> result = udb.getJoinedSharedFolders(user1, 2, 0, "foo");
         List<String> resultNames = getResultNames(result, user1);
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
 
         //Page 2
         orderedNames = Lists.newArrayList("fooBar");
-        result = udb.getSharedFolders(user1, 1, 1, "foo");
+        result = udb.getJoinedSharedFolders(user1, 1, 1, "foo");
         resultNames = getResultNames(result, user1);
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
 
         //No Matches
-        result = udb.getSharedFolders(user1, 100, 0, "zzzz");
+        result = udb.getJoinedSharedFolders(user1, 100, 0, "zzzz");
         resultNames = getResultNames(result, user1);
         Assert.assertArrayEquals(new String[0], resultNames.toArray());
     }
 
     @Test
-    public void getSharedFolders_shouldListAllNamesAlphabeticallyWithPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAllNamesAlphabeticallyWithPrefix() throws Exception
     {
         //Create some shared folders and change their names
         SID folder1 = addSharedFolder(user1, user2, "a_alpha");
@@ -177,13 +177,77 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
 
         List<SID> orderedIds = Lists.newArrayList(folder2, folder3, folder1);
         List<SID> orderedIds2 = Lists.newArrayList(folder1, folder2, folder3);
-        Collection<SID> result1 = udb.getSharedFolders(user1, 100, 0, "a_");
-        Collection<SID> result2 = udb.getSharedFolders(user2, 100, 0, "a_");
+        Collection<SID> result1 = udb.getJoinedSharedFolders(user1, 100, 0, "a_");
+        Collection<SID> result2 = udb.getJoinedSharedFolders(user2, 100, 0, "a_");
 
         Assert.assertArrayEquals(orderedIds.toArray(), result1.toArray());
         Assert.assertArrayEquals(orderedIds2.toArray(), result2.toArray());
     }
 
+    @Test
+    public void getJoinedSharedFolders_shouldListOnlyJoinedFolders() throws Exception
+    {
+        //Create some shared folders and change their names
+        SID folder1 = addSharedFolder(user1, user2, "alpha");
+        SID folder2 = addSharedFolder(user1, user2, "beta");
+        SID folder3 = addSharedFolder(user1, user2, "gamma");
+
+        sfdb.setState(folder1, user1, SharedFolderState.PENDING);
+        sfdb.setState(folder3, user2, SharedFolderState.LEFT);
+
+        List<SID> ordered1Ids = Lists.newArrayList(folder2, folder3);
+        List<SID> ordered2Ids = Lists.newArrayList(folder1, folder2);
+        Collection<SID> result1 = udb.getJoinedSharedFolders(user1, null, null, null);
+        Collection<SID> result2 = udb.getJoinedSharedFolders(user2, null, null, null);
+
+        Assert.assertArrayEquals(ordered1Ids.toArray(), result1.toArray());
+        Assert.assertArrayEquals(ordered2Ids.toArray(), result2.toArray());
+
+    }
+
+    @Test
+    public void getLeftSharedFolders_shouldListOnlyLeftFolders() throws Exception
+    {
+        //Create some shared folders and change their names
+        SID folder1 = addSharedFolder(user1, user2, "alpha");
+        SID folder2 = addSharedFolder(user1, user2, "beta");
+        SID folder3 = addSharedFolder(user1, user2, "gamma");
+
+        sfdb.setState(folder1, user1, SharedFolderState.PENDING);
+        sfdb.setState(folder3, user2, SharedFolderState.LEFT);
+
+        List<SID> ordered1Ids = Lists.newArrayList();
+        List<SID> ordered2Ids = Lists.newArrayList(folder3);
+        Collection<SID> result1 = udb.getLeftSharedFolders(user1);
+        Collection<SID> result2 = udb.getLeftSharedFolders(user2);
+
+        Assert.assertArrayEquals(ordered1Ids.toArray(), result1.toArray());
+        Assert.assertArrayEquals(ordered2Ids.toArray(), result2.toArray());
+
+    }
+
+    @Test
+    public void getLeftSharedFolders_shouldListOnlyLeftFoldersAlphabeticaly() throws Exception
+    {
+        //Create some shared folders and change their names
+        SID folder1 = addSharedFolder(user1, user2, "alpha");
+        SID folder2 = addSharedFolder(user1, user2, "gamma");
+        SID folder3 = addSharedFolder(user1, user2, "beta");
+
+        sfdb.setState(folder1, user1, SharedFolderState.LEFT);
+        sfdb.setState(folder2, user1, SharedFolderState.LEFT);
+        sfdb.setState(folder2, user2, SharedFolderState.LEFT);
+        sfdb.setState(folder3, user2, SharedFolderState.LEFT);
+
+        List<SID> ordered1Ids = Lists.newArrayList(folder1, folder2);
+        List<SID> ordered2Ids = Lists.newArrayList(folder3, folder2);
+        Collection<SID> result1 = udb.getLeftSharedFolders(user1);
+        Collection<SID> result2 = udb.getLeftSharedFolders(user2);
+
+        Assert.assertArrayEquals(ordered1Ids.toArray(), result1.toArray());
+        Assert.assertArrayEquals(ordered2Ids.toArray(), result2.toArray());
+
+    }
 
     private SID addSharedFolder(UserID sharer, UserID sharee, String name) throws Exception
     {

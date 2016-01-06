@@ -645,14 +645,14 @@ public class SPService implements ISPService
     }
 
 
-    public  ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID)
+    public  ListenableFuture<ListSharedFoldersReply> listUserJoinedSharedFolders(String userID)
             throws Exception
     {
-        return listUserSharedFolders(userID, null, null, null);
+        return listUserJoinedSharedFolders(userID, null, null, null);
     }
 
     @Override
-    public ListenableFuture<ListSharedFoldersReply> listUserSharedFolders(String userID,
+    public ListenableFuture<ListSharedFoldersReply> listUserJoinedSharedFolders(String userID,
           Integer maxResults, Integer offset, String searchPrefix)
             throws Exception
     {
@@ -662,9 +662,9 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         checkUserIsOrAdministers(requester, user);
 
-        int sharedFolderCount = searchPrefix != null ? user.countSharedFoldersWithPrefix(searchPrefix): user.countSharedFolders();
+        int sharedFolderCount = searchPrefix != null ? user.countJoinedSharedFoldersWithPrefix(searchPrefix): user.countJoinedSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(user.getSharedFolders(maxResults, offset, searchPrefix),
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getJoinedSharedFolders(maxResults, offset, searchPrefix),
                 requester.getOrganization(), user);
 
         _sqlTrans.commit();
@@ -674,6 +674,28 @@ public class SPService implements ISPService
                 .setTotalCount(sharedFolderCount)
                 .build());
     }
+
+    @Override
+    public ListenableFuture<ListSharedFoldersReply> listUserLeftSharedFolders(String userID)
+            throws Exception
+    {
+        _sqlTrans.begin();
+
+        User requester = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
+        User user = _factUser.createFromExternalID(userID);
+        checkUserIsOrAdministers(requester, user);
+
+
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getLeftSharedFolders(),
+                requester.getOrganization(), user);
+
+        _sqlTrans.commit();
+
+        return createReply(ListSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(pbs)
+                .build());
+    }
+
 
     @Override
     public ListenableFuture<ListUserDevicesReply> listUserDevices(String userID)

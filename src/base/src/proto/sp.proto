@@ -347,7 +347,7 @@ service SPService {
     // Throws: ExEmptyEmailAddress if the user id is empty
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 
-    // Get list of folders being shared by users in organization. See also: ListUserSharedFolders
+    // Get list of folders being shared by users in organization. See also: ListUserJoinedSharedFolders
     //
     // Required Auth Level: admin
     rpc ListOrganizationSharedFolders(ListOrganizationSharedFoldersCall)
@@ -363,7 +363,19 @@ service SPService {
     //
     // Throws:
     //   ExNoPerm       if the user calling this does not have enough privileges (see above)
-    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListSharedFoldersReply);
+    rpc ListUserJoinedSharedFolders(ListUserJoinedSharedFoldersCall) returns(ListSharedFoldersReply);
+
+    // Get list of folders being shared by a specified user that the user has left. If the specified user is not the
+    // current user, the current user must be the admin of the organization the specified user
+    // belongs to.
+    //
+    // See also: ListOrganizationSharedFolders
+    //
+    // Required Auth Level: user or admin (see above)
+    //
+    // Throws:
+    //   ExNoPerm       if the user calling this does not have enough privileges (see above)
+    rpc ListUserLeftSharedFolders(ListUserLeftSharedFoldersCall) returns(ListSharedFoldersReply);
 
     // Gets a list of organizations the user has been invited to, excluding their current
     // organization.
@@ -576,7 +588,7 @@ service SPService {
     // The returned shared folders will match the input store IDs by the indices in the list.
     // Alternatively, the client can also inspect the store ID of the returned folders.
     //
-    // See Also: ListUserSharedFolders, ListOrganizationSharedFolders
+    // See Also: ListUserJoinedSharedFolders, ListOrganizationSharedFolders
     //
     // Required Auth Level: user (see above)
     //
@@ -1251,7 +1263,7 @@ message ListOrganizationSharedFoldersReply {
     required uint32 total_count = 2;
 }
 
-message ListUserSharedFoldersCall {
+message ListUserJoinedSharedFoldersCall {
     required string user_id = 1;
 
     // Maximum number of folders returned.
@@ -1670,4 +1682,8 @@ message SearchOrganizationUsersReply {
 message SetUrlRequireLoginCall {
     required string key = 1;
     required bool require_login = 2;
+}
+
+message ListUserLeftSharedFoldersCall {
+    required string user_id = 1;
 }

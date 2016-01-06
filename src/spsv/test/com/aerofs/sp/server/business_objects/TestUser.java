@@ -168,16 +168,16 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void countSharedFolders_shouldCountUserSharedFolders()
+    public void countJoinedSharedFolders_shouldCountUserSharedFolders()
             throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
         User user3 = saveUser();
 
-        assertEquals(0, user1.countSharedFolders());
-        assertEquals(0, user2.countSharedFolders());
-        assertEquals(0, user3.countSharedFolders());
+        assertEquals(0, user1.countJoinedSharedFolders());
+        assertEquals(0, user2.countJoinedSharedFolders());
+        assertEquals(0, user3.countJoinedSharedFolders());
 
         // Add 5 shared folders.
         addSharedFolder(user1, Arrays.asList(user2), "Test Folder", SharedFolderState.JOINED);
@@ -186,50 +186,50 @@ public class TestUser extends AbstractBusinessObjectTest
         addSharedFolder(user1, Arrays.asList(user3), "1Sf", SharedFolderState.JOINED);
         addSharedFolder(user1, Arrays.asList(user3), "sf", SharedFolderState.JOINED);
 
-        assertEquals(5, user1.countSharedFolders());
-        assertEquals(2, user2.countSharedFolders());
-        assertEquals(3, user3.countSharedFolders());
+        assertEquals(5, user1.countJoinedSharedFolders());
+        assertEquals(2, user2.countJoinedSharedFolders());
+        assertEquals(3, user3.countJoinedSharedFolders());
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
             throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
         User user3 = saveUser();
 
-        assertEquals(0, user1.countSharedFolders());
-        assertEquals(0, user2.countSharedFolders());
-        assertEquals(0, user3.countSharedFolders());
+        assertEquals(0, user1.countJoinedSharedFolders());
+        assertEquals(0, user2.countJoinedSharedFolders());
+        assertEquals(0, user3.countJoinedSharedFolders());
 
         createSharedFolders(user1, user2);
         createSharedFolders(user1, user3);
 
-        assertEquals(4, user1.countSharedFoldersWithPrefix("tes"));
-        assertEquals(0, user2.countSharedFoldersWithPrefix("a"));
-        assertEquals(1, user3.countSharedFoldersWithPrefix("s"));
+        assertEquals(4, user1.countJoinedSharedFoldersWithPrefix("tes"));
+        assertEquals(0, user2.countJoinedSharedFoldersWithPrefix("a"));
+        assertEquals(1, user3.countJoinedSharedFoldersWithPrefix("s"));
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
             throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
 
-        assertEquals(0, user1.countSharedFolders());
-        assertEquals(0, user2.countSharedFolders());
+        assertEquals(0, user1.countJoinedSharedFolders());
+        assertEquals(0, user2.countJoinedSharedFolders());
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, user1.countSharedFoldersWithPrefix("tes"));
-        assertEquals(5, user1.countSharedFoldersWithPrefix(null));
-        assertEquals(5, user2.countSharedFoldersWithPrefix(null));
+        assertEquals(2, user1.countJoinedSharedFoldersWithPrefix("tes"));
+        assertEquals(5, user1.countJoinedSharedFoldersWithPrefix(null));
+        assertEquals(5, user2.countJoinedSharedFoldersWithPrefix(null));
     }
 
     @Test
-    public void getSharedFolders_shouldListInAlphabeticalOrder() throws Exception
+    public void getJoinedSharedFolders_shouldListInAlphabeticalOrder() throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
@@ -239,7 +239,7 @@ public class TestUser extends AbstractBusinessObjectTest
         List<String> orderedNames =
                 Lists.newArrayList("1Sf", "1sf", "sf", "Test Folder", "test Folder");
         List<String> resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders()) {
+        for (SharedFolder sf : user1.getJoinedSharedFolders()) {
             resultNames.add(sf.getName(user1));
         }
 
@@ -247,7 +247,7 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffset() throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
@@ -257,7 +257,7 @@ public class TestUser extends AbstractBusinessObjectTest
         //Page 1
         List<String> orderedNames = Lists.newArrayList("1Sf", "1sf", "sf");
         List<String> resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders(3, 0, null)) {
+        for (SharedFolder sf : user1.getJoinedSharedFolders(3, 0, null)) {
             resultNames.add(sf.getName(user1));
         }
 
@@ -266,7 +266,7 @@ public class TestUser extends AbstractBusinessObjectTest
         //Page 2
         orderedNames = Lists.newArrayList("Test Folder","test Folder");
         resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders(3, 3, null)) {
+        for (SharedFolder sf : user1.getJoinedSharedFolders(3, 3, null)) {
             resultNames.add(sf.getName(user1));
         }
 
@@ -274,7 +274,7 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void getSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
@@ -284,7 +284,7 @@ public class TestUser extends AbstractBusinessObjectTest
         //Page 1
         List<String> orderedNames = Lists.newArrayList("1Sf");
         List<String> resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders(1, 0, "1")) {
+        for (SharedFolder sf : user1.getJoinedSharedFolders(1, 0, "1")) {
             resultNames.add(sf.getName(user1));
         }
 
@@ -293,14 +293,14 @@ public class TestUser extends AbstractBusinessObjectTest
         //Page 2
         orderedNames = Lists.newArrayList("1sf");
         resultNames = Lists.newArrayList();
-        for (SharedFolder sf : user1.getSharedFolders(1, 1, "1")) {
+        for (SharedFolder sf : user1.getJoinedSharedFolders(1, 1, "1")) {
             resultNames.add(sf.getName(user1));
         }
 
         Assert.assertArrayEquals(orderedNames.toArray(), resultNames.toArray());
 
         //No Matches
-        Assert.assertArrayEquals(new String[0], user1.getSharedFolders(10, 0, "zzz").toArray());
+        Assert.assertArrayEquals(new String[0], user1.getJoinedSharedFolders(10, 0, "zzz").toArray());
     }
 
     private void createSharedFolders(User user1, User user2)

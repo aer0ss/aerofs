@@ -23,7 +23,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
+public class TestSP_ListUserLeftSharedFolders extends AbstractSPFolderTest
 {
     @Test
     public void shouldThrowExNoPermIfNonAdminQueriesOtherUsers()
@@ -49,7 +49,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         setSession(user1);
 
         try {
-            service.listUserSharedFolders(user2.id().getString());
+            service.listUserLeftSharedFolders(user2.id().getString());
             fail();
         } catch (ExNoPerm ignored) {
             // expected
@@ -61,7 +61,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSession(USER_1);
-        service.listUserSharedFolders("non-existing");
+        service.listUserLeftSharedFolders("non-existing");
     }
 
     @Test(expected = ExNoPerm.class)
@@ -69,7 +69,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
             throws Exception
     {
         setSession(USER_1);
-        service.listUserSharedFolders("non-existing");
+        service.listUserLeftSharedFolders("non-existing");
     }
 
     @Test
@@ -90,7 +90,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
 
         setSession(user1);
         try {
-            service.listUserSharedFolders(user2.id().getString());
+            service.listUserLeftSharedFolders(user2.id().getString());
             fail();
         } catch (ExNoPerm ignored) {
             // expected
@@ -101,9 +101,9 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldNotListRootStores()
             throws Exception
     {
-        createSharedFolders();
+        createLeftFolders();
 
-        for (PBSharedFolder sf : queryCurrentAndOtherUsers()) {
+        for (PBSharedFolder sf : getLeftFoldersForAllUsers()) {
             assertFalse(new SID(BaseUtil.fromPB(sf.getStoreId())).isUserRoot());
         }
     }
@@ -112,9 +112,9 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldNotListTeamServers()
             throws Exception
     {
-        createSharedFolders();
+        createLeftFolders();
 
-        for (PBSharedFolder sf : queryCurrentAndOtherUsers()) {
+        for (PBSharedFolder sf : getLeftFoldersForAllUsers()) {
             for (PBUserPermissionsAndState urs : sf.getUserPermissionsAndStateList()) {
                 assertFalse(UserID.fromInternal(urs.getUser().getUserEmail()).isTeamServerID());
             }
@@ -125,68 +125,12 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
     public void shouldOnlyListSharedFoldersOfSpecifiedUser()
             throws Exception
     {
-        createSharedFolders();
-        assertAllSharedFoldersHaveUser(queryOtherUser(), USER_2);
-        assertAllSharedFoldersHaveUser(queryCurrentUser(), USER_1);
+        createLeftFolders();
+        assertAllLeftFoldersHaveUser(getLeftFoldersForUser2(), USER_2);
     }
 
     @Test
-    public void shouldReturnPagedResultWithLimitAndOffset()
-            throws Exception
-    {
-        createSharedFolders();
-        setSession(USER_2);
-        String user2Id = USER_2.id().getString(); //Has two shared folders
-
-
-        List<PBSharedFolder> matches = service
-                .listUserSharedFolders(user2Id, 1, 0, null)
-                .get()
-                .getSharedFolderList();
-
-        assertEquals(1, matches.size());
-        String firstMatch = matches.get(0).getName();
-
-        matches = service
-                .listUserSharedFolders(user2Id, 1, 1, null)
-                .get()
-                .getSharedFolderList();
-
-        assertEquals(1, matches.size());
-        String secondMatch = matches.get(0).getName();
-
-        //Make sure we get a different folder with offset
-        assertFalse(firstMatch == secondMatch);
-
-    }
-
-    @Test
-    public void shouldListSharedFoldersWithPrefix()
-            throws Exception
-    {
-        createSharedFolders();
-        setSession(USER_2);
-        String folderName =  SID_2.toStringFormal();
-        String user2Id = USER_2.id().getString();
-
-        List<PBSharedFolder> allFolders = service
-                .listUserSharedFolders(user2Id, 100, 0, null)
-                .get()
-                .getSharedFolderList();
-
-        assertEquals(2, allFolders.size());
-
-        List<PBSharedFolder> matches = service
-                .listUserSharedFolders(user2Id, 100, 0, folderName.substring(0, folderName.length() - 2))
-                .get()
-                .getSharedFolderList();
-
-        assertEquals(1, matches.size());
-        assertEquals(folderName, matches.get(0).getName());
-    }
-
-    @Test
-    public void shouldListSharedFolderRegardlessOfStateOfSpecifiedUser()
+    public void shouldReturnLeftFoldersOnly()
             throws Exception
     {
         sqlTrans.begin();
@@ -194,17 +138,19 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         admin.setOrganization(USER_2.getOrganization(), AuthorizationLevel.ADMIN);
         sqlTrans.commit();
 
+        setSession(admin);
+
         SID joinedSID = SID.generate();
         shareAndJoinFolder(USER_1, joinedSID, USER_2, Permissions.allOf(Permission.WRITE));
+        assertEquals(0, getLeftFoldersForUser2().size());
 
         SID pendingSID = SID.generate();
         shareFolder(USER_1, pendingSID, USER_2, Permissions.allOf(Permission.WRITE));
+        assertEquals(0, getLeftFoldersForUser2().size());
 
-        SID leftSID = SID.generate();
-        shareAndJoinFolder(USER_1, leftSID, USER_2, Permissions.allOf(Permission.WRITE));
+        leaveSharedFolder(USER_2, joinedSID);
 
-        setSession(admin);
-        assertEquals(3, queryOtherUser().size());
+        assertEquals(1, getLeftFoldersForUser2().size());
     }
 
     @Test
@@ -232,7 +178,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         shareAndJoinFolder(user2, sid2, user3, Permissions.allOf(Permission.WRITE));
 
         setSession(otherAdmin);
-        for (PBSharedFolder sf : service.listUserSharedFolders(user2.id().getString())
+        for (PBSharedFolder sf : service.listUserLeftSharedFolders(user2.id().getString())
                 .get().getSharedFolderList()) {
             SID sid = new SID(BaseUtil.fromPB(sf.getStoreId()));
             if (sid1.equals(sid)) assertFalse(sf.getOwnedByTeam());
@@ -240,7 +186,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         }
     }
 
-    private void assertAllSharedFoldersHaveUser(Collection<PBSharedFolder> sfs, User user)
+    private void assertAllLeftFoldersHaveUser(Collection<PBSharedFolder> sfs, User user)
     {
         assertFalse(sfs.isEmpty());
 
@@ -255,11 +201,14 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         }
     }
 
-    private void createSharedFolders()
+    private void createLeftFolders()
             throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
         shareAndJoinFolder(USER_2, SID_2, USER_3, Permissions.allOf(Permission.WRITE));
+
+        leaveSharedFolder(USER_2, SID_1);
+        leaveSharedFolder(USER_3, SID_2);
 
         setSession(USER_1);
 
@@ -269,25 +218,25 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderTest
         sqlTrans.commit();
     }
 
-    private List<PBSharedFolder> queryOtherUser()
+    private List<PBSharedFolder> getLeftFoldersForUser2()
             throws Exception
     {
-        return service.listUserSharedFolders(USER_2.id().getString()).get().getSharedFolderList();
+        return service.listUserLeftSharedFolders(USER_2.id().getString()).get().getSharedFolderList();
     }
 
-    private List<PBSharedFolder> queryCurrentUser()
+    private List<PBSharedFolder> getLeftFoldersForUser1()
             throws Exception
     {
-        return service.listUserSharedFolders(USER_1.id().getString()).get().getSharedFolderList();
+        return service.listUserLeftSharedFolders(USER_1.id().getString()).get().getSharedFolderList();
     }
 
-    private List<PBSharedFolder> queryCurrentAndOtherUsers()
+    private List<PBSharedFolder> getLeftFoldersForAllUsers()
             throws Exception
     {
         List<PBSharedFolder> list = Lists.newArrayList();
         setSession(USER_1);
-        list.addAll(queryCurrentUser());
-        list.addAll(queryOtherUser());
+        list.addAll(getLeftFoldersForUser1());
+        list.addAll(getLeftFoldersForUser2());
         return list;
     }
 }

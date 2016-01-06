@@ -45,6 +45,7 @@ import static com.aerofs.sp.server.lib.SPSchema.V_SFV;
 import static com.aerofs.sp.server.lib.SPSchema.C_SFV_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_SFV_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SFV_SID;
+import static com.aerofs.sp.server.lib.SPSchema.C_SFV_STATE;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -513,15 +514,16 @@ public class UserDatabase extends AbstractSQLDatabase
 
     }
 
-    public int countSharedFolders(UserID userId)
+    public int countJoinedSharedFolders(UserID userId)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? ",
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? ",
                 "count(*)"))) {
 
             ps.setString(1, userId.getString());
+            ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
             try (ResultSet rs = ps.executeQuery()) {
                 return DBUtil.count(rs);
@@ -529,18 +531,19 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public int countSharedFoldersWithPrefix(UserID userId, String searchPrefix)
+    public int countJoinedSharedFoldersWithPrefix(UserID userId, String searchPrefix)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " + andNameLikePrefix(searchPrefix),
                 "count(*)"))) {
 
             ps.setString(1, userId.getString());
+            ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
             if (searchPrefix != null) {
-                ps.setString(2, searchPrefix + "%");
+                ps.setString(3, searchPrefix + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -550,21 +553,21 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * @return the shared folders for which the user has acls (this includes folders for which the
-     * user is PENDING or has LEFT)
+     * @return the shared folders for which the user has joined
      */
-    public Collection<SID> getSharedFolders(UserID userId, Integer maxResults,
+    public Collection<SID> getJoinedSharedFolders(UserID userId, Integer maxResults,
             Integer offset, String searchPrefix)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " + andNameLikePrefix(searchPrefix),
                 C_SFV_SID)
-                + "order by " + C_SFV_NAME +", binary(" + C_SFV_NAME + ") asc" + limitAndOffset(maxResults, offset))) {
+                + "order by " + C_SFV_NAME + ", binary(" + C_SFV_NAME + ") asc" + limitAndOffset(maxResults, offset))) {
 
             int index = 1;
             ps.setString(index++, userId.getString());
+            ps.setInt(index++, SharedFolderState.JOINED.ordinal());
 
             if (searchPrefix != null) {
                 ps.setString(index++, searchPrefix + '%');
@@ -574,6 +577,25 @@ public class UserDatabase extends AbstractSQLDatabase
                 ps.setInt(index++, maxResults);
                 ps.setInt(index++, offset);
             }
+
+            return executeGetFoldersQuery(ps);
+        }
+    }
+
+    /**
+     * @return the shared folders for which the user has left
+     */
+    public Collection<SID> getLeftSharedFolders(UserID userId)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
+                V_SFV,
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? ",
+                C_SFV_SID)
+                + "order by " + C_SFV_NAME + ", binary(" + C_SFV_NAME + ") asc")) {
+
+            ps.setString(1, userId.getString());
+            ps.setInt(2, SharedFolderState.LEFT.ordinal());
 
             return executeGetFoldersQuery(ps);
         }

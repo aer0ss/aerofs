@@ -489,7 +489,7 @@ public class User
         // delete ACLs
         ImmutableSet.Builder<UserID> affected = ImmutableSet.builder();
 
-        // N.B. remove the user from all groups first, so that the later getSharedFolders() call
+        // N.B. remove the user from all groups first, so that the later getJoinedSharedFolders() call
         // will only return sharedFolders we're in a part of irrespective of group memberships
         for (Group group : getGroups()) {
             affected.addAll(group.removeMember(this, newOwner));
@@ -676,28 +676,35 @@ public class User
         return getFoldersFromSIDs(sids);
     }
 
-    public int countSharedFolders()
+    public int countJoinedSharedFolders()
             throws SQLException
     {
-        return _f._udb.countSharedFolders(_id);
+        return _f._udb.countJoinedSharedFolders(_id);
     }
 
-    public int countSharedFoldersWithPrefix(String searchPrefix)
+    public int countJoinedSharedFoldersWithPrefix(String searchPrefix)
             throws SQLException
     {
-        return _f._udb.countSharedFoldersWithPrefix(_id, searchPrefix);
+        return _f._udb.countJoinedSharedFoldersWithPrefix(_id, searchPrefix);
     }
 
-    public Collection<SharedFolder> getSharedFolders()
+    public Collection<SharedFolder> getJoinedSharedFolders()
             throws SQLException
     {
-        return getSharedFolders(null, null, null);
+        return getJoinedSharedFolders(null, null, null);
     }
 
-    public Collection<SharedFolder> getSharedFolders(Integer maxResults, Integer offset, String searchPrefix)
+    public Collection<SharedFolder> getJoinedSharedFolders(Integer maxResults, Integer offset, String searchPrefix)
             throws SQLException
     {
-        Collection<SID> sids = _f._udb.getSharedFolders(_id, maxResults, offset, searchPrefix);
+        Collection<SID> sids = _f._udb.getJoinedSharedFolders(_id, maxResults, offset, searchPrefix);
+        return getFoldersFromSIDs(sids);
+    }
+
+    public Collection<SharedFolder> getLeftSharedFolders()
+            throws SQLException
+    {
+        Collection<SID> sids = _f._udb.getLeftSharedFolders(_id);
         return getFoldersFromSIDs(sids);
     }
 

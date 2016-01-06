@@ -93,7 +93,7 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
             throws Exception
     {
         setSession(user);
-        List<PBSharedFolder> folders = service.listUserSharedFolders(user.id().getString()).get()
+        List<PBSharedFolder> folders = service.listUserJoinedSharedFolders(user.id().getString()).get()
                 .getSharedFolderList();
 
         for (PBSharedFolder folder : folders) {

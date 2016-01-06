@@ -140,12 +140,33 @@ def json_get_user_shared_folders(request, is_me=False):
     # It's very weird that if we use get_rpc_stub instead of
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
-    reply = sp.list_user_shared_folders(specified_user, count, offset, substring)
-    folders = [f for f in reply.shared_folder if (not _is_pending(f, specified_user))]
-    return _sp_reply2json(folders,
-        privileger, authenticated_userid(request), request,
-        is_mine=is_me, specified_user=specified_user, total=reply.total_count, offset=offset)
 
+    # Splitting up the joined folders and the left folders
+    # this way we don't have to do the array manipulation on the client
+    # I like to think this paves the way to be able to pull left folders out
+    # from joined folders UI.
+    joined = sp.list_user_joined_shared_folders(specified_user, count, offset, substring)
+    left = sp.list_user_left_shared_folders(specified_user)
+    joined_folders = [f for f in joined.shared_folder]
+    left_folders = [f for f in left.shared_folder]
+
+    joined_reply = _sp_reply2json(joined_folders,
+        privileger, authenticated_userid(request), request,
+        is_mine=is_me, specified_user=specified_user, total=joined.total_count, offset=offset)
+
+    left_reply = _sp_reply2json(left_folders,
+        privileger, authenticated_userid(request), request,
+        is_mine=is_me, specified_user=specified_user)
+
+    return {
+        'data': {
+            'folders': joined_reply["data"],
+            'left_folders': left_reply["data"]
+        },
+        'me': joined_reply["me"],
+        'total': joined_reply["total"],
+        'offset': joined_reply["offset"]
+    }
 
 @view_config(
     route_name = 'json.get_org_shared_folders',
@@ -162,6 +183,7 @@ def json_get_org_shared_folders(request):
     # helper_functions.get_rpc_stub here, the unit test would fail.
     sp = util.get_rpc_stub(request)
     reply = sp.list_organization_shared_folders(count, offset, substring)
+    log.info("LEN: " + str(len(reply.shared_folder)))
     return _sp_reply2json(reply.shared_folder, _session_team_privileger,
         authenticated_userid(request), request, total=reply.total_count, offset=offset)
 
@@ -233,11 +255,13 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
         id = _encode_store_id(folder.store_id)
         reordered_owners_list = _jsonable_people(list(owners), session_user)
         reordered_members_list = _jsonable_people(list(members), session_user)
+        groups_list = _jsonable_groups(group_perms)
         data.append({
             'name': escape(folder.name),
             'owners': reordered_owners_list,
             'members': reordered_members_list,
-            'groups': _jsonable_groups(group_perms),
+            'groups':  groups_list,
+            'people':  reordered_owners_list + reordered_members_list + groups_list,
             'sid': escape(id),
             'is_privileged': 1 if privileger(folder, session_user) else 0,
             'is_member': is_mine,

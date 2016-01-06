@@ -10,14 +10,6 @@ shadowfaxControllers.controller('SharedFoldersController',
         $scope.dataUrl = dataUrl;
 
         var getData = function() {
-            // sometimes we have URL param args already, sometimes we don't
-            // need this to make sure the offset arg gets added correctly
-            var getDataUrl = function () {
-                if (dataUrl.indexOf("?") == -1 ){
-                    return dataUrl + "?"
-                }
-                return dataUrl
-            }
 
             var params = {
                 offset: $scope.paginationInfo.offset.toString()
@@ -56,21 +48,30 @@ shadowfaxControllers.controller('SharedFoldersController',
             }
         };
 
-        var setFolderData = function(folders) {
-            // reset folder data to empty
-            var folder;
-            $scope.folders = [];
-            $scope.leftFolders = [];
+        var setFolderData = function(data) {
 
-            for (var i=0; i < folders.length; i++) {
-                folder = folders[i];
-                folder.people = folder.owners.concat(folder.members).concat(folder.groups);
-                folder.spinnerID = i;
-                if (folder.is_left) {
-                    $scope.leftFolders.push(folder);
-                } else {
-                    $scope.folders.push(folder);
-                }
+            if (data.hasOwnProperty('folders')) {
+                // We are looking at user shared folders
+
+                // Joined Folders
+                $scope.folders = data.folders.map(function (folder, i) {
+                    folder.spinnerID = i;
+                    return folder;
+                });
+
+                // Left Folders
+                // We want each to have a unique spinnerID, so add the current index
+                // to the already existing joined list.
+                $scope.leftFolders = data.left_folders.map(function (folder, i) {
+                    folder.spinnerID = data.folders.length + i;
+                    return folder;
+                });
+            } else {
+                // We are looking at organization shared folders
+                $scope.folders = data.map(function (folder, i) {
+                    folder.spinnerID = i;
+                    return folder;
+                });
             }
         }
 
@@ -388,6 +389,7 @@ shadowfaxControllers.controller('SharedFoldersController',
             });
         };
 
+
         $scope.leave = function(folder) {
             var spinner = new Spinner(defaultSpinnerOptions).spin();
             $('#folder-' + folder.spinnerID.toString() +
@@ -401,13 +403,8 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }
             ).success(function() {
                 $log.info('You have left folder '+ folder.name);
-                for (var i = 0; i < $scope.folders.length; i++) {
-                    if ($scope.folders[i].sid === folder.sid){
-                        $scope.leftFolders.push($scope.folders[i]);
-                        $scope.folders.splice(i,1);
-                        break;
-                    }
-                }
+                getData();
+                spinner.stop();
             }).error(function(data, status){
                 showErrorMessageWith(data, status);
                 spinner.stop();
@@ -424,13 +421,7 @@ shadowfaxControllers.controller('SharedFoldersController',
                 }
             ).success(function(){
                 $log.info("You have rejoined folder " + folder.name);
-                for (var i = 0; i < $scope.leftFolders.length; i++) {
-                    if ($scope.leftFolders[i].sid === folder.sid){
-                        $scope.folders.push($scope.leftFolders[i]);
-                        $scope.leftFolders.splice(i,1);
-                        break;
-                    }
-                }
+                getData();
                 spinner.stop();
             }).error(function(data, status){
                 showErrorMessageWith(data, status);
@@ -471,13 +462,8 @@ shadowfaxControllers.controller('SharedFoldersController',
                         return folder;
                     },
                     deleteFolder: function() {
-                        return function(doomedFolder){
-                            for (var i = 0; i < $scope.folders.length; i++) {
-                                if ($scope.folders[i].sid === doomedFolder.sid){
-                                    $scope.folders.splice(i,1);
-                                    break;
-                                }
-                            }
+                        return function(){
+                            getData();
                         };
                     }
                 }
