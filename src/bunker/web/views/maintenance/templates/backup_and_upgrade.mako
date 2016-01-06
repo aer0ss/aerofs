@@ -89,7 +89,8 @@
     </p>
 </%modal:modal>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">backup-modal</%def>
     <p>
         Depending on your data size, backup might take some time...
     </p>
@@ -97,7 +98,7 @@
     ## the bottom of the modal.
     Please do not navigate away from this page.
     ## TODO (WW) add a browser alert when the user attempts to leave the page?
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -110,6 +111,12 @@
             disableEscapingFromModal($('div.modal'));
         });
 
+        $('#backup-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         ## @param onBackupDone: a callback when backup succeeds. Expected signature:
         ##          function onBackupDone(onSuccess, onFailure),
         ## where onSuccess and onFailure are the methods to be called when onBackupDone succeeds or
@@ -118,7 +125,7 @@
         ## When the backup is done, the system is in Maintenance Mode. It's onBackupDone()'s
         ## responsibility to exit the mode if necessary.
         function backup(onBackupDone) {
-            $('#${progress_modal.id()}').modal('show');
+            $('#backup-modal').modal('show');
             reboot('maintenance', function() {
                 performBackup(onBackupDone);
             }, failed);
@@ -179,7 +186,7 @@
         }
 
         function hideProgressModal() {
-            $('#${progress_modal.id()}').modal('hide');
+            $('#backup-modal').modal('hide');
         }
 
         function maintenanceExit(onSuccess, onFailure) {

@@ -39,14 +39,15 @@
     </button>
 </p>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">toggle-modal</%def>
     %if is_maintenance_mode:
         Exiting
     %else:
         Entering
     %endif
     maintenance mode...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%progress_modal:scripts/>
@@ -59,8 +60,14 @@
             initializeProgressModal();
         });
 
+        $('#toggle-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function enterOrExitMaintenance() {
-            $('#${progress_modal.id()}').modal('show');
+            $('#toggle-modal').modal('show');
 
             var target =
                 %if is_maintenance_mode:
@@ -73,7 +80,7 @@
                 ## reload the page to refresh the value of is_maintenance_mode.
                 location.reload();
             }, function(xhr) {
-                $('#${progress_modal.id()}').modal('hide');
+                $('#toggle-modal').modal('hide');
                 showErrorMessageFromResponse(xhr);
             });
         }

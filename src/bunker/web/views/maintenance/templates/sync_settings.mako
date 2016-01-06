@@ -46,9 +46,10 @@ clients.</p>
     </form>
 </%def>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">sync-modal</%def>
     Configuring your sync settings...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%modal:modal>
     <%def name="id()">disable-lan-sync-modal</%def>
@@ -75,8 +76,15 @@ clients.</p>
             initializeProgressModal();
         });
 
+        $('#sync-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
+
         function submitForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#sync-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_sync_settings')}",
@@ -89,7 +97,7 @@ clients.</p>
         }
 
         function restartServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#sync-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved. Your desktop clients will need to be restarted for this change to take effect.');

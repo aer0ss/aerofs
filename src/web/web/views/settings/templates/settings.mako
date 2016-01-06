@@ -174,9 +174,10 @@
     </%def>
 </%modal:modal>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">settings-modal</%def>
     Please wait while we apply changes...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%progress_modal:scripts/>
@@ -192,7 +193,7 @@
             };
 
             var createAccessToken = function() {
-                var $progressModal = $('#${progress_modal.id()}');
+                var $progressModal = $('#settings-modal');
                 $progressModal.modal('show');
                 var always = function() {
                     $progressModal.modal('hide');
@@ -211,7 +212,7 @@
             };
 
             var deleteAccessToken = function() {
-                var $progressModal = $('#${progress_modal.id()}');
+                var $progressModal = $('#settings-modal');
                 $progressModal.modal('show');
                 var always = function() {
                     $progressModal.modal('hide');
@@ -299,6 +300,11 @@
             $('#delete-account-confirmed').on('click', deleteAccount);
         });
 
+        $('#settings-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
 
         function showAdvancedSettingsOptions() {
             $('#advanced-settings-options').show();

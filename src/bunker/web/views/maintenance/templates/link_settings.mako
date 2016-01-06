@@ -55,18 +55,29 @@
     </form>
 </div>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">link-modal</%def>
     Applying changes...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
     <%spinner:scripts/>
     <%progress_modal:scripts/>
     <script>
+       $(document).ready(function() {
+            initializeProgressModal();
+        });
+
+        $('#link-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function setRequireLogin() {
             // Set up modal
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#link-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_require_login')}",

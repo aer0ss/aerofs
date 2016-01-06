@@ -13,10 +13,11 @@
     ${common.render_finish_prev_buttons()}
 </form>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">repackage-modal</%def>
     <span id="be-patient-text">Please wait while the system customizes your
     desktop client installers...</span>
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <div id="success-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -64,9 +65,15 @@
             disableEscapingFromModal($('div.modal'));
         });
 
+        $('#repackage-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function resume() {
             ${common.trackInitialTrialSetup('Wait for services')}
-            $('#${progress_modal.id()}').modal('show');
+            $('#repackage-modal').modal('show');
             waitForServicesReady();
         }
 

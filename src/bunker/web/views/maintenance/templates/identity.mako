@@ -564,9 +564,10 @@
     </%def>
 </%modal:modal>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">identity-modal</%def>
     Please wait while we apply changes...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -596,6 +597,12 @@
             utcoffset.setAttribute("name", "utc_offset");
             utcoffset.setAttribute("value", getTimezoneOffset());
             document.getElementById("identity-form").appendChild(utcoffset);
+        });
+
+        $('#identity-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
         });
 
         function localSelected() {
@@ -639,7 +646,7 @@
         }
 
         function submitForm() {
-            var $progressModal = $('#${progress_modal.id()}');
+            var $progressModal = $('#identity-modal');
             $progressModal.modal('show');
             var always = function() {
                 $progressModal.modal('hide');
@@ -654,7 +661,7 @@
         }
 
         function submitSignupForm() {
-            var $progressModal = $('#${progress_modal.id()}');
+            var $progressModal = $('#identity-modal');
             $progressModal.modal('show');
             var always = function() {
                 $progressModal.modal('hide');

@@ -4,9 +4,10 @@
 <%namespace name="bootstrap" file="bootstrap.mako"/>
 
 <%def name="html()">
-    <%progress_modal:html>
+    <%progress_modal:progress_modal>
+        <%def name="id()">logs-modal</%def>
         Compressing appliance logs. This process might take some time.
-    </%progress_modal:html>
+    </%progress_modal:progress_modal>
 </%def>
 
 <%def name="submit_logs_text(open_link_in_new_window)">
@@ -32,8 +33,14 @@
             initializeProgressModal();
         });
 
+        $('#logs-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function archiveAndDownloadLogs() {
-            $('#${progress_modal.id()}').modal('show');
+            $('#logs-modal').modal('show');
             $.post('${request.route_path("json-archive-container-logs")}')
                 .done(downloadLogs)
                 .fail(function(xhr) {
@@ -53,7 +60,7 @@
         }
 
         function hideProgressModal() {
-            $('#${progress_modal.id()}').modal('hide');
+            $('#logs-modal').modal('hide');
         }
     </script>
 </%def>

@@ -46,10 +46,11 @@
     </div>
 </form>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">create-modal</%def>
     <p>The system is restoring from the backup file...</p>
     Depending on the backup file size, this may take a while.
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%modal:modal>
     <%def name="id()">backup-success-modal</%def>
@@ -74,6 +75,12 @@
             $('#backup-file').change(onBackupFileChange);
         });
 
+        $('#create-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function onBackupFileChange() {
             var hasFile = $('#backup-file').val() != "";
             ## Do nothing if the user doesn't provide a valid file.
@@ -82,7 +89,7 @@
 
         function uploadAndRestoreFromBackup() {
             console.log("upload backup file");
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#create-modal');
             $progress.modal('show');
 
             $.ajax({
@@ -121,7 +128,7 @@
                     } else {
                         console.log('restore failed');
                         window.clearInterval(interval);
-                        $('#${progress_modal.id()}').modal('hide');
+                        $('#create-modal').modal('hide');
                         showLogPromptWithMessageUnsafe("Restore failed.");
                     }
                 }).fail(failed);
@@ -135,7 +142,7 @@
         }
 
         function restoreFromBackupDone() {
-            $('#${progress_modal.id()}').modal('hide');
+            $('#create-modal').modal('hide');
             $('#backup-success-modal').modal('show');
             $('#backup-success-ok').off().click(function() {
                 ## Backup is done. Submit the form.
@@ -148,7 +155,7 @@
 
         function failed(xhr) {
             showAndTrackErrorMessageFromResponse(xhr);
-            $('#${progress_modal.id()}').modal('hide');
+            $('#create-modal').modal('hide');
         }
     </script>
 </%def>

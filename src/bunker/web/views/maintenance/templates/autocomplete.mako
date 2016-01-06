@@ -33,6 +33,10 @@
     </div>
 </form>
 
+<%progress_modal:progress_modal>
+    <%def name="id()">auto-modal</%def>
+</%progress_modal:progress_modal>
+
 <%block name="scripts">
     ## spinner support is required by progress_modal
     <%progress_modal:scripts/>
@@ -40,9 +44,19 @@
     <%bootstrap:scripts/>
 
     <script>
+        $(document).ready(function() {
+            initializeProgressModal();
+        });
+
+        $('#auto-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function submitForm(form) {
             console.log("upload backup file");
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#auto-modal');
             $progress.modal('show');
 
             $.ajax({

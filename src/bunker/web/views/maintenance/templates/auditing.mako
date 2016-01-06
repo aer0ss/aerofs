@@ -107,9 +107,10 @@
     </form>
 </%def>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">audit-modal</%def>
     Configuring the auditing system...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -120,8 +121,14 @@
             initializeProgressModal();
         });
 
+        $('#audit-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function submitForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#audit-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_auditing')}",
@@ -134,7 +141,7 @@
         }
 
         function restartServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#audit-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');

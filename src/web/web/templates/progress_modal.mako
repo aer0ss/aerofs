@@ -1,55 +1,44 @@
 ## The modal with a spinner. Usage:
+## Utility function to create progress modals
 ##
-##      <%namespace name="spinner" file="spinner.mako"/>
-##      <%namespace name="progress_modal" file="progress_modal.mako"/>
-##
-##      <%progress_modal:html>
-##          Doing something...
-##      </%progress_modal:html>
-##
-##      <%progress_modal:scripts/>
-##
-##      ########
-##      ## N.B. spinner support is required by progress_modal
-##      ########
-##      <%spinner:scripts/>
-##
-##      <script>
-##          $(document).ready(function() {
-##              initializeProgressModal();
-##          });
-##          function start() {
-##              $('#${progress_modal.id()}').modal('show');
-##          }
-##      </script>
-##
-## If the modal contains multiple lines, don't use <p> for the last line:
-##
-##      <%progress_modal:html>
-##          <p>Please wait while blah...</p>
-##          ## Don't use <p> to wrap the following line to avoid an ugly, big padding
-##          ## between the line and the bottom of the modal.
-##          Blah Blah.
-##      </%progress_modal:html>
-##
-## N.B. there can be at most one progress modal on each HTML page because of ID
-## conflicts.
-##
+## caller.id(): the id of the modal
+## caller.title(), body(), footer(): modal title (optional), body, and footer (optional)
+## Optionally define caller.error() to return true for modals that indicate errors.
+## Optionally define caller.success() to return true for modals that indicate success.
+## Optionally define caller.no_close() to hide the close button in the header (the X).
 
-<%def name="id()">progress-modal</%def>
-
-<%def name="html()">
-    <div id="${id()}" class="modal" tabindex="-1" role="dialog"
+<%def name="progress_modal()">
+    <div id="${caller.id()}" class="modal" tabindex="-1" role="dialog"
             style="top: 200px">
         <div class="modal-dialog">
             <div class="modal-content">
+                %if hasattr(caller, "title"):
+                    <div class="modal-header">
+                        %if not hasattr(caller, "no_close"):
+                            <button type="button" class="close" data-dismiss="modal">×</button>
+                        %endif
+
+                        <h4
+                        %if hasattr(caller, "error"):
+                            class="text-error"
+                        %elif hasattr(caller, "success"):
+                            class="text-success"
+                        %endif
+                        >${caller.title()}</h4>
+                    </div>
+                %endif
                 <div class="modal-body">
-                    <div id="progress-modal-spinner" class="pull-left"
+                    <div class="progress-modal-spinner pull-left"
                           style="margin-right: 28px; padding-top: -10px">&nbsp;</div>
                     <div>
                         ${caller.body()}
                     </div>
                 </div>
+                %if hasattr(caller, "footer"):
+                    <div class="modal-footer">
+                        ${caller.footer()}
+                    </div>
+                %endif
             </div>
         </div>
     </div>
@@ -58,11 +47,9 @@
 <%def name="scripts()">
     <script>
         function initializeProgressModal() {
-            initializeSpinners();
-            var $spinner = $('#progress-modal-spinner');
 
-            var $modal = $('#${id()}');
-            disableEscapingFromModal($modal);
+            initializeSpinners();
+            var $spinner = $('.progress-modal-spinner');
             startSpinner($spinner, 0);
         }
     </script>

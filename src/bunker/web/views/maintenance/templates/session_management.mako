@@ -40,9 +40,10 @@
 
 </%def>
 
-<%progress_modal:html>
-Configuring the session setting...
-</%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">session-modal</%def>
+    Configuring the session setting...
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
 <%loader:scripts/>
@@ -53,8 +54,14 @@ Configuring the session setting...
             initializeProgressModal();
         });
 
+        $('#session-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function submitForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#session-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('session_management')}",
@@ -67,7 +74,7 @@ Configuring the session setting...
         }
 
         function restartServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#session-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');

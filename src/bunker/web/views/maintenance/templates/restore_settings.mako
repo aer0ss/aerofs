@@ -43,9 +43,10 @@
     </div>
 </form>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">restore-modal</%def>
     The system is syncing settings from the backup file...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     ## spinner support is required by progress_modal
@@ -58,6 +59,12 @@
             initializeProgressModal();
             populateModificationTime("${modification_time}");
             $('#backup-file').change(onBackupFileChange);
+        });
+
+        $('#restore-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
         });
 
         function populateModificationTime(isoformatUTC) {
@@ -81,7 +88,7 @@
 
         function uploadAndRestoreFromBackup() {
             console.log("upload backup file");
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#restore-modal');
             $progress.modal('show');
 
             $.ajax({
@@ -100,7 +107,7 @@
         }
 
         function updateFromBackup() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#restore-modal');
             runBootstrapTask('update-properties-from-backup', function() {
                 showSuccessMessage("Successfully updated properties");
                 $progress.modal('hide');

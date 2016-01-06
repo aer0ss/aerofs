@@ -178,9 +178,10 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
     </form>
 </%def>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">device-modal</%def>
     Applying changes...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -192,8 +193,15 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
             optionsUpdated();
         });
 
+        $('#device-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
+
         function submitDeviceForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#device-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_device_authorization')}",
@@ -206,7 +214,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
         }
 
         function submitMDMForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#device-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_mobile_device_management')}",
@@ -219,7 +227,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
         }
 
         function restartDeviceServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#device-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');
@@ -245,7 +253,7 @@ Management (MDM) proxy. This will prevent mobile app setup on non-MDM-managed de
         }
 
         function restartMDMServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#device-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');

@@ -82,9 +82,10 @@ to your organization.</p>
     </form>
 </%def>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">customize-modal</%def>
     Configuring your customization...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -96,11 +97,17 @@ to your organization.</p>
             linkFileSelectorToField_base64('#white-label-logo-selector', '#white-label-logo');
         });
 
+        $('#customize-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         $("#white-label-logo-selector").change(function(){
             document.getElementById("custom-logo").checked = true;
         });
         function submitForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#customize-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('customization')}",
@@ -113,7 +120,7 @@ to your organization.</p>
         }
 
         function restartServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#customize-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');

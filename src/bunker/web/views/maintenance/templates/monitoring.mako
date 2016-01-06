@@ -74,9 +74,10 @@ given below.</p>
     </%def>
 </%modal:modal>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">monitoring-modal</%def>
     Please wait while we apply changes...
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%progress_modal:scripts/>
@@ -87,6 +88,12 @@ given below.</p>
     <script>
         $(document).ready(function() {
             initializeProgressModal();
+        });
+
+        $('#monitoring-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
         });
 
         ## Pop up a confirm modal, when click through then generate a credential
@@ -105,7 +112,7 @@ given below.</p>
         }
 
         function post() {
-            var $progressModal = $('#${progress_modal.id()}');
+            var $progressModal = $('#monitoring-modal');
             $progressModal.modal('show');
             var always = function() {
                 $progressModal.modal('hide');

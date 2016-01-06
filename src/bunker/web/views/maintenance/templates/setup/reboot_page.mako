@@ -13,9 +13,10 @@
     ${common.render_next_prev_buttons()}
 </form>
 
-<%progress_modal:html>
+<%progress_modal:progress_modal>
+    <%def name="id()">reboot-modal</%def>
     <span>Please wait while the system reboots...</span>
-</%progress_modal:html>
+</%progress_modal:progress_modal>
 
 <div id="success-modal" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
@@ -46,9 +47,15 @@
             disableEscapingFromModal($('div.modal'));
         });
 
+        $('#reboot-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
+
         function apply() {
             ${common.trackInitialTrialSetup('Clicked Apply Button')}
-            $('#${progress_modal.id()}').modal('show');
+            $('#reboot-modal').modal('show');
             reboot('default', conclude, onFailure);
         }
 

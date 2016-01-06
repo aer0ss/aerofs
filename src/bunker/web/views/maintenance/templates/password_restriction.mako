@@ -106,9 +106,10 @@
 
 <br/>
 
-<%progress_modal:html>
-    Applying changes...
-</%progress_modal:html>
+<%progress_modal:progress_modal>
+  <%def name="id()">pwd-modal</%def>
+  Applying changes...
+</%progress_modal:progress_modal>
 
 <%block name="scripts">
     <%loader:scripts/>
@@ -118,6 +119,15 @@
 <script type='text/javascript' src="${request.static_path('web:static/js/bootstrap-slider.js')}"></script>
 
     <script>
+        $(document).ready(function() {
+            initializeProgressModal();
+        });
+
+        $('#pwd-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        });
 
         $("#expirationPeriodSlider").slider();
         $("#expirationPeriodSlider").on("change", function(ev) {
@@ -136,7 +146,7 @@
         });
 
         function submitPasswordRestrictionForm() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#pwd-modal');
             $progress.modal('show');
 
             $.post("${request.route_path('json_set_password_restriction')}",
@@ -149,7 +159,7 @@
         }
 
         function restartPasswordServices() {
-            var $progress = $('#${progress_modal.id()}');
+            var $progress = $('#pwd-modal');
             reboot('current', function() {
                 $progress.modal('hide');
                 showSuccessMessage('New configuration is saved.');
