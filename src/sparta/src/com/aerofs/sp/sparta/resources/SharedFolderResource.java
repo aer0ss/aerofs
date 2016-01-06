@@ -179,6 +179,8 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         checkArgument(share.name != null, "Request body missing required field: name");
+        requirePermission(Scope.WRITE_ACL, token);
+
         User caller = _factUser.create(token.user());
 
         SharedFolder sf;
@@ -279,6 +281,8 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         checkArgument(member.email != null, "Request body missing required field: email");
+        requirePermission(Scope.WRITE_ACL, token);
+
         User caller = validateAuth(token, Scope.WRITE_ACL, sf);
         User user;
         try {
@@ -457,6 +461,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     {
         User caller = validateAuth(token, Scope.WRITE_ACL, sf);
         checkArgument(groupMember.id != null, "Request body missing required field: id");
+        requirePermission(Scope.WRITE_ACL, token);
 
         Group group = _factGroup.create(GroupID.fromExternal(groupMember.id));
         if (!group.exists()) throw new ExNotFound("No such group");
@@ -644,7 +649,9 @@ public class SharedFolderResource extends AbstractSpartaResource
         checkArgument(invitee.email != null, "Request body missing required field: email");
         checkArgument(invitee.permissions != null, "Request body missing required field: permissions");
 
+        requirePermission(Scope.WRITE_ACL, token);
         requirePermissionOnFolder(Scope.WRITE_ACL, token, sf.id());
+
         User caller = _factUser.create(token.user());
         throwIfNotAMember(sf, caller, "No such shared folder");
         User user;
