@@ -25,7 +25,8 @@ def create_new_settings_token(request):
         'user.password',
         'acl.read',
         'acl.write',
-        'acl.invitations'
+        'acl.invitations',
+        'groups.read',
     ])
 
 
