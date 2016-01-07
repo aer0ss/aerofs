@@ -65,6 +65,8 @@ containers:
     image: aeroim/sloth
     run:
       detach: true
+      volume:
+        - /etc/ssl/certs:/etc/ssl/certs:ro
       volumes-from:
         - data
       link:

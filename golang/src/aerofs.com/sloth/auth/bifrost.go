@@ -51,7 +51,6 @@ type bifrostTokenVerifier struct {
 }
 
 func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
-	log.Printf("verify token: %v\n", token)
 	// check cache
 	uid, ok := v.cache.Get(token)
 	if ok {

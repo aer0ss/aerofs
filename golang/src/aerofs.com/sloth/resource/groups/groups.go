@@ -5,6 +5,8 @@ import (
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
+	"aerofs.com/sloth/lastOnline"
+	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
 	"database/sql"
 	"github.com/emicklei/go-restful"
@@ -12,8 +14,10 @@ import (
 )
 
 type context struct {
-	broadcaster broadcast.Broadcaster
-	db          *sql.DB
+	broadcaster     broadcast.Broadcaster
+	db              *sql.DB
+	lastOnlineTimes *lastOnline.Times
+	pushNotifier    *push.Notifier
 }
 
 //
@@ -23,13 +27,17 @@ type context struct {
 func BuildRoutes(
 	db *sql.DB,
 	broadcaster broadcast.Broadcaster,
+	lastOnlineTimes *lastOnline.Times,
+	pushNotifier *push.Notifier,
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
 
 ) *restful.WebService {
 	ctx := &context{
-		broadcaster: broadcaster,
-		db:          db,
+		broadcaster:     broadcaster,
+		db:              db,
+		lastOnlineTimes: lastOnlineTimes,
+		pushNotifier:    pushNotifier,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
@@ -421,6 +429,7 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 
 	tx := dao.BeginOrPanic(ctx.db)
 	group := dao.GetGroup(tx, gid)
+	callerUser := dao.GetUser(tx, caller, ctx.lastOnlineTimes)
 	if group == nil {
 		response.WriteHeader(404)
 		tx.Rollback()
@@ -444,6 +453,8 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 
 	response.WriteEntity(message)
 	broadcast.SendGroupMessageEvent(ctx.broadcaster, gid, group.Members)
+	pushRecipients := getPushRecipients(caller, group.Members, ctx.lastOnlineTimes)
+	go ctx.pushNotifier.NotifyNewMessage(callerUser, pushRecipients)
 }
 
 func (ctx *context) getReceipts(request *restful.Request, response *restful.Response) {
@@ -504,4 +515,17 @@ func (ctx *context) updateReceipt(request *restful.Request, response *restful.Re
 
 	response.WriteEntity(receipt)
 	broadcast.SendGroupMessageReadEvent(ctx.broadcaster, gid, group.Members)
+}
+
+func getPushRecipients(caller string, members []string, lastOnlineTimes *lastOnline.Times) []string {
+	rs := make([]string, 0)
+	for _, r := range members {
+		if r == caller {
+			continue
+		}
+		if lastOnlineTimes.IsOffline(r) {
+			rs = append(rs, r)
+		}
+	}
+	return rs
 }

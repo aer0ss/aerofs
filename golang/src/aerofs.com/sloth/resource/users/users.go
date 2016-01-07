@@ -6,6 +6,7 @@ import (
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
 	"aerofs.com/sloth/lastOnline"
+	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
 	"database/sql"
 	"fmt"
@@ -22,6 +23,7 @@ type context struct {
 	broadcaster     broadcast.Broadcaster
 	db              *sql.DB
 	lastOnlineTimes *lastOnline.Times
+	pushNotifier    *push.Notifier
 }
 
 //
@@ -32,6 +34,7 @@ func BuildRoutes(
 	db *sql.DB,
 	broadcaster broadcast.Broadcaster,
 	lastOnlineTimes *lastOnline.Times,
+	pushNotifier *push.Notifier,
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
 
@@ -40,6 +43,7 @@ func BuildRoutes(
 		broadcaster:     broadcaster,
 		db:              db,
 		lastOnlineTimes: lastOnlineTimes,
+		pushNotifier:    pushNotifier,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
@@ -329,6 +333,7 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
+	callerUser := dao.GetUser(tx, caller, ctx.lastOnlineTimes)
 	if !dao.UserExists(tx, uid) {
 		response.WriteHeader(404)
 		tx.Rollback()
@@ -345,6 +350,9 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 
 	response.WriteEntity(message)
 	broadcast.SendUserMessageEvent(ctx.broadcaster, caller, uid)
+	if ctx.lastOnlineTimes.IsOffline(uid) {
+		go ctx.pushNotifier.NotifyNewMessage(callerUser, []string{uid})
+	}
 }
 
 func (ctx *context) getAvatar(request *restful.Request, response *restful.Response) {

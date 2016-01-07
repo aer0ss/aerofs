@@ -6,6 +6,7 @@ import (
 )
 
 const BROADCAST_TIMEOUT_SECONDS = 30
+const OFFLINE_TIMEOUT_SECONDS = 30
 
 type Times struct {
 	m             map[string]time.Time
@@ -50,4 +51,9 @@ func (t *Times) Set(uid string) bool {
 		return true
 	}
 	return false
+}
+
+func (t *Times) IsOffline(uid string) bool {
+	elapsed := t.GetElapsed(uid, time.Now())
+	return elapsed == nil || *elapsed > OFFLINE_TIMEOUT_SECONDS
 }

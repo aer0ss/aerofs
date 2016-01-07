@@ -5,11 +5,14 @@ import (
 	"aerofs.com/service/mysql"
 	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
+	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
 	"aerofs.com/sloth/lastOnline"
+	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
 	"aerofs.com/sloth/resource/groups"
 	"aerofs.com/sloth/resource/keepalive"
+	pushResource "aerofs.com/sloth/resource/push"
 	"aerofs.com/sloth/resource/token"
 	"aerofs.com/sloth/resource/users"
 	"flag"
@@ -57,7 +60,11 @@ func main() {
 	portStr := ":" + strconv.Itoa(port)
 	restUrlStr := "http://" + host + portStr
 
-	// connect and run migrations
+	// connect to config
+	config, err := service.NewConfigClient("sloth").Get()
+	errors.PanicOnErr(err)
+
+	// connect to db and run migrations
 	dbDSN := fmt.Sprintf("root@tcp(%v:3306)/", dbHost)
 	dbParams := "charset=utf8mb4"
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
@@ -67,6 +74,19 @@ func main() {
 	tokenCache := auth.NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE)
 	lastOnlineTimes := lastOnline.New()
 	broadcaster := broadcast.NewBroadcaster()
+
+	// grab button config and initialize push notifier
+	buttonAuthUser, userOk := config["messaging.button.auth.user"]
+	buttonAuthPass, passOk := config["messaging.button.auth.pass"]
+	buttonBaseUrl, urlOk := config["messaging.button.url.base"]
+	if !userOk || !passOk || !urlOk {
+		panic("missing button config")
+	}
+	pushNotifier := &push.Notifier{
+		AuthUser: buttonAuthUser,
+		AuthPass: buttonAuthPass,
+		Url:      buttonBaseUrl,
+	}
 
 	// initialize token verifier
 	var tokenVerifier auth.TokenVerifier
@@ -81,25 +101,53 @@ func main() {
 	updateLastOnlineFilter := filters.UpdateLastOnline(lastOnlineTimes, broadcaster)
 
 	// REST routes
-	restful.Add(bots.BuildRoutes(db, broadcaster, checkUserFilter))
-	restful.Add(users.BuildRoutes(db, broadcaster, lastOnlineTimes, checkUserFilter, updateLastOnlineFilter))
-	restful.Add(groups.BuildRoutes(db, broadcaster, checkUserFilter, updateLastOnlineFilter))
-	restful.Add(keepalive.BuildRoutes(checkUserFilter, updateLastOnlineFilter))
-	restful.Add(token.BuildRoutes(tokenCache))
+	restful.Add(bots.BuildRoutes(
+		db,
+		broadcaster,
+		checkUserFilter,
+	))
+	restful.Add(users.BuildRoutes(
+		db,
+		broadcaster,
+		lastOnlineTimes,
+		pushNotifier,
+		checkUserFilter,
+		updateLastOnlineFilter,
+	))
+	restful.Add(groups.BuildRoutes(
+		db,
+		broadcaster,
+		lastOnlineTimes,
+		pushNotifier,
+		checkUserFilter,
+		updateLastOnlineFilter,
+	))
+	restful.Add(keepalive.BuildRoutes(
+		checkUserFilter,
+		updateLastOnlineFilter,
+	))
+	restful.Add(token.BuildRoutes(
+		tokenCache,
+	))
+	restful.Add(pushResource.BuildRoutes(
+		checkUserFilter,
+		updateLastOnlineFilter,
+		pushNotifier,
+	))
 
 	// COOOOOOOORRRRRRRRSSSSSSSSS
 	restful.Filter(filters.AddCORSHeaders)
 	restful.Filter(restful.OPTIONSFilter())
 
 	// Swagger API doc config
-	config := swagger.Config{
+	swaggerCfg := swagger.Config{
 		WebServices:     restful.DefaultContainer.RegisteredWebServices(),
 		WebServicesUrl:  restUrlStr,
 		ApiPath:         "/apidocs.json",
 		SwaggerPath:     "/apidocs/",
 		SwaggerFilePath: swaggerFilePath,
 	}
-	swagger.RegisterSwaggerService(config, restful.DefaultContainer)
+	swagger.RegisterSwaggerService(swaggerCfg, restful.DefaultContainer)
 
 	// listen for REST connections
 	log.Print("REST server listening on ", restUrlStr)
