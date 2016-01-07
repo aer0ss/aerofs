@@ -40,6 +40,14 @@
         {{ render_field(form.allow_device_restriction) }}
         {{ submit_button("Create license request") }}
     </form>
+    <p>&nbsp;</p>
+    <h3>Create HPC Deployment</h3>
+        <form role="form" class="form-horizontal" action="{{ url_for('internal.hpc_deployments') }}" method="post">
+        {{ hpc_form.hidden_tag() }}
+        {{ render_field(hpc_form.customer_id, with_label=False, hidden=True) }}
+        {{ render_field(hpc_form.subdomain) }}
+        {{ submit_button("Create") }}
+    </form>
 {% endblock %}
 
 {% block scripts %}

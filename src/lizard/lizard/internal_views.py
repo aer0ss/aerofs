@@ -69,7 +69,12 @@ def customer_actions(org_id):
     form.allow_mdm.data = True
     form.allow_device_restriction.data = True
     charge_data = charges.data if charges else None
-    return render_template('customer_actions.html', form=form, customer=customer, charges=charge_data)
+
+    hpc_form = forms.CreateHostedDeployment()
+    hpc_form.customer_id.data = org_id
+
+    return render_template('customer_actions.html', form=form, customer=customer, charges=charge_data,
+                           hpc_form=hpc_form)
 
 @blueprint.route("/licenses/<int:license_id>", methods=["GET", "POST"])
 def license_actions(license_id):
@@ -386,7 +391,7 @@ def hpc_deployments():
 
     # TODO (GS): filter & order query
     deployments = models.HPCDeployment.query.all()
-    return render_template('hpc_deployments.html', deployments=deployments, form=form)
+    return render_template('hpc_deployments.html', deployments=deployments)
 
 
 @blueprint.route("/hpc_deployments/<string:subdomain>", methods=["GET"])
