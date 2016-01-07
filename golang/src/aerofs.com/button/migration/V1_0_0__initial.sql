@@ -1,0 +1,12 @@
+CREATE TABLE registrations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    deviceType VARCHAR(16) CHARACTER SET LATIN1 NOT NULL,
+    token TEXT CHARACTER SET LATIN1 NOT NULL,
+    alias VARCHAR(128) CHARACTER SET UTF8MB4 NOT NULL,
+    dev BOOLEAN NOT NULL DEFAULT FALSE,
+
+    UNIQUE KEY (token(2048), alias)
+);
+
+CREATE INDEX registrations_alias ON registrations (alias);
+

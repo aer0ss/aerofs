@@ -1,0 +1,2 @@
+- nginx docker image
+- add certs dir to docker image
