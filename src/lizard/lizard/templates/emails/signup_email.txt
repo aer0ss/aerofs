@@ -1,5 +1,10 @@
+Hi {{ admin.first_name }},
+
 Please complete your AeroFS Private Cloud signup by following this link:
 
 {{ signup_url }}
 
 If you didn't sign up for AeroFS Private Cloud, please ignore this email.
+
+Regards,
+The AeroFS Team

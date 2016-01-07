@@ -131,7 +131,7 @@ def request_signup(form):
         db.session.add(record)
         db.session.commit()
 
-    notifications.send_verification_email(form.email.data, record.signup_code)
+    notifications.send_verification_email(record)
     pardot_params = {
         'first_name': record.first_name.encode('utf-8'),
         'last_name': record.last_name.encode('utf-8'),
@@ -254,7 +254,7 @@ def signup_completion_page():
         record=signup,
     )
 
-@blueprint.route("/users/edit", methods=["GET", "POST"])
+@blueprint.route("/account", methods=["GET", "POST"])
 @login.login_required
 def edit_preferences():
 
@@ -290,14 +290,14 @@ def edit_preferences():
 @login.login_required
 def invite_to_organization():
     user = login.current_user
+    customer = user.customer
     form = forms.InviteForm()
     if form.validate_on_submit():
-        customer = user.customer
         email = form.email.data
         # Verify that the email is not already in the Admin table
         if models.Admin.query.filter_by(email=form.email.data).first():
             flash(u'That user is already a member of an organization', 'error')
-            return redirect(url_for(".administrators"))
+            return redirect(url_for(".users"))
         # Either this user has been invited to the organization already or hasn't.
         # (Since multiple organizations may attempt to invite the same user, we
         # need to filter on both email and org id in the query here.)
@@ -305,22 +305,20 @@ def invite_to_organization():
         # to resend her email invitation because she lost the first one.
         # If she hasn't (record is None), we need to generate a BoundInvite and
         # email it to her.
-        record = models.BoundInvite.query.filter_by(email=email, customer_id=customer.id).first()
-        if not record:
+        bound_invite = models.BoundInvite.query.filter_by(email=email, customer_id=customer.id).first()
+        if not bound_invite:
             invite_code = base64.urlsafe_b64encode(os.urandom(30))
-            record = models.BoundInvite()
-            record.invite_code = invite_code
-            record.email = email
-            record.customer_id = customer.id
-            db.session.add(record)
+            bound_invite = models.BoundInvite()
+            bound_invite.invite_code = invite_code
+            bound_invite.email = email
+            bound_invite.customer_id = customer.id
+            db.session.add(bound_invite)
             db.session.commit()
         # Send the invite email
-        notifications.send_invite_email(record.email, customer, record.invite_code)
+        notifications.send_invite_email(bound_invite, customer)
 
         flash(u'Invited {} to join {}'.format(email, customer.name), 'success')
-        return redirect(url_for('.administrators'))
-    flash(u'Sorry, that was an invalid email.', 'error')
-    return redirect(url_for('.administrators'))
+        return redirect(url_for('.users'))
 
 @blueprint.route('/users/accept', methods=["GET", "POST"])
 def accept_organization_invite():
@@ -689,10 +687,10 @@ def dashboard():
         mi_ios_app_store="https://itunes.apple.com/us/app/aerofs/id933038859"
     )
 
-@blueprint.route("/administrators", methods=["GET"])
+@blueprint.route("/users", methods=["GET"])
 @login.login_required
-def administrators():
-    return render_template("administrators.html",
+def users():
+    return render_template("users.html",
         user=login.current_user,
         form=forms.InviteForm(),
     )
@@ -792,17 +790,15 @@ def download_latest_license():
 def start_password_reset():
     form = forms.PasswordResetForm()
     if form.validate_on_submit():
-        if models.Admin.query.filter_by(email=form.email.data).first():
+        admin = models.Admin.query.filter_by(email=form.email.data).first()
+        if admin:
             # Generate a blob hmaced
             email = form.email.data
             s = TimestampSigner(current_app.secret_key)
-            token = {
-                    "email": email,
-                    }
+            token = {"email": email}
             reset_token = base64.urlsafe_b64encode(s.sign(json.dumps(token)))
             reset_link = url_for(".complete_password_reset", reset_token=reset_token, _external=True)
-            notifications.send_password_reset_email(email, reset_link)
-
+            notifications.send_password_reset_email(admin, reset_link)
         # Note: pretend that password reset worked even if the email given
         # was not known to avoid leaking which emails are registered admins.
         return render_template("password_reset_requested.html")
@@ -860,7 +856,7 @@ def complete_password_reset():
 
 @blueprint.route("/contact", methods=["GET", "POST"])
 @login.login_required
-def contact_us():
+def contact():
     user = login.current_user
     form = forms.ContactForm()
 
@@ -872,4 +868,4 @@ def contact_us():
         flash(u"Message sent. An AeroFS representative will be in touch shortly.", 'success')
         return redirect(url_for(".dashboard"))
 
-    return render_template("contact_us.html", form=form)
+    return render_template("contact.html", form=form)

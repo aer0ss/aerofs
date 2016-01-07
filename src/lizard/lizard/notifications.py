@@ -9,6 +9,7 @@ from flask import current_app, render_template, url_for
 SUPPORT_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
 SLACK_WEBHOOK="https://hooks.slack.com/services/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"
+FAQS_URL = "https://support.aerofs.com/hc/en-us/articles/204592794",
 
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart("alternative")
@@ -33,29 +34,33 @@ def _make_email_message(email_address, subject, text_body, html_body):
 
     return msg
 
-def _verification_email_for(email_address, signup_code):
-    signup_url = url_for(".signup_completion_page", signup_code=signup_code, _external=True)
-    print u"will email verification to {}, link {}".format(email_address, signup_url)
-
-    text_body = render_template("emails/signup_email.txt", signup_url=signup_url)
-    html_body = render_template("emails/signup_email.html", signup_url=signup_url)
-    return _make_email_message(email_address, "Complete your AeroFS Private Cloud signup",
+def _verification_email_for(unbound_signup):
+    signup_url = url_for(".signup_completion_page", signup_code=unbound_signup.signup_code, _external=True)
+    print u"will email verification to {}, link {}".format(unbound_signup.email, signup_url)
+    text_body = render_template("emails/signup_email.txt",
+            signup_url=signup_url,
+            admin=unbound_signup)
+    html_body = render_template("emails/signup_email.html",
+            signup_url=signup_url,
+            admin=unbound_signup
+    )
+    return _make_email_message(unbound_signup.email, "Complete your AeroFS Private Cloud signup",
             text_body, html_body)
 
-def _invite_email_for(email_address, company, invite_code):
-    invite_url = url_for(".accept_organization_invite", invite_code=invite_code, _external=True)
-    print u"will email invite to {}, link {}".format(email_address, invite_url)
-
+def _invite_email_for(bound_invite, customer):
+    invite_url = url_for(".accept_organization_invite", invite_code=bound_invite.invite_code, _external=True)
+    print u"will email invite to {}, link {}".format(bound_invite.email, invite_url)
     text_body = render_template("emails/invite_email.txt",
+            faqs_url=FAQS_URL,
             invite_url=invite_url,
-            customer=company,
-            )
+            customer=customer,
+    )
     html_body = render_template("emails/invite_email.html",
+            faqs_url=FAQS_URL,
             invite_url=invite_url,
-            customer=company,
-            )
-
-    return _make_email_message(email_address, "You've been invited to help purchase AeroFS Private Cloud",
+            customer=customer,
+    )
+    return _make_email_message(bound_invite.email, "You've been invited to help  manage purchasing for the AeroFS Private Cloud",
             text_body, html_body)
 
 def _license_available_email_for(admin):
@@ -65,7 +70,7 @@ def _license_available_email_for(admin):
     template_args = {
             "admin": admin,
             "dashboard_url": "https://enterprise.aerofs.com/dashboard",
-            "faqs_url": "https://support.aerofs.com/hc/en-us/articles/204592794",
+            "faqs_url": FAQS_URL,
             "contact_url": "https://support.aerofs.com/hc/en-us/articles/201440860"
     }
     text_body = render_template("emails/license_ready_email.txt", **template_args)
@@ -73,16 +78,17 @@ def _license_available_email_for(admin):
     return _make_email_message(admin.email, "Your AeroFS Private Cloud License is ready",
             text_body, html_body)
 
-def _password_reset_email_for(email_address, link):
+def _password_reset_email_for(admin, link):
     text_body = render_template("emails/password_reset_email.txt",
+            admin=admin,
             link=link)
     html_body = render_template("emails/password_reset_email.html",
+            admin=admin,
             link=link)
-    return _make_email_message(email_address, "AeroFS Private Cloud password reset",
+    return _make_email_message(admin.email, "AeroFS Private Cloud password reset",
             text_body, html_body)
 
 def _get_mail_connection():
-    conn = None
     host = current_app.config["MAIL_SERVER"]
     port = current_app.config["MAIL_PORT"]
     if current_app.config["MAIL_USE_SSL"]:
@@ -109,21 +115,21 @@ def _send_email(email_address, msg):
     finally:
         s.quit()
 
-def send_verification_email(email_address, signup_code):
-    msg = _verification_email_for(email_address, signup_code)
-    _send_email(email_address, msg)
+def send_verification_email(unbound_signup):
+    msg = _verification_email_for(unbound_signup)
+    _send_email(unbound_signup.email, msg)
 
-def send_invite_email(email_address, company, invite_code):
-    msg = _invite_email_for(email_address, company, invite_code)
-    _send_email(email_address, msg)
+def send_invite_email(bound_invite, customer):
+    msg = _invite_email_for(bound_invite, customer)
+    _send_email(bound_invite.email, msg)
 
 def send_license_available_email(admin):
     msg = _license_available_email_for(admin)
     _send_email(admin.email, msg)
 
-def send_password_reset_email(email_address, link):
-    msg = _password_reset_email_for(email_address, link)
-    _send_email(email_address, msg)
+def send_password_reset_email(admin, link):
+    msg = _password_reset_email_for(admin, link)
+    _send_email(admin.email, msg)
 
 def send_private_cloud_question_email(requester, to_contact, subject, message):
     to_addr = SALES_ADDR if 'sales' in to_contact.lower() else SUPPORT_ADDR

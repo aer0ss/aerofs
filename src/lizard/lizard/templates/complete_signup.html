@@ -4,16 +4,7 @@
 {% block title %}Complete Signup | AeroFS Private Cloud{% endblock %}
 
 {% block head %}
-<style type="text/css">
-    .progress {
-        width: 174px;
-        margin: 15px auto 5px auto;
-    }
-    span.password-verdict {
-        color: gray;
-        font-size: 12px;
-    }
-</style>
+    <link href="{{ url_for('static', filename='css/password.css') }}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -33,7 +24,7 @@
 
 {% block scripts %}
     <script>
-        (function completeSignupPage() {
+        (function completeSignup() {
             $(':password').pwstrength();
         })();
     </script>

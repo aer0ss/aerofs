@@ -15,9 +15,10 @@
 {% block sidebar %}
     <ul class="nav nav-list left-nav">
         <li class="nav-header">Private Cloud</li>
-        {{ render_menu_item('.edit_preferences', 'My Account') }}
+        {{ render_menu_item('.edit_preferences', 'My account') }}
+        {{ render_menu_item('.users', 'My team') }}
         {{ render_menu_item('.billing', 'Billing')}}
-        {{ render_menu_item('.contact_us', 'Contact Us') }}
-        {{ render_menu_item('.dashboard', 'Download On-Premises') }}
+        {{ render_menu_item('.contact', 'Contact') }}
+        {{ render_menu_item('.dashboard', 'Download on-premises') }}
     </ul>
 {% endblock %}

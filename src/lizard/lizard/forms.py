@@ -33,12 +33,12 @@ class SignupForm(Form):
     demandramp_rm__session_id__c = HiddenField("demandramp_rm__session_id__c", validators=[Optional()])
 
 class CompleteSignupForm(Form):
-    password = PasswordField('Password', validators=[Length(min=6)])
+    password = PasswordField('Password', validators=[InputRequired(), Length(min=6)])
 
 class AcceptInviteForm(Form):
     first_name = StringField('First Name', validators=[InputRequired()])
     last_name = StringField('Last Name', validators=[InputRequired()])
-    password = PasswordField('Password', validators=[Length(min=6)])
+    password = PasswordField('Password', validators=[InputRequired(), Length(min=6)])
     phone_number = StringField("Phone Number", validators=[Optional()])
     job_title = StringField("Job Title", validators=[Optional()])
 

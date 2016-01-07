@@ -1,4 +1,4 @@
-{{ admin.first_name }},
+Hi {{ admin.first_name }},
 
 In this email you are receiving access to your AeroFS Private Cloud license. Your license and the appliance image are available for download your the Private Cloud Dashboard.
 

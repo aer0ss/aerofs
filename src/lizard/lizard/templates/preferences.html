@@ -4,7 +4,7 @@
 {% block title %}My Account | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
-    <h1>My Account</h1>
+    <h1>My account</h1>
     <form role="form" class="form-horizontal" action="" method="post" name="prefs">
         {{ form.hidden_tag() }}
         {{ render_disabled_field('Organization:', current_user.customer.name) }}

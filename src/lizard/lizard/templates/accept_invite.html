@@ -3,17 +3,30 @@
 
 {% block title %}Create Account | AeroFS Private Cloud{% endblock %}
 
+{% block head %}
+    <link href="{{ url_for('static', filename='css/password.css') }}" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
-    <h1>Accept your invitation to manage {{ customer.name }}</h1>
-    <form role="form" class="form-horizontal" action="" method="post" name="login">
-        {{ form.hidden_tag() }}
-        <p> Email: {{ invite.email }} </p>
-        {{ render_field(form.first_name) }}
-        {{ render_field(form.last_name) }}
-        {{ render_field(form.phone_number) }}
-        {{ render_field(form.job_title) }}
-        {{ render_field(form.password) }}
-        {{ eula_notice() }}
-        {{ submit_button("Accept Invitation") }}
-    </form>
+    <h1>Accept the invitation to manage {{ customer.name }}</h1>
+    <div class="text-center col-sm-8">
+        <form role="form" class="form-horizontal" action="" method="post" name="login">
+            {{ form.hidden_tag() }}
+            {{ render_field(form.first_name) }}
+            {{ render_field(form.last_name) }}
+            {{ render_field(form.phone_number) }}
+            {{ render_field(form.job_title) }}
+            {{ render_field(form.password, autofocus=true, type="password") }}
+            {{ eula_notice() }}
+            {{ submit_button("Accept Invitation") }}
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        (function acceptInvitation() {
+            $(':password').pwstrength();
+        })();
+    </script>
 {% endblock %}
