@@ -14,6 +14,7 @@
             {"name": "acl.invitations", "qualified": false, "description": "List, accept, and ignore shared folder invitations."},
             {"name": "acl.read", "qualified": true, "description": "List shared folders and their members."},
             {"name": "acl.write", "qualified": true, "description": "Create and manage shared folders."},
+            {"name": "groups.read", "qualified": false, "description": "Read group properties."},
         ];
 
         var SHARES = ${shares|n};
