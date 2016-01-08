@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-[[ $# = 3 ]] || {
-    echo "Usage: $0 <docker-hub-user-id> <aws_access_key> <aws_secret_key>"
+[[ $# = 2 ]] || {
+    echo "Usage: $0 <aws_access_key> <aws_secret_key>"
     exit 11
 }
-DOCKER_USER="$1"
+DOCKER_USER="aerofs"
 AWS_ACCESS_KEY="$2"
 AWS_SECRET_KEY="$3"
 
