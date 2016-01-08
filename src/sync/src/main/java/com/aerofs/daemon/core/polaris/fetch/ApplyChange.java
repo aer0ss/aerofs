@@ -304,23 +304,35 @@ public class ApplyChange
         _impl.insert_(parent, oidChild, c.childName, c.childObjectType, c.migrantOid, mergeBoundary, t);
     }
 
-    private void share(SOID parent, long lts, Trans t) throws Exception
+    private void share(SOID soid, long lts, Trans t) throws Exception
     {
-        RemoteLink lnk = _rpdb.getParent_(parent.sidx(), parent.oid());
+        RemoteLink lnk = _rpdb.getParent_(soid.sidx(), soid.oid());
         if (lnk == null) throw new ExProtocolError("cannot share non-existent folder");
 
-        SID sid = _sidx2sid.get_(parent.sidx());
+        SID sid = _sidx2sid.get_(soid.sidx());
         if (!sid.isUserRoot()) throw new ExProtocolError("nested sharing not supported");
 
         // apply all buffered changes in the source store before performing migration
-        applyBufferedChanges_(parent.sidx(), Long.MAX_VALUE, t);
+        applyBufferedChanges_(soid.sidx(), Long.MAX_VALUE, t);
 
-        _rpdb.removeParent_(parent.sidx(), parent.oid(), t);
-        _rpdb.insertParent_(parent.sidx(), SID.folderOID2convertedAnchorOID(parent.oid()),
-                lnk.parent, lnk.name, lts, t);
+        _rpdb.removeParent_(soid.sidx(), soid.oid(), t);
+
+        OID anchor = SID.folderOID2convertedAnchorOID(soid.oid());
+        RemoteLink alnk = _rpdb.getParent_(soid.sidx(), anchor);
+        if (alnk != null) {
+            // anchor already exists. Should only happen after unlink/reinstall wherein shared
+            // folders are restored from tag files and the local "changes" are submitted before
+            // remote changes are fetched. In that case, the remote parent entry will either match
+            // the one implied by the SHARE transform, or be more up-to-date
+            if (!alnk.parent.equals(lnk.parent) || !alnk.name.equals(lnk.name)) {
+                l.info("racy racy anchor {}: {} vs {}", anchor, lnk, alnk);
+            }
+        } else {
+            _rpdb.insertParent_(soid.sidx(), anchor, lnk.parent, lnk.name, lts, t);
+        }
 
         try {
-            _impl.share_(parent, t);
+            _impl.share_(soid, t);
         } catch (Exception e) {
             l.warn("share failed", e);
             throw e;
