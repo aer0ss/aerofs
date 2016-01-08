@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/Coccodrillo/apns"
 	"github.com/aerofs/httprouter"
+	"github.com/alexjlockwood/gcm"
 	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"strings"
 )
 
+const GCM_API_KEY = "AIzaSyD5Lbs93SjdaeLvVRcPicP8KZ7Efg9Jpcs" //FIXME: don't commit this
 const APNS_DEV_ADDR = "gateway.sandbox.push.apple.com:2195"
 const APNS_DEV_PEM_PATH = "/certs/apns.dev.pem"
 const BUTTON_PORT = "8095"
@@ -21,6 +23,7 @@ const BUTTON_PORT = "8095"
 type context struct {
 	db      *sql.DB
 	apnsDev apns.APNSClient
+	gcmProd *gcm.Sender
 }
 
 type RegistrationRequest struct {
@@ -36,11 +39,13 @@ type NotificationRequest struct {
 	Badge   int
 }
 
+type pushResponse struct {
+	Success bool
+	Text    string
+	Err     error
+}
+
 func main() {
-	files, _ := ioutil.ReadDir("/")
-	for _, f := range files {
-		log.Println(f)
-	}
 	if _, err := os.Stat(APNS_DEV_PEM_PATH); err != nil {
 		panic("file not found: " + APNS_DEV_PEM_PATH)
 	}
@@ -53,6 +58,7 @@ func main() {
 	ctx := &context{
 		db:      db,
 		apnsDev: apns.NewClient(APNS_DEV_ADDR, APNS_DEV_PEM_PATH, APNS_DEV_PEM_PATH),
+		gcmProd: &gcm.Sender{ApiKey: GCM_API_KEY},
 	}
 
 	router := httprouter.New()
@@ -123,25 +129,32 @@ func (ctx *context) handleNotification(response http.ResponseWriter, request *ht
 		return
 	}
 
-	apnsDevTokens, _, _, err := getTokensForAliases(ctx.db, r.Aliases)
+	apnsDevTokens, apnsProdTokens, gcmProdTokens, err := getTokensForAliases(ctx.db, r.Aliases)
 	if err != nil {
 		log.Print(err)
 		response.WriteHeader(500)
 		return
 	}
-	numTokens := len(apnsDevTokens)
+	numTokens := len(apnsDevTokens) + len(apnsProdTokens) + len(gcmProdTokens)
 
 	log.Printf("sending %v notifications through dev APNS\n", len(apnsDevTokens))
-	responses := make([]chan *apns.PushNotificationResponse, 0)
+	responses := make([]chan *pushResponse, 0)
 	for _, token := range apnsDevTokens {
 		r := sendAPNS(ctx.apnsDev, token, r.Body, r.Badge)
 		responses = append(responses, r)
 	}
+
+	log.Printf("sending %v notifications through prod GCM\n", len(gcmProdTokens))
+	for _, token := range gcmProdTokens {
+		r := sendGCM(ctx.gcmProd, token, r.Body)
+		responses = append(responses, r)
+	}
+
 	for _, c := range responses {
 		r := <-c
 		// if any push fails, return 502
 		if !r.Success {
-			log.Printf("apns err: %v %v\n", r.AppleResponse, r.Error)
+			log.Printf("push err: %v %v\n", r.Text, r.Err)
 			response.WriteHeader(502)
 			return
 		}
@@ -212,7 +225,7 @@ func getTokensForAliases(db *sql.DB, aliases []string) (apnsDev, apnsProd, gcmPr
 	return
 }
 
-func sendAPNS(client apns.APNSClient, token, body string, badge int) chan *apns.PushNotificationResponse {
+func sendAPNS(client apns.APNSClient, token, body string, badge int) chan *pushResponse {
 	payload := apns.NewPayload()
 	payload.Alert = body
 	payload.Badge = badge
@@ -222,9 +235,39 @@ func sendAPNS(client apns.APNSClient, token, body string, badge int) chan *apns.
 	pn.AddPayload(payload)
 
 	// TODO: avoid spawning a goroutine per message
-	c := make(chan *apns.PushNotificationResponse)
+	c := make(chan *pushResponse)
 	go func() {
-		c <- client.Send(pn)
+		resp := client.Send(pn)
+		c <- &pushResponse{
+			Success: resp.Success,
+			Text:    resp.AppleResponse,
+			Err:     resp.Error,
+		}
+	}()
+
+	return c
+}
+
+func sendGCM(client *gcm.Sender, token, body string) chan *pushResponse {
+	log.Printf("gcm send body %v\n", body)
+	payload := map[string]interface{}{
+		"message": body,
+		"data": map[string]interface{}{
+			"conversationId": "hi mom",
+		},
+	}
+	msg := gcm.NewMessage(payload, token)
+	retries := 3
+
+	// TODO: avoid spawning a goroutine per message
+	c := make(chan *pushResponse)
+	go func() {
+		resp, err := client.Send(msg, retries)
+		c <- &pushResponse{
+			Success: resp.Success > 0,
+			Text:    "",
+			Err:     err,
+		}
 	}()
 
 	return c
