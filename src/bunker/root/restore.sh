@@ -96,7 +96,7 @@ else
     # and restores tables that existed when the dump-file was created. This will cause
     # problems when Flyway makes non-idempotent changes to such tables.
     echo ">>> Clearing flyway-managed databases..."
-    for db in bifrost aerofs_sp polaris sloth
+    for db in bifrost aerofs_sp polaris sloth trifrost
     do
         drop_and_restore_db $db
     done
