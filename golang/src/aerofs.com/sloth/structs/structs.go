@@ -29,24 +29,18 @@ type Group struct {
 }
 
 type Message struct {
-	Id   int64     `json:"id"`
-	Time time.Time `json:"time"`
-	Body string    `json:"body"`
-	From string    `json:"from"`
-	To   string    `json:"to"`
+	Id     int64     `json:"id"`
+	Time   time.Time `json:"time"`
+	Body   string    `json:"body"`
+	From   string    `json:"from"`
+	To     string    `json:"to"`
+	IsData bool      `json:"isData,omitempty"`
 }
 
 type LastReadReceipt struct {
 	UserId    string    `json:"userId"`
 	MessageId int64     `json:"messageId"`
 	Time      time.Time `json:"time"`
-}
-
-type GroupMemberChange struct {
-	UserId   string    `json:"userId"`
-	CallerId string    `json:"callerId"`
-	Time     time.Time `json:"time"`
-	Added    bool      `json:"added"`
 }
 
 //
@@ -108,10 +102,6 @@ type IdList struct {
 
 type LastReadReceiptList struct {
 	LastRead []LastReadReceipt `json:"lastRead"`
-}
-
-type GroupMemberHistory struct {
-	History []GroupMemberChange `json:"history"`
 }
 
 //

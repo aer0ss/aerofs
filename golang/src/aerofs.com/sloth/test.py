@@ -43,7 +43,7 @@ try:
     # GET /users
     r = s.get(BASE_URL + "/users", headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["users"] == [], r.json()
+    assert r.json()["users"] == [], r.text
 
     # PUT /users/jgray with no body
     r = s.put(BASE_URL + "/users/jgray", headers=JGRAY_AUTH)
@@ -71,9 +71,9 @@ try:
             json.dumps({"firstName": "Jonathan", "lastName": "Gray"}),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["firstName"] == "Jonathan", r.json()
-    assert r.json()["lastName"] == "Gray", r.json()
-    assert r.json()["id"] == "jgray", r.json()
+    assert r.json()["firstName"] == "Jonathan", r.text
+    assert r.json()["lastName"] == "Gray", r.text
+    assert r.json()["id"] == "jgray", r.text
     tagId = r.json()["tagId"]
     assert tagId != None
 
@@ -92,7 +92,7 @@ try:
             json.dumps({"firstName": "Jonathan", "lastName": "Gray"}),
             headers=DGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["tagId"] != tagId, r.json()
+    assert r.json()["tagId"] != tagId, r.text
 
     # PUT /users/dgray
     r = s.put(BASE_URL + "/users/dgray",
@@ -103,11 +103,11 @@ try:
             }),
             headers=DGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["firstName"] == "Daniel", r.json()
-    assert r.json()["lastName"] == "Gray", r.json()
-    assert r.json()["id"] == "dgray", r.json()
-    assert r.json()["tagId"] == "dg", r.json()
-    assert "avatarPath" not in r.json(), r.json()
+    assert r.json()["firstName"] == "Daniel", r.text
+    assert r.json()["lastName"] == "Gray", r.text
+    assert r.json()["id"] == "dgray", r.text
+    assert r.json()["tagId"] == "dg", r.text
+    assert "avatarPath" not in r.json(), r.text
 
     # PUT /users/ggray (with phone)
     r = s.put(BASE_URL + "/users/ggray",
@@ -123,10 +123,10 @@ try:
     # GET /users
     r = s.get(BASE_URL + "/users", headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["users"][0]["id"] == "dgray", r.json()
-    assert r.json()["users"][1]["id"] == "ggray", r.json()
-    assert r.json()["users"][2]["id"] == "jgray", r.json()
-    assert r.json()["users"][1]["phone"] == "4161234567", r.json()
+    assert r.json()["users"][0]["id"] == "dgray", r.text
+    assert r.json()["users"][1]["id"] == "ggray", r.text
+    assert r.json()["users"][2]["id"] == "jgray", r.text
+    assert r.json()["users"][1]["phone"] == "4161234567", r.text
 
     # GET /users/jgray no auth
     r = s.get(BASE_URL + "/users/jgray")
@@ -139,9 +139,9 @@ try:
     # GET /users/jgray
     r = s.get(BASE_URL + "/users/jgray", headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["firstName"] == "Jonathan", r.json()
-    assert r.json()["lastName"] == "Gray", r.json()
-    assert r.json()["id"] == "jgray", r.json()
+    assert r.json()["firstName"] == "Jonathan", r.text
+    assert r.json()["lastName"] == "Gray", r.text
+    assert r.json()["id"] == "jgray", r.text
 
     # GET /groups no auth
     r = s.get(BASE_URL + "/groups")
@@ -150,7 +150,7 @@ try:
     # GET /groups
     r = s.get(BASE_URL + "/groups", headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("groups") == [], r.json()
+    assert r.json().get("groups") == [], r.text
 
     # POST /groups missing key
     r = s.post(BASE_URL + "/groups",
@@ -179,9 +179,9 @@ try:
             }),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("name") == "F!RST GROUP", r.json()
-    assert r.json().get("isPublic") == True, r.json()
-    assert r.json().get("members") == ["dgray", "jgray"], r.json()
+    assert r.json().get("name") == "F!RST GROUP", r.text
+    assert r.json().get("isPublic") == True, r.text
+    assert r.json().get("members") == ["dgray", "jgray"], r.text
     gid = r.json().get("id")
     created_time = r.json().get("createdTime")
     assert gid != None
@@ -196,7 +196,7 @@ try:
         "members": ["dgray", "jgray"],
         "id": gid,
         "createdTime": created_time,
-    }], r.json()
+    }], r.text
 
     # GET /groups/gid not found
     r = s.get(BASE_URL + "/groups/nonexistent", headers=JGRAY_AUTH)
@@ -215,7 +215,7 @@ try:
         "members": ["dgray", "jgray"],
         "id": gid,
         "createdTime": created_time,
-    }, r.json()
+    }, r.text
 
     # GET /groups/gid public
     r = s.get(BASE_URL + "/groups/" + gid, headers=GGRAY_AUTH)
@@ -226,7 +226,7 @@ try:
         "members": ["dgray", "jgray"],
         "id": gid,
         "createdTime": created_time,
-    }, r.json()
+    }, r.text
 
     # PUT /groups/gid no auth
     r = s.put(BASE_URL + "/groups/" + gid,
@@ -256,7 +256,7 @@ try:
         "members": ["dgray", "jgray"],
         "id": gid,
         "createdTime": created_time,
-    }, r.json()
+    }, r.text
 
     # PUT /groups/gid add member
     r = s.put(BASE_URL + "/groups/" + gid,
@@ -267,7 +267,7 @@ try:
     assert r.ok, r
     r = s.get(BASE_URL + "/groups/" + gid, headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["members"] == ["dgray", "ggray", "jgray"], r.json()
+    assert r.json()["members"] == ["dgray", "ggray", "jgray"], r.text
 
     # PUT /groups/gid remove member
     r = s.put(BASE_URL + "/groups/" + gid,
@@ -316,7 +316,7 @@ try:
     r = s.get("{}/groups/{}/members".format(BASE_URL, gid),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("ids") == ["jgray"], r.json()
+    assert r.json().get("ids") == ["jgray"], r.text
 
     # PUT /groups/gid/members/uid no auth
     r = s.put("{}/groups/{}/members/{}".format(BASE_URL, gid, "dgray"))
@@ -337,7 +337,7 @@ try:
     # GET /groups/gid/members
     r = s.get("{}/groups/{}/members".format(BASE_URL, gid), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("ids") == ["dgray", "jgray"], r.json()
+    assert r.json().get("ids") == ["dgray", "jgray"], r.text
 
     # POST /users/uid/messages no body
     r = s.post("{}/users/{}/messages".format(BASE_URL, "dgray"), headers=JGRAY_AUTH)
@@ -359,11 +359,11 @@ try:
             json.dumps({"body": "f!rst p0st"}),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get('id') != None, r.json()
-    assert r.json().get('time') != None, r.json()
-    assert r.json().get('body') == "f!rst p0st", r.json()
-    assert r.json().get('from') == "jgray", r.json()
-    assert r.json().get('to') == "dgray", r.json()
+    assert r.json().get('id') != None, r.text
+    assert r.json().get('time') != None, r.text
+    assert r.json().get('body') == "f!rst p0st", r.text
+    assert r.json().get('from') == "jgray", r.text
+    assert r.json().get('to') == "dgray", r.text
 
     # POST /users/uid/messages response
     r = s.post("{}/users/{}/messages".format(BASE_URL, "jgray"),
@@ -382,15 +382,15 @@ try:
     # GET /users/uid/messages
     r = s.get("{}/users/{}/messages".format(BASE_URL, "dgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert type(r.json().get('messages')) == list, r.json()
-    assert r.json()['messages'][0].get('body') == "f!rst p0st", r.json()
-    assert r.json()['messages'][1].get('body') == "bruh", r.json()
+    assert type(r.json().get('messages')) == list, r.text
+    assert r.json()['messages'][0].get('body') == "f!rst p0st", r.text
+    assert r.json()['messages'][1].get('body') == "bruh", r.text
     mid = r.json()['messages'][1]['id']
 
     # GET /users/uid/messages empty list
     r = s.get("{}/users/{}/messages".format(BASE_URL, "dgray"), headers=GGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get('messages') == [], r.json()
+    assert r.json().get('messages') == [], r.text
 
     # POST /groups/gid/messages no auth
     r = s.post("{}/groups/{}/messages".format(BASE_URL, gid),
@@ -415,10 +415,10 @@ try:
             headers=JGRAY_AUTH)
     assert r.ok, r
     group_mid = r.json()['id']
-    assert r.json().get('time') != None, r.json()
-    assert r.json().get('body') == "w00p de gr00p", r.json()
-    assert r.json().get('from') == "jgray", r.json()
-    assert r.json().get('to') == gid, r.json()
+    assert r.json().get('time') != None, r.text
+    assert r.json().get('body') == "w00p de gr00p", r.text
+    assert r.json().get('from') == "jgray", r.text
+    assert r.json().get('to') == gid, r.text
 
     # GET /groups/gid/messages no auth
     r = s.get("{}/groups/{}/messages".format(BASE_URL, gid))
@@ -432,8 +432,8 @@ try:
     # GET /groups/gid/messages
     r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=DGRAY_AUTH)
     assert r.ok, r
-    assert type(r.json().get('messages')) == list, r.json()
-    assert r.json()['messages'][0].get('from') == 'jgray', r.json()
+    assert type(r.json().get('messages')) == list, r.text
+    assert r.json()['messages'][0].get('from') == 'jgray', r.text
 
     # GET /users/uid/avatar no auth
     r = s.get("{}/users/{}/avatar".format(BASE_URL, "jgray"),
@@ -487,7 +487,7 @@ try:
     # GET /users/uid should have avatarPath
     r = s.get("{}/users/{}".format(BASE_URL, "jgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()["avatarPath"] == "/users/jgray/avatar", r.json()
+    assert r.json()["avatarPath"] == "/users/jgray/avatar", r.text
 
     # GET /users/uid/avatar
     r = s.get("{}/users/{}/avatar".format(BASE_URL, "jgray"),
@@ -516,7 +516,7 @@ try:
     # GET /users/uid/receipts no receipts
     r = s.get("{}/users/{}/receipts".format(BASE_URL, "dgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json()['lastRead'] == [], r.json()
+    assert r.json()['lastRead'] == [], r.text
 
     # POST /users/uid/receipts missing key
     r = s.post("{}/users/{}/receipts".format(BASE_URL, "dgray"),
@@ -549,11 +549,11 @@ try:
     # GET /users/uid/receipts
     r = s.get("{}/users/{}/receipts".format(BASE_URL, "dgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['lastRead']) == 2, r.json()
-    assert r.json()['lastRead'][0]['userId'] == 'jgray', r.json()
-    assert r.json()['lastRead'][0]['messageId'] == mid, r.json()
-    assert r.json()['lastRead'][1]['userId'] == 'dgray', r.json()
-    assert r.json()['lastRead'][1]['messageId'] == mid, r.json()
+    assert len(r.json()['lastRead']) == 2, r.text
+    assert r.json()['lastRead'][0]['userId'] == 'jgray', r.text
+    assert r.json()['lastRead'][0]['messageId'] == mid, r.text
+    assert r.json()['lastRead'][1]['userId'] == 'dgray', r.text
+    assert r.json()['lastRead'][1]['messageId'] == mid, r.text
 
     # GET /groups/gid/receipts non-member
     r = s.get("{}/groups/{}/receipts".format(BASE_URL, gid), headers=GGRAY_AUTH)
@@ -591,8 +591,8 @@ try:
             json.dumps({'messageId': group_mid}),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get('messageId') == group_mid, r.json()
-    assert r.json().get('time') != None, r.json()
+    assert r.json().get('messageId') == group_mid, r.text
+    assert r.json().get('time') != None, r.text
     r = s.post("{}/groups/{}/receipts".format(BASE_URL, gid),
             json.dumps({'messageId': group_mid}),
             headers=DGRAY_AUTH)
@@ -633,7 +633,7 @@ try:
     # GET /users/{uid}/pinned
     r = s.get("{}/users/{}/pinned".format(BASE_URL, "jgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['ids']) == 2, r.json()
+    assert len(r.json()['ids']) == 2, r.text
 
     # DELETE /users/{uid}/pinned/{gid} forbidden
     r = s.delete("{}/users/{}/pinned/{}".format(BASE_URL, "jgray", gid),
@@ -647,9 +647,9 @@ try:
     # GET /users/{uid}/pinned
     r = s.get("{}/users/{}/pinned".format(BASE_URL, "jgray"), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['ids']) == 1, r.json()
+    assert len(r.json()['ids']) == 1, r.text
 
-    # GET /groups/{gid}/member_history new group
+    # GET group member history new group
     r = s.post("{}/groups".format(BASE_URL), json.dumps({
             "name": "shoop de groop",
             "isPublic": True,
@@ -659,49 +659,60 @@ try:
     assert r.ok, r
     group = r.json()
     gid = group['id']
-    r = s.get("{}/groups/{}/member_history".format(BASE_URL, gid), headers=JGRAY_AUTH)
+    r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=JGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['history']) == 2, r.json()
-    assert r.json()['history'][0]['time'] == r.json()['history'][1]['time'], r.json()
-    assert r.json()['history'][0]['callerId'] == 'jgray', r.json()
-    assert r.json()['history'][0]['added'] == True, r.json()
+    assert len(r.json()['messages']) == 2, r.text
+    assert r.json()['messages'][0]['isData'] == True
+    assert r.json()['messages'][1]['isData'] == True
+    data = [
+        json.loads(r.json()['messages'][0]['body']),
+        json.loads(r.json()['messages'][1]['body'])
+    ]
+    assert data[0]['type'] == 'MEMBER_ADDED', r.text
+    assert data[1]['type'] == 'MEMBER_ADDED', r.text
+    assert r.json()['messages'][0]['time'] == r.json()['messages'][1]['time'], r.text
+    assert r.json()['messages'][0]['from'] == 'jgray', r.text
 
-    # GET /groups/{gid}/member_history kicked member
+    # GET group member history kicked member
     r = s.delete("{}/groups/{}/members/{}".format(BASE_URL, gid, 'jgray'), headers=DGRAY_AUTH)
     assert r.ok
-    r = s.get("{}/groups/{}/member_history".format(BASE_URL, gid), headers=DGRAY_AUTH)
+    r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=DGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['history']) == 3, r.json()
-    assert r.json()['history'][2]['userId'] == 'jgray', r.json()
-    assert r.json()['history'][2]['callerId'] == 'dgray', r.json()
-    assert r.json()['history'][2]['added'] == False, r.json()
+    assert len(r.json()['messages']) == 3, r.text
+    assert r.json()['messages'][2]['isData'] == True
+    assert json.loads(r.json()['messages'][2]['body'])['type'] == 'MEMBER_REMOVED', r.text
+    assert json.loads(r.json()['messages'][2]['body'])['userId'] == 'jgray', r.text
+    assert r.json()['messages'][2]['from'] == 'dgray', r.text
 
-    # GET /groups/{gid}/member_history added member
+    # GET group member history added member
     r = s.put("{}/groups/{}/members/{}".format(BASE_URL, gid, 'jgray'), headers=DGRAY_AUTH)
     assert r.ok
-    r = s.get("{}/groups/{}/member_history".format(BASE_URL, gid), headers=DGRAY_AUTH)
+    r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=DGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['history']) == 4, r.json()
-    assert r.json()['history'][3]['userId'] == 'jgray', r.json()
-    assert r.json()['history'][3]['callerId'] == 'dgray', r.json()
-    assert r.json()['history'][3]['added'] == True, r.json()
+    assert len(r.json()['messages']) == 4, r.text
+    assert r.json()['messages'][3]['isData'] == True
+    assert json.loads(r.json()['messages'][3]['body'])['type'] == 'MEMBER_ADDED', r.text
+    assert json.loads(r.json()['messages'][3]['body'])['userId'] == 'jgray', r.text
+    assert r.json()['messages'][3]['from'] == 'dgray', r.text
 
-    # GET /groups/{gid}/member_history added member no-op
+    # GET group member history added member no-op
     r = s.put("{}/groups/{}/members/{}".format(BASE_URL, gid, 'jgray'), headers=DGRAY_AUTH)
     assert r.ok
-    r = s.get("{}/groups/{}/member_history".format(BASE_URL, gid), headers=DGRAY_AUTH)
+    r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=DGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['history']) == 4, r.json()
+    assert len(r.json()['messages']) == 4, r.text
 
-    # GET /groups/{gid}/member_history edited by PUT /groups/{gid}
+    # GET group member history edited by PUT /groups/{gid}
     group['members'] = ['jgray', 'ggray']
     r = s.put("{}/groups/{}".format(BASE_URL, gid), json.dumps(group), headers=JGRAY_AUTH)
     assert r.ok
-    r = s.get("{}/groups/{}/member_history".format(BASE_URL, gid), headers=DGRAY_AUTH)
+    r = s.get("{}/groups/{}/messages".format(BASE_URL, gid), headers=DGRAY_AUTH)
     assert r.ok, r
-    assert len(r.json()['history']) == 6, r.json()
-    assert r.json()['history'][4]['time'] == r.json()['history'][5]['time']
-    assert r.json()['history'][4]['added'] != r.json()['history'][5]['added'] # one added, one removed
+    assert r.json()['messages'][4]['isData'] == True
+    assert r.json()['messages'][5]['isData'] == True
+    assert len(r.json()['messages']) == 6, r.text
+    assert r.json()['messages'][4]['time'] == r.json()['messages'][5]['time']
+    assert json.loads(r.json()['messages'][4]['body'])['type'] != json.loads(r.json()['messages'][5]['body'])['type'] # one added, one removed
 
     print 'all tests passed!'
 finally:

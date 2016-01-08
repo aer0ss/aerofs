@@ -121,18 +121,6 @@ func BuildRoutes(
 		Returns(404, "Group not found", nil))
 
 	//
-	// path: /groups/{gid}/member_history
-	//
-
-	ws.Route(ws.GET("/{gid}/member_history").To(ctx.getMemberHistory).
-		Doc("Get group membership history").
-		Param(ws.PathParameter("gid", "Group id").DataType("string")).
-		Returns(200, "Group membership history", nil).
-		Returns(401, "Invalid Authorization", nil).
-		Returns(403, "Forbidden", nil).
-		Returns(404, "Group or user not found", nil))
-
-	//
 	// path: /groups/{gid}/messages
 	//
 
@@ -215,6 +203,7 @@ func (ctx *context) createGroup(request *restful.Request, response *restful.Resp
 
 	response.WriteEntity(group)
 	broadcast.SendGroupEvent(ctx.broadcaster, group.Id, group.Members)
+	broadcast.SendGroupMessageEvent(ctx.broadcaster, group.Id, group.Members)
 }
 
 func (ctx *context) getById(request *restful.Request, response *restful.Response) {
@@ -269,6 +258,9 @@ func (ctx *context) updateGroup(request *restful.Request, response *restful.Resp
 		targets = group.Members
 	}
 	broadcast.SendGroupEvent(ctx.broadcaster, gid, targets)
+	if params.Members != nil {
+		broadcast.SendGroupMessageEvent(ctx.broadcaster, gid, targets)
+	}
 }
 
 func (ctx *context) getMembers(request *restful.Request, response *restful.Response) {
@@ -317,7 +309,7 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 		return
 	}
 	dao.AddGroupMember(tx, gid, uid)
-	dao.InsertGroupMemberChange(tx, gid, uid, caller, time.Now(), true)
+	dao.InsertGroupMemberAddedMessage(tx, gid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
 	var targets []string
@@ -326,6 +318,7 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 		targets = group.Members
 	}
 	broadcast.SendGroupEvent(ctx.broadcaster, gid, targets)
+	broadcast.SendGroupMessageEvent(ctx.broadcaster, gid, targets)
 }
 
 func (ctx *context) removeMember(request *restful.Request, response *restful.Response) {
@@ -352,7 +345,7 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 		return
 	}
 	dao.RemoveGroupMember(tx, gid, uid)
-	dao.InsertGroupMemberChange(tx, gid, uid, caller, time.Now(), false)
+	dao.InsertGroupMemberRemovedMessage(tx, gid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
 	var targets []string
@@ -360,27 +353,7 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 		targets = group.Members
 	}
 	broadcast.SendGroupEvent(ctx.broadcaster, gid, targets)
-}
-
-func (ctx *context) getMemberHistory(request *restful.Request, response *restful.Response) {
-	gid := request.PathParameter("gid")
-	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
-
-	tx := dao.BeginOrPanic(ctx.db)
-	group := dao.GetGroup(tx, gid)
-	if group == nil {
-		response.WriteHeader(404)
-		tx.Rollback()
-		return
-	}
-	if !group.IsPublic && !group.HasMember(caller) {
-		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
-		return
-	}
-	history := dao.GetGroupMemberHistory(tx, gid)
-	dao.CommitOrPanic(tx)
-	response.WriteEntity(GroupMemberHistory{History: history})
+	broadcast.SendGroupMessageEvent(ctx.broadcaster, gid, targets)
 }
 
 func (ctx *context) getMessages(request *restful.Request, response *restful.Response) {

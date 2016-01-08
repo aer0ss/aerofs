@@ -5,6 +5,7 @@ import (
 	. "aerofs.com/sloth/structs"
 	"aerofs.com/sloth/util"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -96,7 +97,7 @@ func CreateGroup(tx *sql.Tx, params *GroupWritable, caller string) *Group {
 	errors.PanicAndRollbackOnErr(err, tx)
 	for _, uid := range group.Members {
 		AddGroupMember(tx, group.Id, uid)
-		InsertGroupMemberChange(tx, group.Id, uid, caller, group.CreatedTime, true)
+		InsertGroupMemberAddedMessage(tx, group.Id, uid, caller, group.CreatedTime)
 	}
 	return group
 }
@@ -134,11 +135,11 @@ func UpdateGroup(tx *sql.Tx, group *Group, params *GroupWritable, caller string)
 	updateTime := time.Now()
 	for uid := range membersRemoved {
 		RemoveGroupMember(tx, group.Id, uid)
-		InsertGroupMemberChange(tx, group.Id, uid, caller, updateTime, false)
+		InsertGroupMemberRemovedMessage(tx, group.Id, uid, caller, updateTime)
 	}
 	for uid := range membersAdded {
 		AddGroupMember(tx, group.Id, uid)
-		InsertGroupMemberChange(tx, group.Id, uid, caller, updateTime, true)
+		InsertGroupMemberAddedMessage(tx, group.Id, uid, caller, updateTime)
 	}
 	// return updated group
 	return group
@@ -158,28 +159,31 @@ func RemoveGroupMember(tx *sql.Tx, gid, uid string) {
 	errors.PanicAndRollbackOnErr(err, tx)
 }
 
-func GetGroupMemberHistory(tx *sql.Tx, gid string) []GroupMemberChange {
-	rows, err := tx.Query("SELECT user_id,caller_id,time,added FROM group_member_history WHERE group_id=? ORDER BY time", gid)
-	errors.PanicAndRollbackOnErr(err, tx)
-	defer rows.Close()
-	changes := make([]GroupMemberChange, 0)
-	for rows.Next() {
-		c := parseGroupMemberHistoryRow(tx, rows)
-		changes = append(changes, *c)
-	}
-	return changes
+func InsertGroupMemberAddedMessage(tx *sql.Tx, gid, uid, caller string, time time.Time) {
+	insertGroupMemberChangeMessage(tx, gid, uid, caller, "MEMBER_ADDED", time)
 }
 
-func InsertGroupMemberChange(tx *sql.Tx, gid, uid, caller string, time time.Time, added bool) {
-	_, err := tx.Exec("INSERT INTO group_member_history (group_id,user_id,caller_id,time,added) VALUES (?,?,?,?,?)",
-		gid, uid, caller, time.UnixNano(), added,
-	)
-	errors.PanicAndRollbackOnErr(err, tx)
+func InsertGroupMemberRemovedMessage(tx *sql.Tx, gid, uid, caller string, time time.Time) {
+	insertGroupMemberChangeMessage(tx, gid, uid, caller, "MEMBER_REMOVED", time)
 }
 
 //
 // Private
 //
+
+func insertGroupMemberChangeMessage(tx *sql.Tx, gid, uid, caller, mtype string, time time.Time) {
+	bytes, _ := json.Marshal(map[string]interface{}{
+		"type":   mtype,
+		"userId": uid,
+	})
+	InsertMessage(tx, &Message{
+		Time:   time,
+		From:   caller,
+		To:     gid,
+		Body:   string(bytes),
+		IsData: true,
+	})
+}
 
 func getGroupMembers(tx *sql.Tx, gid string) []string {
 	members := make([]string, 0)
@@ -190,15 +194,6 @@ func getGroupMembers(tx *sql.Tx, gid string) []string {
 		members = append(members, parseString(tx, rows))
 	}
 	return members
-}
-
-func parseGroupMemberHistoryRow(tx *sql.Tx, row Row) *GroupMemberChange {
-	var c GroupMemberChange
-	var unixTimeNanos int64
-	err := row.Scan(&c.UserId, &c.CallerId, &unixTimeNanos, &c.Added)
-	errors.PanicAndRollbackOnErr(err, tx)
-	c.Time = time.Unix(0, unixTimeNanos)
-	return &c
 }
 
 func difference(a, b []string) stringSet {

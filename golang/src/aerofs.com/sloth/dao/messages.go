@@ -8,13 +8,13 @@ import (
 )
 
 func GetUserMessages(tx *sql.Tx, from, to string) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY time", from, to, to, from)
+	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY time", from, to, to, from)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseMessageRows(tx, rows)
 }
 
 func GetGroupMessages(tx *sql.Tx, gid string) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id FROM messages WHERE to_id=? ORDER BY time", gid)
+	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? ORDER BY time", gid)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseMessageRows(tx, rows)
 }
@@ -43,11 +43,12 @@ func GroupMessageExists(tx *sql.Tx, mid int64, gid string) bool {
 
 // Returns the newly created message (with id)
 func InsertMessage(tx *sql.Tx, msg *Message) *Message {
-	res, err := tx.Exec("INSERT INTO messages (time,body,from_id,to_id) VALUES (?,?,?,?)",
+	res, err := tx.Exec("INSERT INTO messages (time,body,from_id,to_id,is_data) VALUES (?,?,?,?,?)",
 		msg.Time.UnixNano(),
 		msg.Body,
 		msg.From,
-		msg.To)
+		msg.To,
+		msg.IsData)
 	errors.PanicAndRollbackOnErr(err, tx)
 	msg.Id, err = res.LastInsertId()
 	errors.PanicAndRollbackOnErr(err, tx)
@@ -66,7 +67,7 @@ func parseMessageRows(tx *sql.Tx, rows *sql.Rows) []Message {
 func parseMessage(tx *sql.Tx, row Row) *Message {
 	var msg Message
 	var timeUnixNanos int64
-	err := row.Scan(&msg.Id, &timeUnixNanos, &msg.Body, &msg.From, &msg.To)
+	err := row.Scan(&msg.Id, &timeUnixNanos, &msg.Body, &msg.From, &msg.To, &msg.IsData)
 	errors.PanicAndRollbackOnErr(err, tx)
 	msg.Time = time.Unix(0, timeUnixNanos)
 	return &msg
