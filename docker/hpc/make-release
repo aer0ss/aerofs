@@ -13,6 +13,11 @@ if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then
     exit 1
 fi
 
+if [[ $(git status $PWD/hpc-docker-gen/root/nginx.tmpl --porcelain) ]]; then
+    echo "### Error: $PWD/hpc-docker-gen/root/nginx.tmpl has uncommited changes. Please commit or stash them before proceeding."
+    exit 1
+fi
+
 echo "This script will do the following tasks:"
 echo " - Build Docker images for: $IMAGES"
 echo " - Tag the images with version: $VERSION"
@@ -26,9 +31,6 @@ $PWD/../../tools/cache/start.sh
 
 # Important: make sure we're not accidentally including the *.syncfs.com cert & key
 rm -f $PWD/hpc-reverse-proxy/root/certs/syncfs.com.*
-
-# Revert any changes to nginx.tmpl
-git checkout $PWD/hpc-docker-gen/root/nginx.tmpl
 
 # Build the images
 for i in ${IMAGES}; do
