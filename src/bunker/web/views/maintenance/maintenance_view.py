@@ -42,8 +42,6 @@ def login_submit(request):
     log.info("attempt to login with license. auth'ed userid: {}"
         .format(authenticated_userid(request)))
 
-    # TODO (WW) share code with setup_view.py:json_set_license()?
-
     license_bytes = ''
     while True:
         buf = request.POST[URL_PARAM_LICENSE].file.read(4096)
@@ -72,8 +70,10 @@ def login_submit(request):
     renderer='toggle_maintenance_mode.mako'
 )
 def toggle_maintenance_mode(request):
+    conf = get_conf(request)
     return {
-        'is_maintenance_mode': is_maintenance_mode(request.registry.settings)
+        'base_url': conf['base.www.url'],
+        'is_maintenance_mode': is_maintenance_mode(request.registry.settings),
     }
 
 

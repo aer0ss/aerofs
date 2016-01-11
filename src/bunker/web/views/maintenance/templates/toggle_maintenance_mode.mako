@@ -19,7 +19,7 @@
     pages will still be available at the following URL:
 </p>
 <p>
-    <code>${request.route_url('maintenance_home')}</code>
+    <code>${base_url}/admin</code>
 </p>
 
 <p>The appliance enters maintenance mode automatically during
