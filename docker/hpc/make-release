@@ -47,7 +47,7 @@ done
 
 # Retry 'docker push $0' with exponential backoff. Needed as some docker registries are not reliably reachable.
 # Copied from ship/push-images.sh
-push() {
+push-retry() {
     (set +e
         RETRY=0
         TIMEOUT=1
@@ -68,30 +68,29 @@ push() {
     )
 }
 
-push_image() {
+tag-and-push() {
     img=$1
     tag=$2
 
-    echo ""
-    echo ""
-    echo "========================================"
-    echo "  Pushing aerofs/${img}:${tag} to ${REGISTRY}"
-    echo "========================================"
-    echo ""
-
     PUSH_IMAGE="${REGISTRY}/aerofs/${img}:${tag}"
     docker tag -f "aerofs/${img}" "${PUSH_IMAGE}"
-    push "${PUSH_IMAGE}"
+    push-retry "${PUSH_IMAGE}"
     docker rmi "${PUSH_IMAGE}"
 }
 
 # Tag and push to the registry
-for i in ${IMAGES}; do
-    push_image $i $VERSION
+for img in ${IMAGES}; do
+    echo ""
+    echo ""
+    echo "========================================"
+    echo "  Pushing aerofs/${img} to ${REGISTRY}"
+    echo "========================================"
+    echo ""
+
+    tag-and-push $img $VERSION
+    tag-and-push $img latest
 done
 
-# Push `hpc-reverse-proxy` with tag `latest` so that we can use that to compute the next version
-push_image hpc-reverse-proxy latest
 
 
 echo "Removing untagged images to save space..."
