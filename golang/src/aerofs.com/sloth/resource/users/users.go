@@ -265,6 +265,7 @@ func (ctx *context) updateUser(request *restful.Request, response *restful.Respo
 		Id:        uid,
 		FirstName: params.FirstName,
 		LastName:  params.LastName,
+		Phone:     params.Phone,
 		TagId:     getTagId(params),
 	}
 

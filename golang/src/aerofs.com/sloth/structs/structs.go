@@ -9,6 +9,7 @@ type User struct {
 	FirstName      string  `json:"firstName"`
 	LastName       string  `json:"lastName"`
 	TagId          string  `json:"tagId,omitempty"`
+	Phone          string  `json:"phone,omitempty"`
 	AvatarPath     string  `json:"avatarPath,omitempty"`
 	LastOnlineTime *uint64 `json:"lastOnlineTime,omitempty"`
 }
@@ -56,6 +57,7 @@ type UserWritable struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	TagId     string `json:"tagId"`
+	Phone     string `json:"phone"`
 }
 
 type BotWritable struct {

@@ -109,9 +109,14 @@ try:
     assert r.json()["tagId"] == "dg", r.json()
     assert "avatarPath" not in r.json(), r.json()
 
-    # PUT /users/ggray
+    # PUT /users/ggray (with phone)
     r = s.put(BASE_URL + "/users/ggray",
-            json.dumps({"firstName": "Gary", "lastName": "Gray", "tagId": "ggray"}),
+            json.dumps({
+                "firstName": "Gary",
+                "lastName": "Gray",
+                "tagId": "ggray",
+                "phone": "4161234567"
+            }),
             headers=GGRAY_AUTH)
     assert r.ok, r
 
@@ -121,6 +126,7 @@ try:
     assert r.json()["users"][0]["id"] == "dgray", r.json()
     assert r.json()["users"][1]["id"] == "ggray", r.json()
     assert r.json()["users"][2]["id"] == "jgray", r.json()
+    assert r.json()["users"][1]["phone"] == "4161234567", r.json()
 
     # GET /users/jgray no auth
     r = s.get(BASE_URL + "/users/jgray")
