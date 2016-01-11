@@ -15,15 +15,18 @@ import (
 	"strings"
 )
 
+const BUTTON_PORT = "8095"
 const GCM_API_KEY = "AIzaSyD5Lbs93SjdaeLvVRcPicP8KZ7Efg9Jpcs" //FIXME: don't commit this
 const APNS_DEV_ADDR = "gateway.sandbox.push.apple.com:2195"
 const APNS_DEV_PEM_PATH = "/certs/apns.dev.pem"
-const BUTTON_PORT = "8095"
+const APNS_PROD_ADDR = "gateway.push.apple.com:2195"
+const APNS_PROD_PEM_PATH = "/certs/apns.prod.pem"
 
 type context struct {
-	db      *sql.DB
-	apnsDev apns.APNSClient
-	gcmProd *gcm.Sender
+	db       *sql.DB
+	apnsDev  apns.APNSClient
+	apnsProd apns.APNSClient
+	gcmProd  *gcm.Sender
 }
 
 type RegistrationRequest struct {
@@ -56,9 +59,10 @@ func main() {
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
 
 	ctx := &context{
-		db:      db,
-		apnsDev: apns.NewClient(APNS_DEV_ADDR, APNS_DEV_PEM_PATH, APNS_DEV_PEM_PATH),
-		gcmProd: &gcm.Sender{ApiKey: GCM_API_KEY},
+		db:       db,
+		apnsDev:  apns.NewClient(APNS_DEV_ADDR, APNS_DEV_PEM_PATH, APNS_DEV_PEM_PATH),
+		apnsProd: apns.NewClient(APNS_PROD_ADDR, APNS_PROD_PEM_PATH, APNS_PROD_PEM_PATH),
+		gcmProd:  &gcm.Sender{ApiKey: GCM_API_KEY},
 	}
 
 	router := httprouter.New()
@@ -141,6 +145,12 @@ func (ctx *context) handleNotification(response http.ResponseWriter, request *ht
 	responses := make([]chan *pushResponse, 0)
 	for _, token := range apnsDevTokens {
 		r := sendAPNS(ctx.apnsDev, token, r.Body, r.Badge)
+		responses = append(responses, r)
+	}
+
+	log.Printf("sending %v notifications through prod APNS\n", len(apnsProdTokens))
+	for _, token := range apnsProdTokens {
+		r := sendAPNS(ctx.apnsProd, token, r.Body, r.Badge)
 		responses = append(responses, r)
 	}
 

@@ -2,6 +2,7 @@ package push
 
 import (
 	"aerofs.com/sloth/errors"
+	"aerofs.com/sloth/httpClientPool"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -16,8 +17,10 @@ import (
 type Notifier struct {
 	AuthUser, AuthPass string // basic auth values for Button service
 	Url                string // base url of Button service
+	HttpClientPool     httpClientPool.Pool
 }
 
+// Notify synchronously sends a notification request
 func (p *Notifier) Notify(body string, uids []string, badge int) error {
 	log.Printf("push notify %v %v\n", uids, body)
 	payload, err := request{Body: body, Aliases: uids, Badge: badge}.toJson()
@@ -30,9 +33,9 @@ func (p *Notifier) Notify(body string, uids []string, badge int) error {
 	}
 	req.SetBasicAuth(p.AuthUser, p.AuthPass)
 	req.Header.Add("Content-Type", "application/json")
-	resp, err := new(http.Client).Do(req)
-	log.Printf("push notify response status %v\n", resp.StatusCode)
-	return err
+	resp := <-p.HttpClientPool.Do(req)
+	log.Printf("push notify response status %v\n", resp.R.StatusCode)
+	return resp.Err
 }
 
 func (p *Notifier) Register(deviceType, alias, token string, dev bool) int {
@@ -42,7 +45,7 @@ func (p *Notifier) Register(deviceType, alias, token string, dev bool) int {
 		Token:      token,
 		Dev:        dev,
 	}
-	return p.makeRegisterRequest(r).StatusCode
+	return p.makeRegisterRequest(r)
 }
 
 //
@@ -70,14 +73,15 @@ func (r request) toJson() (io.Reader, error) {
 	return bytes.NewReader(b), nil
 }
 
-func (p *Notifier) makeRegisterRequest(r *buttonRegistrationRequest) *http.Response {
+// Synchronously make the request and return the status code
+func (p *Notifier) makeRegisterRequest(r *buttonRegistrationRequest) int {
 	b, err := json.Marshal(r)
 	errors.PanicOnErr(err)
 
 	req, err := http.NewRequest("POST", p.Url+"/registration", bytes.NewReader(b))
 	errors.PanicOnErr(err)
 	req.SetBasicAuth(p.AuthUser, p.AuthPass)
-	resp, err := new(http.Client).Do(req)
-	errors.PanicOnErr(err)
-	return resp
+	resp := <-p.HttpClientPool.Do(req)
+	errors.PanicOnErr(resp.Err)
+	return resp.R.StatusCode
 }

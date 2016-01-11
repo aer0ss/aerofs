@@ -7,6 +7,7 @@ import (
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
+	"aerofs.com/sloth/httpClientPool"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
@@ -33,6 +34,7 @@ import (
 
 const TOKEN_CACHE_TIME = time.Minute
 const TOKEN_CACHE_SIZE = 1000
+const HTTP_CLIENT_POOL_SIZE = 20
 
 //
 // Main
@@ -83,9 +85,10 @@ func main() {
 		panic("missing button config")
 	}
 	pushNotifier := &push.Notifier{
-		AuthUser: buttonAuthUser,
-		AuthPass: buttonAuthPass,
-		Url:      buttonBaseUrl,
+		AuthUser:       buttonAuthUser,
+		AuthPass:       buttonAuthPass,
+		Url:            buttonBaseUrl,
+		HttpClientPool: httpClientPool.NewPool(HTTP_CLIENT_POOL_SIZE),
 	}
 
 	// initialize token verifier
