@@ -169,9 +169,7 @@ public class InvitationEmailer
             String body = "\n" +
                     nf.nameAndEmail() + " has added you to the group " + quotedGroupName + ".\n" +
                     "From now on you will be invited to any shared folders that " +
-                    quotedGroupName + " joins.\n" +
-                    "Click on this link to view and accept any pending invitations:\n " +
-                    ACCEPT_INVITATION_LINK;
+                    quotedGroupName + " joins.";
             String title = "You Are Now a Member of The Group " + quotedGroupName;
 
             email.addSection(title, body);
