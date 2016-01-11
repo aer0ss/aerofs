@@ -54,6 +54,10 @@ BOOTSTRAP_ENTRY = os.path.join(TOOLS_DIR, 'build', 'bootstrap')
 # Some other tools make assumptions about PWD.  Set it to a trustworthy, consistent value.
 os.chdir(GIT_ROOT)
 
+# Import the compute_next_version() function from tools/build/compute_next_version.py
+sys.path.append(os.path.join(TOOLS_DIR, 'build'))
+from compute_next_version import compute_next_version
+
 # map from <destdir> to <map of language, includes, proto files>
 PROTO_MAPPINGS = {
         # Java protobufs
@@ -592,14 +596,8 @@ def build_sa(args):
     subprocess.check_call([ "gradle", "src/storage-agent:dist"], cwd=GIT_ROOT)
     print colored("Client built.", Colors.GREEN)
 
-
-def compute_next_version(args):
-    cmdline = [ BOOTSTRAP_ENTRY, 'compute_next_version', 'loader' ]
-    output = subprocess.check_output(cmdline, cwd=GIT_ROOT)
-    return output
-
 def write_version(args):
-    version = args.release_version or compute_next_version(args)
+    version = args.release_version or compute_next_version('loader')
     if not os.path.exists(PACKAGE_DIR):
         os.makedirs(PACKAGE_DIR)
     with open(os.path.join(PACKAGE_DIR, "current.ver"), "w") as f:
@@ -609,7 +607,7 @@ def write_version(args):
 def _package(args, products, should_clean=True):
     signed_arg = "SIGNED" if args.signed else "UNSIGNED"
     # TODO(AS): Version computation based on loader/SA-loader
-    version = args.release_version or compute_next_version(args)
+    version = args.release_version or compute_next_version('loader')
     # clean packaging dir
     if os.path.exists(PACKAGE_DIR) and should_clean:
         for package in os.listdir(PACKAGE_DIR):
