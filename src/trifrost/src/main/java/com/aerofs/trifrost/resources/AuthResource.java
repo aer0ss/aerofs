@@ -71,8 +71,8 @@ public final class AuthResource {
             mailSender.sendPublicEmail(MAIL_FROM_ADDR, MAIL_FROM_NAME,
                     claimedEmail.email,
                     null,
-                    "Your AeroIM code is " + authCode,
-                    "Here be two snowmans: ☃ ☃",
+                    "AeroIM Authorization Code",
+                    "Enter this authorization code to access AeroIM: " + authCode,
                     null);
 
             logger.info("verification code {} for user {}", authCode, claimedEmail.email);
