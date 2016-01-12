@@ -113,6 +113,12 @@ public class MetaChangesDatabase extends AbstractDatabase
         return update(_pswUpdateChanges.get(sidx), anchor.getBytes(), oid.getBytes());
     }
 
+    private final ParameterizedStatement<SIndex> _pswUpdateChange = new ParameterizedStatement<>(
+            sidx ->  DBUtil.updateWhere(tableName(sidx), C_META_CHANGE_IDX + "=?", C_META_CHANGE_NEW_NAME));
+    public int updateChange_(SIndex sidx, long idx, String temporaryName, Trans t) throws SQLException {
+        return update(_pswUpdateChange.get(sidx), idx, temporaryName);
+    }
+
     public static class MetaChange
     {
         public final SIndex sidx;

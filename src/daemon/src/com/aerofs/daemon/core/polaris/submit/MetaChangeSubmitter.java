@@ -348,18 +348,40 @@ public class MetaChangeSubmitter implements Submitter
 
     private boolean onConflict_(MetaChange c, LocalChange change, String body) throws Exception
     {
+        OA oa =_ds.getOANullable_(new SOID(c.sidx, c.oid));
+        if (oa == null) throw new ExRetryLater("object disappeared");
+
         OID local = _ds.getChild_(c.sidx, c.newParent, c.newName);
         if (!c.oid.equals(local)) {
-            /**
-             * Complication: name conflicts in the middle of a chain of renames/moves
-             *
-             * we need to clean up the change queue here because it won't be done by
-             * the fetcher until another peer renames the same child, which may never
-             * happen.
-             */
+            // The change rejected by polaris does not reflect the latest local state therefore we
+            // cannot rely on ApplyChangeImpl to resolve the conflict.
+            //
+            // If the change is a move (i.e. the object was already known to polaris) then we can
+            // safely discard it and rely on the next move(s) to restore harmony.
+            //
+            // However if it was an insert, extra care is required to avoid reaching an inconsistent
+            // state. Ideally we'd omit submission of transient objects but this would introduce
+            // serious complexity to correctly handle non-transient objects being moved under
+            // transient folders and to avoid issues when folders are moved out of the trash.
+            //
+            // TODO: revisit once legacy code is burned?
             try (Trans t = _tm.begin_()) {
-                if (_mcdb.deleteChange_(c.sidx, c.idx, t)) {
-                    l.info("discard conflicting local change {} {} {}", c.idx, c.sidx, c.oid);
+                if (change.type == LocalChange.Type.INSERT_CHILD) {
+                    // Update transform to use a random name to avoid the conflict, with the
+                    // expectation that a subsequent rename will overwrite that.
+                    // Ideally we'd insert the object at its current (parent, name) location
+                    // directly but that is more complicated as it requires compacting the local
+                    // transforms log to avoid further conflicts and even worse inconsistencies
+                    // TODO: safely compact local transforms instead
+                    String temporaryName = OID.generate().toStringFormal();
+                    _mcdb.updateChange_(c.sidx, c.idx, temporaryName, t);
+                    l.info("update conflicting local change {} {} {} {}", c.idx, c.sidx, c.oid,
+                            temporaryName);
+                } else {
+                    checkState(change.type == LocalChange.Type.MOVE_CHILD);
+                    if (_mcdb.deleteChange_(c.sidx, c.idx, t)) {
+                        l.info("discard conflicting local change {} {} {}", c.idx, c.sidx, c.oid);
+                    }
                 }
                 t.commit_();
             }
