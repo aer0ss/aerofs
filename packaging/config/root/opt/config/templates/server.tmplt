@@ -51,7 +51,12 @@ ldap.server.schema.group.member.dynamic={{ ldap_server_schema_group_member_dynam
 ldap.server.schema.group.member.unique={{ ldap_server_schema_group_member_unique }}
 
 ldap.groupsyncing.enabled={{ ldap_groupsyncing_enabled }}
+ldap.groupsyncing.schedule_enum={{ ldap_groupsyncing_schedule_enum }}
+{# This will be relevant if ldap.groupsyncing.schedule_enum is set to DAILY.
+ # User will be able to set their own time.
+ #}
 ldap.groupsyncing.time={{ ldap_groupsyncing_time }}
+
 
 ldap.invitation.required_for_signup={{ ldap_invitation_required_for_signup }}
 

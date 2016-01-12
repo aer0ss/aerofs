@@ -17,6 +17,7 @@
     open_signup = str2bool(conf['open_signup'])
     # Use the local namespace so the method scripts() can access it
     local.local_auth = authenticator == 'local_credential'
+    local.ldap_group_sync_schedule_enum = conf['ldap.groupsyncing.schedule_enum']
 %>
 
 <div class="page-block">
@@ -113,14 +114,14 @@
 <%def name="ldap_options()">
     <div class="row">
         <div class="col-sm-6">
-            <label for="ldap-server-host" class="control-label">Server host:</label>
+            <label for="ldap-server-host" class="control-label">Server host</label>
             <input class="form-control" id="ldap-server-host"
                     name="ldap_server_host" type="text" required
                     value="${conf['ldap.server.host']}">
             <div class="help-block">e.g. ldap.example.com</div>
         </div>
         <div class="col-sm-6">
-            <label for="ldap-server-port" class="control-label">Server port:</label>
+            <label for="ldap-server-port" class="control-label">Server port</label>
             <input class="form-control" id="ldap-server-port"
                    name="ldap_server_port" type="text" required
                    value="${conf['ldap.server.port']}">
@@ -130,7 +131,7 @@
 
     <div class="row">
         <div class="col-sm-6">
-            <label for="ldap-server-schema-user-base" class="control-label">Base DN:</label>
+            <label for="ldap-server-schema-user-base" class="control-label">Base DN</label>
             <input class="form-control" id="ldap-server-schema-user-base"
                    name="ldap_server_schema_user_base" type="text" required
                    value="${conf['ldap.server.schema.user.base']}">
@@ -139,14 +140,14 @@
     </div>
     <div class="row">
         <div class="col-sm-6">
-            <label for="ldap-server-principal" class="control-label">Bind user name:</label>
+            <label for="ldap-server-principal" class="control-label">Bind user name</label>
             <input class="form-control" id="ldap-server-principal"
                    name="ldap_server_principal" type="text" required
                    value="${conf['ldap.server.principal']}">
             <div class="help-block">e.g. <code>cn=admin,ou=users,dc=example,dc=com</code></div>
         </div>
         <div class="col-sm-6">
-            <label for="ldap-server-credential" class="control-label">Bind user password:</label>
+            <label for="ldap-server-credential" class="control-label">Bind user password</label>
             <input class="form-control" id="ldap-server-credential"
                    name="ldap_server_credential" type="password" required
                    value="${conf['ldap.server.credential']}">
@@ -266,7 +267,7 @@
                 value = conf['ldap.server.schema.user.class']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-class">LDAP object class for user records:</label>
+            <label class="control-label" for="ldap-server-schema-user-class">LDAP object class for user records</label>
             <input class="form-control" id="ldap-server-schema-user-class"
                    name="ldap_server_schema_user_class" type="text" required
                    value="${value}">
@@ -282,7 +283,7 @@
                 value = conf['ldap.server.schema.user.field.firstname']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-field-firstname">LDAP first name attribute:</label>
+            <label class="control-label" for="ldap-server-schema-user-field-firstname">LDAP first name attribute</label>
             <input class="form-control" id="ldap-server-schema-user-field-firstname"
                    name="ldap_server_schema_user_field_firstname" type="text" required
                    value="${value}">
@@ -294,7 +295,7 @@
                 value = conf['ldap.server.schema.user.field.lastname']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-field-lastname">LDAP last name attribute:</label>
+            <label class="control-label" for="ldap-server-schema-user-field-lastname">LDAP last name attribute</label>
             <input class="form-control" id="ldap-server-schema-user-field-lastname"
                    name="ldap_server_schema_user_field_lastname" type="text" required
                    value="${value}">
@@ -309,7 +310,7 @@
                 value = conf['ldap.server.schema.user.field.email']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-field-email">LDAP email attribute:</label>
+            <label class="control-label" for="ldap-server-schema-user-field-email">LDAP email attribute</label>
             <input class="form-control" id="ldap-server-schema-user-field-email"
                    name="ldap_server_schema_user_field_email" type="text" required
                    value="${value}">
@@ -325,7 +326,7 @@
                 value = conf['ldap.server.schema.user.filter']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-filter">Additional LDAP filter criteria:</label>
+            <label class="control-label" for="ldap-server-schema-user-filter">Additional LDAP filter criteria</label>
             <input class="form-control" id="ldap-server-schema-user-filter"
                    name="ldap_server_schema_user_filter" type="text"
                    value="${value}">
@@ -338,7 +339,7 @@
 
     <div class="row">
         <div class="col-sm-12">
-            <label class="control-label" for="ldap-server-ca_certificate">Server certificate for StartTLS and SSL (optional):</label>
+            <label class="control-label" for="ldap-server-ca_certificate">Server certificate for StartTLS and SSL (optional)</label>
             <textarea rows="4" class="form-control" id="ldap-server-ca_certificate"
                     name="ldap_server_ca_certificate"
                     ## Don't leave spaces around the config value; otherwise they will
@@ -421,7 +422,7 @@
 
     <div class="row">
         <div class="col-sm-6">
-            <label for="ldap-server-schema-group-base" class="control-label">Base DN for groups:</label>
+            <label for="ldap-server-schema-group-base" class="control-label">Base DN for groups</label>
             <input class="form-control" id="ldap-server-schema-group-base"
                    name="ldap_server_schema_group_base" type="text"
                    value="${conf['ldap.server.schema.group.base']}">
@@ -437,7 +438,7 @@
                 if not values: values = default
                 values = ", ".join(values.split(separator))
             %>
-            <label for="ldap-server-schema-group-class" class="control-label">LDAP Group object classes:</label>
+            <label for="ldap-server-schema-group-class" class="control-label">LDAP Group object classes</label>
             <textarea rows="1" class="form-control" name="ldap_server_schema_group_class" id="ldap-server-schema-group-class"
                 >${values}</textarea>
             <div class="help-block">Common object classes are <code>groupOfNames</code>, <code>groupOfURLs</code>,
@@ -453,7 +454,7 @@
                 if not values: values = default
                 values = ", ".join(values.split(separator))
             %>
-            <label for="ldap-server-schema-group-member-static" class="control-label">LDAP Group static member attribute(s):</label>
+            <label for="ldap-server-schema-group-member-static" class="control-label">LDAP Group static member attribute(s)</label>
             <textarea rows="1" class="form-control" name="ldap_server_schema_group_member_static" id="ldap-server-schema-group-member-static"
                 >${values}</textarea>
             <div class="help-block">These attributes should have the DNs of group members as values,
@@ -470,7 +471,7 @@
                 if not values: values = default
                 values = ", ".join(values.split(separator))
             %>
-            <label for="ldap-server-schema-group-member-dynamic" class="control-label">LDAP Group dynamic member attribute(s):</label>
+            <label for="ldap-server-schema-group-member-dynamic" class="control-label">LDAP Group dynamic member attribute(s)</label>
             <textarea rows="1" class="form-control" name="ldap_server_schema_group_member_dynamic" id="ldap-server-schema-group-member-dynamic"
                 >${values}</textarea>
             <div class="help-block">These attributes should contain LDAP search URLs which specify members of the group,
@@ -485,7 +486,7 @@
                 value = conf['ldap.server.schema.group.member.unique']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-group-member-unique" class="control-label">LDAP Group unique member attribute:</label>
+            <label for="ldap-server-schema-group-member-unique" class="control-label">LDAP Group unique member attribute</label>
             <input class="form-control" id="ldap-server-schema-group-member-unique"
                     name="ldap_server_schema_group_member_unique" type="text"
                     value="${value}">
@@ -498,7 +499,7 @@
                 value = conf['ldap.server.schema.user.field.uid']
                 if not value: value = default
             %>
-            <label class="control-label" for="ldap-server-schema-user-field-uid">Group member unique identifier attribute:</label>
+            <label class="control-label" for="ldap-server-schema-user-field-uid">Group member unique identifier attribute</label>
             <input class="form-control" id="ldap-server-schema-user-field-uid"
                     name="ldap_server_schema_user_field_uid" type="text"
                     value="${value}">
@@ -514,7 +515,7 @@
                 value = conf['ldap.server.schema.group.name']
                 if not value: value = default
             %>
-            <label for="ldap-server-schema-group-name" class="control-label">LDAP Group name attribute:</label>
+            <label for="ldap-server-schema-group-name" class="control-label">LDAP Group name attribute</label>
             <input class="form-control" id="ldap-server-schema-group-name"
                    name="ldap_server_schema_group_name" type="text"
                    value="${value}">
@@ -524,21 +525,31 @@
 
     <div class="row">
         <div class="col-sm-6">
+            <label for="ldap-groupsyncing-schedule" class="control-label">Syncing schedule</label>
+            <select class="form-control" id="ldap-groupsyncing-schedule" name="ldap_groupsyncing_schedule_enum">
+                <option value="ONE-HOUR">Every Hour</option>
+                <option value="THREE-HOURS">Every 3 Hours</option>
+                <option value="DAILY">Daily</option>
+            </select>
+            <div class="help-block">Periodically sync with your LDAP Endpoint.</div>
+            <br />
+        </div>
+        <div class ="col-sm-6" id="ldap-groupsync-time-selection">
             <%
-                hours = range(1,13)
-                hours.insert(0, hours.pop())
-                times = [str(hour)+":00 " + ampm for ampm in ["AM", "PM"] for hour in hours]
-                selected = conf['ldap.groupsyncing.time']
-                if not selected: selected = "12:00 AM"
+            hours = range(1,13)
+            hours.insert(0, hours.pop())
+            times = [str(hour)+":00 " + ampm for ampm in ["AM", "PM"] for hour in hours]
+            selected = conf['ldap.groupsyncing.time']
+            if not selected: selected = "12:00 AM"
             %>
-            <label for="ldap-groupsyncing-time" class="control-label">Daily syncing time:</label>
+            <label for="ldap-groupsyncing-time" class="control-label">Time:</label>
             <select class="form-control" id="ldap-groupsyncing-time"
                     name="ldap_groupsyncing_time">
                 % for time in times:
                     ${makeTimeOption(time, selected)}
                 % endfor
             </select>
-            <div class="help-block">A time each day for AeroFS to sync with your LDAP Endpoint.
+            <div class="help-block">Specific local time to sync with your LDAP Endpoint.
                     Default is <code>12:00 AM</code>.</div>
         </div>
         <%def name="makeTimeOption(time, selected)">
@@ -549,6 +560,7 @@
             >${time}</option>
         </%def>
     </div>
+
 </%def>
 
 <%modal:modal>
@@ -586,6 +598,20 @@
                 ldapSelected();
             %endif
 
+            var ldapGroupSyncSchedule = "DAILY";
+
+            %if local.ldap_group_sync_schedule_enum:
+                ldapGroupSyncSchedule = "${local.ldap_group_sync_schedule_enum}";
+            %endif
+
+            $('#ldap-groupsyncing-schedule').val(ldapGroupSyncSchedule)
+
+            if (ldapGroupSyncSchedule == "DAILY" ) {
+                $('#ldap-groupsync-time-selection').show();
+            } else {
+                $('#ldap-groupsync-time-selection').hide();
+            }
+
             ## Listen to any changes to LDAP options.
             ## LDAP options start with 'ldap_' per identity_view.py
             $('input[name^="ldap_"]').change(function () {
@@ -603,6 +629,14 @@
             backdrop: 'static',
             keyboard: false,
             show: false
+        });
+
+        $('#ldap-groupsyncing-schedule').change(function() {
+            if ($(this).val() == 'DAILY') {
+                $('#ldap-groupsync-time-selection').show();
+            } else {
+                 $('#ldap-groupsync-time-selection').hide();
+            }
         });
 
         function localSelected() {

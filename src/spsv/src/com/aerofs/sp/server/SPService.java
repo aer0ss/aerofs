@@ -297,6 +297,38 @@ public class SPService implements ISPService
         });
     }
 
+    private enum GroupSyncingSchedule
+    {
+        DAILY (24),
+        ONE_HOUR (1),
+        THREE_HOURS (3);
+
+        private final int hours;
+        private static final String ldapGroupSyncType = getStringProperty("ldap.groupsyncing.schedule_enum", "daily");
+
+        GroupSyncingSchedule(int hour)
+        {
+            this.hours = hour;
+        }
+
+        public static GroupSyncingSchedule getSchedule()
+        {
+
+            if (ldapGroupSyncType.equals("ONE-HOUR")) {
+                return GroupSyncingSchedule.ONE_HOUR;
+            } else if ((ldapGroupSyncType.equals("THREE-HOURS"))) {
+                return GroupSyncingSchedule.THREE_HOURS;
+            } else {
+                return GroupSyncingSchedule.DAILY;
+            }
+        }
+
+        public static int getValue()
+        {
+            return getSchedule().hours;
+        }
+    }
+
     public void setUserTracker(SPActiveUserSessionTracker userTracker)
     {
         assert userTracker != null;
@@ -318,16 +350,21 @@ public class SPService implements ISPService
     private void startPeriodicSyncing(ScheduledExecutorService scheduler, Runnable sync)
     {
         if (LDAP_GROUP_SYNCING_ENABLED) {
-            // first get the difference in seconds between now and the SYNCING_TIME set, then set it
-            // to repeat once a day at that time
-            Duration difference = Duration.between(LocalTime.now(Clock.systemUTC()),
-                    LocalTime.parse(LDAP_GROUP_SYNCING_TIME));
-            // if the time has already passed today, the difference will be negative - add 24 hours
-            // so we get to the scheduled time tomorrow
-            if (difference.isNegative()) {
-                difference = difference.plusDays(1);
+            if (GroupSyncingSchedule.getSchedule() == GroupSyncingSchedule.DAILY) {
+                // first get the difference in seconds between now and the SYNCING_TIME set, then set it
+                // to repeat once a day at that time
+                Duration difference = Duration.between(LocalTime.now(Clock.systemUTC()),
+                        LocalTime.parse(LDAP_GROUP_SYNCING_TIME));
+                // if the time has already passed today, the difference will be negative - add 24 hours
+                // so we get to the scheduled time tomorrow
+                if (difference.isNegative()) {
+                    difference = difference.plusDays(1);
+                }
+                scheduler.scheduleAtFixedRate(sync, difference.getSeconds(), 60 * 60 * 24, TimeUnit.SECONDS);
+            } else {
+                int intervalInSeconds = GroupSyncingSchedule.getValue() * 60 * 60;
+                scheduler.scheduleAtFixedRate(sync, intervalInSeconds, intervalInSeconds, TimeUnit.SECONDS);
             }
-            scheduler.scheduleAtFixedRate(sync, difference.getSeconds(), 60 * 60 * 24, TimeUnit.SECONDS);
         } else {
             scheduler.shutdown();
         }
