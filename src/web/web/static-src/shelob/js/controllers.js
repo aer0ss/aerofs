@@ -1,7 +1,7 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter',
-        function ($scope, $rootScope, $http, $log, $routeParams, $window, $modal, $sce, $q, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$location', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter', 'LinkPassword',
+        function ($scope, $rootScope, $http, $location, $log, $routeParams, $window, $modal, $sce, $q, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter, LinkPassword) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -27,13 +27,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         Initialize variables!
         * * *
     */
-    // $rootScope.linkPasswordEntered contains user-entered password attempt,
-    // if linkshare is password-protected. Nothing, otherwise. Uses $rootScope so that
-    // state can be shared with the login controller. Hopefully this can be reformulated in
-    // the future.
+
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
-    $rootScope.linkPasswordEntered, $scope.objects, $scope.links;
+    $scope.objects, $scope.links;
 
     // See if linksharing has been turned off
     $scope.enableLinksharing = enableLinksharing;
@@ -177,9 +174,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             OutstandingRequestsCounter.pop();
             // check if object data's done loading, if so, populate link data
             // (if not, will populate via the _getFolders call once it's done)
-            $scope.links = response.data.urls;
+            //$scope.links = response.data.urls;
             if ($scope.objects) {
-                _populateLinks();
+                _populateLinks(response.data.urls);
             }
         }, function(response){
             OutstandingRequestsCounter.pop();
@@ -219,13 +216,16 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         if (status == 401 && $scope.currentShare.token) {
             // redirect to linkshare login page
             $log.info('Link may be password-protected; directing user to log in.');
-            if (window.location.hash != '#/login') {
-                window.location.hash = '#/login';
+
+            if ($location.path() != '/authorize') {
+                $location.path('/authorize');
             }
-            if ($rootScope.linkPasswordEntered) {
+
+            if (LinkPassword.userInput) {
                 showErrorMessage('Password was incorrect. Please try again.');
             }
-            $rootScope.linkPasswordEntered = undefined;
+
+            LinkPassword.resetUserInput();
         } else {
             if ($scope.currentShare.token) {
                 $log.error('Link-sharing call failed with ' + status);
@@ -270,7 +270,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             // if login's already run, and successfully, there'll be a password attached
 
             $http.post('/url_info/' + $scope.currentShare.token, {
-                password: $rootScope.linkPasswordEntered
+                password: LinkPassword.userInput
             }).success(function(response){
                 $scope.currentShare.link = response;
 
@@ -624,14 +624,16 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     /* Link-based sharing methods */
     // attaches links to their associated files and folders
-    function _populateLinks() {
+    function _populateLinks(links) {
         var o, l;
         for (var i = 0; i < $scope.objects.length; i++) {
             o = $scope.objects[i];
             o.links = [];
-            var links = $scope.links;
-            for (var j = 0; j < $scope.links.length; j++) {
-                l = $scope.links[j];
+
+            links = links || _.clone($scope.links);
+
+            for (var j = 0; j < links.length; j++) {
+                l = links[j];
                 // Only show links that haven't already expired
                 if (l.soid === o.id && l.expires > -1) {
                     if (l.has_password) {
@@ -722,14 +724,14 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 }]);
 
 
-shelobControllers.controller('LoginCtrl',
-    ['$scope', '$rootScope',
-    function ($scope, $rootScope) {
-        $scope.loginFunction = function(password) {
-            /* Hack: put password in root scope, so other controller can access it */
-            $rootScope.linkPasswordEntered = password;
+shelobControllers.controller('LinkAuthorizationCtrl',
+    ['$scope', '$location', 'LinkPassword',
+    function ($scope, $location, LinkPassword) {
+        $scope.goToLink = function(password) {
+            LinkPassword.userInput = password;
             password = '';
-            // redirect to main page
-            window.location.hash = '#/';
+
+            //Back to main asset
+            $location.path('/');
         };
     }]);

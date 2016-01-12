@@ -14,6 +14,19 @@ shelobServices.factory('OutstandingRequestsCounter', [
     }
 ]);
 
+// This service is used to cache a user entered password between controllers
+// for password protected links
+shelobServices.factory('LinkPassword', [
+    function() {
+        return {
+            userInput: null,
+            resetUserInput: function () {
+                this.userInput = null;
+            }
+        };
+    }
+]);
+
 shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCounter',
     function($http, $q, $log, OutstandingRequestsCounter) {
 
@@ -86,7 +99,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             var deferred = $q.defer();
 
             /* Two arguments: a token and an optional boolean
-            that will stop the function from retrying fetching a token 
+            that will stop the function from retrying fetching a token
             from the Token service */
             var doStuffWithToken = function (token, doNotRetry) {
                 config.headers.Authorization = 'Bearer ' + token;

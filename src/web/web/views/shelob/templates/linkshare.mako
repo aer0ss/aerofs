@@ -10,8 +10,7 @@
 
 ## We must define home_url, or base_layout.mako cannot be rendered.
 ## An empty definition defaults home_url to the current page.
-<%def name="home_url()">
-</%def>
+<%def name="home_url()">${request.route_path('dashboard_home')}</%def>
 
 <%block name="tracking_codes">
     <script>window.analytics = false;</script>
@@ -29,7 +28,8 @@
 
 <div class="row">
     <div class="col-lg-8 col-sm-10 col-lg-offset-2 col-sm-offset-1">
-        <div xmlns:ng="http://angularjs.org" id="ngApp" xml:id="shelobApp" ng-app="shelobApp" ng-app="shelobApp">
+        <!-- IE9 doesn't like ng-app. So we put data in front of it-->
+        <div xmlns:ng="http://angularjs.org" id="ngApp" xml:id="shelobApp" data-ng-app="shelobApp">
             <div id="linkshare">
                 <div ng-view></div>
             </div>
