@@ -20,6 +20,7 @@ containers:
         - "443:443"
       volume:
         - /tmp/hpc-reverse-proxy:/etc/nginx/conf.d
+        - /hpc/certs:/etc/nginx/certs
 
   hpc-port-allocator:
     image: aerofs/hpc-port-allocator

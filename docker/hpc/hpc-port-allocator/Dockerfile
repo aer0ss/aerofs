@@ -1,4 +1,4 @@
-FROM python:2.7
+FROM python:alpine
 
 MAINTAINER AeroFS "support@aerofs.com"
 

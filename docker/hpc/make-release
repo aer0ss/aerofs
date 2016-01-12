@@ -29,9 +29,6 @@ read
 # Make sure the cache is running on the Docker VM
 $PWD/../../tools/cache/start.sh
 
-# Important: make sure we're not accidentally including the *.syncfs.com cert & key
-rm -f $PWD/hpc-reverse-proxy/root/certs/syncfs.com.*
-
 # Build the images
 for i in ${IMAGES}; do
     echo ""

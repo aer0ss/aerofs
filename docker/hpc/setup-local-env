@@ -5,7 +5,6 @@ set -e
 # the syncfs.com domain. See the README for more information on how to run locally.
 
 TEST_DOMAIN="syncfs.com"
-
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # patch the nginx config template
@@ -13,12 +12,16 @@ sed -i "" -e "s/$domain := \"aerofs.com\"/$domain := \"${TEST_DOMAIN}\"/" \
     "${THIS_DIR}/hpc-docker-gen/root/nginx.tmpl"
 
 
-# Use the syncfs.com certificate
-cp "${THIS_DIR}/hpc-reverse-proxy/root/test_certs"/syncfs.com.* "${THIS_DIR}/hpc-reverse-proxy/root/certs"
+# Copy the syncfs.com SSL cert to the docker-machine
+VM=docker-dev  # This should be kept in sync with ~/repos/aerofs/tools/bashrc/docker.sh
+SSH_KEY=~/.docker/machine/machines/${VM}/id_rsa
+SSH_HOST=docker@`docker-machine ip ${VM}`
+ssh -i $SSH_KEY $SSH_HOST "sudo mkdir -p /hpc/certs/ && sudo chown docker /hpc/certs"
+scp -i $SSH_KEY "${THIS_DIR}/hpc-reverse-proxy/test_certs"/syncfs.com.* $SSH_HOST:/hpc/certs/
 
 echo
 echo "================================"
 echo "    Success!"
 echo "    nginx.tmpl has been patched for local test with the syncfs.com domain."
-echo "    Don't forget to revert the change before commiting."
+echo "    syncfs.com SSL certificates have been copied to your docker-machine."
 echo "================================"
