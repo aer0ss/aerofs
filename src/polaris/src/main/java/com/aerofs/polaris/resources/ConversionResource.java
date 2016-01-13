@@ -339,8 +339,6 @@ public class ConversionResource {
                 objectStore.performTransform(dao, token, device, parent, new MoveChild(conflict, parent, nonConflictingName(dao, parent, conflict, ic.childName)));
                 return makeOperation(parent, currentParent, child, ic);
             } else {
-                // TODO (RD) consider queueing up a remove operation for this case, will mean that other further operations on this child would have to restore object first
-                Preconditions.checkState(child.equals(ic.child), "have an illogical alias %s for name conflicting object %s with conflict %s", child, ic.child, conflict);
                 if (currentParent != null) {
                     return new MoveChild(child, parent, nonConflictingName(dao, parent, child, ic.childName));
                 } else {

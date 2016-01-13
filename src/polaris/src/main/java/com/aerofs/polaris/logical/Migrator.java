@@ -514,8 +514,9 @@ public class Migrator implements Managed {
             LockableLogicalObject restoredObject = getObject(dao, toRestore);
             if (restoredObject.locked == LockStatus.MIGRATED) {
                 dao.objects.setLocked(toRestore, LockStatus.UNLOCKED);
+            } else if (restoredObject.locked == LockStatus.LOCKED) {
+                LOGGER.warn("restore locked object {}", toRestore);
             }
-            // TODO (RD) do something when encounter a LOCKED obj?
 
             // N.B. we don't recurse into STORE types here because those (and their subtrees) are not persistently locked by migration
             if (restoredObject.objectType == ObjectType.FOLDER) {
