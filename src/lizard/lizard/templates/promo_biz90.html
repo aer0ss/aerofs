@@ -1,0 +1,21 @@
+{% extends "logged_in.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block title %}Business-90 Trial | AeroFS Private Cloud{% endblock %}
+
+{% block content %}
+    <h1>Start Your Trial</h1>
+    <p>
+        For a limited time, we are offering a free 90-day trial for AeroFS for Business with
+        enterprise features like the Email Attachment Manager, LDAP integration, and mobile
+        device management.
+    </p>
+    <p>
+        To get started, simply click Start Trial below. No commitment or purchase required.
+    </p>
+    <br>
+    <form role="form" class="form-horizontal" action="" method="post">
+        {{ form.hidden_tag() }}
+        {{ submit_button("Start Trial") }}
+    </form>
+{% endblock %}

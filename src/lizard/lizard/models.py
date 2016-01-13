@@ -18,7 +18,7 @@ _USER_STRING_MAX_LEN = 256
 _SALT_LENGTH = 89
 _HASH_LENGTH = 89
 
-# The length of a randomly-generated signup code (should be 128 bits of randomness)
+# The length of a randomly-generated signup/promo code (should be 128 bits of randomness)
 # len(base64(' ' * 32)) + 1
 _SIGNUP_CODE_LENGTH = 45
 
@@ -144,6 +144,7 @@ class UnboundSignup(db.Model):
     # We allow these to be null or empty
     phone_number = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
     job_title = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=True)
+    promo_code = db.Column(db.String(_SIGNUP_CODE_LENGTH), nullable=True)
 
 class BoundInvite(db.Model):
     # A model that represents an email address that a customer has specified

@@ -20,6 +20,7 @@ class SignupForm(Form):
     current_fss = StringField("Current file sharing solution", validators=[Optional()])
     country = StringField("Country", validators=[Optional()])
     price_plan = HiddenField("price_plan", validators=[Optional()])
+    promo_code = HiddenField("promo_code", validators=[Optional()])
     demandramp_rm__utm_medium__c = HiddenField("demandramp_rm__utm_medium__c", validators=[Optional()])
     demandramp_rm__utm_source__c = HiddenField("demandramp_rm__utm_source__c", validators=[Optional()])
     demandramp_rm__utm_campaign__c = HiddenField("demandramp_rm__utm_campaign__c", validators=[Optional()])
@@ -54,8 +55,11 @@ class PreferencesForm(Form):
     #maintenance_emails = BooleanField("Receive maintenance notifications")
 
 class LicenseCountForm(Form):
-
     count = IntegerField('New License Count', validators=[NumberRange(min=1,max=1000,message="Purchase between 1 and 1,000 seats")])
+
+class PromoForm(Form):
+    # this field optional because it is hidden and we handle the error ourselves
+    code = HiddenField('promo_code', validators=[Optional()])
 
 def IsFutureDate(message=None):
     def _IsFutureDate(form, field):
@@ -73,6 +77,7 @@ class InternalLicenseRequestForm(Form):
     allow_device_restriction = BooleanField("Allow Device Restriction?")
     manual_invoice = StringField("Manual Invoice ID?(Required for manual license requests)", validators=[Optional()])
     stripe_subscription_id = StringField("Stripe Subscription ID?", validators=[Optional()])
+
 class InternalLicenseBundleUploadForm(Form):
     license_bundle = FileField("License bundle:", validators=[FileRequired()])
 

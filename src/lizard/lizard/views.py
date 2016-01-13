@@ -15,7 +15,7 @@ from flask import Blueprint, abort, current_app, render_template, flash, redirec
     url_for, Response, session
 
 from lizard import analytics_client, db, login_manager, csrf, login_helper, password_reset_helper, \
-    appliance, notifications, forms, models
+    appliance, notifications, forms, models, promotions
 
 blueprint = Blueprint('main', __name__, template_folder='templates')
 
@@ -128,6 +128,7 @@ def request_signup(form):
         record.company_name = form.company_name.data
         record.phone_number = form.phone_number.data
         record.job_title = form.job_title.data
+        record.promo_code = form.promo_code.data
         db.session.add(record)
         db.session.commit()
 
@@ -247,7 +248,10 @@ def signup_completion_page():
         if not login_success:
             flash(u"Login failed for {}: probably marked inactive?", "error")
 
-        return redirect(url_for(".index"))
+        if signup.promo_code:
+            return redirect("{}?code={}".format(url_for(".promo"), signup.promo_code))
+        else:
+            return redirect(url_for(".index"))
 
     return render_template("complete_signup.html",
         form=form,
@@ -594,7 +598,7 @@ def billing():
         err  = body['error']
         msg = err['message']
     except stripe.StripeError as e:
-        msg = u"An unknown error has occured and your card has not been changed. Please try again later."
+        msg = u"An unknown error has occurred and your card has not been changed. Please try again later."
         current_app.logger.warn(e)
     except Exception as e:
         msg = u"An internal server error has occured and your card has not been changed. If you continue seeing this error, please contact us at support@aerofs.com."
@@ -626,6 +630,16 @@ def receipt(id):
         charge=charge,
         line_items=line_items
     )
+
+
+@blueprint.route("/promo", methods=["GET", "POST"])
+@login.login_required
+def promo():
+    form = forms.PromoForm()
+
+    if form.validate_on_submit():
+        return promotions.post_promo(form.code.data)
+    return promotions.get_promo(request.args.get('code', ''))
 
 @blueprint.route("/dashboard", methods=["GET", "POST"])
 @login.login_required
