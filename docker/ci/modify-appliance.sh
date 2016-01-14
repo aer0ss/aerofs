@@ -28,9 +28,11 @@ true && {
     cat > "${TMP}/Dockerfile" <<END
 FROM ${CONFIG}
 RUN  sed -i \
-     -e s/enable_phoenix=true// \
-     -e s/log_level=INFO/log_level=DEBUG/ \
-     /external.properties.docker.default
+        -e s/enable_phoenix=true// \
+        /external.properties.default && \
+     sed -i \
+        -e s/log_level=INFO/log_level=DEBUG/ \
+        /external.properties.docker.default
 END
     docker build -t ${CONFIG} "${TMP}"
     rm -rf "${TMP}"
