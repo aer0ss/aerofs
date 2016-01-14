@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.fetch.ChangeNotificationSubscriber;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
+import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -57,6 +58,7 @@ public class Core implements IModule
     private final IQuotaEnforcement _quota;
     private final LogicalStagingArea _sa;
     private final ChangeNotificationSubscriber _cnsub;
+    private final PauseSync _pauseSync;
 
     @Inject
     public Core(
@@ -85,6 +87,7 @@ public class Core implements IModule
             IQuotaEnforcement quota,
             DaemonLaunchTasks dlts,
             LogicalStagingArea sa,
+            PauseSync pauseSync,
             ChangeNotificationSubscriber cnsub)
     {
         _imce2core = imce.imce();
@@ -113,6 +116,7 @@ public class Core implements IModule
         _quota = quota;
         _sa = sa;
         _cnsub = cnsub;
+        _pauseSync = pauseSync;
     }
 
     @Override
@@ -195,7 +199,7 @@ public class Core implements IModule
 
         try {
             _tokenManager.inPseudoPause_(Cat.UNLIMITED, "first-launch", () -> {
-                Thread t = new Thread(this::startAll_);
+                Thread t = new Thread(this::startAll_, "fl");
                 t.start();
                 t.join();
                 return null;
@@ -224,5 +228,8 @@ public class Core implements IModule
         _ssmp.start();
         _quota.start_();
         _cc.start();
+
+        // delay polaris interaction to the very end of the startup sequence
+        _pauseSync.resume();
     }
 }

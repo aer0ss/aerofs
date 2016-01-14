@@ -8,8 +8,8 @@ from lib.files import instance_unique_path
 from lib.files.dirtree.dirtree import DirTree
 from lib import ritual
 from syncdet.case.assertion import assertTrue
-from lib.cases import reinstall
 from lib.app import aerofs_proc
+from lib.app.install import get_installer
 
 from ..sharing.common import TAG_FILE_NAME
 
@@ -48,7 +48,11 @@ def main():
         'dir':      {TAG_FILE_NAME: {}}
     }).write(instance_unique_path())
 
-    reinstall.reinstall()
+    installer = get_installer()
+    # remove conf db to force rtroot cleanup/reinstall
+    os.remove(os.path.join(installer.get_rtroot(), "conf"))
+    installer.configure_unattended_setup()
+    installer.install(clean_install=False)
 
     # check that folders are still present after reinstall
     assertTrue(os.path.exists(sub_shared_folder()))
@@ -75,7 +79,7 @@ def main():
     # folders are restored, which is true iff all shares from before are present after.
     while not sf.issubset(set(ritual.connect().list_admitted_or_linked_shared_folders())):
         n += 1
-        if n > 10:
+        if n > 50:
             assertTrue(False)
         time.sleep(0.2)
 

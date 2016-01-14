@@ -57,20 +57,6 @@ public class DaemonPolarisStore extends PolarisStore
     }
 
     @Override
-    void postCreate_()
-    {
-        _mcss.start_();
-        super.postCreate_();
-    }
-
-    @Override
-    void preDelete_()
-    {
-        _mcss.stop_();
-        super.preDelete_();
-    }
-
-    @Override
     public void startSubmissions() {
         super.startSubmissions();
         _mcss.start_();

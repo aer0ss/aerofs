@@ -87,7 +87,8 @@ public class ChangeFetcher
     {
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
-            cb.onFailure_(new ExRetryLater("paused"));
+            // NB: fetch scheduler will be restarted when sync is resumed
+            cb.onSuccess_(false);
             return;
         }
 

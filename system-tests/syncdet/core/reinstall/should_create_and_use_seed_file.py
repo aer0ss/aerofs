@@ -11,11 +11,10 @@ import binascii
 from lib.files import instance_unique_path
 from lib import ritual
 from aerofs_ritual.id import get_root_sid_bytes
-from aerofs_sp import sp as sp_service
 from syncdet.case import local_actor
 from syncdet.case.assertion import assertEqual
 from lib.app import aerofs_proc
-from lib.cases import reinstall
+from lib.app.install import get_installer
 
 
 def main():
@@ -30,7 +29,11 @@ def main():
 
     aerofs_proc.stop_all()
 
-    reinstall.reinstall()
+    installer = get_installer()
+    # remove conf db to force rtroot cleanup/reinstall
+    os.remove(os.path.join(installer.get_rtroot(), "conf"))
+    installer.configure_unattended_setup()
+    installer.install(clean_install=False)
 
     # check that the SOID is unchanged
     r = ritual.connect()

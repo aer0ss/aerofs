@@ -38,7 +38,7 @@ public class PolarisStore extends Store
         @Inject protected ChangeFetchScheduler.Factory _factCFS;
         @Inject protected Collector2.Factory _factCF;
         @Inject protected SenderFilters.Factory _factSF;
-        @Inject private PauseSync _pauseSync;
+        @Inject protected PauseSync _pauseSync;
         @Inject private SubmissionScheduler.Factory<ContentChangeSubmitter> _factCCSS;
         @Inject private IVersionUpdater _vu;
         @Inject private PulledDeviceDatabase _pddb;
@@ -51,7 +51,7 @@ public class PolarisStore extends Store
         }
     }
 
-    private final Factory _f;
+    protected final Factory _f;
 
     protected PolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs,
                            Collector2 cf, SenderFilters sf, IVersionUpdater vu) throws SQLException
@@ -107,12 +107,9 @@ public class PolarisStore extends Store
     @Override
     void postCreate_()
     {
-        _ccss.start_();
-        // start fetching updates from polaris
-        _cfs.start_();
-
-        // subscribe to change notifications
-        _f._cnsub.subscribe_(this);
+        if (!_f._pauseSync.isPaused()) {
+            onResumeSync_();
+        }
 
         _f._devices.afterAddingStore_(_sidx);
 
@@ -124,11 +121,11 @@ public class PolarisStore extends Store
     @Override
     void preDelete_()
     {
-        _ccss.stop_();
         _f._pauseSync.removeListener_(this);
 
-        // stop fetching updates from polaris
-        _cfs.stop_();
+        if (!_f._pauseSync.isPaused()) {
+            onPauseSync_();
+        }
 
         _f._cnsub.unsubscribe_(this);
 

@@ -158,13 +158,14 @@ public class MetaChangeSubmitter implements Submitter
     {
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
-            cb.onFailure_(new ExRetryLater("paused"));
+            cb.onSuccess_(false);
             return;
         }
 
         long highest = _cedb.getHighestChangeEpoch_(sidx);
         Long current = _cedb.getChangeEpoch_(sidx);
-        // current will only be set if we've migrated to polaris, if not migrated to polaris we should ignore this check
+        // current will only be set if we've migrated to polaris
+        // if not migrated to polaris we should ignore this check
         if (current != null && highest > current) {
             l.info("delay submit: current {} < highest {}", current, highest);
             cb.onSuccess_(false);

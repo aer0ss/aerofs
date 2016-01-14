@@ -105,7 +105,7 @@ public class ContentChangeSubmitter implements Submitter
     {
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
-            cb.onFailure_(new ExRetryLater("paused"));
+            cb.onSuccess_(false);
             return;
         }
 

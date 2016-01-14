@@ -16,7 +16,7 @@ public class PauseSync
 {
     private final static Logger l = Loggers.getLogger(PauseSync.class);
 
-    private final AtomicBoolean _paused = new AtomicBoolean(false);
+    private final AtomicBoolean _paused = new AtomicBoolean(true);
     private final HashSet<Listener> _listeners = new HashSet<>();
 
     public interface Listener
