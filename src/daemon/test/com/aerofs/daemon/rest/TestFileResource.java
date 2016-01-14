@@ -277,6 +277,96 @@ public class TestFileResource extends AbstractRestTest
     }
 
     @Test
+    public void shouldReturnHeadersForHeadRequest() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+
+        //Chrome
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/" +
+                        "537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+
+        //Safari
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/" +
+                        "601.3.9 (KHTML, like Gecko) Version/9.0.2 Safari/601.3.9")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", Integer.toString(FILE_CONTENT.length))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+    }
+
+    @Test
+    public void shouldNotReturnContentLengthForHeadRequestinIE() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", equalTo(null))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", " Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; Trident/6.0)")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", equalTo(null))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+    }
+
+    @Test
+    public void shouldNotReturnContentLengthForHeadRequestinIE11() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", equalTo(null))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+    }
+
+    @Test
+    public void shouldNotReturnContentLengthForHeadRequestinIEEdge() throws Exception
+    {
+        givenAccess()
+                .header("Accept", "*/*")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/532.36 " +
+                        "(KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240")
+        .expect()
+                .statusCode(200)
+                .header("Content-Type", "text/plain")
+                .header("Content-Length", equalTo(null))
+                .header("ETag", CURRENT_ETAG)
+        .when().head(RESOURCE + "/content", object("f1.txt").toStringFormal());
+    }
+
+    @Test
     public void shouldGet406IfNotAcceptingOctetStream() throws Exception
     {
         givenAccess()

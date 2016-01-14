@@ -28,6 +28,35 @@ import static com.aerofs.daemon.rest.util.EntityTagParser.parse;
 @Produces(MediaType.APPLICATION_JSON)
 public class FilesResource extends AbstractResource
 {
+
+    @Since("0.9")
+    @HEAD
+    @Path("/{file_id}/content")
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, "multipart/byteranges"})
+    public Response contentHead(@Auth OAuthToken token,
+                            @PathParam("file_id") RestObject object,
+                            @HeaderParam(Names.IF_RANGE) String ifRange,
+                            @HeaderParam(Names.RANGE) String range,
+                            @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch,
+                            @HeaderParam(Names.USER_AGENT) String userAgent)
+    {
+        EntityTag etIfRange = parse(ifRange);
+        Response response = new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
+
+        /**
+         * There is a weird thing in IE where if the content-length exceeds the value of an unsigned
+         * 32-bit integer (4,294,967,295bytes or 4.29GB) it results in a 534 Exception:
+         * Arithmetic result exceeded 32 bits. Since RFC 2616 standards only highly recommend the
+         * presence of a content-length field in a HEAD request, it is removed for IE.
+         */
+
+        if (userAgent.contains("MSIE") || userAgent.contains("Edge") || userAgent.contains("Trident")) {
+            response.getMetadata().remove(Names.CONTENT_LENGTH);
+        }
+
+        return response;
+    }
+
     @Since("0.9")
     @GET
     @Path("/{file_id}/content")

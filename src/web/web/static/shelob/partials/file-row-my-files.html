@@ -8,7 +8,7 @@
           </div>
           <div class="name">
             <a ng-if="object.type === 'folder'" ng-hide="object.edit" ng-href="#/{{derefAnchor(object)}}">{{object.name}}</a>
-            <a ng-if="object.type === 'file' && object.size >= 0" ng-hide="object.edit" ng-click="download(object.id)">{{object.name}}</a>
+            <a ng-if="object.type === 'file' && object.size >= 0" ng-hide="object.edit" ng-click="download(object.id, object.name)">{{object.name}}</a>
             <span ng-if="object.type === 'file' && (object.size === undefined || object.size === null || object.size === -1)">{{object.name}}</span>
             <input aero-in-place-edit
                    ng-show="object.edit"

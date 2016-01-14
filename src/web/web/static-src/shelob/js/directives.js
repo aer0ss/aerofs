@@ -53,7 +53,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
 
             // open progress modal
             scope.progressModal = $modal.open({
-                templateUrl: '/static/shelob/partials/file-download-modal.html',
+                templateUrl: '/static/shelob/partials/file-upload-modal.html',
                 // don't close modal when clicking the backdrop or hitting escape
                 backdrop: 'static',
                 keyboard: false,
@@ -219,7 +219,7 @@ getFilename = function(mimeType) {
 };
 
 // Generates a file/folder row for an object.
-// Uses different templates to render with depending on whether this is 
+// Uses different templates to render with depending on whether this is
 // a My Files admin page or a linkshare page
 shelobDirectives.directive('aeroFileRow', function() {
     return {
