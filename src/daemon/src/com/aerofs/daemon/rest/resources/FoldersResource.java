@@ -15,6 +15,7 @@ import com.aerofs.daemon.rest.event.EIObjectPath;
 import com.aerofs.daemon.rest.util.Fields;
 import com.aerofs.rest.auth.OAuthToken;
 import com.aerofs.base.id.RestObject;
+import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Folder;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -36,6 +37,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.io.IOException;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -112,5 +114,17 @@ public class FoldersResource extends AbstractResource
             @PathParam("folder_id") RestObject object)
     {
         return new EIObjectPath(_imce,  token, object).execute();
+    }
+
+    @Since("1.3")
+    @PUT
+    @Path("/{folder_id}/is_shared")
+    public Response share(@Auth OAuthToken token,
+            @PathParam("folder_id") RestObject object)
+    {
+        // Status.NOT_IMPLEMENTED (= 501) is... not implemented.
+        return Response.status(501).entity(
+            new Error(com.aerofs.rest.api.Error.Type.NOT_IMPLEMENTED,
+                      "This route exists only with centralized metadata configuration.")).build();
     }
 }
