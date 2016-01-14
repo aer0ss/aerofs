@@ -906,6 +906,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
 
         OA oaParent;
+        // FIXME: interleaved submission of complex name conflicts (e.g. name-shifting)
+        // can result in changes being reverted on both side
+        // This is suboptimal (one side should win) and can occasionally break meta/meta conflict
+        // syncdet tests.
+        // One way of improving this would be for polaris to be enforce more restrictions on moves,
+        // e.g. tagging (parent, name) pairs with a logical timestamp to prevent such interleaved
+        // submissions and close some races in conflict resolution. A purely client-side solution
+        // would however be preferred.
         if (clnk != null && _ds.getChild_(sidx, clnk.parent, clnk.name) == null) {
             // conflict OID was moved locally and its remote location is free: move it back
             l.info("revert local change: {} -> {}/{}", oaConflict.soid(), clnk.parent, clnk.name);
