@@ -201,7 +201,7 @@ public class ContentReceiver
         // stream being cleanly closed in such circumstances.
         Thread prefixCloser = new Thread(() -> {
             try { prefixStream.close(); } catch (IOException e) {}
-        });
+        }, "closer");
         Runtime.getRuntime().addShutdownHook(prefixCloser);
 
         try {
@@ -270,7 +270,14 @@ public class ContentReceiver
             }
         } finally {
             prefixStream.close();
-            Runtime.getRuntime().removeShutdownHook(prefixCloser);
+            try {
+                Runtime.getRuntime().removeShutdownHook(prefixCloser);
+            } catch (IllegalStateException e) {
+                // sigh, this is so damn stupid...
+                // removing a hook after shutdown is started throws an exception but of course
+                // there is no way to tell if a shutdown has been initiated...
+                l.info("failed to remove shutdown hook", e);
+            }
         }
         return prefixStream.digest();
     }
