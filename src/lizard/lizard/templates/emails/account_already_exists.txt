@@ -1,0 +1,10 @@
+Hi {{ admin.first_name }},
+
+An attempt has been made to create an AeroFS Private Cloud account using this email address. Our system has detected that you already have an account, so we have not taken any action based on this request.
+
+If you are unable to access your account, you may reset your password using our password reset interface.
+
+{{ password_reset_url }}
+
+Regards,
+The AeroFS Team

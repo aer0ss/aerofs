@@ -108,8 +108,12 @@ def signup_request_headless_page():
 def request_signup(form):
     # If email already in Admin table, noop (but return success). We don't want to leak that an
     # account bound to an email exists by returning an error.
-    print(form.email.data)
-    if models.Admin.query.filter_by(email=form.email.data).first():
+    admin = models.Admin.query.filter_by(email=form.email.data).first()
+    if admin:
+        if form.promo_code.data is not None and len(form.promo_code.data) > 0:
+            notifications.send_account_already_exists_with_promo_email(admin, form.promo_code.data)
+        else:
+            notifications.send_account_already_exists_email(admin)
         return
     # If email already in UnboundSignup, just fetch that record.
     record = models.UnboundSignup.query.filter_by(email=form.email.data).first()

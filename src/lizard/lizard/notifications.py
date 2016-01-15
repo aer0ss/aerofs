@@ -34,6 +34,27 @@ def _make_email_message(email_address, subject, text_body, html_body):
 
     return msg
 
+def _account_already_exists_email_for(admin):
+    text_body = render_template("emails/account_already_exists.txt",
+            password_reset_url=url_for(".start_password_reset", _external=True),
+            admin=admin)
+    html_body = render_template("emails/account_already_exists.html",
+            password_reset_url=url_for(".start_password_reset", _external=True),
+            admin=admin)
+    return _make_email_message(admin.email, "Your AeroFS Account", text_body, html_body)
+
+def _account_already_exists_with_promo_email_for(admin, promo_code):
+    promo_url = "{}?code={}".format(url_for(".promo", _external=True), promo_code)
+    text_body = render_template("emails/account_already_exists_with_promo.txt",
+            promo_url=promo_url,
+            password_reset_url=url_for(".start_password_reset", _external=True),
+            admin=admin)
+    html_body = render_template("emails/account_already_exists_with_promo.html",
+            promo_url=promo_url,
+            password_reset_url=url_for(".start_password_reset", _external=True),
+            admin=admin)
+    return _make_email_message(admin.email, "Your AeroFS Account", text_body, html_body)
+
 def _verification_email_for(unbound_signup):
     signup_url = url_for(".signup_completion_page", signup_code=unbound_signup.signup_code, _external=True)
     print u"will email verification to {}, link {}".format(unbound_signup.email, signup_url)
@@ -114,6 +135,14 @@ def _send_email(email_address, msg):
         s.sendmail(SUPPORT_ADDR, [email_address], msg.as_string())
     finally:
         s.quit()
+
+def send_account_already_exists_with_promo_email(admin, promo_code):
+    msg = _account_already_exists_with_promo_email_for(admin, promo_code)
+    _send_email(admin.email, msg)
+
+def send_account_already_exists_email(admin):
+    msg = _account_already_exists_email_for(admin)
+    _send_email(admin.email, msg)
 
 def send_verification_email(unbound_signup):
     msg = _verification_email_for(unbound_signup)
