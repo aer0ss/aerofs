@@ -237,7 +237,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         for (SIndex sidx : _stores.getAll_()) {
             if (sidx.equals(expect)) continue;
             OA oa = _ds.getOANullable_(new SOID(sidx, migrant));
-            if (oa != null) {
+            if (oa != null && !oa.isAnchor()) {
                 return sidx;
             }
         }

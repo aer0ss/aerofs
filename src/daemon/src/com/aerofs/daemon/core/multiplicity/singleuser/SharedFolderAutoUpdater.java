@@ -6,6 +6,9 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStoreCreationOperator;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -23,6 +26,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.Sets;
@@ -39,11 +43,13 @@ import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newMutualAu
  * folder (mostly to avoid automatically re-joining it when a new device is installed).
  * When anchor is renamed it triggers shared folder name update in db for this particular user
  */
-class SharedFolderAutoUpdater implements IDirectoryServiceListener, IExpulsionListener
+class SharedFolderAutoUpdater implements IDirectoryServiceListener, IExpulsionListener,
+        IStoreCreationOperator
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoUpdater.class);
 
     private final DirectoryService _ds;
+    private final IMapSIndex2SID _sidx2sid;
     private final SharedFolderUpdateQueueDatabase _lqdb;
 
     class LeaveQueue implements IPersistentQueue<ISharedFolderOp, ISharedFolderOp>
@@ -101,16 +107,24 @@ class SharedFolderAutoUpdater implements IDirectoryServiceListener, IExpulsionLi
 
     @Inject
     public SharedFolderAutoUpdater(PersistentQueueDriver.Factory f, DirectoryService ds,
-            Expulsion expulsion, SharedFolderUpdateQueueDatabase lqdb)
+            Expulsion expulsion, SharedFolderUpdateQueueDatabase lqdb, StoreCreationOperators sco,
+            IMapSIndex2SID sidx2sid)
     {
         _ds = ds;
         _lqdb = lqdb;
+        _sidx2sid = sidx2sid;
         _pqd = f.create(new LeaveQueue());
 
         _ds.addListener_(this);
         expulsion.addListener_(this);
+        sco.add_(this);
 
         _pqd.scheduleScan_();
+    }
+
+    @Override
+    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException {
+        removeLeaveCommandsFromQueue_(_sidx2sid.getLocalOrAbsent_(sidx), t);
     }
 
     public void removeLeaveCommandsFromQueue_(SID sid, Trans t) throws SQLException

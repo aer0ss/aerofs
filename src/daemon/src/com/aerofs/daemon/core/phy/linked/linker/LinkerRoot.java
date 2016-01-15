@@ -21,6 +21,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
+import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
@@ -193,7 +194,7 @@ public class LinkerRoot
             try (Trans t = _f._tm.begin_()) {
                 res = _f._mc.mightCreate_(pc, _f._globalBuffer, _og, t);
                 t.commit_();
-            } catch (ExFileNotFound|ExFileNoPerm|ExNotFound e) {
+            } catch (ExFileNotFound | ExFileNoPerm | ExNotFound e) {
                 // We may get a not found exception if a file was created and deleted or moved very
                 // soon thereafter, and we didn't get around to checking it out until it was already
                 // gone. We simply ignore the error in this situation to avoid frequent rescans
@@ -207,9 +208,13 @@ public class LinkerRoot
                 // placed in them faster than we can register a watch on Linux.
                 _ssq.scanImmediately_(Collections.singleton(pc._absPath), true);
             }
+        } catch (ExRetryLater e) {
+            // post-phoenix, migration depends on polaris, which may not be available...
+            l.warn("rescan later {}", absPath, e);
+            _ssq.scanAfterDelay_(Collections.singleton(absPath), rescanSubtree == RescanSubtree.FORCE);
         } catch (Exception e) {
-            // On any exception, perform a full scan.
-            l.warn("full scan triggered by " + Util.e(e));
+            // On any unexpected exception, perform a full scan.
+            l.warn("full rescan", e);
             _ssq.scanAfterDelay_(Collections.singleton(_absRootAnchor), true);
         }
     }

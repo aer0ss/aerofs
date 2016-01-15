@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
@@ -165,6 +166,18 @@ public class ImmigrantCreator
             // Hopefully offline cross-store moves are rare enough that the synchronous polaris
             // request doesn't cause too much trouble
             // TODO: revisit this once p2p meta sync is burned
+
+            // Wait until we the object being migrated is in the remote tree
+            //  - if it's not know to polaris, the transform will be rejected with a 404
+            //  - otherwise we want to avoid races where we migrate an object before receiving
+            //    the ack of its INSERT transform and end up restoring the object incorrectly,
+            //    which in turn can result in the object being incorrectly deleted if it is migrated
+            //    back and forth between two stores.
+            RemoteLink lnk = _rldb.getParent_(soid.sidx(), soid.oid());
+            if (lnk == null) {
+                throw new ExRetryLater("resolve meta before migrate");
+            }
+
             OA oa = _ds.getOA_(soid);
             LocalChange c = new LocalChange();
             c.type = LocalChange.Type.MOVE_CHILD;
@@ -222,6 +235,7 @@ public class ImmigrantCreator
         String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
         if (!r.getStatus().equals(HttpResponseStatus.OK)) {
             l.info("polaris error {}\n{}", r.getStatus(), content);
+            // TODO: handle lack of WRITE access to source or dest store
             if (r.getStatus().getCode() >= 500) {
                 throw new ExRetryLater(r.getStatus().getReasonPhrase());
             }
@@ -323,7 +337,7 @@ public class ImmigrantCreator
                 // OID propagates to polaris and from there to other peers.
                 if (!reuseId || _rldb.getParent_(sidxFrom, oidFrom) == null) {
                     _mcdb.insertChange_(sidxTo, soidTo.oid(), soidToParent.oid(), name,
-                            reuseId ? null : oidFrom, t);
+                            reuseId || oaFrom.isAnchor() ? null : oidFrom, t);
                 }
 
                 // preserve explicit expulsion state
