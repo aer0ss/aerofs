@@ -59,12 +59,11 @@
 
 <%block name="custom_banner_display">
     <div style="display:none; background:#EEE;" id="flash-msg-info" class="alert alert-block">
-        <span id="flash-msg-info-body">
+        <p id="flash-msg-info-body">
             You are using an insecure interface. It is recommended that you use our
             <a id="secure-link" href="">secure site</a>. Browser warnings may appear if this is a
-            new installation and you have not yet configured a pubicly signed certificate and key.
-        </span>
-    <br/>
+            new installation and you have not yet configured a publicly signed certificate and key.
+        </p>
     </div>
 </%block>
 
