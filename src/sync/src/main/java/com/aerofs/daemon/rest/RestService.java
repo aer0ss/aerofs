@@ -10,11 +10,18 @@ import com.aerofs.daemon.rest.resources.AbstractResource;
 import com.aerofs.daemon.rest.resources.VersionResource;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.rest.api.ChildrenList;
+import com.aerofs.rest.api.File;
+import com.aerofs.rest.api.File.ContentState;
+import com.aerofs.rest.api.Folder;
+import com.aerofs.rest.api.ParentPath;
 import com.aerofs.rest.auth.OAuthExtractor;
 import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.rest.providers.*;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Version;
+import com.aerofs.restless.providers.GsonProvider;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -38,6 +45,16 @@ public class RestService extends Service
     private static final int PORT = getIntegerProperty("api.daemon.port", 0);
 
     private final ISslHandlerFactory _sslHandlerFactory;
+
+    static {
+        // Workaround for https://github.com/google/gson/issues/764
+        GsonProvider.GSON.toJson(new ChildrenList(null,
+                ImmutableList.of(
+                        new Folder("", "", "", new ParentPath(ImmutableList.of()), "", null)),
+                ImmutableList.of(
+                        new File("", "", "", null, null, 0L, "", "", ContentState.AVAILABLE)
+                )));
+    }
 
     @Inject
     RestService(Injector injector, CfgKeyManagersProvider kmgr, Set<AbstractResource> resources)

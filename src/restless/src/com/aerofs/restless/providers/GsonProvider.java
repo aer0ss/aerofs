@@ -30,7 +30,7 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
 {
     private final static Logger l = LoggerFactory.getLogger(GsonProvider.class);
 
-    private static final Gson _gson = new GsonBuilder()
+    public static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(Date.class, new DateTypeAdapter())
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
@@ -70,7 +70,7 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
             MediaType mediaType, MultivaluedMap<String, String> httpHeaders, InputStream entityStream)
             throws IOException, WebApplicationException
     {
-        return _gson.fromJson(new InputStreamReader(entityStream, Charsets.UTF_8), type);
+        return GSON.fromJson(new InputStreamReader(entityStream, Charsets.UTF_8), type);
     }
 
     // WRITER
@@ -93,7 +93,7 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
             throws IOException
     {
         try (JsonWriter jsw = new JsonWriter(new OutputStreamWriter(entityStream, Charsets.UTF_8))) {
-            _gson.toJson(t, type, jsw);
+            GSON.toJson(t, type, jsw);
         } catch (Throwable e) {
             l.warn("serialization failed", e);
             Throwables.propagateIfInstanceOf(e, IOException.class);
