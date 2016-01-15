@@ -174,7 +174,20 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             OutstandingRequestsCounter.pop();
             // check if object data's done loading, if so, populate link data
             // (if not, will populate via the _getFolders call once it's done)
-            $scope.links = response.data.urls;
+            var now = Date.now()
+            var links = response.data.urls
+            // server gives (optional) absolute expiry date
+            // existing code expects number of seconds until expiry, with 0 to signify no expiry
+            // TODO: rework existing code to use new definition of expiry
+            for (var j = 0; j < links.length; j++) {
+                l = links[j];
+                if (l.expires === undefined) {
+                    l.expires = 0;
+                } else if {
+                    l.expires = (new Date(l.expires).getTime() - now) / 1000;
+                }
+            }
+            $scope.links = links;
             if ($scope.objects) {
                 _populateLinks();
             }

@@ -1,10 +1,12 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.ids.OID;
+import com.aerofs.bifrost.module.AccessTokenDAO;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
+import com.aerofs.restless.providers.GsonProvider;
 import com.aerofs.sp.server.AccessCodeProvider;
 import com.aerofs.sp.server.Zelda;
 import com.google.common.collect.ImmutableMap;
@@ -18,26 +20,23 @@ import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.X_REAL_IP;
 import static com.jayway.restassured.http.ContentType.JSON;
-import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 /**
  * N.B. the routes covered in this test suite are currently undocumented.
- *
- * TODO (AT): implement and add test coverage for internal failures and ensure access codes and
- *   access tokens are cleaned up.
  */
 public class TestUrlShareResource extends AbstractResourceTest
 {
-    private static final String BASE_RESOURCE = "/v1.4/shares";
-    private static final String URL_SHARES_RESOURCE = BASE_RESOURCE + "/{sid}/urls";
+    private static final String URL_SHARES_RESOURCE = "/v1.4/links";
     private static final String SINGLE_URL_SHARE_RESOURCE = URL_SHARES_RESOURCE + "/{key}";
     private static final String URL_PASSWORD_RESOURCE = SINGLE_URL_SHARE_RESOURCE + "/password";
     private static final String URL_EXPIRES_RESOURCE = SINGLE_URL_SHARE_RESOURCE + "/expires";
@@ -52,6 +51,11 @@ public class TestUrlShareResource extends AbstractResourceTest
     private String key;
     private String urlContent;
     private String urlContentWithFields;
+    private String urlContentToAnchor;
+    private String urlContentToOtherAnchor;
+
+    final static Long EXPIRY_EPOCH = 8000L;
+    final static String EXPIRY =  GsonProvider.dateFormat().format(new Date(EXPIRY_EPOCH));
 
     @Before
     public void testSetup()
@@ -84,7 +88,11 @@ public class TestUrlShareResource extends AbstractResourceTest
                 "soid", soid.toStringFormal(),
                 "password", "fake_password",
                 "require_login", true,
-                "expires", 8000L));
+                "expires", EXPIRY));
+        urlContentToAnchor = formatJSONContent(ImmutableMap.of("soid",
+                new RestObject(SID.rootSID(user), SID.storeSID2anchorOID(sid)).toStringFormal()));
+        urlContentToOtherAnchor = formatJSONContent(ImmutableMap.of("soid",
+                new RestObject(SID.rootSID(other), SID.storeSID2anchorOID(sid)).toStringFormal()));
     }
 
     @Test
@@ -94,8 +102,8 @@ public class TestUrlShareResource extends AbstractResourceTest
 
         givenReadAccess()
                 .header(X_REAL_IP, "4.2.2.2")
-                .expect()
-                .statusCode(SC_OK)
+        .expect()
+                .statusCode(200)
                 .body("key", equalTo(key))
                 .body("soid", equalTo(soid.toStringFormal()))
                 .body("token", equalTo(token))
@@ -103,9 +111,8 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .body("require_login", equalTo(false))
                 .body("has_password", equalTo(false))
                 .body("password", nullValue())
-                .body("expires", equalTo(0))
-                .when()
-                .get(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key);
+        .when()
+                .get(SINGLE_URL_SHARE_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -132,36 +139,18 @@ public class TestUrlShareResource extends AbstractResourceTest
     public void getURLInfo_shouldReturnPropertyValues()
             throws Exception
     {
-        mockTime(5000L);
-
-        String key2 = mkUrl(soid, token, user, true, "fake_password", 8000L);
+        String key2 = mkUrl(soid, token, user, true, "fake_password", EXPIRY_EPOCH);
 
         givenReadAccess()
         .expect()
-                .statusCode(SC_OK)
+                .statusCode(200)
                 .body("key", equalTo(key2))
                 .body("require_login", equalTo(true))
                 .body("has_password", equalTo(true))
                 .body("password", nullValue())
-                .body("expires", equalTo(3))
+                .body("expires", equalTo(EXPIRY))
         .when()
-                .get(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key2);
-    }
-
-    @Test
-    public void listURLs_should200GivenReadAccess()
-            throws Exception
-    {
-        mkUrl(soid, token, user, false, null, null);
-        mkUrl(soid, token, user, false, null, null);
-        mkUrl(soid, token, user, false, null, null);
-
-        givenReadAccess()
-        .expect()
-                .statusCode(SC_OK)
-                .body("urls", iterableWithSize(4))
-        .when()
-                .get(URL_SHARES_RESOURCE, sid.toStringFormal());
+                .get(SINGLE_URL_SHARE_RESOURCE, key2);
     }
 
     @Test
@@ -171,15 +160,14 @@ public class TestUrlShareResource extends AbstractResourceTest
         mockTime(5000L);
 
         LocationMatchers matchers = new LocationMatchers(
-                String.format("https://localhost:%s%s/%s/urls/",
-                        sparta.getListeningPort(), BASE_RESOURCE, sid.toStringFormal()));
+                String.format("https://localhost:%s/v1.4/links/", sparta.getListeningPort()));
 
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
                 .contentType(JSON)
                 .content(urlContent)
         .expect()
-                .statusCode(SC_CREATED)
+                .statusCode(201)
                 .header(HttpHeaders.Names.LOCATION, matchers._locationMatcher)
                 .body("key", matchers._keyMatcher)
                 .body("soid", equalTo(soid.toStringFormal()))
@@ -187,9 +175,8 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .body("created_by", equalTo(user.getString()))
                 .body("require_login", equalTo(false))
                 .body("has_password", equalTo(false))
-                .body("expires", equalTo(0))
         .when()
-                .post(URL_SHARES_RESOURCE, sid.toStringFormal());
+                .post(URL_SHARES_RESOURCE);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -219,13 +206,13 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content(urlContentWithFields)
         .expect()
-                .statusCode(SC_CREATED)
+                .statusCode(201)
                 .body("require_login", equalTo(true))
                 .body("has_password", equalTo(true))
                 .body("password", nullValue())
-                .body("expires", equalTo(3))
+                .body("expires", equalTo(EXPIRY))
         .when()
-                .post(URL_SHARES_RESOURCE, sid.toStringFormal());
+                .post(URL_SHARES_RESOURCE);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -236,7 +223,21 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("true", payload.get("set_password"));
         assertFalse(payload.containsKey("password"));
         assertFalse(payload.containsValue("fake_password"));
-        assertEquals("8000", payload.get("expiry"));
+        assertEquals(Long.toString(EXPIRY_EPOCH), payload.get("expiry"));
+    }
+
+    @Test
+    public void createURL_shouldFollowAnchor()
+            throws Exception
+    {
+        givenWriteAccess()
+                .contentType(JSON)
+                .content(urlContentToAnchor)
+        .expect()
+                .statusCode(201)
+                .body("soid", equalTo(new RestObject(sid).toStringFormal()))
+        .when()
+                .post(URL_SHARES_RESOURCE);
     }
 
     @Test
@@ -246,27 +247,22 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content(urlContent)
         .expect()
-                .statusCode(SC_UNAUTHORIZED)
+                .statusCode(401)
                 .body("type", equalTo("UNAUTHORIZED"))
         .when()
-                .post(URL_SHARES_RESOURCE, sid.toStringFormal());
+                .post(URL_SHARES_RESOURCE);
     }
 
     @Test
     public void createURL_should400OnBadSOID()
             throws Exception
     {
-        SID sid2 = mkShare("fake_share_2", user);
-        OID oid2 = SID.storeSID2anchorOID(sid2);
-
         String[] soids = {
                 "badSOID",
                 "root",
                 "appdata",
                 "badSID0000000000000000000000000badOID",
                 "badSID0000000000000000000000000badOID00000000000000000000000000",
-                new RestObject(sid2).toStringFormal(),      // object in another store
-                new RestObject(sid, oid2).toStringFormal(), // anchor in the same store
         };
 
         for (String soid : soids) {
@@ -274,10 +270,34 @@ public class TestUrlShareResource extends AbstractResourceTest
                     .contentType(JSON)
                     .content(formatJSONContent(ImmutableMap.of("soid", soid)))
             .expect()
-                    .statusCode(SC_BAD_REQUEST)
+                    .statusCode(400)
                     .body("type", equalTo("BAD_ARGS"))
             .when()
-                    .post(URL_SHARES_RESOURCE, sid.toStringFormal());
+                    .post(URL_SHARES_RESOURCE);
+        }
+    }
+
+    @Test
+    public void createURL_should403IfNotJoinedOwner()
+            throws Exception
+    {
+        SID another = mkShare("another_share", other);
+        RestObject[] soids = {
+                new RestObject(another),
+                new RestObject(SID.rootSID(other), SID.storeSID2anchorOID(another)),
+        };
+
+        for (RestObject soid : soids)
+        {
+            // the caller may be an admin, but the caller is not a joined owner of the new share.
+            givenAdminAccess()
+                    .contentType(JSON)
+                    .content(formatJSONContent(ImmutableMap.of("soid", soid.toStringFormal())))
+            .expect()
+                    .statusCode(403)
+                    .body("type", equalTo("FORBIDDEN"))
+            .when()
+                    .post(URL_SHARES_RESOURCE);
         }
     }
 
@@ -292,15 +312,15 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content(urlContentWithFields)
         .expect()
-                .statusCode(SC_OK)
+                .statusCode(200)
                 .body("key", equalTo(key))
                 .body("token", not(equalTo(token)))
                 .body("has_password", equalTo(true))
                 .body("password", nullValue())
-                .body("expires", equalTo(3))
+                .body("expires", equalTo(EXPIRY))
                 .body("require_login", equalTo(true))
         .when()
-                .put(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key);
+                .put(SINGLE_URL_SHARE_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -312,10 +332,12 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("true", payload.get("set_password"));
         assertFalse(payload.containsKey("password"));
         assertFalse(payload.containsValue("fake_password"));
-        assertEquals("8000", payload.get("expiry"));
+        assertEquals(Long.toString(EXPIRY_EPOCH), payload.get("expiry"));
         assertEquals("true", payload.get("require_login"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
     }
 
     @Test
@@ -326,31 +348,25 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content(urlContent)
         .expect()
-                .statusCode(SC_BAD_REQUEST)
+                .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
         .when()
-                .put(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key);
+                .put(SINGLE_URL_SHARE_RESOURCE, key);
     }
 
     @Test
-    public void setURLPassword_should200GivenWriteAccess()
-    {
+    public void setURLPassword_should204GivenWriteAccess() throws Exception {
         mockTime(5000L);
 
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
                 .contentType(JSON)
-                .content("fake")
+                .content("\"quoted\\\\/\\u1234\"")
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("token", not(equalTo(token)))
-                .body("has_password", equalTo(true))
-                .body("password", nullValue())
-                .body("expires", equalTo(0))
-                .body("require_login", equalTo(false))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .put(URL_PASSWORD_RESOURCE, sid.toStringFormal(), key);
+                .put(URL_PASSWORD_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -363,6 +379,29 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertFalse(payload.containsValue("fake"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
+
+        assertTrue(validatePassword("quoted\\/\u1234"));
+    }
+
+    boolean validatePassword(String password) throws Exception
+    {
+        try {
+        sqlTrans.begin();
+            try {
+                factUrlShare.create(key).validatePassword(password.getBytes(StandardCharsets.UTF_8));
+                sqlTrans.commit();
+            } catch (Exception e) {
+                sqlTrans.rollback();
+                throw e;
+            } finally {
+                sqlTrans.cleanUp();
+            }
+            return true;
+        } catch (ExBadCredential e) {
+            return false;
+        }
     }
 
     @Test
@@ -372,31 +411,26 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content("")
         .expect()
-                .statusCode(SC_BAD_REQUEST)
+                .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
         .when()
-                .put(URL_PASSWORD_RESOURCE, sid.toStringFormal(), key);
+                .put(URL_PASSWORD_RESOURCE, key);
     }
 
     @Test
-    public void setURLExpires_should200GivenWriteAccess()
+    public void setURLExpires_should204_iso8601()
     {
         mockTime(5000L);
 
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
                 .contentType(JSON)
-                .content("8000")
+                .content(GsonProvider.GSON.toJson(new Date(EXPIRY_EPOCH)))
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("token", not(equalTo(token)))
-                .body("has_password", equalTo(false))
-                .body("password", nullValue())
-                .body("expires", equalTo(3))
-                .body("require_login", equalTo(false))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .put(URL_EXPIRES_RESOURCE, sid.toStringFormal(), key);
+                .put(URL_EXPIRES_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -405,9 +439,40 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("4.2.2.2", payload.get("ip"));
         assertEquals("5000", payload.get("timestamp"));
         assertEquals(key, payload.get("key"));
-        assertEquals("8000", payload.get("expiry"));
+        assertEquals(Long.toString(EXPIRY_EPOCH), payload.get("expiry"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
+    }
+
+    @Test
+    public void setURLExpires_should204_epoch()
+    {
+        mockTime(5000L);
+
+        givenWriteAccess()
+                .header(X_REAL_IP, "4.2.2.2")
+                .contentType(JSON)
+                .content(Long.toString(EXPIRY_EPOCH))
+        .expect()
+                .statusCode(204)
+                .body(isEmptyOrNullString())
+        .when()
+                .put(URL_EXPIRES_RESOURCE, key);
+
+        Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
+
+        assertEquals("LINK", payload.get("topic"));
+        assertEquals("link.set_expiry", payload.get("event"));
+        assertEquals("4.2.2.2", payload.get("ip"));
+        assertEquals("5000", payload.get("timestamp"));
+        assertEquals(key, payload.get("key"));
+        assertEquals(Long.toString(EXPIRY_EPOCH), payload.get("expiry"));
+
+        assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
     }
 
     @Test
@@ -417,29 +482,24 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .contentType(JSON)
                 .content("bad input")
         .expect()
-                .statusCode(SC_BAD_REQUEST)
+                .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
         .when()
-                .put(URL_EXPIRES_RESOURCE, sid.toStringFormal(), key);
+                .put(URL_EXPIRES_RESOURCE, key);
     }
 
     @Test
-    public void setURLRequireLogin_should200GivenWriteAccess()
+    public void setURLRequireLogin_should204GivenWriteAccess()
     {
         mockTime(5000L);
 
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("token", not(equalTo(token)))
-                .body("has_password", equalTo(false))
-                .body("password", nullValue())
-                .body("expires", equalTo(0))
-                .body("require_login", equalTo(true))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .put(URL_REQUIRE_LOGIN_RESOURCE, sid.toStringFormal(), key);
+                .put(URL_REQUIRE_LOGIN_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -451,6 +511,8 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals("true", payload.get("require_login"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
     }
 
     @Test
@@ -462,9 +524,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
         .expect()
-                .statusCode(SC_NO_CONTENT)
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .delete(SINGLE_URL_SHARE_RESOURCE, sid.toStringFormal(), key);
+                .delete(SINGLE_URL_SHARE_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -475,10 +538,24 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals(key, payload.get("key"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
     }
 
     @Test
-    public void removeURLPassword_should200GivenWriteAccess()
+    public void removeURL_should204GivenAdminAccess()
+            throws Exception
+    {
+        givenAdminAccess()
+        .expect()
+                .statusCode(204)
+                .body(isEmptyOrNullString())
+        .when()
+                .delete(SINGLE_URL_SHARE_RESOURCE, key);
+    }
+
+    @Test
+    public void removeURLPassword_should204GivenWriteAccess()
             throws Exception
     {
         mockTime(5000L);
@@ -486,11 +563,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("has_password", equalTo(false))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .delete(URL_PASSWORD_RESOURCE, sid.toStringFormal(), key);
+                .delete(URL_PASSWORD_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -504,7 +580,7 @@ public class TestUrlShareResource extends AbstractResourceTest
     }
 
     @Test
-    public void removeURLExpires_should200GivenWriteAccess()
+    public void removeURLExpires_should204GivenWriteAccess()
             throws Exception
     {
         mockTime(5000L);
@@ -512,12 +588,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("token", not(equalTo(token)))
-                .body("expires", equalTo(0))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .delete(URL_EXPIRES_RESOURCE, sid.toStringFormal(), key);
+                .delete(URL_EXPIRES_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -528,6 +602,8 @@ public class TestUrlShareResource extends AbstractResourceTest
         assertEquals(key, payload.get("key"));
 
         assertHasCaller(payload, user);
+
+        assertAccessTokenDeleted(token);
     }
 
     @Test
@@ -539,11 +615,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         givenWriteAccess()
                 .header(X_REAL_IP, "4.2.2.2")
         .expect()
-                .statusCode(SC_OK)
-                .body("key", equalTo(key))
-                .body("require_login", equalTo(false))
+                .statusCode(204)
+                .body(isEmptyOrNullString())
         .when()
-                .delete(URL_REQUIRE_LOGIN_RESOURCE, sid.toStringFormal(), key);
+                .delete(URL_REQUIRE_LOGIN_RESOURCE, key);
 
         Map<String, Object> payload = auditClient.getLastEventPayloadAndReset();
 
@@ -558,18 +633,39 @@ public class TestUrlShareResource extends AbstractResourceTest
     }
 
     @Test
+    public void allRoutesExceptCreateAndRemove_shouldSucceedGivenAdminAccess() throws Exception
+    {
+        for (TestPath path : allPaths()) {
+            // skip createURL because it should 403 with admin access
+            if (path._method == HttpMethod.POST) { continue; }
+
+            // skip removeURL because it destroys the link and causes other routes to fail
+            if (path._method == HttpMethod.DELETE
+                    && path._path.equals(SINGLE_URL_SHARE_RESOURCE)) { continue; }
+
+            path.begin(givenAdminAccess())
+            .expect()
+                    .statusCode(either(equalTo(200)).or(equalTo(204)))
+            .when()
+                    .run(key);
+        }
+    }
+
+    @Test
     public void allRoutes_should403GivenInsufficientAccess() throws Exception
     {
         for (TestPath path : allPaths()) {
-            path.begin(path._method == HttpMethod.GET
+            RequestSpecification givenInsufficientAccess = path._method == HttpMethod.GET
                     // get requests only requires read access
                     ? givenLinkSharingAccess()
-                    : givenReadAccess())
+                    : givenReadAccess();
+
+            path.begin(givenInsufficientAccess)
             .expect()
-                    .statusCode(SC_FORBIDDEN)
+                    .statusCode(403)
                     .body("type", equalTo("FORBIDDEN"))
             .when()
-                    .run(sid.toStringFormal(), key);
+                    .run(key);
         }
     }
 
@@ -581,10 +677,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         for (TestPath path : allPaths()) {
             path.begin(givenOtherAccess())
             .expect()
-                    .statusCode(SC_FORBIDDEN)
+                    .statusCode(403)
                     .body("type", equalTo("FORBIDDEN"))
             .when()
-                    .run(sid.toStringFormal(), key);
+                    .run(key);
         }
     }
 
@@ -594,47 +690,10 @@ public class TestUrlShareResource extends AbstractResourceTest
         for (TestPath path : allPaths()) {
             path.begin(givenOtherAccess())
             .expect()
-                    .statusCode(SC_NOT_FOUND)
+                    .statusCode(404)
                     .body("type", equalTo("NOT_FOUND"))
             .when()
-                    .run(sid.toStringFormal(), key);
-        }
-    }
-
-    @Test
-    public void allRoutes_should404IfStoreNotFound() throws Exception
-    {
-        // seems excessive, but I'd rather not dig into a failing test only to find conflicting sids
-        SID sid2;
-        do {
-            sid2 = SID.generate();
-        } while (sid.equals(sid2));
-
-        for (TestPath path : allPaths()) {
-            path.begin(givenWriteAccess())
-            .expect()
-                    .statusCode(SC_NOT_FOUND)
-                    .body("type", equalTo("NOT_FOUND"))
-            .when()
-                    .run(sid2.toStringFormal(), key);
-        }
-    }
-
-    @Test
-    public void allRoutes_should404IfLinkedObjectNotInStore() throws Exception
-    {
-        SID sid2 = mkShare("fake_share2", user);
-
-        // exclude createURL & listStoreURLs because it doesn't make sense
-        for (TestPath path : allPaths().stream()
-                .filter(testCase -> !testCase._path.equals(URL_SHARES_RESOURCE))
-                .collect(Collectors.toSet())) {
-            path.begin(givenWriteAccess())
-            .expect()
-                    .statusCode(SC_NOT_FOUND)
-                    .body("type", equalTo("NOT_FOUND"))
-            .when()
-                    .run(sid2.toStringFormal(), key);
+                    .run(key);
         }
     }
 
@@ -646,13 +705,21 @@ public class TestUrlShareResource extends AbstractResourceTest
                 .collect(Collectors.joining(",", "{", "}"));
     }
 
+    private void assertAccessTokenDeleted(String token)
+    {
+        assertNull(bifrostInj.getInstance(AccessTokenDAO.class).findByToken(token));
+    }
+
     private Set<TestPath> allPaths()
     {
         return ImmutableSet.of(
-                new TestPath(HttpMethod.GET, URL_SHARES_RESOURCE),
                 new TestPath(HttpMethod.GET, SINGLE_URL_SHARE_RESOURCE),
                 new TestPath(HttpMethod.POST, URL_SHARES_RESOURCE)
                         .withContent(JSON, urlContent),
+                new TestPath(HttpMethod.POST, URL_SHARES_RESOURCE)
+                        .withContent(JSON, urlContentToAnchor),
+                new TestPath(HttpMethod.POST, URL_SHARES_RESOURCE)
+                        .withContent(JSON, urlContentToOtherAnchor),
                 new TestPath(HttpMethod.PUT, SINGLE_URL_SHARE_RESOURCE)
                         .withContent(JSON, urlContentWithFields),
                 new TestPath(HttpMethod.DELETE, SINGLE_URL_SHARE_RESOURCE),
@@ -712,6 +779,12 @@ public class TestUrlShareResource extends AbstractResourceTest
             return this;
         }
 
+        public TestPath statusCode(Matcher<? super Integer> statusCode)
+        {
+            _response = _response.statusCode(statusCode);
+            return this;
+        }
+
         public TestPath body(String key, Matcher<?>matcher)
         {
             _response = _response.body(key, matcher);
@@ -734,7 +807,7 @@ public class TestUrlShareResource extends AbstractResourceTest
         public Response run(Object... pathParams)
         {
             return _path.equals(URL_SHARES_RESOURCE)
-                    ? _method.apply(_response, _path, pathParams[0])
+                    ? _method.apply(_response, _path)
                     : _method.apply(_response, _path, pathParams);
         }
     }

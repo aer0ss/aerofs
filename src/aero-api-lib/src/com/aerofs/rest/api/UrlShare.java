@@ -5,6 +5,7 @@
 package com.aerofs.rest.api;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 
 public class UrlShare
 {
@@ -15,11 +16,11 @@ public class UrlShare
     public final @Nullable Boolean requireLogin;
     public final boolean hasPassword;
     public final @Nullable String password;
-    public final @Nullable Long expires;
+    public final @Nullable Date expires;
 
     public UrlShare(String key, String soid, String token, String createdBy,
             @Nullable Boolean requireLogin, boolean hasPassword, @Nullable String password,
-            @Nullable Long expires)
+            @Nullable Date expires)
     {
         this.key = key;
         this.soid = soid;

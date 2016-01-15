@@ -7,11 +7,9 @@ package com.aerofs.sp.sparta.resources;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
-import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.rest.auth.*;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.restless.Version;
@@ -61,17 +59,12 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
 import java.net.URI;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
-import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static com.google.common.base.Strings.isNullOrEmpty;
 
 @Path(Service.VERSION + "/shares")
 @Produces(MediaType.APPLICATION_JSON)
@@ -80,7 +73,6 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class SharedFolderResource extends AbstractSpartaResource
 {
     public static final String X_REAL_IP = "X-Real-IP";
-    public static final Charset CHARSET = StandardCharsets.UTF_8;
 
     private static final Logger l = Loggers.getLogger(SharedFolderResource.class);
 
@@ -93,16 +85,14 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final SharedFolderNotificationEmailer _sfnEmailer;
     private final ACLNotificationPublisher _aclNotifier;
     private final AuditClient _audit;
-    private final AccessCodeProvider _accessCodeProvider;
-    private final Zelda _zelda;
-    private final TimeSource _timeSource;
+    private final UrlShareResource _urlShare;
 
     @Inject
     public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF, Group.Factory factGroup,
             UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
             InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
             SharedFolderNotificationEmailer sfnEmailer, AuditClient audit,
-            AccessCodeProvider accessCodeProvider, Zelda zelda, TimeSource timeSource)
+            UrlShareResource urlShare)
     {
         _factUser = factUser;
         _factGroup = factGroup;
@@ -113,9 +103,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         _aclNotifier = aclNotifier;
         _sfnEmailer = sfnEmailer;
         _audit = audit;
-        _accessCodeProvider = accessCodeProvider;
-        _zelda = zelda;
-        _timeSource = timeSource;
+        _urlShare = urlShare;
     }
 
     private AuditableEvent audit(SharedFolder sf, User caller, IUserAuthToken token, String event)
@@ -124,20 +112,6 @@ public class SharedFolderResource extends AbstractSpartaResource
         return _audit.event(AuditTopic.SHARING, event)
                 .embed("folder", new AuditFolder(sf.id(), sf.getName(caller)))
                 .embed("caller", new AuditCaller(caller.id(), token.issuer(), token.uniqueId()));
-    }
-
-    private AuditableEvent auditLink(IAuthToken token, @Nullable String ip,
-            String event, String key)
-    {
-        Object caller = token instanceof IUserAuthToken
-                ? AuditCaller.fromUserAuthToken((IUserAuthToken)token)
-                : "AeroFS Service";
-
-        return _audit.event(AuditTopic.LINK, event)
-                .add("ip", Optional.ofNullable(ip).orElse("Unknown"))
-                .add("timestamp", _timeSource.getTime()) // override the timestamp for test coverage
-                .embed("caller", caller)
-                .add("key", key);
     }
 
     private @Nullable User validateAuth(IAuthToken token, Scope scope, SharedFolder sf)
@@ -738,48 +712,12 @@ public class SharedFolderResource extends AbstractSpartaResource
     }
 
     /**
-     * N.B. this route is undocumented as urls are not strongly tied to the stores.
-     *
-     * This route is a more restrictive version of SP.GetURLInfo() because it is tied to a store
-     * and password verification on top of token verification proved to be non-trivial.
-     *
-     * Since this functionality is not critical for my purpose. I'm going to support a subset of
-     * cases supported by SP.GetURLInfo(), namely when the caller is a store owner.
-     *
-     * see ENG-2315
-     */
-    @Since("1.4")
-    @GET
-    @Path("/{id}/urls/{key}")
-    public Response getURLInfo(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws ExNotFound, ExNoPerm, SQLException
-    {
-        User caller = validateAuth(auth, Scope.READ_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        if (!sf.id().equals(urlShare.getSid())) {
-            // return 404 if the url exists but does not belong to the given store
-            throw new ExNotFound();
-        }
-
-        auditLink(auth, ip, "link.access", urlShare.getKey())
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    /**
      * NB: this route is currently undocumented
      *
      * This is intended to be temporary. Eventually we should figure out acceptable semantics and
      * document them in the public API docs.
+     *
+     * This route is used by Shelob
      *
      * see ENG-2315
      */
@@ -810,7 +748,9 @@ public class SharedFolderResource extends AbstractSpartaResource
     }
 
     /**
-     * N.B. this route is undocumented as urls are not strongly tied to the stores.
+     * N.B. this route is undocumented and deprecated
+     *
+     * It is only kept because AttachmentManager was released prior to its deprecation
      *
      * see ENG-2315
      */
@@ -824,336 +764,11 @@ public class SharedFolderResource extends AbstractSpartaResource
             com.aerofs.rest.api.UrlShare request)
             throws Exception // ExNotFound, ExNoPerm, ExBadArgs
     {
-        User caller = validateAuth(token, Scope.WRITE_ACL, sf);
-        // this should never happen given current implementation, so throw 500 if it does
-        checkNotNull(caller);
-
-        RestObject restObject;
-
-        // enforcing the same restriction as SP: an user _must_ be the owner of a store to
-        // create links because we don't want org admins to be able to create links to
-        // arbitrary content.
-        sf.throwIfNotJoinedOwner(caller);
-
-        restObject = RestObject.fromString(request.soid);
-        checkArgument(restObject.getSID() != null);
-        checkArgument(restObject.getOID() != null);
-
+        RestObject restObject = RestObject.fromString(request.soid);
         // 400 if the target object is not in the store or is anchor (pointing to an object
         // in another store).
-        checkArgument(restObject.getSID().equals(sf.id()));
-        checkArgument(!restObject.getOID().isAnchor());
-
-        // N.B. These newly created access code and access token will remain valid until expiry
-        //   should we encounter a failure later in the transaction.
-        // This is not a regression since SP doesn't invalidate the tokens in the event of failure
-        //   either.
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(caller);
-        String accessToken = _zelda.createAccessToken(restObject.toStringFormal(), accessCode,
-                firstNonNull(request.expires, 0L));
-
-        UrlShare urlShare = _factUrlShare.save(restObject, accessToken, caller.id());
-
-        AuditableEvent auditEvent = auditLink(token, ip, "link.create", urlShare.getKey())
-                .add("soid", urlShare.getRestObject().toStringFormal());
-
-        // the end point will treat empty password as not setting password. Note that the backend
-        // appear to support empty string as passwords but the web frontend does not.
-        if (!isNullOrEmpty(request.password)) {
-            urlShare.setPassword(request.password.getBytes(CHARSET), accessToken);
-            auditEvent.add("set_password", true);
-        }
-
-        if (request.requireLogin != null) {
-            urlShare.setRequireLogin(request.requireLogin, accessToken);
-        }
-        auditEvent.add("require_login", firstNonNull(request.requireLogin, false));
-
-        if (request.expires != null) {
-            urlShare.setExpires(request.expires, accessToken);
-            auditEvent.add("expiry", request.expires);
-        }
-
-        auditEvent.publish();
-
-        String location = Service.DUMMY_LOCATION
-                + 'v' + version
-                + "/shares/" + sf.id().toStringFormal()
-                + "/urls/" + urlShare.getKey();
-
-        return Response.created(new URI(location))
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @DELETE
-    @Path("/{id}/urls/{key}")
-    public Response removeURL(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws Exception // ExNoPerm, ExNotFound
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        _zelda.deleteToken(urlShare.getToken());
-        urlShare.delete();
-
-        auditLink(auth, ip, "link.delete", urlShare.getKey())
-                .publish();
-
-        return Response.noContent()
-                .build();
-    }
-
-    @Since("1.4")
-    @PUT
-    @Path("/{id}/urls/{key}")
-    public Response updateURLInfo(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare,
-            com.aerofs.rest.api.UrlShare request)
-            throws Exception // ExNoPerm, ExNotFound, ExBadArgs
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        boolean updatePassword = !isNullOrEmpty(request.password);
-        boolean updateRequireLogin = request.requireLogin != null;
-        boolean updateExpires = request.expires != null;
-
-        // return 400 if the request doesn't include any of these properties.
-        checkArgument(updatePassword || updateRequireLogin || updateExpires);
-
-        User creator = _factUser.create(urlShare.getCreatedBy());
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(creator);
-        String accessToken = _zelda.createAccessToken(urlShare.getRestObject().toStringFormal(),
-                accessCode, firstNonNull(urlShare.getExpiresNullable(), 0L));
-
-        AuditableEvent auditEvent = auditLink(auth, ip, "link.update", urlShare.getKey());
-
-        if (updatePassword) {
-            urlShare.setPassword(request.password.getBytes(CHARSET), accessToken);
-            auditEvent.add("set_password", true);
-        }
-
-        if (updateRequireLogin) {
-            urlShare.setRequireLogin(request.requireLogin, accessToken);
-            auditEvent.add("require_login", request.requireLogin);
-        }
-
-        if (updateExpires) {
-            urlShare.setExpires(request.expires, accessToken);
-            auditEvent.add("expiry", request.expires);
-        }
-
-        auditEvent.publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @PUT
-    @Path("/{id}/urls/{key}/password")
-    public Response setURLPassword(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare,
-            String password)
-            throws Exception // ExNoPerm, ExNotFound, ExBadArgs
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-        checkArgument(!isNullOrEmpty(password));
-
-        User creator = _factUser.create(urlShare.getCreatedBy());
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(creator);
-        String accessToken = _zelda.createAccessToken(urlShare.getRestObject().toStringFormal(),
-                accessCode, firstNonNull(urlShare.getExpiresNullable(), 0L));
-
-        try {
-            _zelda.deleteToken(urlShare.getToken());
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
-        }
-
-        urlShare.setPassword(password.getBytes(CHARSET), accessToken);
-
-        auditLink(auth, ip, "link.set_password", urlShare.getKey())
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @DELETE
-    @Path("/{id}/urls/{key}/password")
-    public Response removeURLPassword(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws Exception // ExNoPerm, ExNotFound
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        urlShare.removePassword();
-
-        auditLink(auth, ip, "link.remove_password", urlShare.getKey())
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @PUT
-    @Path("/{id}/urls/{key}/expires")
-    public Response setURLExpires(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare,
-            Long expires)
-            throws Exception // ExNoPerm, ExNotFound, ExBadArgs
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        User creator = _factUser.create(urlShare.getCreatedBy());
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(creator);
-        String accessToken = _zelda.createAccessToken(urlShare.getRestObject().toStringFormal(),
-                accessCode, expires);
-        _zelda.deleteToken(urlShare.getToken());
-
-        urlShare.setExpires(expires, accessToken);
-
-        auditLink(auth, ip, "link.set_expiry", urlShare.getKey())
-                .add("expiry", expires)
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @DELETE
-    @Path("/{id}/urls/{key}/expires")
-    public Response removeURLExpires(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws Exception // ExNoPerm, ExNotFound
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        User creator = _factUser.create(urlShare.getCreatedBy());
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(creator);
-        String accessToken = _zelda.createAccessToken(urlShare.getRestObject().toStringFormal(),
-                accessCode, 0L);
-        _zelda.deleteToken(urlShare.getToken());
-
-        urlShare.removeExpires(accessToken);
-
-        auditLink(auth, ip, "link.remove_expiry", urlShare.getKey())
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @PUT
-    @Path("/{id}/urls/{key}/require_login")
-    public Response setURLRequireLogin(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws Exception // ExNoPerm, ExNotFound
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        User creator = _factUser.create(urlShare.getCreatedBy());
-        String accessCode = _accessCodeProvider.createAccessCodeForUser(creator);
-        String accessToken = _zelda.createAccessToken(urlShare.getRestObject().toStringFormal(),
-                accessCode, firstNonNull(urlShare.getExpiresNullable(), 0L));
-        _zelda.deleteToken(urlShare.getToken());
-
-        urlShare.setRequireLogin(true, accessToken);
-
-        auditLink(auth, ip, "link.set_require_login", urlShare.getKey())
-                .add("require_login", true)
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
-    }
-
-    @Since("1.4")
-    @DELETE
-    @Path("/{id}/urls/{key}/require_login")
-    public Response removeURLRequireLogin(@Auth IAuthToken auth,
-            @HeaderParam(X_REAL_IP) String ip,
-            @PathParam("id") SharedFolder sf,
-            @PathParam("key") UrlShare urlShare)
-            throws Exception // ExNoPerm, ExNotFound
-    {
-        User caller = validateAuth(auth, Scope.WRITE_ACL, sf);
-        if (caller != null) {
-            sf.throwIfNoPrivilegeToChangeACL(caller);
-        }
-
-        throwIfNotInStore(sf, urlShare.getSid());
-
-        urlShare.setRequireLogin(false, urlShare.getToken());
-
-        auditLink(auth, ip, "link.set_require_login", urlShare.getKey())
-                .add("require_login", false)
-                .publish();
-
-        return Response.ok()
-                .entity(toUrlShareResponse(urlShare))
-                .build();
+        checkArgument(sf.id().equals(restObject.getSID()));
+        return _urlShare.createURL(token, ip, version, request);
     }
 
     static String aclEtag(User user) throws SQLException
@@ -1203,16 +818,7 @@ public class SharedFolderResource extends AbstractSpartaResource
     private com.aerofs.rest.api.UrlShare toUrlShareResponse(UrlShare url)
             throws ExNotFound, SQLException
     {
-        // TODO: etag support
-        //
-        // NB: expiry logic should probably be moved to the frontend
-        // For now this needs to be a drop-in replacement for the json endpoint in the web code
-        //
-        // FIXME(HB): if the link expires NOW it will be shown as never expiring
-        // this is pretty unlikely but should still be fixed in the fullness of time
-        long expires = Optional.ofNullable(url.getExpiresNullable())
-                .map(value -> (value - _timeSource.getTime()) / C.SEC)
-                .orElse(0L);
+        Long expires = url.getExpiresNullable();
 
         return new com.aerofs.rest.api.UrlShare(
                 url.getKey(),
@@ -1223,7 +829,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                 url.hasPassword(),
                 // never reveal the link password
                 null,
-                expires);
+                expires != null ? new Date(expires) : null);
     }
 
     /**

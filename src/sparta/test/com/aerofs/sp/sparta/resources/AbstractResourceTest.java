@@ -23,9 +23,6 @@ import com.aerofs.bifrost.oaaas.model.Client;
 import com.aerofs.bifrost.oaaas.model.ResourceServer;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
@@ -98,6 +95,7 @@ public class AbstractResourceTest extends AbstractBaseTest
 
     private static final SessionFactory sessionFactory = mock(SessionFactory.class);
     private static final Session session = mock(Session.class);
+    protected static Injector bifrostInj;
     private static Bifrost bifrost;
     private static final NonceChecker nonceChecker = mock(NonceChecker.class);
     protected static String deploymentSecret = "81706d9d9cbdbc4e6f14e08117cfcd73";
@@ -192,7 +190,8 @@ public class AbstractResourceTest extends AbstractBaseTest
         ElapsedTimer t = new ElapsedTimer();
 
         // start OAuth service
-        bifrost = new Bifrost(bifrostInjector(), deploymentSecret);
+        bifrostInj = bifrostInjector();
+        bifrost = new Bifrost(bifrostInj, deploymentSecret);
         bifrost.start();
         l.info("OAuth service at {}", bifrost.getListeningPort());
 
@@ -255,10 +254,11 @@ public class AbstractResourceTest extends AbstractBaseTest
                 BifrostTest.CLIENTNAME, ImmutableSet.of("files.read", "files.write"), 0L);
 
         createAccessToken(client, inj, RW_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read", "user.write", "acl.write",
+                ImmutableSet.of("files.read", "user.read", "acl.read",
+                        "files.write", "user.write", "acl.write",
                         "acl.invitations", "groups.read", "user.password"));
         createAccessToken(client, inj, RO_SELF, user, OrganizationID.PRIVATE_ORGANIZATION, 0,
-                ImmutableSet.of("user.read", "acl.read", "acl.invitations", "groups.read"));
+                ImmutableSet.of("files.read", "user.read", "acl.read", "acl.invitations", "groups.read"));
         createAccessToken(client, inj, ADMIN,
                 OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID(),
                 OrganizationID.PRIVATE_ORGANIZATION, 0,

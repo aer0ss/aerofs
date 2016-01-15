@@ -14,7 +14,6 @@ def includeme(config):
         'set_url_password',
         'remove_url_password',
         'validate_url_password',
-        'list_urls_for_store',
         'audit_link_download',
     ]
     add_routes(config, routes)

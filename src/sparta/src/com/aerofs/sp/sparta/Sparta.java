@@ -102,6 +102,7 @@ public class Sparta extends Service
         addResource(UsersResource.class);
         addResource(DevicesResource.class);
         addResource(SharedFolderResource.class);
+        addResource(UrlShareResource.class);
         addResource(OrganizationsResource.class);
         addResource(GroupResource.class);
     }

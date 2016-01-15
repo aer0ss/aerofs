@@ -35,25 +35,43 @@ public class GsonProvider implements MessageBodyReader<Object>, MessageBodyWrite
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
 
+    // DateFormat is not thread-safe
+    private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<>();
+    public static DateFormat dateFormat() {
+        DateFormat fmt = dateFormat.get();
+        if (fmt == null) {
+            fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            dateFormat.set(fmt);
+        }
+        return fmt;
+    }
+
     /**
      * Enforce ISO 8601 format and UTC timezone for date serialization
      */
-    public static class DateTypeAdapter implements JsonSerializer<Date>
+    public static class DateTypeAdapter implements JsonSerializer<Date>, JsonDeserializer<Date>
     {
-        // DateFormat is not thread-safe
-        private final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<>();
 
         @Override
         public JsonElement serialize(Date date, Type type,
                 JsonSerializationContext jsonSerializationContext) {
-            DateFormat fmt = dateFormat.get();
-            if (fmt == null) {
-                fmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-                dateFormat.set(fmt);
+            return new JsonPrimitive(dateFormat().format(date));
+        }
+
+        @Override
+        public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            try {
+                JsonPrimitive p = (JsonPrimitive) json;
+                if (p.isNumber()) {
+                    return new Date(p.getAsLong());
+                } else {
+                    return dateFormat().parse(json.getAsString());
+                }
+            } catch (Exception e) {
+                throw new JsonParseException(e);
             }
-            String dateFormatAsString = fmt.format(date);
-            return new JsonPrimitive(dateFormatAsString);
         }
     }
 
