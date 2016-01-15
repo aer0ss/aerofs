@@ -92,7 +92,7 @@
                     <textarea rows="4" class="form-control"
                         id="audit-downstream-certificate"
                         name="audit-downstream-certificate">${downstream_cert}</textarea>
-                    <div class="help-block">Supply the downstream server's certificate
+                    <div class="help-block">Supply the downstream server's entire certificate chain
                         only if the certificate is <strong>not</strong> publicly signed.
                     </div>
                 </div>
