@@ -9,6 +9,7 @@
 0. stated goals of being able to run across docker swarm and scale services to multiple containers, could be useful in the multi-appliance scalability phase
 0. more capabilities handled inside of docker compose, instead of our current combination of python server and bash scripts
 0. can support containers that are not managed explicitly by compose, e.g. loader
+0. possibly will automatically carry over volumes from past containers even if the version is different, meaning that we no longer need to copy volume data over manually (slow) on in-place upgrade (!)
 
 ### Cons
 0. no support of container groups, will have to split out the different groups into different compose files, however does support importing from another file - so there isn't any need for duplication
