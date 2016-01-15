@@ -35,10 +35,16 @@ server {
     return       503;  # Service Unavailable
 }
 
+{{/* Note: due to a bug in docker-gen (https://github.com/jwilder/docker-gen/issues/154), if you're
+   * trying to use local containers (as opposed to containers pulled from registry.aerofs.com),
+   * docker-gen will incorrectly consider 'aerofs' as being the registry, and the code below will
+   * fail to match the containers. In that case, just patch the line below as such:
+        if (and (eq $container.Image.Registry "aerofs") (or (eq $container.Image.Repository "nginx") (eq $container.Image.Repository "maintenance-nginx")))
+   */}}
 
 {{ range $container := $ }}
-  {{ if (and (eq $container.Image.Registry "aerofs") (or (eq $container.Image.Repository "nginx") (eq $container.Image.Repository "maintenance-nginx"))) }}
-    {{ $subdomain := first (split $container.Name (print "-hpc-" $container.Image.Repository)) }}
+  {{ if (or (eq $container.Image.Repository "aerofs/nginx") (eq $container.Image.Repository "aerofs/maintenance-nginx")) }}
+    {{ $subdomain := first (split $container.Name "-hpc-") }}
     {{ if gt (len $subdomain) 1 }}  {{/* sanity check */}}
 
 ### Config for subdomain "{{ $subdomain }}" - container name: "{{ $container.Name }}"
