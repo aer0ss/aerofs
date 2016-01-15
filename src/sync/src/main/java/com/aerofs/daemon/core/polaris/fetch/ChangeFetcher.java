@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.polaris.GsonUtil;
@@ -124,6 +125,9 @@ public class ChangeFetcher
         String content = r.getContent().toString(BaseUtil.CHARSET_UTF);
         if (!r.getStatus().equals(HttpResponseStatus.OK)) {
             l.info("polaris error {}\n{}", r.getStatus(), content);
+            if (r.getStatus().equals(HttpResponseStatus.FORBIDDEN)) {
+                throw new ExNoPerm();
+            }
             if (r.getStatus().getCode() >= 500) {
                 throw new ExRetryLater(r.getStatus().getReasonPhrase());
             }

@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris.submit;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -336,6 +337,8 @@ public class MetaChangeSubmitter implements Submitter
             if (failed > 0) throw new ExRetryLater("batch not complete");
             return true;
         }
+        case 403:
+            throw new ExNoPerm();
         default:
             l.warn("unexpected error {}\n", statusCode, body);
             throw new ExRetryLater("unexpected status code: " + statusCode);
