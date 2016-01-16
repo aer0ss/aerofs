@@ -1,7 +1,7 @@
 <%inherit file="maintenance_layout.mako"/>
-<%! page_title = "Server Status" %>
+<%! page_title = "System Status" %>
 
-<h2>Service status</h2>
+<h2>System status</h2>
 %if possible_backup:
     <p>Any changes made on this appliance will <strong>not</strong> be reflected on other AeroFS appliances.
     If you make any changes through this appliance management portal, please download a backup file so you can synchronize these changes with other appliances.
@@ -15,7 +15,7 @@
         <br/>
     %endif
 
-    Setting up automated service monitoring?
+    Setting up automated system monitoring?
     <a href="${request.route_path('monitoring')}">Integrate this status with your existing sytems.</a>
 </div>
 

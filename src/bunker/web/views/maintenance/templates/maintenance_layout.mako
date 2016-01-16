@@ -26,11 +26,11 @@
                 ('link_settings', _("Link sharing")),
                 ('password_restriction', _("Password restriction")),
                 ('registered_apps', _("Registered apps")),
-                ('status', _("Service status")),
                 ('session_management', _("Session management")),
                 ('setup', _("Setup")),
                 ('sync_settings', _("Sync settings")),
                 ('toggle_maintenance_mode', _("System maintenance")),
+                ('status', _("System status")),
                 ('timekeeping', _("Timekeeping")),
             ]
         %>
