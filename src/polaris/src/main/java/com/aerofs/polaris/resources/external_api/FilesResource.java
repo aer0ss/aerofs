@@ -63,7 +63,7 @@ public class FilesResource
             File file)
     {
         checkArgument(file != null);
-        return metadataBuilder.move(principal, object, file.parent, file.name);
+        return metadataBuilder.move(principal, object, file.parent, file.name, ifMatch);
     }
 
     @Since("0.10")
@@ -73,7 +73,7 @@ public class FilesResource
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             @PathParam("file_id") RestObject object)
     {
-        return metadataBuilder.delete(principal, object);
+        return metadataBuilder.delete(principal, object, ifMatch);
     }
 
     @Since("1.2")

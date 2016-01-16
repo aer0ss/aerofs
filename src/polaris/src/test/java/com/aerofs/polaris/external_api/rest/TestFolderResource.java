@@ -11,7 +11,7 @@ import com.aerofs.rest.api.CommonMetadata;
 import com.aerofs.rest.api.Error;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
-import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
 import static com.aerofs.polaris.PolarisTestServer.getApiFoldersURL;
@@ -590,7 +590,7 @@ public class TestFolderResource extends AbstractRestTest
 
         givenAccess()
                 .contentType(ContentType.JSON)
-                .header(HttpHeaders.Names.IF_MATCH, OTHER_ETAG)
+                .header(Names.IF_MATCH, OTHER_ETAG)
                 .body(json(CommonMetadata.child(new RestObject(rootSID, folder1).toStringFormal(),
                         "bar")))
         .expect()
@@ -1026,4 +1026,70 @@ public class TestFolderResource extends AbstractRestTest
         .when().log().everything()
                 .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
+
+    @Test
+    public void shouldMoveFolderWhenEtagMatch() throws Exception
+    {
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+        OID parent = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "parent");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .header(Names.IF_MATCH, getFolderEtag(rootSID, folder))
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, parent).toStringFormal(), "foo")))
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(new RestObject(rootSID, folder).toStringFormal()))
+                .body("name", equalTo("foo"))
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenMovingAndEtagChanged() throws Exception
+    {
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+        OID parent = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "parent");
+
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .header(Names.IF_MATCH, OTHER_ETAG)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, parent).toStringFormal(), "foo")))
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo("CONFLICT"))
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder).toStringFormal());
+    }
+
+
+    @Test
+    public void shouldReturn204WhenDeletingAndEtagMatch() throws Exception
+    {
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+
+        givenAccess()
+                .header(Names.IF_MATCH, getFolderEtag(rootSID, folder))
+        .expect()
+                .statusCode(204)
+        .when()
+                .delete(getApiFoldersURL() + new RestObject(rootSID, folder).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenDeletingAndEtagChanged() throws Exception
+    {
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo("CONFLICT"))
+        .when()
+                .delete(getApiFoldersURL() + new RestObject(rootSID, folder).toStringFormal());
+    }
+
 }

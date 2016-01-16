@@ -15,6 +15,7 @@ import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.DeletableChild;
 import com.aerofs.polaris.dao.Children;
 import com.aerofs.polaris.dao.types.*;
+import com.aerofs.polaris.external_api.etag.EntityTagSet;
 import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
 import com.aerofs.polaris.external_api.rest.util.Version;
 import com.aerofs.polaris.logical.DAO;
@@ -61,6 +62,7 @@ public class TestMetadataBuilder
     private ObjectStore objects;
     private AeroOAuthPrincipal principal;
     private MetadataBuilder metadataBuilder;
+    private EntityTagSet etags = new EntityTagSet(null);
 
     @BeforeClass
     public static void setupDB() throws Exception
@@ -382,7 +384,7 @@ public class TestMetadataBuilder
         });
 
 
-        metadataBuilder.delete(principal, new RestObject(rootStore, test1));
+        metadataBuilder.delete(principal, new RestObject(rootStore, test1), etags);
 
         verifyChildDeleted(rootStore, "test1");
         // If test1 is deleted, so must test11
@@ -403,14 +405,14 @@ public class TestMetadataBuilder
         });
 
         // Verify a folder under a folder can be deleted.
-        metadataBuilder.delete(principal, new RestObject(rootStore, test22));
+        metadataBuilder.delete(principal, new RestObject(rootStore, test22), etags);
         verifyChildDeleted(test2, "test22");
     }
 
     @Test(expected=CallbackFailedException.class)
     public void testShouldFailDeletingAeroFSRoot() throws Exception
     {
-        metadataBuilder.delete(principal, RestObject.fromString("root"));
+        metadataBuilder.delete(principal, RestObject.fromString("root"), etags);
     }
 
     @Test
@@ -430,7 +432,7 @@ public class TestMetadataBuilder
 
 
         metadataBuilder.move(principal, new RestObject(rootStore, test11),
-                new RestObject(rootStore, test2).toStringFormal(), "test11");
+                new RestObject(rootStore, test2).toStringFormal(), "test11", etags);
 
         // Make sure test11 moved from under test1.
         dbi.inTransaction((conn, status) -> {
@@ -452,7 +454,7 @@ public class TestMetadataBuilder
         OID test1 = newFolder(rootStore, "test1",  USERID, DEVICE, objects);
 
         metadataBuilder.move(principal, RestObject.fromString("root"),
-                new RestObject(rootStore, test1).toStringFormal(), "AeroFS");
+                new RestObject(rootStore, test1).toStringFormal(), "AeroFS", etags);
     }
 
     @Test(expected=CallbackFailedException.class)
@@ -460,7 +462,7 @@ public class TestMetadataBuilder
     {
         OID test1 = newFolder(rootStore, "test1",  USERID, DEVICE, objects);
         metadataBuilder.move(principal, new RestObject(rootStore, OID.TRASH),
-                new RestObject(rootStore, test1).toStringFormal(), ".trash");
+                new RestObject(rootStore, test1).toStringFormal(), ".trash", etags);
     }
 
     @Test(expected=CallbackFailedException.class)
@@ -469,6 +471,6 @@ public class TestMetadataBuilder
         OID test1 = newFolder(rootStore, "test1", USERID, DEVICE, objects);
         OID file1 = newFile(rootStore, "testFile1", USERID, DEVICE, objects);
         metadataBuilder.move(principal, new RestObject(rootStore, test1),
-                new RestObject(rootStore, file1).toStringFormal(), "test1");
+                new RestObject(rootStore, file1).toStringFormal(), "test1", etags);
     }
 }

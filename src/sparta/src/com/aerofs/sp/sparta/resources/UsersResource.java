@@ -18,21 +18,15 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.Nullable;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.aerofs.restless.util.EntityTagSet;
+import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,13 +190,19 @@ public class UsersResource extends AbstractSpartaResource
     @GET
     @Path("/{email}/shares")
     public Response listShares(@Auth IAuthToken token, @Context Version version,
+                               @HeaderParam(HttpHeaders.Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch,
                                @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
-        validateAuth(token, Scope.READ_ACL, user);
+        User caller = validateAuth(token, Scope.READ_ACL, user);
+        EntityTag etag = caller == null ? null : new EntityTag(aclEtag(caller), true);
+        if (ifNoneMatch.isValid() && etag != null && ifNoneMatch.matches(etag)) {
+            return Response.notModified(etag).build();
+        }
 
         return Response.ok()
                 .entity(listShares(user, version, token))
+                .tag(etag)
                 .build();
     }
 
@@ -301,7 +301,8 @@ public class UsersResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
-                        sf.getName(user), listMembers(sf), listGroupMembers(sf),
+                        sf.getName(user), listMembers(sf),
+                        version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
                         listPendingMembers(sf), sf.isExternal(user), permissions))
                 .build();
     }

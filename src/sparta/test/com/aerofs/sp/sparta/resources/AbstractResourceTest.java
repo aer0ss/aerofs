@@ -56,14 +56,13 @@ import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.mapper.factory.GsonObjectMapperFactory;
+import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -73,20 +72,16 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
-import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.*;
-import java.util.concurrent.Executors;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.bifrost.server.BifrostTest.*;
-import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.*;
@@ -155,7 +150,7 @@ public class AbstractResourceTest extends AbstractBaseTest
             @Override
             public boolean matches(Object item) {
                 try {
-                    Date d = _dateFormat.get().parse((String)item);
+                    _dateFormat.get().parse((String)item);
                     return true;
                 } catch (Exception e) {
                     return false;
@@ -535,17 +530,16 @@ public class AbstractResourceTest extends AbstractBaseTest
         sqlTrans.commit();
     }
 
-    protected String membersEtag(UserID user) throws SQLException
-    {
-        sqlTrans.begin();
-        String etag = "W/\"" + aclEtag(factUser.create(user)) + "\"";
-        sqlTrans.commit();
-        return etag;
-    }
-
     /** create a User object without adding anything to the db */
     protected User newUser()
     {
         return factUser.create(UserID.fromInternal("u" + Integer.toString(++nextUserID) + "@email"));
+    }
+
+    String getEtag(SID sid)
+    {
+        Response resp = givenReadAccess().get("/v1.3/shares/{sid}", sid.toStringFormal());
+        assert resp.statusCode() == 200;
+        return resp.header(Names.ETAG);
     }
 }

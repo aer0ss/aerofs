@@ -39,11 +39,11 @@ public class RestObjectResolver
         }
     }
 
-    static String toRestObject(SID sid, UniqueID oid)
+    static RestObject toRestObject(SID sid, UniqueID oid)
     {
         if (Identifiers.isRootStore(oid) || sid.equals(oid)) {
             oid = OID.ROOT;
         }
-        return new RestObject(sid, new OID(oid)).toStringFormal();
+        return new RestObject(sid, new OID(oid));
     }
 }

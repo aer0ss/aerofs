@@ -12,11 +12,9 @@ import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
+import com.aerofs.polaris.external_api.etag.EntityTagSet;
 import com.aerofs.polaris.external_api.rest.util.Version;
-import com.aerofs.polaris.logical.DAO;
-import com.aerofs.polaris.logical.FolderSharer;
-import com.aerofs.polaris.logical.NotFoundException;
-import com.aerofs.polaris.logical.ObjectStore;
+import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
@@ -35,11 +33,10 @@ import javax.inject.Singleton;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Lock;
@@ -106,7 +103,7 @@ public class MetadataBuilder
             if (parentNames.contains(APPDATA_FOLDER_NAME)) return true;
         }
         if (!qualifiedScopes.containsKey(scope)) return false;
-        if (hasUnrestrictedPermission(qualifiedScopes, scope)) return true ;
+        if (hasUnrestrictedPermission(qualifiedScopes, scope)) return true;
 
         for (RestObject objectInTokenScope : qualifiedScopes.get(scope)) {
             UniqueID tokenOID = fromRestObject(principal, objectInTokenScope);
@@ -216,15 +213,15 @@ public class MetadataBuilder
             RestObject object)
     {
         UniqueID store = objectStore.getStore(dao, oid);
-        String storeFromRestObject;
+        UniqueID storeFromRestObject;
         if (object.isRoot() || object.isAppData()) {
-            storeFromRestObject = SID.rootSID(principal.getUser()).toStringFormal();
+            storeFromRestObject = SID.rootSID(principal.getUser());
         } else if (object.getOID().isRoot() || !Identifiers.isSharedFolder(object.getOID())) {
-            storeFromRestObject = object.getSID().toStringFormal();
+            storeFromRestObject = object.getSID();
         } else {
-            storeFromRestObject = object.getOID().toStringFormal();
+            storeFromRestObject = object.getOID();
         }
-        return store != null && store.toStringFormal().equals(storeFromRestObject);
+        return store != null && store.equals(storeFromRestObject);
     }
 
     private Folder folder(String id, String name, String parent, ParentPath path, String sid,
@@ -297,12 +294,13 @@ public class MetadataBuilder
         return true;
     }
 
-    private CommonMetadata getObjectMetadata(DAO dao, AeroOAuthPrincipal principal, UniqueID oid,
+    private MetadataAndEtag getObjectMetadata(DAO dao, AeroOAuthPrincipal principal, UniqueID oid,
             @Nullable String queryParam, @Nullable LinkedHashMap<UniqueID, Folder> parentFolders)
     {
         String [] fields = queryParam == null ? null : queryParam.split(",");
         UniqueID parentOID = getParentOID(dao, principal.getUser(), oid);
-        String name, parent;
+        String name;
+        RestObject parent;
         SID parentSID;
         if (parentOID == null) {
             // If at this stage parent = null, this would mean that it is an external store.
@@ -311,8 +309,8 @@ public class MetadataBuilder
             checkState(Identifiers.isSharedFolder(oid), "Cannot resolve object's parent.");
             // TODO(AS): Name for external root.
             name = "";
-            parentSID = new SID(oid.getBytes());
-            parent = new RestObject(parentSID, OID.ROOT).toStringFormal();
+            parentSID = SID.anchorOID2storeSID(new OID(oid));
+            parent = new RestObject(parentSID, OID.ROOT);
         } else {
             name = resolveName(dao, parentOID, oid);
             // Getting parent SID because for stores we want to return its anchor representation. So we
@@ -320,7 +318,7 @@ public class MetadataBuilder
             // of its parent and itself will be the same.
             parentSID = new SID(objectStore.getStore(dao, parentOID).getBytes());
             if (Identifiers.isRootStore(parentOID) || Identifiers.isSharedFolder(parentOID)) {
-                parent = new RestObject(parentSID, OID.ROOT).toStringFormal();
+                parent = new RestObject(parentSID, OID.ROOT);
             } else {
                 parent = toRestObject(parentSID, parentOID);
             }
@@ -337,11 +335,11 @@ public class MetadataBuilder
             Long size = getSize(fp);
             String etag = getContentEtag(fp);
             String mimeType = detector.detect(name);
-            return  file(toRestObject(parentSID, oid), name, parent, path,
-                    mtime, size, mimeType, etag, null);
+            return  new MetadataAndEtag(file(toRestObject(parentSID, oid).toStringFormal(), name, parent.toStringFormal(), path,
+                    mtime, size, mimeType, etag, null), metaEtag(parent.getOID(), name, fp));
         }
-        return folder(toRestObject(parentSID, oid), name, parent,
-                path, oid2Sid(oid), childrenList);
+        return new MetadataAndEtag(folder(toRestObject(parentSID, oid).toStringFormal(), name, parent.toStringFormal(),
+                path, oid2Sid(oid), childrenList), metaEtag(parent.getOID(), name, null));
     }
 
     private ChildrenList childrenList(DAO dao, UniqueID oid, boolean shouldIncludeParent)
@@ -349,7 +347,7 @@ public class MetadataBuilder
         List<Folder> folders = Lists.newArrayList();
         List<File> files = Lists.newArrayList();
         SID sid = new SID(objectStore.getStore(dao, oid).getBytes());
-        String currentRest = toRestObject(sid, oid);
+        String currentRest = toRestObject(sid, oid).toStringFormal();
 
         for(Child child: objectStore.children(dao, oid)) {
             OID childOID = new OID(child.oid);
@@ -392,7 +390,7 @@ public class MetadataBuilder
             if (parent == null || dao.children.isDeleted(parent, child)) {
                 throw new NotFoundException(oid);
             }
-            folders.put(parent, (Folder) getObjectMetadata(dao, principal, parent, null, null));
+            folders.put(parent, (Folder) (getObjectMetadata(dao, principal, parent, null, null)).metadata);
             child = parent;
         } while(parent != null && !Identifiers.isRootStore(parent));
         return folders;
@@ -405,9 +403,10 @@ public class MetadataBuilder
         UniqueID oid = restObject2OID(principal, object);
         checkAccess(principal, Lists.newArrayList(oid), READ);
 
-        CommonMetadata metadata = dbi.inTransaction(READ_COMMITTED,
+        MetadataAndEtag metaAndTag = dbi.inTransaction(READ_COMMITTED,
                 (conn, status) -> metadata(new DAO(conn), principal, object, oid, queryParam, isFile));
 
+        CommonMetadata metadata = metaAndTag.metadata;
         if (metadata instanceof Folder && ((Folder) metadata).children != null) {
             List<Folder> folders = ((Folder) metadata).children.folders.stream().filter(folder ->
                     !folder.is_shared || shouldIncludeInResponse(principal,
@@ -417,10 +416,10 @@ public class MetadataBuilder
                     ((Folder) metadata).sid, new ChildrenList(((Folder) metadata).children.parent, folders,
                     ((Folder) metadata).children.files));
         }
-        return Response.ok().entity(metadata).build();
+        return Response.ok().entity(metadata).tag(metaAndTag.etag).build();
     }
 
-    private CommonMetadata metadata(DAO dao, AeroOAuthPrincipal principal, RestObject object,
+    private MetadataAndEtag metadata(DAO dao, AeroOAuthPrincipal principal, RestObject object,
             UniqueID oid, String queryParam, boolean isFile)
     {
         if (!isStoreConsistent(principal, dao, oid, object)) {
@@ -485,14 +484,16 @@ public class MetadataBuilder
         String location = EXTERNAL_API_LOCATION
                 + "v" + version
                 +  (isFile ? "/files" : "/folders")
-                + "/" + toRestObject(new SID(objectStore.getStore(dao, oid)), oid);
+                + "/" + toRestObject(new SID(objectStore.getStore(dao, oid)), oid).toStringFormal();
 
+        MetadataAndEtag metadataAndEtag = getObjectMetadata(dao, principal, oid, null, null);
         return new ApiOperationResult(result.updated, Response.created(URI.create(location))
-                .entity(getObjectMetadata(dao, principal, oid, null, null))
+                .entity(metadataAndEtag.metadata)
+                .tag(metadataAndEtag.etag)
                 .build());
    }
 
-    public Response move(AeroOAuthPrincipal principal, RestObject object, String parent, String name) {
+    public Response move(AeroOAuthPrincipal principal, RestObject object, String parent, String name, EntityTagSet ifmatch) {
         Preconditions.checkArgument(parent != null, "Destination is null.");
         Preconditions.checkArgument(name != null, "No object name given.");
 
@@ -521,7 +522,7 @@ public class MetadataBuilder
         try {
             ApiOperationResult result = dbi.inTransaction((conn, status) ->
                     move(new DAO(conn), principal, object, RestObject.fromString(parent), oid,
-                            toParent, name, accessToken));
+                            toParent, name, accessToken, ifmatch));
             Map<UniqueID, Long> updatedStores = result.updated.stream()
                     .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
             updatedStores.forEach(notifier::notifyStoreUpdated);
@@ -532,33 +533,43 @@ public class MetadataBuilder
     }
 
     private ApiOperationResult move(DAO dao, AeroOAuthPrincipal principal, RestObject object,
-            RestObject toParentObject, UniqueID oid, UniqueID toParent, String name, AccessToken accessToken)
+            RestObject toParentObject, UniqueID oid, UniqueID toParent, String name, AccessToken accessToken, EntityTagSet ifmatch)
     {
         if (!isStoreConsistent(principal, dao, oid, object) ||
                 !isStoreConsistent(principal, dao, toParent, toParentObject)) {
             throw new NotFoundException(oid);
         }
-        LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
-        throwIfInSufficientTokenScope(principal, oid, Scope.WRITE_FILES, parentFolders);
-        parentFolders = computeParentFolders(dao, principal, toParent);
-        throwIfInSufficientTokenScope(principal, toParent, Scope.WRITE_FILES, parentFolders);
 
         UniqueID fromParent = getParentOID(dao, principal.getUser(), oid);
         if (fromParent == null) {
             throw new NotFoundException(oid);
         }
 
+        if (ifmatch.isValid()) {
+            EntityTag currentTag = metaEtag(restObjectOID(fromParent), PolarisUtilities.stringFromUTF8Bytes(dao.children.getChildName(fromParent, oid)), dao.objectProperties.getLatest(oid));
+            if (!ifmatch.matches(currentTag)) {
+                throw new ConditionFailedException();
+            }
+        }
+
+        LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
+        throwIfInSufficientTokenScope(principal, oid, Scope.WRITE_FILES, parentFolders);
+        parentFolders = computeParentFolders(dao, principal, toParent);
+        throwIfInSufficientTokenScope(principal, toParent, Scope.WRITE_FILES, parentFolders);
+
         l.info("Move {} from {} to {} as {}", oid, fromParent, toParent, name);
         OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
         UniqueID child = dao.children.getActiveChildNamed(toParent, PolarisUtilities.stringToUTF8Bytes(name));
         checkState(child != null, "cannot find child that was just moved");
+        MetadataAndEtag metadataAndEtag = getObjectMetadata(dao, principal, child, null, null);
         return new ApiOperationResult(result.updated, Response.ok()
-                .entity(getObjectMetadata(dao, principal, child, null, null))
+                .entity(metadataAndEtag.metadata)
+                .tag(metadataAndEtag.etag)
                 .build());
     }
 
-    public Response delete(AeroOAuthPrincipal principal, RestObject object)
+    public Response delete(AeroOAuthPrincipal principal, RestObject object, EntityTagSet ifmatch)
     {
         l.info("Deleting object {}", object.toStringFormal());
 
@@ -577,8 +588,8 @@ public class MetadataBuilder
             AccessToken accessToken = objectStore.checkAccessForStores(principal.getUser(),
                     ps.stores, READ, WRITE);
             ApiOperationResult result = dbi.inTransaction((conn, status) ->
-                    delete(new DAO(conn), principal, object, oid, accessToken));
-            Map<UniqueID, Long> updatedStores =result.updated.stream()
+                    delete(new DAO(conn), principal, object, oid, accessToken, ifmatch));
+            Map<UniqueID, Long> updatedStores = result.updated.stream()
                     .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
             updatedStores.forEach(notifier::notifyStoreUpdated);
             return result.response;
@@ -588,16 +599,24 @@ public class MetadataBuilder
     }
 
     private ApiOperationResult delete(DAO dao, AeroOAuthPrincipal principal, RestObject object,
-            UniqueID oid, AccessToken accessToken)
+            UniqueID oid, AccessToken accessToken, EntityTagSet ifmatch)
     {
         if (!isStoreConsistent(principal, dao, oid, object)) {
             throw new NotFoundException(oid);
         }
+
+        UniqueID parent = getParentOID(dao, principal.getUser(), oid);
+        if (ifmatch.isValid()) {
+            EntityTag currentTag = metaEtag(restObjectOID(parent), PolarisUtilities.stringFromUTF8Bytes(dao.children.getChildName(parent, oid)), dao.objectProperties.getLatest(oid));
+            if (!ifmatch.matches(currentTag)) {
+                throw new ConditionFailedException();
+            }
+        }
+
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
         throwIfInSufficientTokenScope(principal, oid, Scope.WRITE_FILES, parentFolders);
         Preconditions.checkArgument(!Identifiers.isRootStore(oid), "cannot remove user root");
 
-        UniqueID parent = getParentOID(dao, principal.getUser(), oid);
         OperationResult result = objectStore.performTransform(dao, accessToken,
                 principal.getDID(), parent, new RemoveChild(new OID(oid)));
 
@@ -748,8 +767,28 @@ public class MetadataBuilder
                     parentOID, new Share(oid)).updated;
             l.info("Shared object {} updated {}", oid.toStringFormal(), updated);
         }
+        MetadataAndEtag metadataAndEtag = getObjectMetadata(dao, principal, anchorOID, null, null);
         return new ApiOperationResult(updated, Response.ok()
-                .entity(getObjectMetadata(dao, principal, anchorOID, null, null)).build());
+                .entity(metadataAndEtag.metadata)
+                .tag(metadataAndEtag.etag)
+                .build());
+    }
+
+    private static EntityTag metaEtag(UniqueID parent, String name, @Nullable Content content)
+    {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        md.update(parent.getBytes());
+        md.update(BaseUtil.string2utf(name));
+        if (content != null) {
+            md.update(BaseUtil.toByteArray(content.size));
+            md.update(BaseUtil.toByteArray(content.mtime));
+        }
+        return new EntityTag(BaseUtil.hexEncode(md.digest()), true);
     }
 
     // POJO to store parent OID and store OID for later use within an API operation since both are
@@ -784,5 +823,22 @@ public class MetadataBuilder
             this.updated = updated;
             this.response = response;
         }
+    }
+
+    private static final class MetadataAndEtag
+    {
+        public final CommonMetadata metadata;
+        public final EntityTag etag;
+
+        public MetadataAndEtag(CommonMetadata metadata, EntityTag etag)
+        {
+            this.metadata = metadata;
+            this.etag = etag;
+        }
+    }
+
+    private static OID restObjectOID(UniqueID id)
+    {
+        return Identifiers.isSharedFolder(id) || Identifiers.isRootStore(id) ? OID.ROOT : new OID(id);
     }
 }

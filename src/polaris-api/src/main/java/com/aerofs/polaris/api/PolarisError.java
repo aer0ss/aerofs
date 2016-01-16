@@ -16,6 +16,8 @@ public enum PolarisError {
 
     OBJECT_LOCKED(806),
 
+    CONDITION_FAILED(807),
+
     UNKNOWN(888);
 
     private final int code;

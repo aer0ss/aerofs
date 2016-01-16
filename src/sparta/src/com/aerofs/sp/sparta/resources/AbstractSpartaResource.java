@@ -9,11 +9,13 @@ import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.oauth.Scope;
+import com.aerofs.sp.server.lib.user.User;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+import java.sql.SQLException;
 
 public class AbstractSpartaResource
 {
@@ -22,6 +24,11 @@ public class AbstractSpartaResource
         if (!token.hasPermission(scope)) {
             throw new WebApplicationException(tokenScope().build());
         }
+    }
+
+    static String aclEtag(User user) throws SQLException
+    {
+        return String.format("%08x", user.getACLEpoch());
     }
 
     protected static void requirePermissionOnFolder(Scope scope, IAuthToken token, SID sid)

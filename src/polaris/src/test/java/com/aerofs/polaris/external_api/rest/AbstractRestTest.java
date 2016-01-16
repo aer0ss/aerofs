@@ -19,10 +19,12 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.restassured.RestAssured;
+import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.*;
 import org.junit.rules.RuleChain;
 
@@ -31,6 +33,8 @@ import java.util.Set;
 import static com.jayway.restassured.RestAssured.given;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
+import static com.aerofs.polaris.PolarisTestServer.getApiFoldersURL;
+import static com.aerofs.polaris.PolarisTestServer.getApiFilesURL;
 
 public class AbstractRestTest {
     static {
@@ -103,7 +107,7 @@ public class AbstractRestTest {
                 0L,
                 new AuthenticatedPrincipal(USERID.getString(), USERID, OrganizationID.PRIVATE_ORGANIZATION),
                 MDID.generate().toStringFormal());
-        doReturn(response).when(polaris.getTokenVerifier()).verifyToken(anyString());
+        doReturn(response).when(polaris.getTokenVerifier()).verifyToken(eq(token));
         return given()
                 .header(HttpHeaders.Names.AUTHORIZATION, "Bearer " + token);
     }
@@ -143,5 +147,19 @@ public class AbstractRestTest {
     protected static String json(Object o)
     {
         return _gson.toJson(o);
+    }
+
+    protected String getFolderEtag(SID store, OID folder) throws Exception
+    {
+        Response resp = givenReadAccess().get(getApiFoldersURL() + new RestObject(store, folder).toStringFormal());
+        assert resp.statusCode() == 200;
+        return resp.header(Names.ETAG);
+    }
+
+    protected String getFileEtag(SID store, OID file) throws Exception
+    {
+        Response resp = givenReadAccess().get(getApiFilesURL() + new RestObject(store, file).toStringFormal());
+        assert resp.statusCode() == 200;
+        return resp.header(Names.ETAG);
     }
 }

@@ -65,7 +65,7 @@ public class FoldersResource
             Folder folder)
     {
         checkArgument(folder != null);
-        return metadataBuilder.move(principal, object, folder.parent, folder.name);
+        return metadataBuilder.move(principal, object, folder.parent, folder.name, ifMatch);
     }
 
     @Since("0.10")
@@ -75,7 +75,7 @@ public class FoldersResource
             @HeaderParam(HttpHeaders.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch,
             @PathParam("folder_id") RestObject object)
     {
-        return metadataBuilder.delete(principal, object);
+        return metadataBuilder.delete(principal, object, ifMatch);
     }
 
     @Since("1.2")

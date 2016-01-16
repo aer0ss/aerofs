@@ -11,6 +11,7 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.rest.api.CommonMetadata;
 import com.jayway.restassured.http.ContentType;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
+import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -338,7 +339,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().post(getApiFilesURL());
+        .when()
+                .post(getApiFilesURL());
     }
 
     @Test
@@ -356,7 +358,8 @@ public class TestFileResource extends AbstractRestTest
                 .body("id", equalTo(new RestObject(rootSID, file1).toStringFormal()))
                 .body("name", equalTo("moved"))
                 .body("parent", equalTo(new RestObject(rootSID, folder2).toStringFormal()))
-        .when().put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
     @Test
@@ -368,18 +371,17 @@ public class TestFileResource extends AbstractRestTest
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, rootSID, folder2).jobID, 5);
         SID sid2 = SID.folderOID2convertedStoreSID(folder2);
 
-        System.out.println("Object to migrate: " + file1.toStringFormal());
         RestObject objectFolder2 = new RestObject(sid2, OID.ROOT);
 
         givenAccess()
                 .contentType(ContentType.JSON)
                 .body(json(CommonMetadata.child(
                         new RestObject(sid2, OID.ROOT).toStringFormal(), "moved")))
-                .expect()
+        .expect()
                 .statusCode(200)
                 .body("name", equalTo("moved"))
                 .body("parent", equalTo(objectFolder2.toStringFormal()))
-                .when()
+        .when()
                 .put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
@@ -397,7 +399,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(409)
                 .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
-        .when().put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
     @Test
@@ -413,7 +416,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().put(getApiFilesURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -428,7 +432,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
     @Test
@@ -467,7 +472,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().put(getApiFilesURL() + new RestObject(sid1, file1).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(sid1, file1).toStringFormal());
 
     }
 
@@ -484,7 +490,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
     @Test
@@ -494,7 +501,8 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(204)
-        .when().delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
 
@@ -504,7 +512,8 @@ public class TestFileResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(404)
-        .when().delete(getApiFilesURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
+        .when()
+                .delete(getApiFilesURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -523,7 +532,8 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
     }
 
     @Test
@@ -536,6 +546,69 @@ public class TestFileResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+        .when()
+                .delete(getApiFilesURL() + new RestObject(rootSID, file1).toStringFormal());
+    }
+
+    @Test
+    public void shouldMoveFileWhenEtagMatch() throws Exception
+    {
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "foo.txt");
+        OID parent = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+
+        givenAccess()
+                .header(Names.IF_MATCH, getFileEtag(rootSID, file))
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(new RestObject(rootSID, parent).toStringFormal(), "foo")))
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(new RestObject(rootSID, file).toStringFormal()))
+                .body("name", equalTo("foo"))
+        .when().log().everything()
+                .put(getApiFilesURL() + new RestObject(rootSID, file).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenMoveAndEtagChanged() throws Exception
+    {
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "foo.txt");
+        OID parent = PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(new RestObject(rootSID, parent).toStringFormal(), "foo")))
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo("CONFLICT"))
+        .when()
+                .put(getApiFilesURL() + new RestObject(rootSID, file).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn204WhenDeletingAndEtagMatch() throws Exception
+    {
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "foo.txt");
+
+        givenAccess()
+                .header(Names.IF_MATCH, getFileEtag(rootSID, file))
+        .expect()
+                .statusCode(204)
+        .when().log().everything()
+                .delete(getApiFilesURL() + new RestObject(rootSID, file).toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn412WhenDeletingAndEtagChanged() throws Exception
+    {
+        OID file = PolarisHelpers.newFile(AUTHENTICATED, rootSID, "foo.txt");
+
+        givenAccess()
+                .header(Names.IF_MATCH, OTHER_ETAG)
+        .expect()
+                .statusCode(412)
+                .body("type", equalTo("CONFLICT"))
+        .when()
+                .delete(getApiFilesURL() + new RestObject(rootSID, file).toStringFormal());
     }
 }

@@ -60,7 +60,7 @@ public final class IllegalArgumentExceptionMapper extends BaseExceptionMapper<Il
             try {
                     return new ObjectMapper().writeValueAsString(errorFields);
             } catch (JsonProcessingException e) {
-                l.debug("Unable to create JSON response entity {}", e);
+                l.warn("Unable to create JSON response entity {}", e);
             }
         }
         return super.constructEntity(throwable);
