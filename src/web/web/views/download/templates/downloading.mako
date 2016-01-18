@@ -85,3 +85,5 @@
         </div>
     </div>
 </%def>
+
+<%include file="download_script.mako" />

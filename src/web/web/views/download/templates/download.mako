@@ -7,6 +7,7 @@
 
 <%!
     from web.util import is_mobile_disabled
+    from urllib import urlencode
 %>
 
 <%
@@ -26,12 +27,19 @@
     }
 
     def downloading_url(os):
-        return '{}?{}={}'.format(downloading_path, url_param_os, os)
+        qs = {
+            'os': os,
+            'msg_type': msg_type
+        }
+        # because having None in the query string is ugly
+        qs = {k:v for k,v in qs.iteritems() if v is not None}
 
-    # don't use params[] to avoid KeyError exceptions
+        return '{}?{}'.format(downloading_path, urlencode(qs))
+
+
     # N.B. this string is hard coded in some source files. Search for 'msg_type'
     # to find them
-    msg_type = request.params.get('msg_type')
+
     if msg_type == 'signup':
         headline = False
         signup_tagline = True
@@ -101,3 +109,5 @@
 <div class="top-divider description-block">
     <%include file="${description_mako}"/>
 </div>
+
+<%include file="download_script.mako" />

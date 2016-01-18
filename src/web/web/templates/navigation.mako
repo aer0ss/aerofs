@@ -10,9 +10,9 @@
 <%def name="link(link)">
     <li
         %if request.matched_route and request.matched_route.name == link[0]:
-            class="nav-link active"
+            class="${link[0]} nav-link active"
         %else:
-            class="nav-link"
+            class="${link[0]} nav-link"
         %endif
     ><a href="${request.route_path(link[0])}">${link[1]}
     <%

@@ -2,8 +2,6 @@ from pyramid.view import view_config
 import re
 from web.version import get_private_version
 
-_URL_PARAM_OS = 'os'
-
 
 @view_config(
     route_name='download',
@@ -37,7 +35,7 @@ def download_sccm(request):
 
 def _download(request, is_team_server):
     return {
-        'url_param_os': _URL_PARAM_OS,
+        'msg_type': request.params.get('msg_type'),
         'is_team_server': is_team_server,
         'os': _get_browser_os(request)
     }
@@ -67,7 +65,8 @@ def downloading(request):
         'aerofs-installer',
         'aerofs-installer',
         'aerofs-cli',
-        'aerofs-sh')
+        'aerofs-sh',
+        False)
 
 
 @view_config(
@@ -82,11 +81,13 @@ def downloading_team_server(request):
         'aerofsts-installer',
         'aerofsts-installer',
         'aerofsts-cli',
-        'aerofsts-sh')
+        'aerofsts-sh',
+        True )
 
 
-def _downloading(request, program, exe, dmg, deb, tgz, cli, sh):
+def _downloading(request, program, exe, dmg, deb, tgz, cli, sh, ts):
     os = request.params.get('os')
+    msg_type = request.params.get('msg_type')
     version = get_private_version(request.registry.settings)
     return {
         'os': os if os else _get_browser_os(request),
@@ -96,5 +97,7 @@ def _downloading(request, program, exe, dmg, deb, tgz, cli, sh):
         'deb': '{}-{}.deb'.format(deb, version),
         'tgz': '{}-{}.tgz'.format(tgz, version),
         'cli': cli,
-        'sh': sh
+        'sh': sh,
+        'is_team_server': ts,
+        'msg_type': msg_type
     }
