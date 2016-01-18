@@ -7,7 +7,6 @@ import (
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
-	"aerofs.com/sloth/httpClientPool"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
@@ -45,6 +44,7 @@ func main() {
 	var host, dbHost, dbName string
 	var swaggerFilePath string
 	var verifier string
+	var pushEnabled bool
 
 	// wait for dependent containers
 	service.ServiceBarrier()
@@ -56,15 +56,12 @@ func main() {
 	flag.StringVar(&dbHost, "dbHost", "localhost", "MySQL host address")
 	flag.StringVar(&swaggerFilePath, "swagger", os.Getenv("HOME")+"/repos/swagger-ui/dist", "Path to swagger-ui files; if missing, swagger will not be invoked.")
 	flag.StringVar(&verifier, "verifier", "bifrost", "Token verifier to use. Currently \"bifrost\" or \"echo\"")
+	flag.BoolVar(&pushEnabled, "pushEnabled", true, "Set false to disable push notifications")
 	flag.Parse()
 
 	// format url strings
 	portStr := ":" + strconv.Itoa(port)
 	restUrlStr := "http://" + host + portStr
-
-	// connect to config
-	config, err := service.NewConfigClient("sloth").Get()
-	errors.PanicOnErr(err)
 
 	// connect to db and run migrations
 	dbDSN := fmt.Sprintf("root@tcp(%v:3306)/", dbHost)
@@ -72,24 +69,28 @@ func main() {
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
 	defer db.Close()
 
+	var pushNotifier push.Notifier
+	if pushEnabled {
+		// connect to config
+		config, err := service.NewConfigClient("sloth").Get()
+		errors.PanicOnErr(err)
+
+		// grab button config and initialize push notifier
+		buttonAuthUser, userOk := config["messaging.button.auth.user"]
+		buttonAuthPass, passOk := config["messaging.button.auth.pass"]
+		buttonBaseUrl, urlOk := config["messaging.button.url.base"]
+		if !userOk || !passOk || !urlOk {
+			panic("missing button config")
+		}
+		pushNotifier = push.NewNotifier(buttonAuthUser, buttonAuthPass, buttonBaseUrl, HTTP_CLIENT_POOL_SIZE)
+	} else {
+		pushNotifier = push.NewNoopNotifier()
+	}
+
 	// create shared variables
 	tokenCache := auth.NewTokenCache(TOKEN_CACHE_TIME, TOKEN_CACHE_SIZE)
 	lastOnlineTimes := lastOnline.New()
 	broadcaster := broadcast.NewBroadcaster()
-
-	// grab button config and initialize push notifier
-	buttonAuthUser, userOk := config["messaging.button.auth.user"]
-	buttonAuthPass, passOk := config["messaging.button.auth.pass"]
-	buttonBaseUrl, urlOk := config["messaging.button.url.base"]
-	if !userOk || !passOk || !urlOk {
-		panic("missing button config")
-	}
-	pushNotifier := &push.Notifier{
-		AuthUser:       buttonAuthUser,
-		AuthPass:       buttonAuthPass,
-		Url:            buttonBaseUrl,
-		HttpClientPool: httpClientPool.NewPool(HTTP_CLIENT_POOL_SIZE),
-	}
 
 	// initialize token verifier
 	var tokenVerifier auth.TokenVerifier

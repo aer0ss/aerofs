@@ -3,6 +3,7 @@ package push
 import (
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/httpClientPool"
+	. "aerofs.com/sloth/structs"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -10,18 +11,37 @@ import (
 	"net/http"
 )
 
-//
-// Public
-//
+type Notifier interface {
 
-type Notifier struct {
+	// Register synchronously sends a registration request and returns the http
+	// status code of the response
+	Register(deviceType, alias, token string, dev bool) int
+
+	// Notify synchronously sends a notification request
+	Notify(body string, uids []string, badge int) error
+
+	// NotifyNewMessage should call Notify with an appropriate body and badge
+	// count when "caller" has messaged "targets".
+	NotifyNewMessage(caller *User, targets []string)
+}
+
+func NewNotifier(user, pass, url string, poolSize uint) Notifier {
+	return &notifier{
+		AuthUser:       user,
+		AuthPass:       pass,
+		Url:            url,
+		HttpClientPool: httpClientPool.NewPool(poolSize),
+	}
+}
+
+type notifier struct {
 	AuthUser, AuthPass string // basic auth values for Button service
 	Url                string // base url of Button service
 	HttpClientPool     httpClientPool.Pool
 }
 
 // Notify synchronously sends a notification request
-func (p *Notifier) Notify(body string, uids []string, badge int) error {
+func (p *notifier) Notify(body string, uids []string, badge int) error {
 	log.Printf("push notify %v %v\n", uids, body)
 	payload, err := request{Body: body, Aliases: uids, Badge: badge}.toJson()
 	if err != nil {
@@ -38,7 +58,7 @@ func (p *Notifier) Notify(body string, uids []string, badge int) error {
 	return resp.Err
 }
 
-func (p *Notifier) Register(deviceType, alias, token string, dev bool) int {
+func (p *notifier) Register(deviceType, alias, token string, dev bool) int {
 	r := &buttonRegistrationRequest{
 		DeviceType: deviceType,
 		Alias:      alias,
@@ -74,7 +94,7 @@ func (r request) toJson() (io.Reader, error) {
 }
 
 // Synchronously make the request and return the status code
-func (p *Notifier) makeRegisterRequest(r *buttonRegistrationRequest) int {
+func (p *notifier) makeRegisterRequest(r *buttonRegistrationRequest) int {
 	b, err := json.Marshal(r)
 	errors.PanicOnErr(err)
 

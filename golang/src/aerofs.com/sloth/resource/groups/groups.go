@@ -17,7 +17,7 @@ type context struct {
 	broadcaster     broadcast.Broadcaster
 	db              *sql.DB
 	lastOnlineTimes *lastOnline.Times
-	pushNotifier    *push.Notifier
+	pushNotifier    push.Notifier
 }
 
 //
@@ -28,7 +28,7 @@ func BuildRoutes(
 	db *sql.DB,
 	broadcaster broadcast.Broadcaster,
 	lastOnlineTimes *lastOnline.Times,
-	pushNotifier *push.Notifier,
+	pushNotifier push.Notifier,
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
 

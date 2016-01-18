@@ -7,7 +7,7 @@ import (
 )
 
 // This method is synchronous. Better call it in a separate goroutine.
-func (p *Notifier) NotifyNewMessage(caller *User, targets []string) {
+func (p *notifier) NotifyNewMessage(caller *User, targets []string) {
 	body := fmt.Sprintf("%v %v sent a message", caller.FirstName, caller.LastName)
 	badge := 0
 	err := p.Notify(body, targets, badge)

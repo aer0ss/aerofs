@@ -13,10 +13,10 @@ type RegistrationRequest struct {
 }
 
 type context struct {
-	pushNotifier *push.Notifier
+	pushNotifier push.Notifier
 }
 
-func BuildRoutes(checkUser restful.FilterFunction, updateLastOnline restful.FilterFunction, pushNotifier *push.Notifier) *restful.WebService {
+func BuildRoutes(checkUser restful.FilterFunction, updateLastOnline restful.FilterFunction, pushNotifier push.Notifier) *restful.WebService {
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
 	ws.Filter(updateLastOnline)
