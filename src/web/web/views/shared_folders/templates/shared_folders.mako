@@ -104,7 +104,7 @@
                                     </div>
                                     <div class="col-xs-3" id="left-folder-{{folder.spinnerID}}">
                                         <span class="folder-spinner pull-left">&nbsp;</span>
-                                        <a class="btn btn-default pull-right" ng-click="rejoin(folder)">Rejoin</a>
+                                        <a class="btn btn-default pull-right" ng-show="folder.is_member" ng-click="rejoin(folder)">Rejoin</a>
                                     </div>
                                 </div>
                             </div>
