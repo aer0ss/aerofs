@@ -133,11 +133,11 @@ func UpdateGroup(tx *sql.Tx, group *Group, params *GroupWritable, caller string)
 	// update group_members and group_member_history tables
 	updateTime := time.Now()
 	for uid := range membersRemoved {
-		AddGroupMember(tx, group.Id, uid)
+		RemoveGroupMember(tx, group.Id, uid)
 		InsertGroupMemberChange(tx, group.Id, uid, caller, updateTime, false)
 	}
 	for uid := range membersAdded {
-		RemoveGroupMember(tx, group.Id, uid)
+		AddGroupMember(tx, group.Id, uid)
 		InsertGroupMemberChange(tx, group.Id, uid, caller, updateTime, true)
 	}
 	// return updated group

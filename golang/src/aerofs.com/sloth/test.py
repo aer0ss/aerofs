@@ -258,6 +258,28 @@ try:
         "createdTime": created_time,
     }, r.json()
 
+    # PUT /groups/gid add member
+    r = s.put(BASE_URL + "/groups/" + gid,
+            json.dumps({
+                "members": ["dgray", "ggray", "jgray"],
+            }),
+            headers=JGRAY_AUTH)
+    assert r.ok, r
+    r = s.get(BASE_URL + "/groups/" + gid, headers=JGRAY_AUTH)
+    assert r.ok, r
+    assert r.json()["members"] == ["dgray", "ggray", "jgray"], r.json()
+
+    # PUT /groups/gid remove member
+    r = s.put(BASE_URL + "/groups/" + gid,
+            json.dumps({
+                "members": ["dgray", "jgray"],
+            }),
+            headers=JGRAY_AUTH)
+    assert r.ok, r
+    r = s.get(BASE_URL + "/groups/" + gid, headers=JGRAY_AUTH)
+    assert r.ok, r
+    assert r.json()["members"] == ["dgray", "jgray"]
+
     # PUT /groups/gid non-member
     r = s.put(BASE_URL + "/groups/" + gid,
             json.dumps({
