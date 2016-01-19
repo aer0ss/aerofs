@@ -40,13 +40,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.skife.jdbi.v2.DBI;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.net.URI;
+
+import static com.aerofs.base.TimerUtil.getGlobalTimer;
 
 // explicitly not final so that I can override the injected components in the tests
 public class Polaris extends Service<PolarisConfiguration> {
@@ -173,7 +174,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         return new TokenVerifier("oauth-havre",
                 "i-am-not-a-restful-secret",
                 URI.create("http://sparta.service:8700/tokeninfo"),
-                new HashedWheelTimer(),
+                getGlobalTimer(),
                 null,
                 new NioClientSocketChannelFactory());
     }

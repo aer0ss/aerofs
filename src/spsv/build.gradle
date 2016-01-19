@@ -30,7 +30,7 @@ dependencies {
     compile 'org.mortbay.jetty:jetty-util:6.1.26'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
-    testCompile 'com.jayway.restassured:rest-assured:2.4.1'
+    testCompile 'com.jayway.restassured:rest-assured:2.8.0'
     testCompile 'org.mortbay.jetty:jetty:6.1.26'
     testCompile project(path: ':src/lib', configuration: 'testutil')
     testCompile project(path: ':src/libservlet', configuration: 'testutil')

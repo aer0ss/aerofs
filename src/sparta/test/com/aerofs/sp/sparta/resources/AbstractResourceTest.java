@@ -62,8 +62,9 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -81,7 +82,9 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.*;
+import java.util.concurrent.Executors;
 
+import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.bifrost.server.BifrostTest.*;
 import static com.aerofs.sp.sparta.resources.SharedFolderResource.aclEtag;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -284,7 +287,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static Injector spartaInjector() throws Exception
     {
         return Guice.createInjector(
-                Sparta.spartaModule(new HashedWheelTimer(), deploymentSecret),
+                Sparta.spartaModule(getGlobalTimer(), deploymentSecret),
                 Sparta.databaseModule(dbParams.getProvider()), new AbstractModule()
         {
             @Override
@@ -367,7 +370,7 @@ public class AbstractResourceTest extends AbstractBaseTest
 
         sqlTrans.commit();
 
-        sparta = new Sparta(inj, deploymentSecret);
+        sparta = new Sparta(inj, deploymentSecret, 2);
         sparta.start();
 
         RestAssured.baseURI = "http://localhost";

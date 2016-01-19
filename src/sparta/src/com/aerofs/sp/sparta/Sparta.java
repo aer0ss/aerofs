@@ -81,12 +81,12 @@ public class Sparta extends Service
 
     private final ExecutionHandler _executionHandler;
 
-    public Sparta(Injector injector, String deploymentSecret)
+    public Sparta(Injector injector, String deploymentSecret, int poolSize)
     {
         super("sparta", listenAddress(), injector);
 
         _executionHandler = new ExecutionHandler(
-                new OrderedMemoryAwareThreadPoolExecutor(10, 1 * C.MB, 5 * C.MB));
+                new OrderedMemoryAwareThreadPoolExecutor(poolSize, 1 * C.MB, 5 * C.MB));
 
         addRequestFilter(OAuthRequestFilter.class);
 
@@ -138,7 +138,7 @@ public class Sparta extends Service
                 spartaModule(timer, secret));
 
         // NB: we expect nginx or similar to provide ssl termination...
-        new Sparta(inj, secret)
+        new Sparta(inj, secret, 10)
                 .start();
 
         // And we embed a Bifrost out of whole cloth, too, because why not.
