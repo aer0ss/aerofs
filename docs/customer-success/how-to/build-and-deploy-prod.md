@@ -61,6 +61,22 @@ version, use `--release-version` in step 4 below.
    manually by updating the version on the
    [Private Cloud Admin Portal](http://enterprise.aerofs.com:8000/release).
    
+   If for any reason, a release needs to be pulled from the registry, 
+   tag the loader that should be the correct release with the tag 
+   latest. Use the following command to list the loader tags to find the correct loader
+   image you want to give the lastest tag:
+
+         curl -s https://registry.aerofs.com/v1/repositories/aerofs/loader/tags 
+         | python -m json.tool
+   		
+   Then run,
+   		
+         curl -v -X PUT https://registry.aerofs.com:5050/v1/repositories/aerofs/
+         loader/tags/latest -H "Content-Type: application/json" -d 
+         '"<loader image you want to roll back to>"'
+   		
+   The loader image will now be set to latest.  
+   
 8. After releasing, write the 
 [Release Notes](https://support.aerofs.com/hc/en-us/articles/201439644-AeroFS-Release-Notes), 
 the Internal Release notes for product updates released only to the AeroFS team 
