@@ -77,10 +77,14 @@ then
     fi
 fi
 
+
 if [ ! -f aerofs-db-backup/external.properties ]
 then
     malformed_db_backup "expected dir \"aerofs-db-backup/external.properties\" not found"
     exit 7
+else
+    echo ">>> Restoring configuration properties..."
+    cp aerofs-db-backup/external.properties /opt/config/properties/external.properties
 fi
 
 if [ -f aerofs-db-backup/external-db-flag ]
@@ -129,20 +133,6 @@ if [ -d aerofs-db-backup/charlie ] ; then
     rm -rf /data/charlie
     cp -a aerofs-db-backup/charlie /data/charlie
 fi
-
-echo ">>> Restoring configuration properties..."
-PROPS=/opt/config/properties/external.properties
-
-# The string replacement is to support restoring from legacy appliances
-sed -e "s/email_host=localhost/email_host=postfix.service/" aerofs-db-backup/external.properties > ${PROPS}
-
-# Add default properties specific to the dockerize appliance if they aren't present
-for i in $(cat /external.properties.docker.default); do
-    KEY=$(echo "$i" | sed -e "s/=.*//")
-    if [ -z "$(grep "^${KEY}=" ${PROPS})" ]; then
-        echo "${i}" >> ${PROPS}
-    fi
-done
 
 popd 1>/dev/null 2>/dev/null
 
