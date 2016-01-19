@@ -2,3 +2,6 @@ mysql_user=root
 mysql_url=mysql.service:3306
 redis_host=redis.service
 log_level=INFO
+messaging_button_url_base=https://push.arrowfs.org/button
+messaging_button_auth_user=EC9682BA-FC28-4259-95D6-C52FB5612CBE
+messaging_button_auth_pass=C252D174-009E-41EA-97FF-D47418607BB8
