@@ -34,6 +34,18 @@ public class PasswordResetEmailer
         sendPublicEmail(userId, subject, body);
     }
 
+    public void sendPasswordResetEmailToExternallyManagedAccount(UserID userId)
+            throws IOException, MessagingException
+    {
+        String subject = SPParam.BRAND + " password request";
+
+        String body = "\nWe are unable to reset your password at this time because\n" +
+                "your account is being managed by an external identity service.\n" +
+                "Please contact " + WWW.SUPPORT_EMAIL_ADDRESS + " for assistance with resetting your credential.\n\n" +
+                "If you didn't request this email please ignore this message.";
+        sendPublicEmail(userId, subject, body);
+    }
+
     public void sendPasswordResetConfirmation(UserID userId)
             throws IOException, MessagingException
     {

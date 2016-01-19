@@ -46,9 +46,6 @@ def request_password_reset(request):
                 sp.send_password_reset_email(login)
                 success = True
             except Exception as e:
-                if e.get_type() == PBException.CANNOT_RESET_PASSWORD:
-                    error = _("Error: The credentials for this account are not managed by AeroFS."
-                              " Please contact your local system administrator.")
                 # do nothing.  We don't want to expose user information about whether or not
                 # an email exists.
                 log.warn('Error received in password reset: ' + str(e))

@@ -1,11 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.ExCannotResetPassword;
-import com.aerofs.base.ex.ExExternalServiceUnavailable;
-import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExCannotReuseExistingPassword;
+import com.aerofs.base.ex.*;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.LocalCredential;
@@ -22,9 +18,8 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.Arrays;
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 
 /**
@@ -62,13 +57,13 @@ public class PasswordManagement
 
         if (!_authenticator.isLocallyManaged(user.id())) {
             l.info("Password reset requested for " + user + " but user has no local credential");
-            throw new ExCannotResetPassword();
+            _passwordResetEmailer.sendPasswordResetEmailToExternallyManagedAccount(user.id());
+        } else {
+            String token = Base62CodeGenerator.generate();
+            _db.insertPasswordResetToken(user.id(), token);
+            _passwordResetEmailer.sendPasswordResetEmail(user.id(), token);
+            l.info("Password Reset Email sent to " + user.id());
         }
-
-        String token = Base62CodeGenerator.generate();
-        _db.insertPasswordResetToken(user.id(), token);
-        _passwordResetEmailer.sendPasswordResetEmail(user.id(), token);
-        l.info("Password Reset Email sent to " + user.id());
     }
 
     /**

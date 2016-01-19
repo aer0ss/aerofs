@@ -24,14 +24,12 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+
 import java.util.Properties;
 
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 public class TestSP_Password extends AbstractTest
@@ -123,18 +121,14 @@ public class TestSP_Password extends AbstractTest
     }
 
     @Test
-    public void shouldThrowExCannotResetPasswordForExternals() throws Exception
+    public void shouldSendEmailToExternallyManagedAccount() throws Exception
     {
         Identity.AUTHENTICATOR = Identity.Authenticator.EXTERNAL_CREDENTIAL;
         when(authenticator.isLocallyManaged(Matchers.any(UserID.class))).thenReturn(false);
 
-        try {
             _passwordManagement.sendPasswordResetEmail(user);
-            fail();
-        } catch (ExCannotResetPassword ignored) {
-            // expected
+            verify(passwordResetEmailer).sendPasswordResetEmailToExternallyManagedAccount(eq(user.id()));
         }
-    }
 
     //  Tests for resetPassword
 
