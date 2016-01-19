@@ -183,7 +183,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 l = links[j];
                 if (l.expires === undefined) {
                     l.expires = 0;
-                } else if {
+                } else {
                     l.expires = (new Date(l.expires).getTime() - now) / 1000;
                 }
             }
