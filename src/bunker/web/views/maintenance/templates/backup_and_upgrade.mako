@@ -186,7 +186,7 @@
 
 <%modal:modal>
     <%def name="id()">pull-wait-modal</%def>
-    <%def name="title()">Downloading The Latest AeroFS Version (Step 1/3)</%def>
+    <%def name="title()">Downloading the Latest AeroFS Version (Step 1/3)</%def>
     <%def name="no_close()"/>
 
     <p>
@@ -226,7 +226,7 @@
 ## I am not sure how to add the steps information without duplicating.
 <%progress_modal:progress_modal>
     <%def name="id()">backup-upgrade-progress-modal</%def>
-    <%def name="title()">Backing Up Your AeroFS (Step 2/3)</%def>
+    <%def name="title()">Backing Up Your System (Step 2/3)</%def>
     <%def name="no_close()"/>
 
     <p>
