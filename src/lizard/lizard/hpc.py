@@ -5,6 +5,7 @@ from models import HPCDeployment, HPCServer
 from docker import Client, tls
 from sqlalchemy.exc import IntegrityError
 import botocore.exceptions
+from hpc_config import configure_deployment, reboot, repackage
 
 
 class DeploymentAlreadyExists(Exception):
@@ -63,6 +64,11 @@ def create_deployment(customer, subdomain):
     create_loader(deployment)
 
     create_subdomain(deployment)
+
+    # Start a chain of Celery tasks to configure the appliance
+    (configure_deployment.s(deployment) |
+     reboot.s() |
+     repackage.s()).apply_async()
 
 
 def create_route53_change(deployment, delete=False):

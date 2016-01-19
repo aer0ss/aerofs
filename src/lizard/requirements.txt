@@ -9,6 +9,7 @@
 # version of pip, it may or may not be installed. Require it explicitly for
 # good measure.
 backports.ssl-match-hostname
+celery[redis]
 CherryPy
 Flask
 Flask-API

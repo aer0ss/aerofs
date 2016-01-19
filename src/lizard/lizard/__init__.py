@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CsrfProtect
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
-
+from celery import Celery
 from .flask_analytics import AnalyticsClient
 
 import stripe
@@ -20,6 +20,8 @@ csrf = CsrfProtect()
 
 # Database stuff
 db = SQLAlchemy()
+
+celery = Celery(__name__, broker='redis://', backend='redis://')
 
 
 def migrate_database(app):
@@ -72,6 +74,7 @@ def create_app(internal=False):
     # 5) Stripe
     stripe.api_key = app.config['STRIPE_SECRET_KEY']
 
+    # 6) AWS (Route 53)
     aws_session = boto3.session.Session(aws_access_key_id=app.config['HPC_AWS_ACCESS_KEY'],
                                         aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'])
     app.route53 = aws_session.client('route53')

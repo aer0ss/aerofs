@@ -36,6 +36,14 @@ make -C ../web/web
 
 Now you should be able to hit the instance on localhost:4444 in your browser.
 
+#### Run Celery (for Hosted Private Cloud)
+
+If you're working on Hosted Private Cloud, you need to run the Celery worker to process the tasks.
+
+1. Make sure redis is running: `$ redis-server /usr/local/etc/redis.conf`
+
+2. Run Celery: `$ ./env/bin/celery worker -b "redis://" -A "celery_worker.celery" -l DEBUG`
+
 
 Notes
 =====
