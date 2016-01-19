@@ -1,11 +1,10 @@
-#!/usr/bin/env python
 import lizard
 
 # See: http://blog.miguelgrinberg.com/post/celery-and-the-flask-application-factory-pattern
 #
 # Run the Celery worker with:
 #  $ cd ~/repos/aerofs/src/lizard
-#  $ ./env/bin/celery worker -b "redis://" -A "celery_worker.celery" -l DEBUG
+#  $ ./env/bin/celery worker -b "redis://" -A "lizard.celery_worker.celery" -l DEBUG
 
 celery = lizard.celery
 

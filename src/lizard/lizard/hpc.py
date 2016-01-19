@@ -66,7 +66,7 @@ def create_deployment(customer, subdomain):
     create_subdomain(deployment)
 
     # Start a chain of Celery tasks to configure the appliance
-    (configure_deployment.s(deployment) |
+    (configure_deployment.s(deployment.subdomain) |
      reboot.s() |
      repackage.s()).apply_async()
 
