@@ -174,9 +174,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             OutstandingRequestsCounter.pop();
             // check if object data's done loading, if so, populate link data
             // (if not, will populate via the _getFolders call once it's done)
-            //$scope.links = response.data.urls;
+            $scope.links = response.data.urls;
             if ($scope.objects) {
-                _populateLinks(response.data.urls);
+                _populateLinks();
             }
         }, function(response){
             OutstandingRequestsCounter.pop();
@@ -624,13 +624,12 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     /* Link-based sharing methods */
     // attaches links to their associated files and folders
-    function _populateLinks(links) {
+    function _populateLinks() {
         var o, l;
+        links = $scope.links;
         for (var i = 0; i < $scope.objects.length; i++) {
             o = $scope.objects[i];
             o.links = [];
-
-            links = links || _.clone($scope.links);
 
             for (var j = 0; j < links.length; j++) {
                 l = links[j];
@@ -643,9 +642,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                     links.splice(j,1);
                 }
             }
-            // remove placed links from the list
-            $scope.links = links;
         }
+        // remove placed links from the list
+        $scope.links = links;
     }
 
     // Needed to print the sharing URL
