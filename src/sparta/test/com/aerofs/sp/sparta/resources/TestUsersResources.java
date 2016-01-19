@@ -287,6 +287,7 @@ public class TestUsersResources extends AbstractResourceTest
         invite(user, sid, other, Permissions.EDITOR);
 
         givenOtherAccess()
+                .contentType(ContentType.JSON)
         .expect()
                 .statusCode(201)
                 .header(Names.LOCATION, "https://localhost:" + sparta.getListeningPort()
@@ -309,6 +310,7 @@ public class TestUsersResources extends AbstractResourceTest
         invite(user, sid, other, Permissions.EDITOR);
 
         givenOtherAccess()
+                .contentType(ContentType.JSON)
                 .queryParam("external", "1")
         .expect()
                 .statusCode(201)
@@ -332,6 +334,7 @@ public class TestUsersResources extends AbstractResourceTest
         invite(user, sid, other, Permissions.EDITOR);
 
         givenOtherAccess()
+                .contentType(ContentType.JSON)
                 .queryParam("external", "hellatru")
         .expect()
                 .statusCode(400)
@@ -347,6 +350,7 @@ public class TestUsersResources extends AbstractResourceTest
         SID sid = mkShare("Test", user.getString());
 
         givenOtherAccess()
+                .contentType(ContentType.JSON)
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -361,6 +365,7 @@ public class TestUsersResources extends AbstractResourceTest
         SID sid = mkShare("Test", user.getString());
 
         givenReadAccess()
+                .contentType(ContentType.JSON)
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
@@ -484,7 +489,7 @@ public class TestUsersResources extends AbstractResourceTest
         givenAdminAccess()
                 .contentType(ContentType.JSON)
         .expect()
-                .statusCode(415)
+                .statusCode(400)
         .when()
                 .post(RESOURCE_BASE);
     }

@@ -404,6 +404,7 @@ public class UsersResource extends AbstractSpartaResource
             @Context Version version) throws Exception
     {
         requirePermission(Scope.WRITE_USER, auth);
+        checkArgument(attrs != null, "Request body missing");
         checkArgument(attrs.email != null, "Request body missing required field: email");
         checkArgument(attrs.firstName != null, "Request body missing required field: first_name");
         checkArgument(attrs.lastName != null, "Request body missing required field: last_name");
