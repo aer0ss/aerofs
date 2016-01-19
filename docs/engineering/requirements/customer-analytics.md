@@ -13,16 +13,13 @@ and how we can make things better.
 * Enable Sales team to identify customers who demonstrate steady growth and actively reach out to
 them to upsell/renew.
 
-
 ## Important Things to Keep in Mind
 
-* Analytics should be an opt-in feature
+* Analytics should be an opt-out feature
 * We should not collect any sensitive information from customers
 * Should not take any additional effort on Admin's part to enable analytics on their appliance
 
-
 ## Functional Requirements
-
 
 ### Data Sets of Interest
 
@@ -53,14 +50,12 @@ Example data points:
 - Number of shared folder creations
 - Number of user deletions
 
-
 ### Enabling Analytics During Appliance Setup
 - The systems admin should be able to select whether or not they want to send analytics information
 to AeroFS during the setup. Similar to how we currently have a checkbox for collecting appliance
 setup experience data. This option should be checked by default.
 - The analytics option should be available to all users regardless of whether they're using the
 free license or business license.
-
 
 ### Change Analytics Options via Bunker Settings Page
 The following analytics options should be available to the admin in bunker settings page:
@@ -85,7 +80,6 @@ take a look at the analytics data before giving the green light to send it over 
    - If they choose to send data to AeroFS, analytics data will get relayed from the appliance to 
 AeroFS through the analytics server
 
-
 ### Generate Reports From Analytics Data
 We should be able to perform queries and generate reports using the data we collect. The type of 
 information we want to extract are as follows.
@@ -102,7 +96,6 @@ Percentage of customer that have:
 - Email integration (MS Exhange Plugin) enabled
 - Team Server/Storage Agent installed
 
-
 Product Usage Queries:
 
 - Number of new user signups over the last X days by customer ID
@@ -118,7 +111,6 @@ Product Usage Queries:
 - Max file size uploaded/downloaded via Web in the last X days by customer ID
 - Total amount of data (bytes) synced in the last X days
 
-
 Success Queries:
 
 - Number of times Team Server went offline in the last X days
@@ -131,11 +123,9 @@ Success Queries:
 - Number of shared folders by customer ID
 - Percentage of customers who successfully completed appliance setup and installed a desktop client
 
-
 Sales Queries:
 
 - Free accounts that are currently at X number of users listed by customer ID
 - Number of free private cloud accounts that have less than X number of users versus greater than 
   X number of users
 - Paid accounts that are approaching their license quota listed by customer ID
-
