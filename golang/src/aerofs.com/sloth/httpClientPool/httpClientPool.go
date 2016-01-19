@@ -51,7 +51,11 @@ func (p *pool) Do(r *http.Request) <-chan *Response {
 		}()
 
 		resp, err := client.Do(r)
-		defer resp.Body.Close()
+		defer func() {
+			if resp != nil && resp.Body != nil {
+				resp.Body.Close()
+			}
+		}()
 		if err != nil {
 			responseChan <- &Response{R: resp, Err: err}
 			return
