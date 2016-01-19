@@ -1,16 +1,18 @@
 #!/bin/bash
 set -e
 
-PROP_FILE=/opt/config/properties/external.properties
+CONFIG_DIR=/opt/config
+PROP_FILE=$CONFIG_DIR/properties/external.properties
 if [ ! -f $PROP_FILE ]; then
     echo Creating $PROP_FILE...
-    cat /external.properties.default /external.properties.docker.default > $PROP_FILE
+    cat $CONFIG_DIR/external.properties.default $CONFIG_DIR/external.properties.docker.default > $PROP_FILE
 fi
 
 # Add default properties specific to the dockerized appliance if they aren't present.
-for i in $(cat /external.properties.docker.default); do
+for i in $(cat $CONFIG_DIR/external.properties.docker.default); do
     KEY=$(echo "$i" | sed -e "s/=.*//")
     if [ -z "$(grep "^${KEY}=" ${PROP_FILE})" ]; then
+        echo Adding new default key: $KEY
         echo "${i}" >> ${PROP_FILE}
     fi
 done
