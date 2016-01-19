@@ -30,7 +30,7 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/bifrost')
     runtime project(':src/spdb')
-    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testCompile 'com.jayway.restassured:rest-assured:2.4.1'
     testCompile project(':src/bifrost')
     testCompile project(path: ':src/bifrost', configuration: 'testutil')
     testCompile project(path: ':src/libservlet', configuration: 'testutil')

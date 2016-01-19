@@ -33,7 +33,7 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/sync')
     compile project(path: ':src/zephyr', configuration: 'client')
-    testCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testCompile 'com.jayway.restassured:rest-assured:2.4.1'
     testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
     testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
     testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'

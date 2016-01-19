@@ -60,7 +60,7 @@ dependencies {
     compile project(path: ':src/zephyr', configuration: 'client')
     testCompile project(':src/zephyr')
     testutilCompile 'javax.mail:mail:1.4.2'
-    testutilCompile 'com.jayway.restassured:rest-assured:2.3.4'
+    testutilCompile 'com.jayway.restassured:rest-assured:2.4.1'
     testutilCompile 'org.hibernate:hibernate-core:4.1.9.Final'
     testutilCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
     testutilCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
