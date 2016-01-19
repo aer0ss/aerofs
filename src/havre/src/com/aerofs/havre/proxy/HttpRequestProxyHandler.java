@@ -12,14 +12,7 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFutureNotifier;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.handler.codec.http.Cookie;
 import org.jboss.netty.handler.codec.http.CookieDecoder;
@@ -135,7 +128,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             _upstream.write(message);
         } else {
             // HttpChunk
-            if (_upstream == null) {
+            if (_upstream == null || !_upstream.isConnected()) {
                 l.warn("ignore incoming message on {}", downstream);
             } else {
                 _upstream.write(message);
@@ -264,7 +257,14 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 _expectedResponses.incrementAndGet();
                 _expectingRequestChunks.set(((HttpRequest)msg).isChunked());
             } else if (msg instanceof HttpChunk) {
-                if (((HttpChunk)msg).isLast()) _expectingRequestChunks.set(false);
+                // in case of a clean shutdown during an upload, discard the incoming chunks
+                if (!_expectingRequestChunks.get()) {
+                    l.debug("ignore chunk");
+                    me.getFuture().setSuccess();
+                    return;
+                } else if (((HttpChunk)msg).isLast()) {
+                    _expectingRequestChunks.set(false);
+                }
                 _closeIfIdle.set(false);
             }
             ctx.sendDownstream(me);
@@ -365,8 +365,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         @Override
         public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent cse)
         {
-            l.info("upstream channel closed {} {} {}", cse.getChannel(),
-                    _upstream.isReadable(), _upstream.isWritable());
+            l.info("upstream channel closed {} up: {} {} down: {} {} exp: {} {}", cse.getChannel(),
+                    _upstream.isReadable(), _upstream.isWritable(),
+                    _downstream.isReadable(), _downstream.isWritable(),
+                    _expectedResponses.get(), _expectingRequestChunks.get());
 
             // avoid forwarding any response Netty may still deliver
             ctx.getPipeline().remove(this);
@@ -389,10 +391,14 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 do {
                     sendError(_downstream, HttpResponseStatus.GATEWAY_TIMEOUT);
                 } while (_expectedResponses.decrementAndGet() > 0);
-            } else {
-                _downstream.write(ChannelBuffers.EMPTY_BUFFER)
-                        .addListener(ChannelFutureNotifier.CLOSE);
+
+                if (!_expectingRequestChunks.get()) return;
+                // If a request body is still being streamed, make sure queued chunks are discarded
+                // and close the connection once the write buffer is flushed
+                _expectingRequestChunks.set(false);
             }
+            _downstream.write(ChannelBuffers.EMPTY_BUFFER)
+                    .addListener(ChannelFutureNotifier.CLOSE);
         }
 
         @Override
