@@ -249,7 +249,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
     {
         if (e.getState() == IdleState.READER_IDLE) {
-            l.warn("tunnel beat missed {}", this);
+            l.warn("tunnel beat missed {} {}", e.getChannel().isReadable(), this);
             e.getChannel().close();
         } else if (e.getState() == IdleState.WRITER_IDLE) {
             if (_addr == null) {
@@ -258,7 +258,7 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
                 // good can possibly come out of this...
                 e.getChannel().close();
             } else {
-                l.debug("tunnel beat send {}", this);
+                l.debug("tunnel beat send {} {}", e.getChannel().isWritable(), this);
                 e.getChannel().write(BEAT);
             }
         }
@@ -274,9 +274,31 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
             final ChannelBuffer header = ChannelBuffers.buffer(HEADER_SIZE);
             header.writeShort(MSG_PAYLOAD);
             header.writeInt(virtualChannel.getConnectionId());
+            final long total = payload.readableBytes() + header.readableBytes();
 
+            // failure to reconstruct WriteCompletion events would prevent IdleState handler from
+            // correctly detecting write timeouts (i.e. successful writes would never reset the
+            // timeout)
             _channel.write(new Fragmenter(header, payload))
-                    .addListener(new ChannelFutureNotifier(future));
+                    .addListener(new ChannelFutureProgressListener() {
+                        long written;
+                        @Override
+                        public void operationProgressed(ChannelFuture cf, long n, long w, long t) {
+                            written = w;
+                            future.setProgress(n, w, t);
+                            Channels.fireWriteComplete(virtualChannel, n);
+                        }
+
+                        @Override
+                        public void operationComplete(ChannelFuture cf) throws Exception {
+                            if (cf.isSuccess()) {
+                                future.setSuccess();
+                                Channels.fireWriteComplete(virtualChannel, total - written);
+                            } else {
+                                future.setFailure(cf.getCause());
+                            }
+                        }
+                    });
         } else {
             l.warn("ignore write {} -> {}", virtualChannel, this);
             future.setFailure(new ClosedChannelException());
