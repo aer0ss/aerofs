@@ -52,6 +52,12 @@ public class Collector2 implements IDumpStatMisc
     private long _backoffInterval;
     private boolean _backoffScheduled;
 
+    private boolean _stopped;  // sometimes shared folder disappears during exp retry
+
+    public void stop_() {
+        _stopped = true;
+    }
+
     public static class Factory
     {
         private final CoreScheduler _sched;
@@ -121,7 +127,7 @@ public class Collector2 implements IDumpStatMisc
     public void online_(final DID did)
     {
         _f._er.retry("online", () -> {
-            if (_cfs.loadDBFilter_(did)) {
+            if (!_stopped && _cfs.loadDBFilter_(did)) {
                 l.debug("{} online triggers collector 4 {}", did, _sidx);
                 resetBackoffInterval_();
                 if (_it.started_()) {
@@ -153,7 +159,7 @@ public class Collector2 implements IDumpStatMisc
 
         _f._er.retry("start", () -> {
             // stop this retry thread if someone called start_() again
-            if (startSeq != _startSeq) return null;
+            if (_stopped || startSeq != _startSeq) return null;
             collect_();
             return null;
         });
@@ -354,6 +360,7 @@ public class Collector2 implements IDumpStatMisc
         {
             l.debug("start continuation");
             _f._er.retry("continuation", () -> {
+                if (_stopped) return null;
                 checkState(_it.started_());
                 collect_();
                 cascade.run();

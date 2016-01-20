@@ -131,6 +131,8 @@ public class PolarisStore extends Store
 
         _f._devices.beforeDeletingStore_(_sidx);
 
+        _cf.stop_();
+
         // stop collector if needed
         getOnlinePotentialMemberDevices_().keySet().forEach(this::notifyDeviceOffline_);
     }
