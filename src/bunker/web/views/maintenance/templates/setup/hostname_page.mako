@@ -46,6 +46,9 @@
     <%def name="title()">Changing hostname</%def>
 
     Are you sure you want to change the hostname? It might ${require_reinstall()}
+    <br><br>
+    Consult our <a href="https://support.aerofs.com/hc/en-us/articles/204985954" target="_blank">help center documentation</a>
+    for instructions on how to safely change the hostname.
 
     <%def name="footer()">
         <a href="#" class="btn btn-default"
