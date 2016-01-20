@@ -125,7 +125,7 @@
             console.log('wait for previous repackaging to finish');
             ## Wait for previouew repackaging done
             var interval = window.setInterval(function() {
-                $.post("${request.route_path('json-repackaging')}")
+                $.get("${request.route_path('json-repackaging')}")
                     .done(function (resp) {
                         if (resp['running']) {
                             console.log('previous packaging is running. wait');
