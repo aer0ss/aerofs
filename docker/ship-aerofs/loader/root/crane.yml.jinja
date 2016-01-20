@@ -67,6 +67,7 @@ containers:
       detach: true
       volume:
         - /etc/ssl/certs:/etc/ssl/certs:ro
+        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
       volumes-from:
         - data
       link:
