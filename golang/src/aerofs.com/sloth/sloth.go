@@ -34,6 +34,7 @@ import (
 const TOKEN_CACHE_TIME = time.Minute
 const TOKEN_CACHE_SIZE = 1000
 const HTTP_CLIENT_POOL_SIZE = 20
+const MAX_OPEN_DB_CONNS = 30
 
 //
 // Main
@@ -67,6 +68,7 @@ func main() {
 	dbDSN := fmt.Sprintf("root@tcp(%v:3306)/", dbHost)
 	dbParams := "charset=utf8mb4"
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
+	db.SetMaxOpenConns(MAX_OPEN_DB_CONNS)
 	defer db.Close()
 
 	var pushNotifier push.Notifier
