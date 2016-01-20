@@ -54,7 +54,11 @@ func (p *notifier) Notify(body string, uids []string, badge int) error {
 	req.SetBasicAuth(p.AuthUser, p.AuthPass)
 	req.Header.Add("Content-Type", "application/json")
 	resp := <-p.HttpClientPool.Do(req)
-	log.Printf("push notify response status %v\n", resp.R.StatusCode)
+	if resp.Err == nil {
+		log.Printf("push notify response status %v\n", resp.R.StatusCode)
+	} else {
+		log.Printf("push notify err %v\n", resp.Err)
+	}
 	return resp.Err
 }
 
