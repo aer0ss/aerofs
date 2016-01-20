@@ -104,7 +104,7 @@ public class InviteesResource extends AbstractSpartaResource {
         OrganizationInvitation invitation = _factInvitation.create(invitee,
                 caller.getOrganization());
         return Response.ok().entity(new Invitee(invitation.getInvitee().id().getString(),
-                caller.id().getString(), invitation.getCode())).build();
+                invitation.getInviter().id().getString(), invitation.getCode())).build();
     }
 
     @Since("1.3")
