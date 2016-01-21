@@ -45,7 +45,7 @@ def _get_promo_biz90():
 
 def _post_promo_biz90():
     """
-    Issue a Business license with all features for 90 days.
+    Issue a trial license with all features for 90 days.
     """
     user = login.current_user
 
@@ -54,7 +54,7 @@ def _post_promo_biz90():
     l.state = models.License.LicenseState.PENDING
     l.seats = 30
     l.set_days_until_expiry(90)
-    l.is_trial = False #we use the is_trial key as "is_team" -- some business features key off of it 
+    l.is_trial = True
     l.allow_audit = True
     l.allow_identity = True
     l.allow_mdm = True

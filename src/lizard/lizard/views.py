@@ -643,16 +643,6 @@ def promo():
     form = forms.PromoForm()
 
     if form.validate_on_submit():
-        user = login.current_user
-        customer = user.customer
-
-        pardot_params = {
-        'email': markupsafe.escape(user.email),
-        'promo_code': form.code.data.encode('utf-8')
-        }
-
-        requests.get("https://go.pardot.com/l/32882/2016-01-20/4nxvsz", params=pardot_params)
-
         return promotions.post_promo(form.code.data)
     return promotions.get_promo(request.args.get('code', ''))
 
