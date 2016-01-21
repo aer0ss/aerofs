@@ -404,11 +404,13 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
         if (info == null) return false;
 
         if (info._length != DELETED_FILE_LEN || info._mtime != DELETED_FILE_DATE) {
-            l.warn("restore non-deleted file {}", pf.sokid(), info._length, info._mtime);
+            l.warn("restore non-deleted file {} {} {}", soid, info._length, info._mtime);
         } else {
             info = _bsdb.getHistFileInfo_(info._id, info._ver - 1);
             if (info == null) return false;
         }
+
+        if (pf.exists_()) throw new FileAlreadyExistsException("" + pf.sokid());
 
         long id = getOrCreateFileId_(pf.sokid(), t);
         _bsdb.insertEmptyFileInfo(id, t);
