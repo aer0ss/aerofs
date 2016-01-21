@@ -18,6 +18,7 @@
         ##          function onFailure(xhr)
         function checkUpgradeInProgressOrStartNew(pullWaitModal, onPullCompletion, pullFailModal,
                 progress_bar, waitForBackup, switchWaitModal, successModal, failModal, onFailure) {
+
             $.get("${request.route_path('json-pull-images')}")
             .done(function(resp) {
                 if (resp['running']) {
@@ -28,13 +29,23 @@
                         if (resp['running']) {
                             waitForBackup();
                         } else {
-                            $.get("${request.route_path('json-gc')}")
+                            $.get("${request.route_path('json-repackaging')}")
                             .done(function(resp) {
                                 if (resp['running']) {
                                     switchWaitModal.modal('show');
-                                    waitForGC(switchWaitModal, successModal, failModal);
+                                    waitForRepackaging(switchWaitModal, successModal, failModal);
                                 } else {
-                                    pullImages($('#pull-wait-modal'), onPullCompletion, $('#pull-fail-modal'), $('.progress-bar'));
+                                    $.get("${request.route_path('json-gc')}")
+                                    .done(function(resp) {
+                                        if (resp['running']) {
+                                            switchWaitModal.modal('show');
+                                            waitForGC(switchWaitModal, successModal, failModal);
+                                        } else {
+                                            pullImages($('#pull-wait-modal'), onPullCompletion, $('#pull-fail-modal'), $('.progress-bar'));
+                                        }
+                                    }).fail(function(xhr) {
+                                        if (onFailure) onFailure(xhr);
+                                    });
                                 }
                             }).fail(function(xhr) {
                                 if (onFailure) onFailure(xhr);
@@ -111,7 +122,40 @@
             }, 5000);
         }
 
+        function postRepackage(waitModal, successModal, failModal) {
+            ## Delete the repackaging done file so that we can repackage.
+            $.post("${request.route_path('json-del-repackage-done')}")
+            .done(function(resp) {
+                $.post("${request.route_path('json-repackaging')}")
+                .done(function(resp) {
+                    console.log("Repackaging installers...");
+                    waitForRepackaging(waitModal, successModal, failModal);
+                }).fail(failed);
+            }).fail(failed);
+        }
 
+        function waitForRepackaging(waitModal, successModal, failModal) {
+            console.log('Wait for repackaging to finish');
+            var interval = window.setInterval(function() {
+                $.get("${request.route_path('json-repackaging')}")
+                .done(function(resp) {
+                    if (resp['running']) {
+                        console.log('packaging is running. wait');
+                    } else if (resp['succeeded']) {
+                        console.log('packaging is done');
+                        window.clearInterval(interval);
+                        postGC(waitModal, successModal, failModal);
+                    } else {
+                        window.clearInterval(interval);
+                        console.log('repackaging has not succeeded');
+                        failModal.modal('show');
+                    }
+                }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    onFailure(xhr);
+                });
+            }, 1000);
+        }
 
         function postGC(waitModal, successModal, failModal) {
             $.post("${request.route_path('json-gc')}")
@@ -141,13 +185,13 @@
                 .done(function() {
                     console.log("switching appliance...");
                     waitForReboot(bootID, function() {
-                        postGC(waitModal, successModal, failModal);
+                        postRepackage(waitModal, successModal, failModal);
                     });
                 }).fail(function(xhr, textStatus, errorThrown) {
                     ## Ignore errors as the server might be killed before replying
                     console.log("Ignore json-boot failure(while switching): " + xhr.status + " " + textStatus + " " + errorThrown);
                     waitForReboot(bootID, function() {
-                        postGC(waitModal, successModal, failModal);
+                        postRepackage(waitModal, successModal, failModal);
                     });
                 });
             }).fail(failed);
