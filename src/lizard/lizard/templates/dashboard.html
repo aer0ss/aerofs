@@ -12,7 +12,7 @@
                 <h4>Active license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if active_license.is_trial %}Team{% else %}Business{% endif %}</dd>
+                    <dd>{% if active_license.allow_audit or active_license.allow_identity or active_license.allow_mdm or active_license.allow_device_restriction %}Business{% else %}Team{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ active_license.seats }}</dd>
                     <dt>Valid until:</dt>
@@ -22,7 +22,7 @@
                 <h4>Pending license</h4>
                 <dl class="well well-sm dl-horizontal">
                     <dt>License type:</dt>
-                    <dd>{% if newest_license.is_trial %}Team{% else %}Business{% endif %}</dd>
+                    <dd>{% if newest_license.allow_audit or newest_license.allow_identity or newest_license.allow_mdm or newest_license.allow_device_restriction %}Business{% else %}Team{% endif %}</dd>
                     <dt>Seats:</dt>
                     <dd>{{ newest_license.seats }}</dd>
                     <dt>Valid until:</dt>

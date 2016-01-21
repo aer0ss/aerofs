@@ -45,7 +45,7 @@ def _get_promo_biz90():
 
 def _post_promo_biz90():
     """
-    Issue a trial license with all features for 90 days.
+    Issue a Business license with all features for 90 days.
     """
     user = login.current_user
 
