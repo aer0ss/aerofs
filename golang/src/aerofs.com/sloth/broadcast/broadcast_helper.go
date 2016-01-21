@@ -60,6 +60,14 @@ func SendLastOnlineEvent(b Broadcaster, uid string) {
 	broadcastSimpleEvent(b, "LAST_ONLINE", uid)
 }
 
+func SendPinEvent(b Broadcaster, uid, cid string) {
+	multicastEventWithPayload(b, "PIN", uid, cid, []string{uid})
+}
+
+func SendUnpinEvent(b Broadcaster, uid, cid string) {
+	multicastEventWithPayload(b, "UNPIN", uid, cid, []string{uid})
+}
+
 //
 // Private
 //

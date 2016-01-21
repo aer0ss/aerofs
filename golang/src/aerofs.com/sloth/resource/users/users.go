@@ -455,6 +455,7 @@ func (ctx *context) pinConvo(request *restful.Request, response *restful.Respons
 	}
 	dao.SetPinned(tx, caller, cid)
 	dao.CommitOrPanic(tx)
+	broadcast.SendPinEvent(ctx.broadcaster, caller, cid)
 }
 
 func (ctx *context) unpinConvo(request *restful.Request, response *restful.Response) {
@@ -464,6 +465,7 @@ func (ctx *context) unpinConvo(request *restful.Request, response *restful.Respo
 	tx := dao.BeginOrPanic(ctx.db)
 	dao.SetUnpinned(tx, caller, cid)
 	dao.CommitOrPanic(tx)
+	broadcast.SendUnpinEvent(ctx.broadcaster, caller, cid)
 }
 
 func (ctx *context) postTyping(request *restful.Request, response *restful.Response) {
