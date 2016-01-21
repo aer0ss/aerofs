@@ -5,7 +5,7 @@ RUN apt-get update -q &&\
         curl \
         python
 
-RUN curl -SL https://raw.github.com/pypa/pip/master/contrib/get-pip.py -o /tmp/get-pip.py &&\
+RUN curl -SL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py &&\
     python /tmp/get-pip.py &&\
     rm /tmp/get-pip.py
 
