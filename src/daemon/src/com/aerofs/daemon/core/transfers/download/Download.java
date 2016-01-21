@@ -229,9 +229,11 @@ class Download
 
         OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
         if (oa == null) {
-            SOCID dst = new SOCID(_socid.soid(), CID.META);
-            _f._dls.downloadSync_(dst, _from.allDIDs(), _cxt);
-            oa = _f._ds.getAliasedOANullable_(_socid.soid());
+            if (!_f._usePolaris.get()) {
+                SOCID dst = new SOCID(_socid.soid(), CID.META);
+                _f._dls.downloadSync_(dst, _from.allDIDs(), _cxt);
+                oa = _f._ds.getAliasedOANullable_(_socid.soid());
+            }
             if (oa == null) throw new ExAborted("meta dl failed");
         }
 

@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -83,6 +84,20 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
 
         Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
         bd.setLocalVersion(v != null ? v : -1);
+
+        if (v == null) {
+            try {
+                SendableContent c = _provider.content(new SOKID(soid, KIndex.MASTER));
+                if (c.hash == null) {
+                    // local file present but not yet hashed
+                    // it is possible that once hashed it will be found to match one of the remote
+                    // content entries,and we don't want to waste bandwidth re-downloading data
+                    // already present locally, especially when unlinking/reinstalling as the
+                    // transfer notifications causes much confusion
+                    throw new ExAborted("wait for hash " + soid);
+                }
+            } catch (ExNotFound e) {}
+        }
 
         PBGetContentRequest.Prefix prefix = getIncrementalDownloadInfo_(soid);
         if (prefix != null) bd.setPrefix(prefix);
