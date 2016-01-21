@@ -42,6 +42,7 @@ routes = [
     'json_set_open_signup',
     'json_set_identity_options',
     'json_set_license',
+    'preview_license',
     'backup_and_upgrade',
     'logs',
     'logs_auto_download',

@@ -134,13 +134,23 @@
                     <span id="flash-msg-success-body"></span>
                 </div>
                 <div id="flash-msg-error" class="alert alert-danger alert-dismissable" style="display: none">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <button type="button" class="close" aria-hidden="true">&times;</button>
                     <span id="flash-msg-error-body"></span>
                 </div>
                 <%block name="custom_banner_display"/>
             </div>
             </div>
         </div>
+
+        <script type="text/javascript">
+           ## Override bootstraps behavior of removing the alert from the dom on close. This
+           ## change applies only to the close button on the error message.
+           $(document).ready(function (){
+               $("#flash-msg-error").children(".close").on('click', function() {
+                   $(this).parent().hide();
+               });
+           });
+        </script>
 
         ## Main body
         <div class="container body-container">

@@ -1,33 +1,20 @@
 <%namespace name="csrf" file="../csrf.mako"/>
 <%namespace name="setup_common" file="setup_common.mako"/>
 
-<form method="post" onsubmit="submitForm(); return false;">
+<form method="post" onsubmit="gotoNextPage(); return false;">
     <h3>Set up AeroFS Appliance</h3>
 
     <p>This page will guide you through setting up the appliance.
         Review your license before continuing.</p>
     <h4>Your license:</h4>
-    <dl class="dl-horizontal">
-        <dt>Licensed to:</dt>
-        <dd>${render_license_field('license_company')}</dd>
-        <dt>Type:</dt>
-        <dd>${render_license_field('license_type')}</dd>
-        <dt>Valid until:</dt>
-        <dd>
-            ${render_license_field('license_valid_until')}
-            ## Because the license must be present before this page can be rendered, the license
-            ## must be invalid if the condition is true.
-            %if not is_license_present_and_valid:
-                <span class="badge badge-important" style="margin-left: 5px;">Expired</span>
-            %endif
-        </dd>
-        <dt>Allowed seats:</dt>
-        <dd>${render_license_field('license_seats')}</dd>
-    </dl>
+    <%namespace name="license_details" file="license_details.mako"/>
+    <div id="license-body">
+        <%license_details:body/>
+    </div>
 
     <h4>Update your license:</h4>
     <p><a href="mailto:sales@aerofs.com">Contact us</a> to request a new license.</p>
-    <p><input id="license-file" type="file"></p>
+    <p><input id="license-file" type="file" onchange="submitNewFile(); return false;"></p>
     <p><a target="_blank" href="https://support.aerofs.com/hc/en-us/articles/204951110">
         What happens if the license expires?</a></p>
 
@@ -35,52 +22,51 @@
     ${setup_common.render_next_button()}
 </form>
 
-<%def name='render_license_field(key)'>
-    %if key in current_config:
-        ${current_config[key].capitalize()}
-    %else:
-        -
-    %endif
-</%def>
 
 <%def name="scripts()">
     <script>
-        ## @param postLicenseUpload a callback function after the license file
-        ##  is uploaded. May be null. Expected signature:
-        ##      postLicenseUpload(onSuccess, onFailure).
-        function submitForm(postLicenseUpload) {
-            ## Go to the next page if no license file is specified. This is
-            ## needed for license_page.mako to skip license upload if
-            ## the license already exists.
+
+        ## submit a new license file when the selection changes
+        function submitNewFile() {
+            hideAllMessages();
+
+            ## only submit the new file if one has been chosen
             if (!$('#license-file').val()) {
-                gotoNextPage();
                 return;
             }
 
+            ## disable navigation while the file uploads
             disableNavButtons();
 
             ## TODO (WW) use multipart/form-data as in login.mako
             var file = document.getElementById('license-file').files[0];
             var reader = new FileReader();
             reader.onload = function() {
-                submitLicenseFile(this.result, postLicenseUpload);
+                doPost("${request.route_path('json_set_license')}", {
+                    'license': this.result
+                }, displayNewLicense, function() {
+                    ## if upload fails, restore the navigation buttons and clear out the selected
+                    ## file from the form
+                    enableNavButtons();
+                    $('#license-file').val('');
+                });
             };
             reader.readAsBinaryString(file);
         }
 
-        function submitLicenseFile(license, postLicenseUpload) {
-            var next;
-            if (postLicenseUpload) {
-                next = function() {
-                    postLicenseUpload(gotoNextPage, enableNavButtons);
-                };
-            } else {
-                next = gotoNextPage;
-            }
-
-            doPost("${request.route_path('json_set_license')}", {
-                'license': license
-            }, next, enableNavButtons);
+        ## Request details about the updated license to render as a partial
+        function displayNewLicense() {
+            enableNavButtons();
+            $.get("${request.route_path('preview_license')}")
+            .done(function (response) {
+                showSuccessMessage('Your license was successfully updated.');
+                $('#license-body').html(response);
+                return;
+            }).fail(function (xhr) {
+                showAndTrackErrorMessageFromResponse(xhr);
+                return;
+            });
         }
+
     </script>
 </%def>

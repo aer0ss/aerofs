@@ -141,6 +141,18 @@ def json_set_license(request):
     headers = remember(request, 'fakeuser')
     return HTTPOk(headers=headers)
 
+@view_config(
+    route_name='preview_license',
+    permission='maintain',
+    renderer='setup/license_details.mako'
+)
+def preview_license(request):
+    conf = get_conf(request)
+    return {
+        'current_config': conf,
+        'is_license_present_and_valid': is_license_present_and_valid(conf)
+    }
+
 
 # ------------------------------------------------------------------------
 # Data collection
