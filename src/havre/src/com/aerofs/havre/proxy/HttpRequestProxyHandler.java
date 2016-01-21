@@ -14,10 +14,7 @@ import com.google.common.collect.Maps;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.handler.codec.http.Cookie;
-import org.jboss.netty.handler.codec.http.CookieDecoder;
-import org.jboss.netty.handler.codec.http.CookieEncoder;
-import org.jboss.netty.handler.codec.http.DefaultCookie;
+import org.jboss.netty.handler.codec.http.cookie.*;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
@@ -88,7 +85,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         Map<String, String> m = Maps.newHashMap();
         String cookie = r.headers().get(Names.COOKIE);
         if (cookie != null) {
-            for (Cookie c : new CookieDecoder().decode(cookie)) m.put(c.getName(), c.getValue());
+            for (Cookie c : ServerCookieDecoder.LAX.decode(cookie)) m.put(c.name(), c.value());
         }
         return m;
     }
@@ -219,8 +216,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     {
         if (_upstream != null && _upstream.isConnected()) {
             final boolean downstreamWritable = ctx.getChannel().isWritable();
-            l.info("{} upstream {}", downstreamWritable ? "resume" : "suspend", _upstream);
-            _upstream.setReadable(downstreamWritable);
+            if (_upstream.isReadable() != downstreamWritable) {
+                l.info("{} upstream {}", downstreamWritable ? "resume" : "suspend", _upstream);
+                _upstream.setReadable(downstreamWritable);
+            }
         }
     }
 
@@ -234,12 +233,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
     private void addCookie(HttpResponse response, String name, String value)
     {
-        CookieEncoder encoder = new CookieEncoder(true);
         Cookie cookie = new DefaultCookie(name, value);
         cookie.setPath("/");
         cookie.setSecure(true);
-        encoder.addCookie(cookie);
-        response.headers().add(Names.SET_COOKIE, encoder.encode());
+        response.headers().add(Names.SET_COOKIE, ServerCookieEncoder.STRICT.encode(cookie));
     }
 
     private class HttpResponseProxyHandler extends IdleStateAwareChannelHandler
