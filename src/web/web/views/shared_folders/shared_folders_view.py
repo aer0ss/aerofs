@@ -14,7 +14,7 @@ from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 from web.auth import is_admin
 from web.sp_util import exception2error
-from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled, GROUP_PREFIX
+from web.util import get_rpc_stub, parse_rpc_error_exception, is_restricted_external_sharing_enabled, GROUP_PREFIX, HTML_PARSER
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
 from web import util
 from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
@@ -204,8 +204,8 @@ def _jsonable_person(person):
     if MANAGE in person.permissions.permission:
         is_owner = True
     return {
-        'first_name': person.user.first_name,
-        'last_name': person.user.last_name,
+        'first_name': HTML_PARSER.unescape(person.user.first_name),
+        'last_name': HTML_PARSER.unescape(person.user.last_name),
         'is_owner': is_owner,
         'can_edit': can_edit,
         'is_group': False,

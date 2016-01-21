@@ -19,6 +19,7 @@ log = logging.getLogger(__name__)
 
 # TODO (RD) consolidate this with the string in SubjectPermissions.java
 GROUP_PREFIX = "g:"
+HTML_PARSER = HTMLParser()
 
 def is_configuration_completed():
     return os.path.exists(CONFIG_COMPLETED_FLAG_FILE)

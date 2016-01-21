@@ -11,7 +11,7 @@ from aerofs_common.exception import ExceptionReply
 from web import util
 from web.oauth import get_privileged_bifrost_client
 from web.sp_util import exception2error
-from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled
+from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled, HTML_PARSER
 from web.auth import is_admin
 from web.views.org_groups.org_groups_view import json_list_org_groups
 from aerofs_common.constants import PAGE_LIMIT
@@ -84,8 +84,8 @@ def json_list_org_users(request):
         publishers = set()
 
     data = [{
-                'first_name': ul.user.first_name,
-                'last_name': ul.user.last_name,
+                'first_name': HTML_PARSER.unescape(ul.user.first_name),
+                'last_name': HTML_PARSER.unescape(ul.user.last_name),
                 'is_admin': ul.level == ADMIN,
                 'is_publisher': ul.user.user_email in publishers,
                 'email': markupsafe.escape(ul.user.user_email),
@@ -119,8 +119,8 @@ def json_search_org_users(request):
     reply = sp.search_organization_users(count, offset, substring)
 
     users = [{
-                'first_name': user.first_name,
-                'last_name': user.last_name,
+                'first_name': HTML_PARSER.unescape(user.first_name),
+                'last_name': HTML_PARSER.unescape(user.last_name),
                 'email': markupsafe.escape(user.user_email),
                 'name': user.first_name + ' ' + user.last_name + ' (' + markupsafe.escape(user.user_email) + ')'
              } for user in reply.matching_users]

@@ -9,6 +9,7 @@ import com.aerofs.base.id.GroupID;
 import com.aerofs.gui.Images;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.Cfg;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.eclipse.swt.graphics.Image;
 
 import static java.util.Objects.hash;
@@ -58,7 +59,8 @@ public interface Subject
 
         private String getName()
         {
-            return (_firstname.trim() + " " + _lastname.trim()).trim();
+            return (StringEscapeUtils.unescapeHtml(_firstname.trim()) +
+                    " " + StringEscapeUtils.unescapeHtml(_lastname.trim()).trim());
         }
 
         @Override
