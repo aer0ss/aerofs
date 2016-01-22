@@ -30,6 +30,8 @@ import com.aerofs.daemon.core.polaris.fetch.ApplyChange;
 import com.aerofs.daemon.core.polaris.fetch.ApplyChangeImpl;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator;
 import com.aerofs.daemon.core.polaris.fetch.DefaultFetchFilter;
+import com.aerofs.daemon.core.polaris.submit.ContentSubmitConflictHandler;
+import com.aerofs.daemon.core.polaris.submit.DaemonContentConflictHandler;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.core.transfers.download.Downloads;
@@ -142,6 +144,7 @@ public class CoreModule extends AbstractModule
             bind(IContentDownloads.class).to(Downloads.class);
             bind(Causality.class).to(PolarisCausality.class);
             bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
+            bind(ContentSubmitConflictHandler.class).to(DaemonContentConflictHandler.class);
 
             multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
             multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);

@@ -7,6 +7,8 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Version;
 import com.aerofs.base.ex.ExNotFound;
@@ -30,6 +32,8 @@ public class BranchDeleter
     private final IPhysicalStorage _ps;
     private final VersionUpdater _vu;
     private final CfgUsePolaris _usePolaris;
+    private final CentralVersionDatabase _cvdb;
+    private final RemoteContentDatabase _rcdb;
 
     @Inject
     public BranchDeleter(Injector inj, DirectoryService ds, IPhysicalStorage ps,
@@ -40,6 +44,8 @@ public class BranchDeleter
         _vu = vu;
         _usePolaris = usePolaris;
         _nvc = usePolaris.get() ? null : inj.getInstance(NativeVersionControl.class);
+        _cvdb = usePolaris.get() ? inj.getInstance(CentralVersionDatabase.class) : null;
+        _rcdb = usePolaris.get() ? inj.getInstance(RemoteContentDatabase.class) : null;
     }
 
     public void deleteBanch_(SOID soid, KIndex kidx, Trans t)
@@ -50,6 +56,14 @@ public class BranchDeleter
             CA ca = oa.caThrows(kidx);
             l.info("delete branch {} {} {}", kidx, ca.length(), ca.mtime());
             // TODO(phoenix): update base version of MASTER CA?
+            Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
+            if (v == null) {
+                // dummy conflict branch: need to bump version to latest know remote version
+                // to "win" conflict
+                Long max = _rcdb.getMaxVersion_(soid.sidx(), soid.oid());
+                _cvdb.setVersion_(soid.sidx(), soid.oid(), max, t);
+                _rcdb.deleteUpToVersion_(soid.sidx(), soid.oid(), max, t);
+            }
             _ds.deleteCA_(soid, kidx, t);
             _ps.newFile_(_ds.resolve_(soid), kidx).delete_(PhysicalOp.APPLY, t);
             return;

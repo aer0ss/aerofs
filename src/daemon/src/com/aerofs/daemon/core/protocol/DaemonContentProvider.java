@@ -152,7 +152,8 @@ public class DaemonContentProvider implements ContentProvider {
         }
 
         CA ca = oa.caNullable(k.kidx());
-        boolean wasPresent = ca != null;
+        // dummy conflicts: can have CA without corresponding physical file
+        boolean wasPresent = ca != null && (k.kidx().isMaster() || pf.exists_());
         if (wasPresent && pf.wasModifiedSince(ca.mtime(), ca.length())) {
             // the linked file modified via the local filesystem
             // (i.e. the linker), but the linker hasn't received
@@ -172,8 +173,8 @@ public class DaemonContentProvider implements ContentProvider {
         if (replyMTime < 0) throw new ExProtocolError("negative mtime");
         long mtime = _ps.apply_(prefix, pf, wasPresent, replyMTime, t);
 
-        if (!wasPresent) {
-            if (!k.kidx().equals(KIndex.MASTER)) {
+        if (ca == null) {
+            if (!k.kidx().isMaster()) {
                 // record creation of conflict branch here instead of in DirectoryService
                 // Aliasing and Migration may recreate them and we only want to record each
                 // conflict once

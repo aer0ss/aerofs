@@ -12,6 +12,7 @@ import com.aerofs.gui.conflicts.ConflictsModel.Branch;
 import com.aerofs.gui.conflicts.DlgConflicts.IConflictEventListener;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
@@ -49,20 +50,25 @@ class CompBranch extends Composite
 
         _branch = branch;
 
+        boolean dummy = _branch.isDummy();
+
         Label lblVersion = createLabel(this, SWT.NONE);
         lblVersion.setText(_branch.formatVersion());
         lblVersion.setFont(makeBold(lblVersion.getFont()));
 
         Label lblMtime = createLabel(this, SWT.NONE);
-        lblMtime.setText(_branch.formatLastModified());
+        if (!dummy) lblMtime.setText(_branch.formatLastModified());
         lblMtime.setFont(makeSubtitle(lblMtime.getFont()));
 
-        Label lblContributors = createLabel(this, SWT.WRAP);
-        lblContributors.setText(_branch.formatContributors());
-        lblContributors.setFont(lblContributors.getFont());
+        if (!new CfgUsePolaris().get()) {
+            Label lblContributors = createLabel(this, SWT.WRAP);
+            if (!dummy) lblContributors.setText(_branch.formatContributors());
+            lblContributors.setFont(lblContributors.getFont());
+            lblContributors.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
+        }
 
         Label lblFilesize = createLabel(this, SWT.NONE);
-        lblFilesize.setText(_branch.formatFileSize());
+        if (!dummy) lblFilesize.setText(_branch.formatFileSize());
         lblFilesize.setFont(makeSubtitle(lblFilesize.getFont()));
 
         Composite buttonsBar = GUIUtil.newButtonContainer(this, false);
@@ -83,31 +89,33 @@ class CompBranch extends Composite
         // button is not visible nor accessible.
         if (branch.isMaster()) btnDelete.setVisible(false);
 
-        Button btnSaveAs = GUIUtil.createButton(buttonsBar, SWT.PUSH);
-        btnSaveAs.setText("Save As...");
-        btnSaveAs.setToolTipText("Save a copy of this version in a different location.");
-        btnSaveAs.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
+        if (!dummy) {
+            Button btnSaveAs = GUIUtil.createButton(buttonsBar, SWT.PUSH);
+            btnSaveAs.setText("Save As...");
+            btnSaveAs.setToolTipText("Save a copy of this version in a different location.");
+            btnSaveAs.addSelectionListener(new SelectionAdapter()
             {
-                onSaveAs();
-            }
-        });
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    onSaveAs();
+                }
+            });
 
-        Button btnOpen = GUIUtil.createButton(buttonsBar, SWT.PUSH);
-        btnOpen.setText(_branch.isMaster() ? "Open" : "View");
-        btnOpen.setToolTipText(_branch.isMaster()
-                ? "Open and edit the current version of this file."
-                : "Open and view a read-only copy of the conflicting version.");
-        btnOpen.addSelectionListener(new SelectionAdapter()
-        {
-            @Override
-            public void widgetSelected(SelectionEvent e)
+            Button btnOpen = GUIUtil.createButton(buttonsBar, SWT.PUSH);
+            btnOpen.setText(_branch.isMaster() ? "Open" : "View");
+            btnOpen.setToolTipText(_branch.isMaster()
+                    ? "Open and edit the current version of this file."
+                    : "Open and view a read-only copy of the conflicting version.");
+            btnOpen.addSelectionListener(new SelectionAdapter()
             {
-                onOpen();
-            }
-        });
+                @Override
+                public void widgetSelected(SelectionEvent e)
+                {
+                    onOpen();
+                }
+            });
+        }
 
         /**
          * Layout := 3x3 grid as follows to allow path and buttons to overlap
@@ -119,7 +127,6 @@ class CompBranch extends Composite
 
         lblVersion.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 2, 1));
         lblMtime.setLayoutData(new GridData(SWT.RIGHT, SWT.BOTTOM, false, false));
-        lblContributors.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
         lblFilesize.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
         buttonsBar.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 2, 1));
     }

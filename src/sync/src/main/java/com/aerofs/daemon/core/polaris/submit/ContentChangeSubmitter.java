@@ -69,12 +69,13 @@ public class ContentChangeSubmitter implements Submitter
     private final ContentProvider _provider;
     private final CfgLocalDID _did;
     private final PolarisContentVersionControl _cvc;
+    private final ContentSubmitConflictHandler _ch;
 
     @Inject
     public ContentChangeSubmitter(PolarisClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
             PauseSync pauseSync, TransManager tm, ContentProvider provider, CfgLocalDID did,
-            PolarisContentVersionControl cvc, ChangeEpochDatabase cedb)
+            PolarisContentVersionControl cvc, ChangeEpochDatabase cedb, ContentSubmitConflictHandler ch)
     {
         _client = client;
         _rldb = rldb;
@@ -87,6 +88,7 @@ public class ContentChangeSubmitter implements Submitter
         _did = did;
         _cvc = cvc;
         _cedb = cedb;
+        _ch = ch;
     }
 
     @Override
@@ -255,7 +257,7 @@ public class ContentChangeSubmitter implements Submitter
                         ack = Math.max(ack, or.updated.get(0).transformTimestamp);
                     }
                 } else if (or.errorCode == PolarisError.VERSION_CONFLICT) {
-                    if (onConflict_(c.get(i), lc, "")) {
+                    if (_ch.onConflict_(c.get(i), lc, or.errorMessage)) {
                         ++failed;
                     }
                 } else {
@@ -265,7 +267,9 @@ public class ContentChangeSubmitter implements Submitter
                             GsonUtil.GSON.toJson(batch.operations.get(i)));
                 }
             }
-            if (failed > 0) throw new ExRetryLater("batch not complete");
+            if (r.results.size() != batch.operations.size() || failed > 0) {
+                throw new ExRetryLater("batch not complete");
+            }
             return true;
         }
         case 403:
@@ -276,20 +280,14 @@ public class ContentChangeSubmitter implements Submitter
         }
     }
 
-    // return false if the conflict is resolved
-    private boolean onConflict_(ContentChange c, LocalChange change, String body)
-    {
-        l.info("conflict {} {}: {}", c.sidx, c.oid, body);
-        // TODO: ?
-        return true;
-    }
-
     private void ackSubmission_(ContentChange c, LocalChange change, UpdatedObject updated, Trans t)
             throws Exception
     {
         checkState(c.oid.equals(updated.object.oid));
 
         l.info("content advertised {}{} {}", c.sidx, c.oid, updated.object.version);
+
+        // FIXME: version may reflect conflict branch state instead of MASTER
         Long v = _cvdb.getVersion_(c.sidx, c.oid);
         if (v == null || v < updated.object.version) {
             _cvc.setContentVersion_(c.sidx, c.oid, updated.object.version, updated.transformTimestamp, t);
@@ -300,6 +298,8 @@ public class ContentChangeSubmitter implements Submitter
 
             long ep = Objects.firstNonNull(_cedb.getContentChangeEpoch_(c.sidx), 0L);
             _cedb.setContentChangeEpoch_(c.sidx, Math.max(ep, updated.transformTimestamp), t);
+
+            // FIXME: remove any conflict branch
         }
 
         if (!_ccdb.deleteChange_(c.sidx, c.idx, t)) {

@@ -10,11 +10,14 @@ import com.google.protobuf.LeanByteString;
 
 import java.util.Arrays;
 
+import static com.aerofs.base.BaseSecUtil.newMessageDigest;
 import static com.google.common.base.Preconditions.checkArgument;
 
 public class ContentHash extends LeanByteString
 {
-    public static final int LENGTH = SecUtil.newMessageDigest().getDigestLength();
+    public static final int LENGTH = newMessageDigest().getDigestLength();
+
+    public static final ContentHash EMPTY = new ContentHash(newMessageDigest().digest());
 
     public ContentHash(byte[] hash)
     {

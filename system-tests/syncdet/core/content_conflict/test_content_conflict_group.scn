@@ -4,3 +4,5 @@
     core.content_conflict.should_resolve_false_conflicts
     core.content_conflict.should_resolve_false_conflicts_for_large_file
     core.content_conflict.should_report_two_conflicts_when_writing_during_download
+    core.content_conflict.should_report_unavailable_conflict
+    core.content_conflict.should_resolve_unavailable_conflict

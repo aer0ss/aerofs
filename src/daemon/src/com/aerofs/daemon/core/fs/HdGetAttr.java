@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.UserAndDeviceNames;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -23,6 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 
 import java.util.List;
 import java.util.Map;
@@ -35,20 +37,19 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
 {
     private final DirectoryService _ds;
 
-    private final CfgUsePolaris _usePolaris;
     private final NativeVersionControl _nvc;
     private final UserAndDeviceNames _udn;
+    private final CentralVersionDatabase _cvdb;
     private final RemoteContentDatabase _rcdb;
 
     @Inject
-    public HdGetAttr(DirectoryService ds, CfgUsePolaris usePolaris, NativeVersionControl nvc,
-            RemoteContentDatabase rcdb, UserAndDeviceNames udn)
+    public HdGetAttr(DirectoryService ds, CfgUsePolaris usePolaris, Injector inj, UserAndDeviceNames udn)
     {
         _ds = ds;
-        _nvc = nvc;
         _udn = udn;
-        _usePolaris = usePolaris;
-        _rcdb = rcdb;
+        _nvc = usePolaris.get() ? null : inj.getInstance(NativeVersionControl.class);
+        _cvdb = usePolaris.get() ? inj.getInstance(CentralVersionDatabase.class) : null;
+        _rcdb = usePolaris.get() ? inj.getInstance(RemoteContentDatabase.class) : null;
     }
 
     @Override
@@ -140,16 +141,24 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         if (branches.size() < 2) return null;
         Map<KIndex, List<PBPeer>> editors = Maps.newHashMap();
 
-        // TODO(phoenix)
-        if (_usePolaris.get()) {
+        if (_cvdb != null) {
             checkState(branches.size() == 2);
-            // when a conflict branch is present it MUST be the last downloaded version
-            // therefore it is still present in the remote content db, from which the
-            // originator can be extracted
             editors.put(KIndex.MASTER,
                     ImmutableList.of(peer(Cfg.did()).toPB()));
-            editors.put(KIndex.MASTER.increment(),
-                    ImmutableList.of(peer(_rcdb.getOriginator_(soid)).toPB()));
+
+            // see DaemonConflictHandler/CentralVersionDatabase
+            // dummy conflict branch has null version, does not match any rcdb entry
+            Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
+            if (v == null) {
+                editors.put(KIndex.MASTER.increment(), ImmutableList.of());
+            } else {
+                // when a conflict branch is present it MUST be the last downloaded version
+                // therefore it is still present in the remote content db, from which the
+                // originator can be extracted
+                // TODO: check consistency (first rcdb entry should match cvdb)
+                editors.put(KIndex.MASTER.increment(),
+                        ImmutableList.of(peer(_rcdb.getOriginator_(soid)).toPB()));
+            }
             return editors;
         }
 

@@ -7,6 +7,7 @@ package com.aerofs.gui.conflicts;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Ritual.ExportConflictReply;
@@ -17,6 +18,7 @@ import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ui.UIUtil;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.apache.commons.lang.StringUtils;
@@ -180,12 +182,26 @@ public class ConflictsModel
             return _kidx.isMaster();
         }
 
+        public boolean isDummy() {
+            return new CfgUsePolaris().get() && _mtime == 0 && _contributors.isEmpty();
+        }
+
         public String formatVersion()
         {
-            return isMaster() ? "Current version on this computer"
-                    // N.B. KIndex is 0-based whereas natural language is 1-based.
-                    // this logic will cause the branches to read "Version 2", "Version 3", etc.
-                    : "Version " + (_kidx.getInt() + 1);
+            if (isMaster()) return "Current version on this computer";
+
+            // N.B. KIndex is 0-based whereas natural language is 1-based.
+            // this logic will cause the branches to read "Version 2", "Version 3", etc.
+            if (!new CfgUsePolaris().get()) return  "Version " + (_kidx.getInt() + 1);
+
+            if (isDummy()) {
+                return "Unavailable remote version";
+            }
+
+            Contributor c = _contributors.iterator().next();
+            return c.isLocalUser()
+                    ? "My version from " + c._devicename
+                    : "Version from " + c._username;
         }
 
         public String formatContributors()

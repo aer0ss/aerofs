@@ -449,6 +449,7 @@ public class ImmigrantCreator
     public boolean preserveVersions_(SIndex sidxFrom, OID oidFrom, OA.Type type, SIndex sidxTo, Trans t)
             throws SQLException {
         // preserve version to avoid false conflicts across SHARE boundary
+        // FIXME: version may reflect conflict branch state instead of MASTER
         Long v = _cvdb.getVersion_(sidxFrom, oidFrom);
         if (v != null) {
             _cvdb.deleteVersion_(sidxFrom, oidFrom, t);

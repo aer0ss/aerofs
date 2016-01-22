@@ -56,7 +56,8 @@ import static com.google.common.base.Preconditions.checkState;
  *
  * The entries in this database only refer to valid (i.e. centrally-issued) version
  * numbers. In case of conflict, the entry corresponds to the version of the REMOTE
- * branch.
+ * branch. Note that in some rare case there may be conflict branches with no
+ * corresponding central version. See DaemonContentConflictHandler for details.
  *
  * NB: in neither case does a change to the object's own name cause a version bump.
  * Such a change would result in the version of the parent folder being bumped.

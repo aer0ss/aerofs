@@ -272,6 +272,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 }
             } else {
                 copy_(oaFrom, oa, pTo, t);
+                // FIXME: version may reflect conflict branch state instead of MASTER
                 Long v = _cvdb.getVersion_(sidxFrom, emigrant);
                 if (v != null) {
                     _cvdb.setVersion_(sidxTo, immigrant, v, t);
@@ -346,6 +347,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 // preserve base version to avoid false conflicts
                 // NB: central version is preserved for deleted objects specifically for this to
                 // work. See PolarisContentVersionControl#fileExpelled_
+                // FIXME: version may reflect conflict branch state instead of MASTER
                 Long v = _cvdb.getVersion_(from.soid().sidx(), from.soid().oid());
                 if (v != null) {
                     _cvdb.setVersion_(pTo.soid().sidx(), pTo.soid().oid(), v, t);
