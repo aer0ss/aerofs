@@ -13,6 +13,9 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import org.slf4j.Logger;
 
+import java.net.SocketException;
+import java.nio.channels.UnresolvedAddressException;
+
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -179,7 +182,8 @@ public class AsyncWorkScheduler implements AsyncTaskCallback
             // TODO: bypass core queue?
             _sched.schedule_(_ev);
         } else {
-            l.info("{} retry in {}", _name, _delay, BaseLogUtil.suppress(t, ExRetryLater.class));
+            l.info("{} retry in {}", _name, _delay, BaseLogUtil.suppress(t,
+                    ExRetryLater.class, SocketException.class, UnresolvedAddressException.class));
             // exponential backoff
             _state = SCHEDULED;
             _delay = Math.min(LibParam.EXP_RETRY_MAX_DEFAULT,

@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.ConnectException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -56,7 +58,8 @@ public abstract class AbstractNettyReconnectingClient
         } else {
             l.warn("{} failed to connect", AbstractNettyReconnectingClient.this,
                     BaseLogUtil.suppress(cf.getCause(),
-                            ConnectException.class, ClosedChannelException.class));
+                            SocketException.class, ClosedChannelException.class,
+                            UnresolvedAddressException.class));
         }
     };
 

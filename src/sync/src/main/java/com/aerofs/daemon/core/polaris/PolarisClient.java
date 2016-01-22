@@ -33,11 +33,13 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
@@ -185,7 +187,8 @@ public class PolarisClient
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent ev)
         {
-            l.warn("ex", BaseLogUtil.suppress(ev.getCause(), ClosedChannelException.class));
+            l.warn("ex", BaseLogUtil.suppress(ev.getCause(),
+                    ClosedChannelException.class, SocketException.class));
             ctx.getChannel().close();
         }
 
@@ -242,7 +245,7 @@ public class PolarisClient
                         onConnect(cf.getChannel());
                         write(cf.getChannel(), req, f);
                     } else {
-                        l.info("connect failed", cf.getCause());
+                        l.info("connect failed", BaseLogUtil.suppress(cf.getCause()));
                         f.setException(cf.getCause());
                     }
                 });
@@ -304,6 +307,8 @@ public class PolarisClient
             try {
                 HttpResponse r = f.get();
                 cb.onSuccess_(cons.apply(r));
+            } catch (ExecutionException e) {
+                cb.onFailure_(e.getCause());
             } catch (Throwable t) {
                 cb.onFailure_(t);
             }

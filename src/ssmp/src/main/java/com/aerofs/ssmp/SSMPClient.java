@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
@@ -138,8 +139,10 @@ public class SSMPClient {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-            if (!(e instanceof ClosedChannelException || e instanceof UnresolvedAddressException)) {
-                L.warn("uncaught exception", e.getCause());
+            Throwable t = e.getCause();
+            if (!(t instanceof ClosedChannelException || t instanceof UnresolvedAddressException
+                    || t instanceof SocketException)) {
+                L.warn("unexpected exception", e.getCause());
             }
             ctx.getChannel().close();
         }

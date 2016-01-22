@@ -23,7 +23,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.ProtocolException;
+import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -131,8 +133,9 @@ public class TunnelHandler extends IdleStateAwareChannelUpstreamHandler implemen
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        l.warn("tunnel exception {} ", this,
-                BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
+        l.warn("tunnel exception {} ", this, BaseLogUtil.suppress(e.getCause(),
+                ClosedChannelException.class, SocketException.class,
+                UnresolvedAddressException.class));
         if (_channel != null && _channel.isConnected()) _channel.close();
     }
 
