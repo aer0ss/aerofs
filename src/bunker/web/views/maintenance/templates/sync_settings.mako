@@ -9,6 +9,8 @@
 
 <h2>Sync Settings</h2>
 
+<h4>Sync Mode</h4>
+
 <p class="page-block">For improved auditing, disable LAN sync and use only
 relay sync. The default sync setting is to use both LAN and relay sync between
 clients.</p>
@@ -21,7 +23,7 @@ clients.</p>
     <form method="POST" onsubmit="warning(); return false;">
         ${csrf.token_input()}
         <label class="radio">
-            <input type="radio" name="enable-lansync" id="lansync-disabled" value="false"
+            <input type="radio" name="enable-lansync" id="lansync-disabled" value="false" onchange="relaySyncSelected()"
                 %if not is_lansync_enabled:
                     checked
                 %endif
@@ -30,7 +32,7 @@ clients.</p>
         </label>
 
         <label class="radio">
-            <input type="radio" name="enable-lansync" value="true"
+            <input type="radio" name="enable-lansync" id="lansync-enabled" value="true" onchange="lanSyncSelected()"
                 %if is_lansync_enabled:
                     checked
                 %endif
@@ -38,11 +40,75 @@ clients.</p>
             Use both LAN and relay sync
         </label>
 
+        <div id="port-range-options"
+             %if not is_lansync_enabled:
+                style="display: none;"
+             %endif
+        >
+            ${port_range_options()}
+        </div>
+
+
+    <%def name="port_range_options()">
+        <br/>
+        <h4>Device Port Range</h4>
+
+        <p>Specify a range of inbound ports for connections between desktop clients to facilitate LAN sync.</p>
+
+        </br>
+        <label class="radio">
+            <input type="radio" name="enable-custom-ports" id="default-ports-enabled" value="false" onchange="defaultPortsSelected()"
+                   %if not is_custom_ports_enabled:
+                   checked
+                   %endif
+                    >
+            Use default ports
+        </label>
+
+        <label class="radio">
+            <input type="radio" name="enable-custom-ports" id="custom-ports-enabled" value="true" onchange="customPortsSelected()"
+                   %if is_custom_ports_enabled:
+                   checked
+                   %endif
+                    >
+            Use custom ports
+        </label>
+
+        <div id="custom-port-range-options"
+             %if not is_custom_ports_enabled:
+             style="display: none;"
+             %endif
+                >
+            ${custom_port_range_options()}
+        </div>
+    </%def>
+
+    <%def name="custom_port_range_options()">
+        <br/>
+        <div class="row">
+            <div class="col-sm-3">
+                <label for="port-range-low">Port Range Lower Bound:</label>
+                <input class="form-control" id="port-range-low" name="port-range-low" type="text"
+                    value="${device_port_range_low}" />
+            </div>
+            <div class="col-sm-3">
+                <label for="port-range-high">Port Range Upper Bound:</label>
+                <input class="form-control" id="port-range-high" name="port-range-high" type="text"
+                       value="${device_port_range_high}" />
+            </div>
+        </div>
+
+        <br/>
+
+    </%def>
+
+        <br/>
         <div class="row">
             <div class="col-sm-6">
                 <button id="save-btn" class="btn btn-primary">Save</button>
             </div>
         </div>
+
     </form>
 </%def>
 
@@ -76,12 +142,23 @@ clients.</p>
             initializeProgressModal();
         });
 
+        %if is_lansync_enabled:
+            lanSyncSelected();
+        %else:
+            relaySyncSelected();
+        %endif
+
+        %if is_custom_ports_enabled:
+            customPortsSelected();
+        %else:
+            defaultPortsSelected();
+        %endif
+
         $('#sync-modal').modal({
             backdrop: 'static',
             keyboard: false,
             show: false
         });
-
 
         function submitForm() {
             var $progress = $('#sync-modal');
@@ -120,5 +197,20 @@ clients.</p>
             hideAllMessages();
         }
 
+        function lanSyncSelected() {
+            $('#port-range-options').show();
+        }
+
+        function relaySyncSelected() {
+            $('#port-range-options').hide();
+        }
+
+        function customPortsSelected() {
+            $('#custom-port-range-options').show();
+        }
+
+        function defaultPortsSelected() {
+            $('#custom-port-range-options').hide();
+        }
     </script>
 </%block>

@@ -13,6 +13,3 @@ lib.anchor.default_location_linux={{ anchor_default_location_linux }}
 lib.anchor.default_location_osx={{ anchor_default_location_osx }}
 
 customer_id={{ customer_id }}
-
-daemon.port.range.low={{ daemon_port_range_low }}
-daemon.port.range.high={{ daemon_port_range_high }}
