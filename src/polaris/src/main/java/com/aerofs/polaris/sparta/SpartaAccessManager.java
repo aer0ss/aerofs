@@ -175,7 +175,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
 
                 // if we got a 404 then the user doesn't exist
                 if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                    LOGGER.warn("user does not belong to shared folder {}", store);
+                    LOGGER.warn("user {} does not belong to shared folder {}", user.getString(), store);
                     return Lists.newArrayList();
                 } else if (statusCode != HttpStatus.SC_OK) {
                     LOGGER.warn("fail retrieve ACL from sparta sc:{}", statusCode);
