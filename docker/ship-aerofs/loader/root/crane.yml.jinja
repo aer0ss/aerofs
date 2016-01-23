@@ -189,6 +189,7 @@ containers:
     image: aerofs/zephyr
     run:
       detach: true
+      net: host
       publish:
         - "8888:8888"
 {% endif %}
