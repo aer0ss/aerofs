@@ -98,6 +98,7 @@ public class DaemonContentConflictHandler extends ContentSubmitConflictHandler {
                 //    resolved
                 t.commit_();
             }
+            return false;
         }
 
         return true;
