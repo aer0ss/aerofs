@@ -901,10 +901,13 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             return targetName;
         }
 
-        // nuke conflicting local changes
-        boolean del = _mcdb.deleteChanges_(sidx, oaConflict.soid().oid(), t);
-        if (!del) {
-            l.warn("name conflict wo/ local meta changes");
+        // NB: we do NOT remove local changes if the object is not yet known to polaris
+        // as it could reorder the initial insert of a folder after insertion of its children
+        // which would result in a persistent no-sync
+        // Instead we rely on MetaChangeSubmitter#onConflict_ to correct any intermediate name
+        // conflicts as needed.
+        if (clnk != null) {
+            _mcdb.deleteChanges_(sidx, oaConflict.soid().oid(), t);
         }
 
         OA oaParent;
