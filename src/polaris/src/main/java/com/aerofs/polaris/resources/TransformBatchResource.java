@@ -10,6 +10,7 @@ import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
 import com.aerofs.polaris.api.batch.transform.TransformBatchResult;
 import com.aerofs.polaris.api.operation.OperationResult;
+import com.aerofs.polaris.api.operation.OperationType;
 import com.aerofs.polaris.logical.ObjectStore;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.collect.Lists;
@@ -64,7 +65,11 @@ public final class TransformBatchResource {
                     LOGGER.warn("unexpected fail transform batch operation {}", operation, cause);
                 }
                 results.add(result);
-                break; // abort early if a batch operation fails
+                if (operation.operation.type != OperationType.UPDATE_CONTENT) {
+                    // abort early if a batch operation fails
+                    // except for content update which have no inter-dependencies
+                    break;
+                }
             }
         }
 
