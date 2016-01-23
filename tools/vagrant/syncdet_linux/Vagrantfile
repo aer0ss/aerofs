@@ -14,6 +14,17 @@ if BRIDGE_IFACE
                                             .select{|a| a[/#{BRIDGE_IFACE}/]}[0]
 end
 
+local_key = %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip()
+agent_key = %x(cat ~/agents-build-kit/agents2actors.pub).strip()
+
+# workaround: facter/puppet barfs if the agent key is empty, failing to provision
+# event the local key, which is a problem for running syncdet on dev machines as
+# the agent pubkey won't be present and failure to provision the local pubkey will
+# break syncdet scripts as they expect passwordless ssh
+if agent_key.length == 0
+  agent_key = local_key
+end
+
 name = %x( whoami ).strip()
 host_base = "#{name}-vagrant-"
 
@@ -34,8 +45,8 @@ Vagrant.configure("2") do |config|
              puppet.manifest_file  = "syncdet.pp"
              puppet.options = "--verbose --debug"
              puppet.facter = {
-                 "my_ssh_key" => %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip(),
-                 "agent_vagrant_ssh_key" => %x(cat ~/agents-build-kit/agents2actors.pub).strip(),
+                 "my_ssh_key" => local_key,
+                 "agent_vagrant_ssh_key" => agent_key,
              }
           end
       end
