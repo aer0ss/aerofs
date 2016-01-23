@@ -17,7 +17,7 @@ dependencies {
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile project(':src/aero-auth')
     compile project(':src/libservlet')
-    runtime 'mysql:mysql-connector-java:5.1.35'
+    runtime 'mysql:mysql-connector-java:5.1.38'
     testCompile project(':src/lib')
     testCompile project(path: ':src/lib', configuration: 'testutil')
     testCompile 'com.jayway.restassured:rest-assured:2.8.0'

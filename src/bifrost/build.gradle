@@ -56,7 +56,7 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/rest-api')
     compile project(':src/aero-auth')
-    runtime 'mysql:mysql-connector-java:5.1.35'
+    runtime 'mysql:mysql-connector-java:5.1.38'
     testutilCompile 'com.jayway.restassured:rest-assured:2.8.0'
     testutilCompile project(path: ':src/lib', configuration: 'testutil')
 }

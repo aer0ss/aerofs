@@ -13,7 +13,7 @@ dependencies {
     compile project(':src/aero-ids')
     compile project(':src/aero-auth')
     compile project(':src/polaris-api')
-    runtime 'mysql:mysql-connector-java:5.1.35'
+    runtime 'mysql:mysql-connector-java:5.1.38'
     testCompile project(':src/lib')
     testCompile project(':src/bifrost')
     testCompile project(path: ':src/bifrost', configuration: 'testutil')
