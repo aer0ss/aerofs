@@ -115,11 +115,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
     final Trans t = mock(Trans.class);
 
-    // FIXME: in-memory fs
-    protected final IPhysicalStorage ps = mock(IPhysicalStorage.class);
-    protected final IPhysicalFolder pf = mock(IPhysicalFolder.class);
-    protected final IPhysicalFile file = mock(IPhysicalFile.class);
-    protected final IPhysicalPrefix prefix = mock(IPhysicalPrefix.class);
+    protected IPhysicalStorage ps = setupPhysicalStorage();
     protected final Map<SOID, IPhysicalFile> files = new HashMap<>();
 
     protected Injector inj;
@@ -139,6 +135,29 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
     protected final PolarisClient client = mock(PolarisClient.class);
     protected final PolarisClient.Factory factClient = mock(PolarisClient.Factory.class);
 
+    protected IPhysicalStorage setupPhysicalStorage() {
+        // FIXME: in-memory fs
+        IPhysicalStorage ps = mock(IPhysicalStorage.class);
+        final IPhysicalFolder folder = mock(IPhysicalFolder.class);
+        final IPhysicalFile file = mock(IPhysicalFile.class);
+        final IPhysicalPrefix prefix = mock(IPhysicalPrefix.class);
+        try {
+            when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(folder);
+            when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(prefix);
+            when(prefix.newOutputStream_(anyBoolean())).thenAnswer(invocation ->
+                    new PrefixOutputStream(new ByteArrayOutputStream(), BaseSecUtil.newMessageDigest())
+            );
+            when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).thenAnswer(invocation -> {
+                ResolvedPath p = (ResolvedPath) invocation.getArguments()[0];
+                IPhysicalFile pf = files.get(p.soid());
+                return pf != null ? pf : file;
+            });
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+        return ps;
+    }
+
     @Before
     public void setUp() throws Exception
     {
@@ -154,19 +173,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 any(Executor.class));
 
         when(factClient.create()).thenReturn(client);
-
-        when(ps.newFolder_(any(ResolvedPath.class))).thenReturn(pf);
-        when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(prefix);
-
-        when(prefix.newOutputStream_(anyBoolean())).thenAnswer(invocation -> {
-            return new PrefixOutputStream(new ByteArrayOutputStream(), BaseSecUtil.newMessageDigest());
-        });
-
-        when(ps.newFile_(any(ResolvedPath.class), any(KIndex.class))).thenAnswer(invocation -> {
-            ResolvedPath p = (ResolvedPath)invocation.getArguments()[0];
-            IPhysicalFile pf = files.get(p.soid());
-            return pf != null ? pf : file;
-        });
 
         inj = Guice.createInjector(new AbstractModule() {
             @Override
@@ -205,8 +211,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(Devices.class).toInstance(mock(Devices.class));
                 bind(SSMPConnection.class).toInstance(mock(SSMPConnection.class));
                 bind(PolarisClient.class).toInstance(mock(PolarisClient.class));
-
-                bind(IPhysicalStorage.class).toInstance(ps);
 
                 bind(DirectoryService.class).to(DirectoryServiceImpl.class);
                 bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
@@ -259,6 +263,9 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
             {
                 return OSUtil.get();
             }
+
+            @Provides
+            public IPhysicalStorage providePS() { return ps; }
 
         });
 
@@ -485,10 +492,11 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 new ContentHash(BaseSecUtil.hash(c)), t);
 
         ccdb.insertChange_(sidx, oid, t);
-        mockPhy(sidx, oid, c, mtime);
+        mockPhy(sidx, oid, KIndex.MASTER, c, mtime, t);
     }
 
-    private void mockPhy(SIndex sidx, OID oid, byte[] c, long mtime) throws IOException
+    protected void mockPhy(SIndex sidx, OID oid, KIndex kidx, byte[] c, long mtime, Trans t)
+            throws SQLException, IOException
     {
         IPhysicalFile pf = mock(IPhysicalFile.class);
         when(pf.lengthOrZeroIfNotFile()).thenReturn((long)c.length);
@@ -508,6 +516,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         ds.setCA_(new SOKID(sidx, oid, kidx), d.length, mtime, new ContentHash(BaseSecUtil.hash(d)), t);
         cvdb.setVersion_(sidx, oid, version, t);
 
-        mockPhy(sidx, oid, d, mtime);
+        mockPhy(sidx, oid, kidx, d, mtime, t);
     }
 }

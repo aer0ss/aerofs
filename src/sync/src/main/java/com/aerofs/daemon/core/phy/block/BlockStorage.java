@@ -57,7 +57,7 @@ import java.util.*;
  * The logic is split between a backend-agnostic database, which keeps track of block usage and a
  * backend which handles the actual storage, either locally or remotely.
  */
-class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
+public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
 {
     static final Logger l = Loggers.getLogger(BlockStorage.class);
 
@@ -403,17 +403,15 @@ class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupHandler
         FileInfo info = getFileInfoNullable_(new SOKID(soid, KIndex.MASTER));
         if (info == null) return false;
 
-        if (info._length != DELETED_FILE_LEN || info._mtime != DELETED_FILE_DATE) {
-            l.warn("restore non-deleted file {} {} {}", soid, info._length, info._mtime);
+        if (info._length != DELETED_FILE_LEN) {
+            l.warn("restore non-deleted file {} {}", soid, info._id);
         } else {
             info = _bsdb.getHistFileInfo_(info._id, info._ver - 1);
             if (info == null) return false;
         }
 
-        if (pf.exists_()) throw new FileAlreadyExistsException("" + pf.sokid());
-
         long id = getOrCreateFileId_(pf.sokid(), t);
-        _bsdb.insertEmptyFileInfo(id, t);
+        l.info("restore as {} {} {} {} {}", pf.sokid(), id, info._length, info._mtime, info._chunks);
         _bsdb.updateFileInfo_(new FileInfo(id, -1, info._length, info._mtime, info._chunks), t);
         return true;
     }
