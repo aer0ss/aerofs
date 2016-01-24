@@ -640,7 +640,42 @@ public class TestApplyChange extends AbstractTestApplyChange
     }
 
     @Test
-    public void shouldRenameLocalObject() throws Exception
+    public void shouldRenameLocalObjectKnownToPolaris() throws Exception
+    {
+        OID bar = OID.generate();
+        apply(
+                insert(OID.ROOT, "bar", bar, ObjectType.FILE)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        OID local = OID.generate();
+        try (Trans t = tm.begin_()) {
+            om.moveInSameStore_(new SOID(sidx, bar), OID.ROOT, "foo", PhysicalOp.MAP, true, t);
+            oc.createMetaForLinker_(Type.FILE, local, new SOID(sidx, OID.ROOT), "bar", t);
+            t.commit_();
+        }
+
+        OID remote = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", remote, ObjectType.FOLDER)
+        );
+        ac.applyBufferedChanges_(sidx, 42, t);
+
+        mds.expect(rootSID,
+                folder("foo", remote),
+                file("foo (2)", bar),
+                file("bar", local));
+
+        // conflicting intermediate moves will be corrected by MetaChangeSubmitter
+        assertHasLocalChanges(sidx,
+                new MetaChange(sidx, -1, bar, OID.ROOT, "foo"),
+                new MetaChange(sidx, -1, local, OID.ROOT, "bar"),
+                new MetaChange(sidx, -1, bar, OID.ROOT, "foo (2)"));
+    }
+
+    @Test
+    public void shouldRenameLocalObjectUnknownToPolaris() throws Exception
     {
         OID local = OID.generate();
         try (Trans t = tm.begin_()) {
@@ -661,6 +696,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 file("foo (2)", local));
 
         assertHasLocalChanges(sidx,
+                new MetaChange(sidx, -1, local, OID.ROOT, "foo"),
                 new MetaChange(sidx, -1, local, OID.ROOT, "foo (2)"));
     }
 

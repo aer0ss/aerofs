@@ -901,15 +901,6 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             return targetName;
         }
 
-        // NB: we do NOT remove local changes if the object is not yet known to polaris
-        // as it could reorder the initial insert of a folder after insertion of its children
-        // which would result in a persistent no-sync
-        // Instead we rely on MetaChangeSubmitter#onConflict_ to correct any intermediate name
-        // conflicts as needed.
-        if (clnk != null) {
-            _mcdb.deleteChanges_(sidx, oaConflict.soid().oid(), t);
-        }
-
         OA oaParent;
         // FIXME: interleaved submission of complex name conflicts (e.g. name-shifting)
         // can result in changes being reverted on both side
@@ -923,10 +914,23 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             // conflict OID was moved locally and its remote location is free: move it back
             l.info("revert local change: {} -> {}/{}", oaConflict.soid(), clnk.parent, clnk.name);
 
+            _mcdb.deleteChanges_(sidx, oaConflict.soid().oid(), t);
+
             oaParent = _ds.getOA_(new SOID(sidx, clnk.parent));
             targetName = clnk.name;
         } else {
             l.info("rename local {} {}", oaConflict.soid(), targetName);
+
+            // NB: we do NOT remove local changes:
+            //  - if the object is not yet known to polaris, doing so could reorder the initial
+            //    insert of a folder after insertion of its children which would result in a
+            //    persistent no-sync
+            //  - if the object is known to polaris and we didn't simply revert the conflicting
+            //    local changes it means the remote location is not free which in turns means we
+            //    have a local transform that targets this location and it will be rejected unless
+            //    we first submit a local transform moving the local object out of its location
+            // Instead we rely on MetaChangeSubmitter#onConflict_ to correct any intermediate name
+            // conflicts as needed.
 
             oaParent = _ds.getOA_(new SOID(sidx, lnk.parent));
             _mcdb.insertChange_(sidx, oaConflict.soid().oid(), lnk.parent, targetName, t);
