@@ -22,10 +22,14 @@
             downloaded from registry.aerofs.com. This can take between one to two hours to complete.</p>
         </li>
         <li>
-            <p><strong>Maintenance and backup</strong>. A backup file is downloaded, which can be used to manually
-            upgrade the appliance in case automatic upgrade fails. To download the backup file
-            your appliance must be put in Maintenance mode. As a result, all your AeroFS clients could
-            pause syncing for up to half an hour.</p>
+            <p><strong>Maintenance and backup</strong>. An appliance backup file is downloaded, which can
+            be used to manually upgrade the appliance in case automatic upgrade fails. To download the
+            backup file your appliance must be put in Maintenance mode. As a result, all your AeroFS
+            clients could pause syncing for up to half an hour.</p>
+
+            <p>Before you can proceed to the next step, you will be asked to confirm if you have
+            completed downloading the backup file. Please confirm only when you have <strong>finished</strong>
+            downloading the file.</p>
 
             <p>Click on "Manual Upgrade" below to find out more about how
             to manually upgrade your AeroFS appliance.</p>
@@ -161,7 +165,7 @@
 </%modal:modal>
 
 <%modal:modal>
-    <%def name="id()">confirm-modal</%def>
+    <%def name="id()">upgrade-confirm-modal</%def>
     <%def name="title()"><h4 class="text-error">Confirm Upgrade</h4></%def>
     <p>
         Upgrading your AeroFS appliance can take between one to two hours. Your organization's
@@ -169,7 +173,22 @@
     </p>
     <%def name="footer()">
         <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-        <a href="#" id="confirm-btn" class="btn btn-primary" data-dismiss="modal">Upgrade</a>
+        <a href="#" id="upgrade-confirm-btn" class="btn btn-primary" data-dismiss="modal">Upgrade</a>
+    </%def>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">backup-confirm-modal</%def>
+    <%def name="title()"><h4 class="text-error">Confirm Backup File Download</h4></%def>
+    <%def name="no_close()"/>
+    <p>
+        Before we can switch your appliance to the latest version, please confirm that you have
+        <strong>completed</strong> downloading the appliance backup file. Your browser should
+        have started downloading the backup file automatically.
+    </p>
+    <%def name="footer()">
+        <a href="#" id="backup-confirm-btn" class="btn btn-primary"
+            data-dismiss="modal">Yes, I have downloaded the backup file</a>
     </%def>
 </%modal:modal>
 
@@ -297,12 +316,12 @@
         }
 
         function confirmUpgrade() {
-            var $modal = $('#confirm-modal');
-             $('#confirm-btn').off().on('click', function() {
-                 $modal.modal('hide');
-                 doUpgrade();
-             });
-             $modal.modal('show');
+            var $modal = $('#upgrade-confirm-modal');
+            $('#upgrade-confirm-btn').off().on('click', function() {
+                $modal.modal('hide');
+                doUpgrade();
+            });
+            $modal.modal('show');
         }
 
         function upgradeIfNotLatest() {
@@ -418,8 +437,13 @@
 
         function switchToLatest(onSuccess) {
             onSuccess();
-            console.log("start switching appliance");
-            switchAppliance($('#switch-wait-modal'), $('#success-modal'), $('#fail-modal'));
+            var $modal = $('#backup-confirm-modal');
+            $('#backup-confirm-btn').off().on('click', function() {
+                $modal.modal('hide');
+                console.log("start switching appliance");
+                switchAppliance($('#switch-wait-modal'), $('#success-modal'), $('#fail-modal'));
+            });
+            $modal.modal('show');
         }
 
     </script>
