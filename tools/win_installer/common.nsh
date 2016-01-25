@@ -3,7 +3,7 @@
  *  Use this macro to avoid killing other users' processes.
 */
 !macro KillProcess Process Username
-    LogText "killing ${Process} for user ${Username}"
+    DetailPrint "Stopping ${Process} for user ${Username}"
     nsExec::Exec 'taskkill /f /im ${Process} /fi "USERNAME eq ${Username}"'
 !macroend
 

@@ -105,18 +105,6 @@ FunctionEnd
  **  Installer
  *************************************/
 Function .onInit
-
-    # Enables logging to $INSTDIR\install.log
-    # Caveat: this will only log operations performed under unprivileged sections
-    # Sections running with elevated privileges will not have their output logged
-    #
-    # NOTE: If you get a NSIS compile error on this line, this means you're using
-    # a default makensis compiler without logging support enabled. In this case,
-    # follow the instructions in "compiling NSIS linux.txt" under the TEAM/docs folder
-    # to get a makensis with logging support.
-    LogSet on
-    LogText "Installing $(^Name) ${VERSION}..."
-
     InitPluginsDir
 
     # Save original user info so that we can retrieve it later while running as admin
