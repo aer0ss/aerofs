@@ -50,25 +50,14 @@ type bifrostTokenVerifier struct {
 	cache *TokenCache
 }
 
+// Verify if a token is authentic and has a corresponding UID
 func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
 	// check cache
-	uid, ok := v.cache.Get(token)
-	if ok {
-		if uid == "" {
-			return "", TokenNotFoundError{Token: token}
-		} else {
-			return uid, nil
-		}
-	}
-	// ask bifrost and set cache
 	log.Printf("verify token against bifrost: %v\n", token)
-	uid, err := requestVerify(token)
-	if err == nil {
-		v.cache.Set(token, uid)
-	} else if _, notFound := err.(TokenNotFoundError); notFound {
-		v.cache.Set(token, "")
-	}
-	return uid, err
+	tokenChannel := v.cache.Get(token)
+	future := <-tokenChannel
+
+	return future.uid, future.err
 }
 
 func requestVerify(token string) (string, error) {
