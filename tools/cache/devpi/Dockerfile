@@ -1,19 +1,8 @@
-FROM debian:sid
+FROM alpine:3.3
 
-RUN apt-get update -q &&\
-    apt-get install -y \
-        curl \
-        python
-
-RUN curl -SL https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py &&\
-    python /tmp/get-pip.py &&\
-    rm /tmp/get-pip.py
-
-RUN pip install \
-    "devpi-server>=2.0.6,<2.1dev" \
-    "requests>=2.4.0,<2.5"
-
-COPY root /
+RUN apk --update add python py-pip py-requests &&\
+    pip install "devpi-server==2.5.2" &&\
+    rm -rf /var/cache/apk/*
 
 EXPOSE 80
-CMD ["/run.sh"]
+CMD ["devpi-server", "--host", "0.0.0.0", "--port", "80", "--serverdir", "/var/cache/devpi"]

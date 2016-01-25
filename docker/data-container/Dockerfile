@@ -1,8 +1,9 @@
-FROM alpine:3.2
+FROM alpine:3.3
 
 MAINTAINER AeroFS "support@aerofs.com"
 
-RUN apk --update add bash
+RUN apk --update add bash &&\
+    rm -rf /var/cache/apk/*
 
 VOLUME /data
 

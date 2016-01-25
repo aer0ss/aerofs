@@ -36,6 +36,11 @@ components are as follows:
    debian and ubuntu apt repos to this container, ensuring Dockerfiles
    remain blissfully unaware of the presence of the proxy.
 
+ - alpinx: a containerized instance of nginx configured as a caching
+   reverse proxy for Alpine Linux package repository. rawdns performs
+   transparent redicrection to this container, ensuring Dockerfiles
+   remain blissfully unaware of the presence of the proxy.
+
  - devpi: a containerized instance of a caching pypi proxy server.
    Unfortunately, pip is built in such a way that transparent proxying
    is impossible, which means Dockerfiles have to be modified to point

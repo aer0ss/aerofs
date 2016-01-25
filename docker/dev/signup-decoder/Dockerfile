@@ -1,13 +1,11 @@
-FROM ubuntu:15.04
+FROM alpine:3.3
 
-RUN apt-get update && apt-get install -y \
-        curl \
+RUN apk --update add \
         python \
-        docker.io &&\
-    curl -SL 'https://bootstrap.pypa.io/get-pip.py' > /tmp/get-pip.py &&\
-    python /tmp/get-pip.py  &&\
-    rm /tmp/get-pip.py &&\
-    pip install Flask
+        py-pip \
+        docker &&\
+    pip install Flask &&\
+    rm -rf /var/cache/apk/*
 
 COPY root /
 

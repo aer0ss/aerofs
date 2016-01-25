@@ -1,11 +1,8 @@
-FROM ubuntu:15.04
+FROM alpine:3.3
 MAINTAINER AeroFS "support@aerofs.com"
 
-RUN apt-get update &&\
-    apt-get install -y \
-        nodejs \
-        npm &&\
-    rm -rf /var/lib/apt/lists/*
+RUN apk --update add nodejs &&\
+    rm -rf /var/cache/apk/*
 
 WORKDIR /opt/blurber
 ADD root /
@@ -14,5 +11,5 @@ RUN cd /opt/blurber && npm install
 
 EXPOSE 8080
 
-CMD ["nodejs", "server.js"]
+CMD ["node", "server.js"]
 

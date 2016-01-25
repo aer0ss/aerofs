@@ -1,7 +1,8 @@
-FROM aerofs/base
+FROM alpine:3.3
 
-RUN apt-get update && apt-get install -y logrotate && rm -rf /var/lib/apt/lists/*
+RUN apk --update add logrotate &&\
+    rm -rf /var/cache/apk/*
 
 COPY root /
 
-CMD [ "/run.sh" ]
+CMD [ "/usr/sbin/crond", "-f", "-L", "/dev/stdout" ]
