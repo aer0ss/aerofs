@@ -22,11 +22,36 @@ else
     BRIDGE=$(ifconfig docker0 | grep 'inet addr:' | cut -d':' -f 2 | cut -d' ' -f 1)
 fi
 
-if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] ; then
+# check if rawdns config was modified since the image was created
+config=$PWD/root/etc/rawdns.json
+if [[ $(uname -s) == "Darwin" ]] ; then
+    # sigh...
+    #  1. docker CLI is not flexible enough so we need to use API directly
+    #  2. OSX is a broken piece of shit, SecureTransport can't load PEM cert/key so we need to
+    #     convert them to PKCS12
+    if [[ ! -f $DOCKER_CERT_PATH/client.p12 ]] ; then
+        openssl pkcs12 -export -in $DOCKER_CERT_PATH/cert.pem -inkey $DOCKER_CERT_PATH/key.pem \
+            -out $DOCKER_CERT_PATH/client.p12 -passout pass:.
+    fi
+
+    curl_opts="-k -E $DOCKER_CERT_PATH/client.p12:. https${DOCKER_HOST#tcp}"
+    modified=$(stat -f %m $config)
+elif [[ $(uname -s) == "Linux" ]] ; then
+    curl_opts="--unix-socket /var/run/docker.sock http:"
+    modified=$(stat -c %Y $config)
+else
+    echoerr "Unsupported platform"
+    exit 1
+fi
+
+# NB: remove sub-second precision and convert from ISO 8601 to Unix epoch
+created=$(curl --fail $curl_opts/images/rawdns/json 2>/dev/null | jq -r '.Created[0:19]+"Z" | fromdate')
+
+if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] && (( $created > $modified )); then
     echo "rawdns already running"
 else
     echo "build rawdns configured image"
-    curl -o $PWD/root/rawdns -sSL "https://github.com/tianon/rawdns/releases/download/1.2/rawdns-amd64"
+    curl -o $PWD/root/rawdns -sSL "https://github.com/tianon/rawdns/releases/download/1.3/rawdns-amd64"
     chmod +x $PWD/root/rawdns
 
     docker build -t rawdns $PWD
