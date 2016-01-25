@@ -47,12 +47,11 @@ node default {
         "staging"   => "cacert-staging.pem",
         default     => "cacert.pem"
     }
-    
-    # Commenting out the following lines because it's not working with newer version of puppet. 
-    #file{"/etc/ssl/certs/AeroFS_CA.pem":
-     #   source  => "puppet:///aerofs_cacert/${ca_cert_filename}",
-      #  ensure  => present
-    #}
+
+    file{"/etc/ssl/certs/AeroFS_CA.pem":
+        source  => "puppet:///modules/lizard/aerofs_cacert/${ca_cert_filename}",
+        ensure  => present
+    }
 }
 
 import "nodes/*.pp"
