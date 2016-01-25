@@ -8,6 +8,7 @@ import com.aerofs.ids.*;
 import com.aerofs.oauth.Scope;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
+import com.aerofs.polaris.api.PolarisUtilities;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.Content;
@@ -129,7 +130,7 @@ public class MetadataBuilder
     private UniqueID createAppDataIfNecessary(DAO dao, AeroOAuthPrincipal principal, SID rootSID,
             List<Updated> updated)
     {
-        UniqueID appDataId = dao.children.getActiveChildNamed(rootSID, APPDATA_FOLDER_NAME.getBytes());
+        UniqueID appDataId = dao.children.getActiveChildNamed(rootSID, PolarisUtilities.stringToUTF8Bytes(APPDATA_FOLDER_NAME));
         if (appDataId == null) {
             // Create .appdata
             appDataId = OID.generate();
@@ -144,7 +145,7 @@ public class MetadataBuilder
                     new InsertChild(appDataId, FOLDER, APPDATA_FOLDER_NAME, null)).updated);
         }
 
-        UniqueID clientId = dao.children.getActiveChildNamed(appDataId, principal.audience().getBytes());
+        UniqueID clientId = dao.children.getActiveChildNamed(appDataId, PolarisUtilities.stringToUTF8Bytes(principal.audience()));
         if (clientId == null) {
             // Create .appdata/{clientId}
             // N.B.: Hack to get oid of the created child back to the callee of this method. We want to
@@ -274,7 +275,7 @@ public class MetadataBuilder
         if (parent == null && Identifiers.isSharedFolder(oid)) {
             return "";
         }
-        return new String(dao.children.getChildName(parent, oid));
+        return PolarisUtilities.stringFromUTF8Bytes(dao.children.getChildName(parent, oid));
     }
 
     private boolean shouldReturnChildren(DAO dao, UniqueID oid, String[] fields)
@@ -352,7 +353,7 @@ public class MetadataBuilder
 
         for(Child child: objectStore.children(dao, oid)) {
             OID childOID = new OID(child.oid);
-            String name = new String(child.name);
+            String name = PolarisUtilities.stringFromUTF8Bytes(child.name);
             String childRest = new RestObject(sid, childOID).toStringFormal();
 
             if (child.objectType != FILE) {
@@ -547,10 +548,11 @@ public class MetadataBuilder
             throw new NotFoundException(oid);
         }
 
-        l.info("Move object <oid, name> <{}, {}> from {} to {}", oid, name, fromParent, toParent);
+        l.info("Move {} from {} to {} as {}", oid, fromParent, toParent, name);
         OperationResult result = objectStore.performTransform(dao, accessToken, principal.getDID(),
                 fromParent, new MoveChild(oid, toParent, name));
-        UniqueID child = dao.children.getActiveChildNamed(toParent, name.getBytes());
+        UniqueID child = dao.children.getActiveChildNamed(toParent, PolarisUtilities.stringToUTF8Bytes(name));
+        checkState(child != null, "cannot find child that was just moved");
         return new ApiOperationResult(result.updated, Response.ok()
                 .entity(getObjectMetadata(dao, principal, child, null, null))
                 .build());
@@ -738,9 +740,9 @@ public class MetadataBuilder
         OID anchorOID =  SID.folderOID2convertedAnchorOID(new OID(oid));
 
         if (isAlreadyShared(dao, oid)) {
-            future.set(new String(dao.children.getActiveChildName(parentOID, anchorOID)));
+            future.set(PolarisUtilities.stringFromUTF8Bytes(dao.children.getActiveChildName(parentOID, anchorOID)));
         } else {
-            future.set(new String(dao.children.getActiveChildName(parentOID, oid)));
+            future.set(PolarisUtilities.stringFromUTF8Bytes(dao.children.getActiveChildName(parentOID, oid)));
             l.info("Share folder: {}", object.toStringFormal());
             updated = objectStore.performTransform(dao, accessToken, principal.getDID(),
                     parentOID, new Share(oid)).updated;

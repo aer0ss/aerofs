@@ -32,7 +32,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().get(getApiFoldersURL() +  "bla");
+        .when()
+                .get(getApiFoldersURL() + "bla");
     }
 
     @Test
@@ -42,8 +43,9 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().get(getApiFoldersURL() + new RestObject(SID.generate(), OID.generate())
-                .toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + new RestObject(SID.generate(), OID.generate())
+                        .toStringFormal());
     }
 
     @Test
@@ -53,7 +55,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().get(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -66,7 +69,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().get(getApiFoldersURL() + objectFile1.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + objectFile1.toStringFormal());
     }
 
     @Test
@@ -81,7 +85,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("id", equalTo(restFolder1.toStringFormal()))
                 .body("name", equalTo("folder1"))
                 .body("is_shared", equalTo(false))
-        .when().get(getApiFoldersURL() + restFolder1.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + restFolder1.toStringFormal());
     }
 
     @Test
@@ -150,7 +155,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("name", equalTo("AeroFS"))
                 .body("is_shared", equalTo(false))
                 .body("parent", equalTo(oid))
-        .when().get(getApiFoldersURL() + USERID.getString()).prettyPrint();
+        .when()
+                .get(getApiFoldersURL() + USERID.getString()).prettyPrint();
     }
 
     @Test
@@ -166,7 +172,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("name", equalTo("AeroFS"))
                 .body("is_shared", equalTo(false))
                 .body("parent", equalTo(restObject))
-        .when().get(getApiFoldersURL() + rootSID.toStringFormal()).prettyPrint();
+        .when()
+                .get(getApiFoldersURL() + rootSID.toStringFormal()).prettyPrint();
     }
 
     @Test
@@ -187,7 +194,8 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(200)
                 .body("name", equalTo("moved"))
                 .body("parent", equalTo(objectFolder2.toStringFormal()))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+               .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -209,7 +217,8 @@ public class TestFolderResource extends AbstractRestTest
             .body("children.files", iterableWithSize(1))
             .body("children.files[0].id", equalTo(new RestObject(sid, file1)
                     .toStringFormal()))
-        .when().get(getApiFoldersURL() + sid.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + sid.toStringFormal());
     }
 
     @Test
@@ -236,7 +245,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("children.files[0].id", equalTo(new RestObject(rootSID, file1)
                         .toStringFormal()))
                 .body("children.files[0].name", equalTo("file1"))
-        .when().get(getApiFoldersURL() + restFolder1.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + restFolder1.toStringFormal());
     }
 
     @Test
@@ -265,7 +275,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("children.files", iterableWithSize(1))
                 .body("children.files[0].id", equalTo(new RestObject(sid, file1).toStringFormal()))
                 .body("children.files[0].name", equalTo("file1"))
-        .when().get(getApiFoldersURL() + objectShared1.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + objectShared1.toStringFormal());
     }
 
     @Test
@@ -324,7 +335,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("folders[2].is_shared", equalTo(true))
                 .body("folders[2].sid", equalTo(sid11.toStringFormal()))
                 .body("folders[2].parent", equalTo(objectFolder1.toStringFormal()))
-        .when().get(getApiFoldersURL() + objectFolder2.toStringFormal() + "/path");
+        .when()
+                .get(getApiFoldersURL() + objectFolder2.toStringFormal() + "/path");
     }
 
 
@@ -335,7 +347,7 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal()
                         + "/path");
     }
@@ -354,7 +366,8 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(200)
                 .body("files", hasSize(1)).body("files.name", hasItems("file1"))
                 .body("folders", hasSize(2)).body("folders.name", hasItems("folder1", "folder2"))
-        .when().get(getApiFoldersURL() + "root" + "/children");
+        .when()
+                .get(getApiFoldersURL() + "root" + "/children");
     }
 
     @Test
@@ -374,7 +387,8 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(200)
                 .body("files", hasSize(1)).body("files.name", hasItems("file1"))
                 .body("folders", hasSize(2)).body("folders.name", hasItems("folder2", "folder3"))
-        .when().get(getApiFoldersURL() + objectFolder1.toStringFormal() + "/children");
+        .when()
+                .get(getApiFoldersURL() + objectFolder1.toStringFormal() + "/children");
     }
 
     @Test
@@ -416,7 +430,8 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(201)
                 .body("name", equalTo("foo"))
                 .body("is_shared", equalTo(false))
-        .when().log().everything().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -433,7 +448,8 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(201)
                 .body("name", equalTo("foo"))
                 .body("is_shared", equalTo(false))
-        .when().log().everything().post(getApiFoldersURL());
+        .when()
+               .post(getApiFoldersURL());
     }
 
     @Test
@@ -454,7 +470,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -471,7 +488,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -484,7 +502,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -499,7 +518,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -520,7 +540,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(409)
                 .body("type", equalTo(com.aerofs.rest.api.Error.Type.CONFLICT.toString()))
-        .when().log().everything().post(getApiFoldersURL());
+        .when()
+                .post(getApiFoldersURL());
     }
 
     @Test
@@ -539,7 +560,8 @@ public class TestFolderResource extends AbstractRestTest
                 .body("id", equalTo(new RestObject(rootSID, folder1).toStringFormal()))
                 .body("name", equalTo("moved"))
                 .body("parent", equalTo(new RestObject(rootSID, folder2).toStringFormal()))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
 
     }
 
@@ -557,7 +579,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(409)
                 .body("type", equalTo(Error.Type.CONFLICT.toString()))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -573,7 +596,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -588,7 +612,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(404)
                 .body("type", equalTo("NOT_FOUND"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -603,7 +628,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -619,7 +645,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -635,7 +662,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().put(getApiFoldersURL() + "root");
+        .when()
+                .put(getApiFoldersURL() + "root");
     }
 
     @Test
@@ -651,7 +679,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(400)
                 .body("type", equalTo("BAD_ARGS"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -674,7 +703,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().put(getApiFoldersURL() + new RestObject(sid1, folder11).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(sid1, folder11).toStringFormal());
     }
 
     @Test
@@ -690,7 +720,8 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(403)
                 .body("type", equalTo("FORBIDDEN"))
-        .when().put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -701,7 +732,8 @@ public class TestFolderResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(204)
-        .when().delete(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
+        .when()
+                .delete(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
     @Test
@@ -710,7 +742,8 @@ public class TestFolderResource extends AbstractRestTest
         givenAccess()
         .expect()
                 .statusCode(404)
-        .when().delete(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
+        .when()
+                .delete(getApiFoldersURL() + new RestObject(rootSID, OID.generate()).toStringFormal());
     }
 
     @Test
@@ -764,7 +797,8 @@ public class TestFolderResource extends AbstractRestTest
         givenLinkShareReadAccess()
         .expect()
                 .statusCode(403)
-        .when().log().everything().get(getApiFoldersURL() + restAnchor1.toStringFormal());
+        .when()
+                .get(getApiFoldersURL() + restAnchor1.toStringFormal());
     }
 
     @Test
@@ -782,7 +816,7 @@ public class TestFolderResource extends AbstractRestTest
         givenLinkShareReadAccess()
         .expect()
                 .statusCode(403)
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + new RestObject(sid2, OID.ROOT).toStringFormal());
     }
 
@@ -801,7 +835,7 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .body("name", equalTo("folder1"))
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + restAnchor1.toStringFormal());
     }
 
@@ -819,7 +853,7 @@ public class TestFolderResource extends AbstractRestTest
         .expect()
                 .statusCode(200)
                 .body("name", equalTo("folder1"))
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + new RestObject(sid1, OID.ROOT).toStringFormal());
     }
 
@@ -841,7 +875,7 @@ public class TestFolderResource extends AbstractRestTest
                 .statusCode(200)
                 .body("name", equalTo("folder1"))
                 .body("children.folders", iterableWithSize(0))
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
@@ -865,7 +899,7 @@ public class TestFolderResource extends AbstractRestTest
                 .body("children.folders[0].id", equalTo(new RestObject(rootSID,
                         SID.folderOID2convertedAnchorOID(folder2)).toStringFormal()))
                 .body("children.folders[0].name", equalTo("folder2"))
-        .when().log().everything()
+        .when()
                 .get(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 
@@ -977,5 +1011,19 @@ public class TestFolderResource extends AbstractRestTest
         .when()
                 .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal() + "/is_shared");
         verify(polaris.getFolderSharer()).shareFolder(any(), any(), any());
+    }
+
+    @Test
+    public void shouldHandleUnicodeNames() throws Exception
+    {
+        OID folder1= PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder");
+        givenAccess()
+                .contentType(ContentType.JSON)
+                .body(json(CommonMetadata.child(
+                        new RestObject(rootSID, OID.ROOT).toStringFormal(), "ㅂㅈㄷㄱ")))
+        .expect()
+                .statusCode(200)
+        .when().log().everything()
+                .put(getApiFoldersURL() + new RestObject(rootSID, folder1).toStringFormal());
     }
 }

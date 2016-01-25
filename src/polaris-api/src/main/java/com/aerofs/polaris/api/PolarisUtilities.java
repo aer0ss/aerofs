@@ -2,7 +2,6 @@ package com.aerofs.polaris.api;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.BaseEncoding;
-import com.google.common.net.UrlEscapers;
 
 import javax.annotation.Nullable;
 
