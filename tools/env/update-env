@@ -2,4 +2,4 @@
 
 DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
 
-ansible-playbook $DIR/playbook.yaml -i localhost --ask-become-pass
+ansible-playbook $DIR/playbook.yaml -i $DIR/localhost --ask-become-pass
