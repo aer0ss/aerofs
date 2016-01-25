@@ -68,7 +68,15 @@ function dk-destroy-vm()
 {
     if [[ $# -eq 0 ]]
     then
+        # find name of hostonly adapter used by docker-machine
+        adapter=$(VBoxManage showvminfo --machinereadable docker-dev | grep hostonlyadapter | cut -d '"' -f 2)
+        
         docker-machine rm -f ${VM}
+        
+        # cleanup hostonlyif and attached DHCP server to ensure the next dk-create
+        # gets the correct IP (192.168.99.100) instead of a successor
+        VBoxManage dhcpserver remove --ifname $adapter
+        VBoxManage hostonlyif remove $adapter
     else
         echo "dk-destroy-vm takes no arguments"
         return 1
