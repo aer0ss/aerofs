@@ -43,15 +43,13 @@ main() {
     # First, list image names ending with $LOADER_IMAGE. `sort` & `uniq` to dedup identical image names with diff tags.
     write_clean_progress
     local IMAGES=$(docker images | awk '{print $1}' | grep -e "/${LOADER_IMAGE}$" | sort | uniq)
-    CLEANED=0
 
     for IMAGE in ${IMAGES}; do
         local REPO=$(sed -e "s./${LOADER_IMAGE}$.." <<< ${IMAGE})
         # Second, list image tags. `tail` to skip header
         for TAG in $(docker images ${IMAGE} | tail -n +2 | awk '{print $2}'); do
-            [[ ${TAG} = ${CUR_TAG} ]] || clean "${REPO}" ${TAG}
+            [[ ${TAG} = ${CUR_TAG} ]] || [[ "${TAG}" = "latest" ]] || clean "${REPO}" ${TAG}
         done
-        CLEANED=$((CLEANED+1))
     done
     write_done
 }
