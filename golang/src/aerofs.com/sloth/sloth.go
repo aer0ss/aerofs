@@ -10,6 +10,7 @@ import (
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
+	"aerofs.com/sloth/resource/commands"
 	"aerofs.com/sloth/resource/groups"
 	"aerofs.com/sloth/resource/keepalive"
 	pushResource "aerofs.com/sloth/resource/push"
@@ -139,6 +140,10 @@ func main() {
 		checkUserFilter,
 		updateLastOnlineFilter,
 		pushNotifier,
+	))
+	restful.Add(commands.BuildRoutes(
+		db,
+		checkUserFilter,
 	))
 
 	// COOOOOOOORRRRRRRRSSSSSSSSS

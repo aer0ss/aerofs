@@ -2,6 +2,7 @@ package groups
 
 import (
 	"aerofs.com/sloth/broadcast"
+	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
@@ -9,6 +10,7 @@ import (
 	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
 	"database/sql"
+	"fmt"
 	"github.com/emicklei/go-restful"
 	"time"
 )
@@ -414,15 +416,35 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 		tx.Rollback()
 		return
 	}
-	// insert message into db
+
 	message := &Message{
 		Time: time.Now(),
 		Body: params.Body,
 		From: caller,
 		To:   gid,
 	}
-	message = dao.InsertMessage(tx, message)
-	dao.CommitOrPanic(tx)
+
+	// Parse for slash commands
+	// If a slash command, create a message for the command response, not the input
+	if commandhandler.IsSlashCommand(message.Body) {
+		h := commandhandler.NewCommandHandler(ctx.db)
+
+		// Perform request
+		cmd, response, err := h.HandleCommand(message.From, message.To, message.Body)
+		if err != nil {
+			response = fmt.Sprintf("Unable to execute slash command %s. %s", cmd, err)
+		}
+
+		// For each /command, the caller is the command string
+		tx := dao.BeginOrPanic(ctx.db)
+		caller := cmd
+		message = dao.InsertGroupCommandMessage(tx, gid, caller, response, time.Now())
+		dao.CommitOrPanic(tx)
+	} else {
+		// Insert regular message
+		message = dao.InsertMessage(tx, message)
+		dao.CommitOrPanic(tx)
+	}
 
 	response.WriteEntity(message)
 	broadcast.SendGroupMessageEvent(ctx.broadcaster, gid, group.Members)

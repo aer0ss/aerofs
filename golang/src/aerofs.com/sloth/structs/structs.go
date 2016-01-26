@@ -43,6 +43,19 @@ type LastReadReceipt struct {
 	Time      time.Time `json:"time"`
 }
 
+type Command struct {
+	Command     string `json:"command"`
+	Method      string `json:"method"`
+	URL         string `json:"url"`
+	Token       string `json:"token"`
+	Syntax      string `json:"syntax"`
+	Description string `json:"description"`
+}
+
+type CommandResponse struct {
+	Text string `json:"text"`
+}
+
 //
 // FIXME: hack until I can figure out read-only keys
 //
@@ -71,6 +84,15 @@ type MessageWritable struct {
 
 type LastReadReceiptWritable struct {
 	MessageId int64 `json:"messageId"`
+}
+
+type CommandWritable struct {
+	Command     string `json:"command"`
+	Method      string `json:"method"`
+	URL         string `json:"url"`
+	Token       string `json:"token"`
+	Syntax      string `json:"syntax"`
+	Description string `json:"description"`
 }
 
 //
@@ -102,6 +124,10 @@ type IdList struct {
 
 type LastReadReceiptList struct {
 	LastRead []LastReadReceipt `json:"lastRead"`
+}
+
+type CommandList struct {
+	Commands []Command `json:"commands"`
 }
 
 //

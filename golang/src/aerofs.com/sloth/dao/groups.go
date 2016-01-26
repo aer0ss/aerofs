@@ -167,6 +167,25 @@ func InsertGroupMemberRemovedMessage(tx *sql.Tx, gid, uid, caller string, time t
 	insertGroupMemberChangeMessage(tx, gid, uid, caller, "MEMBER_REMOVED", time)
 }
 
+func InsertGroupCommandMessage(tx *sql.Tx, gid, caller, msg string, time time.Time) *Message {
+	bytes, err := json.Marshal(map[string]string{
+		"type": "COMMAND_EXECUTED",
+		"text": msg,
+	})
+	if err != nil {
+		return nil
+	}
+
+	message := InsertMessage(tx, &Message{
+		Time:   time,
+		From:   caller,
+		To:     gid,
+		Body:   string(bytes),
+		IsData: true,
+	})
+	return message
+}
+
 //
 // Private
 //

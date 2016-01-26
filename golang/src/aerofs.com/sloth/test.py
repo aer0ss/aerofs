@@ -714,6 +714,27 @@ try:
     assert r.json()['messages'][4]['time'] == r.json()['messages'][5]['time']
     assert json.loads(r.json()['messages'][4]['body'])['type'] != json.loads(r.json()['messages'][5]['body'])['type'] # one added, one removed
 
+    # POST  /commands
+    data = {
+      "command": "diablo2asd",
+      "method": "POST",
+      "url": "https://test_url",
+      "token" : "asdo1023kadl",
+      "syntax" : "testcommand <int> <string>",
+      "description" : "this is a test command",
+    }
+ 
+    r = s.post(BASE_URL + "/commands",
+          json.dumps(data),
+        headers=JGRAY_AUTH)
+    assert r, r.ok
+
+    # GET /commands
+    r = s.get(BASE_URL + "/commands", headers=JGRAY_AUTH)
+    assert r, r.ok
+    assert r.json()['commands'][0]['command'] == data['command']
+    assert r.json()['commands'][0]['method'] == data['method']
+
     print 'all tests passed!'
 finally:
     print 'terminating sloth server'

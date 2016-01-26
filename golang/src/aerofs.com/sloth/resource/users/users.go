@@ -347,9 +347,9 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 	}
 	message = dao.InsertMessage(tx, message)
 	dao.CommitOrPanic(tx)
-
 	response.WriteEntity(message)
 	broadcast.SendUserMessageEvent(ctx.broadcaster, caller, uid)
+
 	if ctx.lastOnlineTimes.IsOffline(uid) {
 		go ctx.pushNotifier.NotifyNewMessage(callerUser, []string{uid})
 	}
