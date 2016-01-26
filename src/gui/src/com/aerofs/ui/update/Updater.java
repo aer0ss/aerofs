@@ -1,5 +1,6 @@
 package com.aerofs.ui.update;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -34,16 +35,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
@@ -184,7 +176,7 @@ public abstract class Updater
                 if (cr == CompareResult.NO_CHANGE) {
                     currentStatus = Status.LATEST;
                 } else if (doesUpdateFileExist(knownVersion)) {
-                    l.info("update exists ver:" + knownVersion + " file:" + _installationFilename);
+                    l.info("update exists ver:{} file:{}", knownVersion, _installationFilename);
                     currentStatus = Status.ONGOING;
                     downloadedVersion = knownVersion;
                 }
@@ -331,34 +323,33 @@ public abstract class Updater
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();
-            l.info("update size: " + updateFileExpectedSize);
+            l.info("update size: {}", updateFileExpectedSize);
 
+            int downloadedFileSize = 0;
             String localFilePath = Util.join(dirName, filename);
-            try (InputStream downloadStream = conn.getInputStream()) {
-                try (FileOutputStream out = new FileOutputStream(localFilePath)) {
-                    int bytesRead;
-                    int downloadedFileSize = 0;
-                    int oldPercent = 0;
-                    byte[] buf = new byte[BaseUtil.FILE_BUF_SIZE];
-                    while ((bytesRead = downloadStream.read(buf)) >= 0) {
-                        out.write(buf, 0, bytesRead);
-                        downloadedFileSize += bytesRead;
+            try (InputStream downloadStream = conn.getInputStream();
+                 FileOutputStream out = new FileOutputStream(localFilePath)) {
+                int bytesRead;
+                int oldPercent = 0;
+                byte[] buf = new byte[BaseUtil.FILE_BUF_SIZE];
+                while ((bytesRead = downloadStream.read(buf)) >= 0) {
+                    out.write(buf, 0, bytesRead);
+                    downloadedFileSize += bytesRead;
 
-                        _percentDownloaded = Math.round(
-                                (downloadedFileSize / (float)updateFileExpectedSize) * 100);
+                    _percentDownloaded = Math.round(
+                            (downloadedFileSize / (float)updateFileExpectedSize) * 100);
 
-                        if (oldPercent < _percentDownloaded) {
-                            oldPercent = _percentDownloaded;
-                            setUpdateStatus(Status.ONGOING, _percentDownloaded);
-                        }
+                    if (oldPercent < _percentDownloaded) {
+                        oldPercent = _percentDownloaded;
+                        setUpdateStatus(Status.ONGOING, _percentDownloaded);
                     }
-
-                    // we should have downloaded the exact expected number of bytes; if not, assert
-                    // and in doing so delete the directory into which we downloaded the update
-
-                    assert downloadedFileSize ==
-                            updateFileExpectedSize : dir.deleteIgnoreErrorRecursively();
                 }
+            }
+
+            // we should have downloaded the exact expected number of bytes; if not, assert
+            // and in doing so delete the directory into which we downloaded the update
+            if (downloadedFileSize != updateFileExpectedSize) {
+                throw new EOFException();
             }
 
             // create the ./ver file
@@ -375,7 +366,7 @@ public abstract class Updater
             updateDirFolder.deleteOrThrowIfExistRecursively();
 
             if (!dir.moveInSameFileSystemIgnoreError(updateDirFolder)) {
-                l.warn("download: could not rename tmp dir. hasPermission? " + hasPermissions());
+                l.warn("download: could not rename tmp dir. hasPermission? {}", hasPermissions());
 
                 throw new ExFileIO("download: could not rename tmp dir {} -> {}",
                         dir.getImplementation(), updateDirFolder.getImplementation());
@@ -383,7 +374,7 @@ public abstract class Updater
 
             // _installationFilename should be file name only, to be passed to Updater.
             _installationFilename = filename;
-        } catch (final Exception e) {
+        } catch (Exception e) {
             l.error("Error downloading update from {}", installerUrl, e);
             Defects.newMetric("updater.downloadUpdate")
                     .setException(e)
@@ -477,12 +468,12 @@ public abstract class Updater
                 }
             }
 
-            l.info("updating to ver:" + verServer + " file:" + _installationFilename);
+            l.info("updating to ver:{} file:{}", verServer, _installationFilename);
 
             return verServer;
 
         } catch (Exception e) {
-            l.warn("update failed: " + Util.e(e, UnknownHostException.class));
+            l.warn("update failed:", BaseLogUtil.suppress(e, UnknownHostException.class));
             setUpdateStatus(Status.ERROR, -1);
             return null;
 
