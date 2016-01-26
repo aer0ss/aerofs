@@ -1,4 +1,4 @@
-FROM nginx:1.7.11
+FROM nginx:1.9.9
 
 MAINTAINER AeroFS "support@aerofs.com"
 
