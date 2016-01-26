@@ -33,14 +33,17 @@ version, use `--release-version` in step 4 below.
    select the `aerofs.keychain` file which you just mounted. Press the little
    unlock button and enter the keychain password (which is _not_ the same as
    the mount password). For this, also ask Matt.
-   
+
 4. Make and push messaging images to the Registry. To do this, run the
-   following command in the repo:
+   following command:
 
-        ~/repos/aeroim-client
-        make image push
+        ~/repos/aeroim-client/bin/dockerize all
 
-5. Build using:
+5. Package the AeroIM installers into the appliance by running:
+
+        ~/repos/aeroim-client/bin/aero-client package
+
+6. Build using:
 
         invoke --signed clean proto build_client package_clients build_docker_images build_vm
 
@@ -49,9 +52,9 @@ version, use `--release-version` in step 4 below.
    provided in the execution output. Then run `top -d 0.1` to speed up the
    docker pull.
 
-6. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
+7. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
 
-7. When you are ready to release,
+8. When you are ready to release,
 
         invoke push_docker_images push_vm tag_release
 
@@ -60,34 +63,33 @@ version, use `--release-version` in step 4 below.
    available to the public immediately. The S3 artifacts need to be released
    manually by updating the version on the
    [Private Cloud Admin Portal](http://enterprise.aerofs.com:8000/release).
-   
-   If for any reason, a release needs to be pulled from the registry, 
-   tag the loader that should be the correct release with the tag 
+
+   If for any reason, a release needs to be pulled from the registry,
+   tag the loader that should be the correct release with the tag
    latest. Use the following command to list the loader tags to find the correct loader
    image you want to give the lastest tag:
 
-         curl -s https://registry.aerofs.com/v1/repositories/aerofs/loader/tags 
+         curl -s https://registry.aerofs.com/v1/repositories/aerofs/loader/tags
          | python -m json.tool
-   		
+
    Then run,
-   		
+
          curl -v -X PUT https://registry.aerofs.com:5050/v1/repositories/aerofs/
-         loader/tags/latest -H "Content-Type: application/json" -d 
+         loader/tags/latest -H "Content-Type: application/json" -d
          '"<loader image you want to roll back to>"'
-   		
-   The loader image will now be set to latest.  
-   
-8. After releasing, write the 
-[Release Notes](https://support.aerofs.com/hc/en-us/articles/201439644-AeroFS-Release-Notes), 
-the Internal Release notes for product updates released only to the AeroFS team 
-(Slack channel "Internal Releases"), and go through the JIRA ENG sprint report to take note of 
-the bug fixes going out in the release. The ENG tickets for the bug fixes should be mapped to 
-Zendesk tickets with their respective asignees. Notify members of the Customer Success Team who 
-should follow-up with their customers to inform them of the bug fix. 
+
+   The loader image will now be set to latest.
+
+9. After releasing, write the
+[Release Notes](https://support.aerofs.com/hc/en-us/articles/201439644-AeroFS-Release-Notes),
+the Internal Release notes for product updates released only to the AeroFS team
+(Slack channel "Internal Releases"), and go through the JIRA ENG sprint report to take note of
+the bug fixes going out in the release. The ENG tickets for the bug fixes should be mapped to
+Zendesk tickets with their respective asignees. Notify members of the Customer Success Team who
+should follow-up with their customers to inform them of the bug fix.
 
 
-9. [OPTIONAL] Reset your docker-dev RAM.
+10. [OPTIONAL] Reset your docker-dev RAM.
 
         dk-halt
         # Stop the VM in the VirtualBox GUI, and adjust RAM to 3 GB.
-
