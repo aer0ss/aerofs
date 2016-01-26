@@ -2,9 +2,8 @@ FROM alpine:3.3
 
 RUN apk --update add \
         python \
-        py-pip \
-        docker &&\
-    pip install Flask &&\
+        py-flask \
+        py-mysqldb &&\
     rm -rf /var/cache/apk/*
 
 COPY root /
