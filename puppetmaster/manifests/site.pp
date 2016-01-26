@@ -42,14 +42,8 @@ node default {
         logoutput => "on_failure",
     }
 
-    # include cacert
-    $ca_cert_filename = hiera("environment","") ? {
-        "staging"   => "cacert-staging.pem",
-        default     => "cacert.pem"
-    }
-
     file{"/etc/ssl/certs/AeroFS_CA.pem":
-        source  => "puppet:///modules/lizard/aerofs_cacert/${ca_cert_filename}",
+        source  => "puppet:///aerofs_cacert/cacert.pem",
         ensure  => present
     }
 }

@@ -38,7 +38,7 @@ class lizard::nginx {
         owner   => "root",
         group   => "root",
         mode    => "0400",
-        source  => "puppet:///modules/lizard/aerofs_ssl/ssl.key",
+        source  => "puppet:///aerofs_ssl/ssl.key",
         # FIXME dep lost. Comment out for now.
         #require => File["/etc/nginx/certs"],
         notify  => Service["nginx"],
@@ -48,7 +48,7 @@ class lizard::nginx {
         owner   => "root",
         group   => "root",
         mode    => "0644",
-        source  => "puppet:///modules/lizard/aerofs_ssl/ssl.cert",
+        source  => "puppet:///aerofs_ssl/ssl.cert",
         # FIXME dep lost. Comment out for now.
         #require => File["/etc/nginx/certs"],
         notify  => Service["nginx"],
