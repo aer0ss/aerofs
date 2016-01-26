@@ -27,11 +27,11 @@
 <li class="page-block">
     <h4>Get the app</h4>
     <a href="https://itunes.apple.com/us/app/aerofs-for-private-cloud/id778103731?mt=8" target="_blank">
-        <img alt="AeroFS on the App Store" src="https://linkmaker.itunes.apple.com/htmlResources/assets/en_us//images/web/linkmaker/badge_appstore-lrg.png"/>
+        <img alt="AeroFS on the App Store" width=135px height=40px src="https://linkmaker.itunes.apple.com/htmlResources/assets/en_us/images/web/linkmaker/badge_appstore-lrg.png"/>
     </a>
     <span style="margin: auto 8px">or</span>
     <a href="https://play.google.com/store/apps/details?id=com.aerofs.android" target="_blank">
-      <img alt="AeroFS on Google Play" src="https://developer.android.com/images/brand/en_generic_rgb_wo_45.png" />
+      <img alt="AeroFS on Google Play" width=135px height=40px src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" />
     </a>
 </li>
 
