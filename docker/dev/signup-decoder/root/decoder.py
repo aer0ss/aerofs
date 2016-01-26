@@ -1,8 +1,14 @@
 
 import MySQLdb
+import dns.resolver
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+
+def connect():
+    r = dns.resolver.query('mysql.docker', 'A').response.answer[0][0].address
+    print "mysql expected at", r
+    return MySQLdb.connect(r, db="aerofs_sp")
 
 @app.route("/get_code", methods=["GET"])
 def get():
@@ -10,7 +16,7 @@ def get():
     if not user: return "Must specify user id in the form of 'userid=email@address'", 400
 
     try:
-        db = MySQLdb.connect("mysql.docker", db="aerofs_sp")
+        db = connect()
         try:
             c = db.cursor()
             c.execute("select t_code from sp_signup_code where t_to=%s order by t_ts desc limit 1", [user])
@@ -30,7 +36,7 @@ def get():
 @app.route("/get_all_codes", methods=["GET"])
 def get_all():
     try:
-        db = MySQLdb.connect("mysql.docker", db="aerofs_sp")
+        db = connect()
         try:
             c = db.cursor()
             c.execute("select t_to, t_code from sp_signup_code where t_ts in ( select max(t_ts) from sp_signup_code group by t_to )")
