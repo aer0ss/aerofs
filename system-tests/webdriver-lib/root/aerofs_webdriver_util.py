@@ -1,3 +1,4 @@
+import time
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_util import wait_and_get
 import requests
@@ -38,8 +39,15 @@ def get_signup_code(hostname, user_id):
     """
     url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'userid': user_id}))
     print "Getting signup code via Signup Decoder at {}...".format(url)
-    r = requests.get(url)
-    r.raise_for_status()
+    n = 15
+    while True:
+        r = requests.get(url)
+        if r.status_code == 200:
+            break
+        n = n - 1
+        if n == 0:
+            r.raise_for_status()
+        time.sleep(0.1)
     return r.json()['signup_code']
 
 def invite_user(driver, wait, selector, host, user):
