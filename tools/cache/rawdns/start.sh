@@ -12,18 +12,11 @@ echoerr() { echo "$@" 1>&2; }
 
 PWD="$( cd $(dirname $0) ; pwd -P )"
 
-VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
-
 # detect docker bridge IP
-if docker-machine ls "$VM" &>/dev/null ; then
-    BRIDGE=$(docker-machine ssh "$VM" ifconfig docker0 | grep 'inet addr:' | cut -d':' -f 2 | cut -d' ' -f 1)
-else
-    # FIXME: does not work inside a container (e.g. CI)...
-    BRIDGE=$(ifconfig docker0 | grep 'inet addr:' | cut -d':' -f 2 | cut -d' ' -f 1)
-fi
+BRIDGE=$(docker run --rm debian:sid ip route | grep default | cut -d ' ' -f 3)
 
 # check if rawdns config was modified since the image was created
-config=$PWD/root/etc/rawdns.json
+config=$PWD/root/rawdns.json
 if [[ $(uname -s) == "Darwin" ]] ; then
     # sigh...
     #  1. docker CLI is not flexible enough so we need to use API directly
@@ -72,6 +65,8 @@ if docker run --rm debian:sid ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns already configured"
     exit 0
 fi
+
+VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 
 if docker-machine ls "$VM" &>/dev/null ; then
     echo "updating docker dameon dns config"
