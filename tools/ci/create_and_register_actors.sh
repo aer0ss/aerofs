@@ -38,9 +38,9 @@ if [[ $top -ge $bottom ]]; then
     for i in $(seq $bottom $top) ; do
         # NB: use the hostonly ip to ssh as this one is guaranteed to be static
         ip=$(ssh aerofstest@192.168.50.$(( 10 + i)) ifconfig | grep -F "inet addr:${bridge_ip}." | cut -d':' -f2 | cut -d' ' -f 1)
-        register="${register:+$register }$ip"
+        rl="${rl:+$rl }$ip"
     done
-    echo $register | "$ACTOR_POOL_DIR"/register.py --os l --vm y --isolated n
+    echo $rl | "$ACTOR_POOL_DIR"/register.py --os l --vm y --isolated n
 fi
 
 # Windows actors
@@ -54,9 +54,9 @@ if [[ $top -ge $bottom ]]; then
     for i in $(seq $bottom $top) ; do
         # NB: use the hostonly ip to ssh as this one is guaranteed to be static
         ip=$(ssh aerofstest@192.168.50.$(( 110 + i)) ipconfig | grep -F "IPv4 Address" | grep -F " : ${bridge_ip}." | cut -d':' -f2)
-        register="${register:+$register }$ip"
+        rw="${rw:+$rw }$ip"
     done
-    echo $register | "$ACTOR_POOL_DIR"/register.py --os w --vm y --isolated n
+    echo $rw | "$ACTOR_POOL_DIR"/register.py --os w --vm y --isolated n
 fi
 
 # OSX actors
