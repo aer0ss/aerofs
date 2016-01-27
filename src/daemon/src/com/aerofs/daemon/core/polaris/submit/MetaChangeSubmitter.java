@@ -231,7 +231,7 @@ public class MetaChangeSubmitter implements Submitter
 
         RemoteLink lnk = proxy.getParent_(c.oid);
 
-        l.info("op: {} {} {} {} {} {}", sidx, c.oid, lnk, c.newParent, c.newName, c.migrant);
+        l.info("op: {} {}{} {} {} {} {}", c.idx, sidx, c.oid, lnk, c.newParent, c.newName, c.migrant);
 
         if (lnk == null || lnk.parent == null) {
             checkState(c.newParent != null && !c.newParent.isTrash());
