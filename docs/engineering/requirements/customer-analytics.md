@@ -41,6 +41,8 @@ This information will give us an idea of product usage trends over a given perio
 be particularly beneficial to the product and marketing team to gauge how customers are actually
 using AeroFS.
 
+Usage based events should be sent from the appliance in real-time.
+
 Example data points:
 
 - Number of files synced
@@ -60,28 +62,28 @@ free license or business license.
 ### Change Analytics Options via Bunker Settings Page
 The following analytics options should be available to the admin in bunker settings page:
 
-- Disable analytics [_Should already be checked if they opted out of sending analytics during 
+- Disable analytics [_Should already be checked if they opted out of sending analytics during
 appliane setup_]
-- Enable analytics [_Should already be checked if they agreed to send analytics during appliance 
+- Enable analytics [_Should already be checked if they agreed to send analytics during appliance
 setup_]
-    - Send analytics data to AeroFS [_Should already be checked if they agreed to send analytics 
+    - Send analytics data to AeroFS [_Should already be checked if they agreed to send analytics
 during appliance setup_]
     - Send analytics data to on-site server
         - Configure server (hostname, port, certificate)
 
 ### On-Site Analytics Collection Server
-Setting up an on-site analytics collection server is optional. It's purpose is to allow admins to 
+Setting up an on-site analytics collection server is optional. It's purpose is to allow admins to
 take a look at the analytics data before giving the green light to send it over to AeroFS.
 
    - Admins should be able to view the JSON dump of analytics data via command line.
    - The following options should be configurable from the analytics server:
        - Send analytics data to AeroFS
        - Don't send analytics data to AeroFS
-   - If they choose to send data to AeroFS, analytics data will get relayed from the appliance to 
+   - If they choose to send data to AeroFS, analytics data will get relayed from the appliance to
 AeroFS through the analytics server
 
 ### Generate Reports From Analytics Data
-We should be able to perform queries and generate reports using the data we collect. The type of 
+We should be able to perform queries and generate reports using the data we collect. The type of
 information we want to extract are as follows.
 
 Percentage of customer that have:
@@ -126,6 +128,6 @@ Success Queries:
 Sales Queries:
 
 - Free accounts that are currently at X number of users listed by customer ID
-- Number of free private cloud accounts that have less than X number of users versus greater than 
+- Number of free private cloud accounts that have less than X number of users versus greater than
   X number of users
 - Paid accounts that are approaching their license quota listed by customer ID
