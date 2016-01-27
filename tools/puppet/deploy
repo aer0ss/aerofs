@@ -1,24 +1,7 @@
 #!/bin/bash
-
 set -e -u
 
-usage()
-{
-    echo "usage: $0 <puppetmaster>"
-    echo "example: $0 puppet.arrowfs.org"
-    exit $1
-}
-
-if [ $# -ne 1 ]; then
-    usage 2
-fi
-
-PUPPET_MASTER=${1:-}
-
-if [ x"$PUPPET_MASTER" == x ]; then
-    echo "puppetmaster server address is required."
-    usage 3
-fi
+PUPPET_MASTER=puppet.arrowfs.org
 
 # Get the directory this script is in no matter where it's called from
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -26,8 +9,14 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )"
 PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster
 
-# rsync - recursuve/follow symlinks - use kssh - exclude ./local (used for vm testing only).
-rsync -v -rl --delete -e "ssh" --exclude "local" --exclude ".swp" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
+echo ">>> Creating directory to rsync puppet content..."
+ssh ${PUPPET_MASTER} "mkdir -p /tmp/puppet/$USER"
 
-echo "Success"
+echo ">>> Rsync content from local to temporary directory on server..."
+rsync --exclude ".swp" --delete -avz ${PUPPET_ROOT} ${PUPPET_MASTER}:/tmp/puppet/$USER
+
+echo ">>> Rsync content from temporary directory on server to master location..."
+ssh ${PUPPET_MASTER} "rsync -rl --delete /tmp/puppet/$USER/puppetmaster/* /etc/puppet"
+
+echo ">>> Success! Puppet master updated."
 exit 0

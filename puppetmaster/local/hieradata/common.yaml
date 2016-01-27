@@ -1,9 +1,0 @@
----
-
-deployment_config: "staging"
-
-aptkey: "64E72541"
-
-metrics:
-    host: "metrics.aerofs.com"
-    port: 2003

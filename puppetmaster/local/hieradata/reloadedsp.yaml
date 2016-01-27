@@ -1,6 +1,0 @@
----
-
-# this is gibberish
-tomcat6_manager:
-    password: "55555555555555555555555555"
-    roles: "manager"

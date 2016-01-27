@@ -67,4 +67,20 @@ class lizard (
     }
 
     logrotate::log{"lizard":}
+
+    file{"/opt/lizard/docker-ca.pem":
+        source  => "puppet:///aerofs_docker/docker-ca.pem",
+        ensure  => present,
+        require => Package["aerofs-lizard"],
+    }
+    file{"/opt/lizard/docker-client-cert.pem":
+        source  => "puppet:///aerofs_docker/docker-client-cert.pem",
+        ensure  => present,
+        require => Package["aerofs-lizard"],
+    }
+    file{"/opt/lizard/docker-client-key.pem":
+        source  => "puppet:///aerofs_docker/docker-client-key.pem",
+        ensure  => present,
+        require => Package["aerofs-lizard"],
+    }
 }
