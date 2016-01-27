@@ -732,7 +732,7 @@ def version():
 def download_ova():
     version = appliance.latest_appliance_version()
 
-    if not login.current_user.is_anonymous():
+    if not login.current_user.is_anonymous:
         analytics_client.track(login.current_user.customer_id, 'Downloading OVA', {
             'email': markupsafe.escape(login.current_user.email),
             'version': version
@@ -744,7 +744,7 @@ def download_ova():
 def download_qcow():
     version = appliance.latest_appliance_version()
 
-    if not login.current_user.is_anonymous():
+    if not login.current_user.is_anonymous:
         analytics_client.track(login.current_user.customer_id, 'Downloading QCOW', {
             'email': markupsafe.escape(login.current_user.email),
             'version': version
@@ -756,7 +756,7 @@ def download_qcow():
 def download_vhd():
     version = appliance.latest_appliance_version()
 
-    if not login.current_user.is_anonymous():
+    if not login.current_user.is_anonymous:
         analytics_client.track(login.current_user.customer_id, 'Downloading VHD', {
             'email': markupsafe.escape(login.current_user.email),
             'version': version
