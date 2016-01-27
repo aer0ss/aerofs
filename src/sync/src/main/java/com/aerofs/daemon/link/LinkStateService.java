@@ -164,7 +164,7 @@ public class LinkStateService
 
         if (current.equals(previous)) return;
 
-        l.info("ls prev " + previous.size() + " cur " + current.size());
+        l.info("ls prev {} cur {}", previous.size(), current.size());
 
         final Set<NetworkInterface> added = Sets.newHashSet(current);
         added.removeAll(previous);
@@ -200,8 +200,13 @@ public class LinkStateService
             //
             // noinspection InfiniteLoopStatement
             while (true) {
-                if (!_markedDown) {
-                    checkLinkState();
+                // FIXME: this synchronization is kinda gross but necessary to avoid a race between
+                // marking links down from the core and the periodic checks on the lss thread
+                // which can defeate pause sync and break syncdet tests
+                synchronized (this) {
+                    if (!_markedDown) {
+                        checkLinkState();
+                    }
                 }
 
                 // FIXME (AG): this is inefficient, especially on Windows
@@ -227,9 +232,14 @@ public class LinkStateService
     // IMPORTANT: the method is _not final_ because I want it to be mockable
     public void markLinksDown()
     {
-        l.warn("mark down");
-        _markedDown = true;
-        notifyLinkStateChange(ImmutableSet.<NetworkInterface>of());
+        // FIXME: this synchronization is kinda gross but necessary to avoid a race between
+        // marking links down from the core and the periodic checks on the lss thread
+        // which can defeate pause sync and break syncdet tests
+        synchronized (this) {
+            l.warn("mark down");
+            _markedDown = true;
+            notifyLinkStateChange(ImmutableSet.<NetworkInterface>of());
+        }
     }
 
     // IMPORTANT: the method is _not final_ because I want it to be mockable
