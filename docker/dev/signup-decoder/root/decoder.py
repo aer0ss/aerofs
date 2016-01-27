@@ -1,12 +1,20 @@
 
 import MySQLdb
-import dns.resolver
+from docker import Client
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+def mysql_ip():
+    cli = Client(base_url='unix://var/run/docker.sock')
+    for c in cli.containers():
+        for n in c['Names']:
+            if n.startswith('/mysql'):
+                return cli.inspect_container(c['Id'])['NetworkSettings']['IPAddress']
+    return None
+
 def connect():
-    r = dns.resolver.query('mysql.docker', 'A').response.answer[0][0].address
+    r = mysql_ip()
     print "mysql expected at", r
     return MySQLdb.connect(r, db="aerofs_sp")
 

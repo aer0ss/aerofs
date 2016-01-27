@@ -5,7 +5,7 @@ RUN apk --update add \
         py-pip \
         py-flask \
         py-mysqldb &&\
-    pip install dnspython &&\
+    pip install docker-py==1.6.0 &&\
     rm -rf /var/cache/apk/*
 
 COPY root /
