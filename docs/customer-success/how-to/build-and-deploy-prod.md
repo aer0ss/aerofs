@@ -41,7 +41,7 @@ version, use `--release-version` in step 4 below.
 
 5. Package the AeroIM installers into the appliance by running:
 
-        ~/repos/aeroim-client/bin/aero-client package
+        ~/repos/aeroim-client/bin/aero-client package <appliance_version_to_build>
 
 6. Build using:
 
