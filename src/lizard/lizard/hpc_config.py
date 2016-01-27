@@ -75,7 +75,7 @@ def new_authed_session(subdomain):
     return session
 
 
-@celery.task(bind=True, max_retries=40)
+@celery.task(bind=True)
 def configure_deployment(self, subdomain):
     """
     Performs the appliance setup (hostname, certificates, email, etc..)
@@ -84,71 +84,75 @@ def configure_deployment(self, subdomain):
 
     try:
         session = new_authed_session(subdomain)
-    except requests.exceptions.ConnectionError as e:
-        # Common causes of error at this stage:
-        #  - DNS hasn't propagated
-        #  - The server is busy pulling images
-        raise self.retry(exc=e, countdown=30)  # Wait 30s and retry
 
-    # Set the hostname (step 1 of setup)
-    r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
-    r.raise_for_status()
+        # Set the hostname (step 1 of setup)
+        r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
+        r.raise_for_status()
 
-    # Set the certificate (step 2 of setup)
-    r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
-    r.raise_for_status()
+        # Set the certificate (step 2 of setup)
+        r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
+        r.raise_for_status()
 
-    # Configure email settings (step 3 of setup)
-    r = session.post("/admin/json_setup_email",
-                     data={'email-server': 'local',
-                           'base-www-support-email-address': 'support@aerofs.com'})
-    r.raise_for_status()
+        # Configure email settings (step 3 of setup)
+        r = session.post("/admin/json_setup_email",
+                         data={'email-server': 'local',
+                               'base-www-support-email-address': 'support@aerofs.com'})
+        r.raise_for_status()
 
-    # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
-    r = session.post("/admin/json_setup_hpc",
-                     data={'zephyr.address': 'zephyr.aerofs.com:8888'})
-    r.raise_for_status()
+        # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+        r = session.post("/admin/json_setup_hpc",
+                         data={'zephyr.address': 'zephyr.aerofs.com:8888'})
+        r.raise_for_status()
 
-    return subdomain  # so that this task can be chained with other tasks
+        return subdomain  # so that this task can be chained with other tasks
+
+    except Exception as e:
+        # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
+        # Wait 30s and retry
+        raise self.retry(exc=e, countdown=30, max_retries=40)
 
 
-@celery.task()
-def reboot(subdomain):
+@celery.task(bind=True)
+def reboot(self, subdomain):
     """
     Reboot the appliance in default (ie: non-maintenance) mode
     """
-    logger.info("Rebooting appliance at {}".format(subdomain))
-
-    deadline = datetime.now() + timedelta(seconds=60)
-    session = new_authed_session(subdomain)
-
-    old_id = get_boot_id(session)
-    if old_id is None:
-        raise Exception("Couldn't get boot id from appliance at {}".format(session.base_url))
-
-    logger.debug("Old boot id {}".format(old_id))
-
-    # Reboot the appliance in default mode
     try:
-        r = session.post("/admin/json-boot/default")
-        if 400 <= r.status_code < 500:
-            raise Exception("Rebooting appliance at {} failed with HTTP status code  {}".format(session.base_url, r.status_code))
-    except requests.exceptions.RequestException:
-        pass  # Ignore connection errors since the server might be killed before replying.
+        logger.info("Rebooting appliance at {}".format(subdomain))
 
-    # Wait for new boot id, or until we time out
-    while True:
-        new_id = get_boot_id(session)
-        logger.debug("New id {}".format(new_id))
-        if new_id is not None and new_id != old_id:
-            break
+        deadline = datetime.now() + timedelta(seconds=60)
+        session = new_authed_session(subdomain)
 
-        if datetime.now() > deadline:
-            raise Exception("Timed out while waiting for appliance at {} to reboot".format(session.base_url))
+        old_id = get_boot_id(session)
+        if old_id is None:
+            raise Exception("Couldn't get boot id from appliance at {}".format(session.base_url))
 
-        time.sleep(2)
+        logger.debug("Old boot id {}".format(old_id))
 
-    return subdomain  # so that this task can be chained with other tasks
+        # Reboot the appliance in default mode
+        try:
+            r = session.post("/admin/json-boot/default")
+            if 400 <= r.status_code < 500:
+                raise Exception("Rebooting appliance at {} failed with HTTP status code  {}".format(session.base_url, r.status_code))
+        except requests.exceptions.RequestException:
+            pass  # Ignore connection errors since the server might be killed before replying.
+
+        # Wait for new boot id, or until we time out
+        while True:
+            new_id = get_boot_id(session)
+            logger.debug("New id {}".format(new_id))
+            if new_id is not None and new_id != old_id:
+                break
+
+            if datetime.now() > deadline:
+                raise Exception("Timed out while waiting for appliance at {} to reboot".format(session.base_url))
+
+            time.sleep(2)
+
+        return subdomain  # so that this task can be chained with other tasks
+
+    except Exception as e:
+        raise self.retry(exc=e, countdown=30, max_retries=10)
 
 
 def get_boot_id(session):
@@ -162,13 +166,17 @@ def get_boot_id(session):
     return r.json()['id'] if r.status_code == 200 else None
 
 
-@celery.task()
-def repackage(subdomain):
-    session = new_authed_session(subdomain)
-    wait_for_services_ready(session)
-    do_repackaging(session)
-    session.post("/admin/json-set-configuration-completed")
-    return subdomain  # so that this task can be chained with other tasks
+@celery.task(bind=True)
+def repackage(self, subdomain):
+    try:
+        session = new_authed_session(subdomain)
+        wait_for_services_ready(session)
+        do_repackaging(session)
+        session.post("/admin/json-set-configuration-completed")
+        return subdomain  # so that this task can be chained with other tasks
+
+    except Exception as e:
+        raise self.retry(exc=e, countdown=30, max_retries=10)
 
 
 def wait_for_services_ready(session):

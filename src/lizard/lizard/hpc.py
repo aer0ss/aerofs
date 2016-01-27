@@ -66,9 +66,10 @@ def create_deployment(customer, subdomain):
     create_subdomain(deployment)
 
     # Start a chain of Celery tasks to configure the appliance
+    # Wait 10s before starting to make sure everything is up and running
     (configure_deployment.s(deployment.subdomain) |
      reboot.s() |
-     repackage.s()).apply_async()
+     repackage.s()).apply_async(countdown=10)
 
 
 def create_route53_change(deployment, delete=False):
@@ -131,16 +132,16 @@ def create_loader(deployment):
 
     # Create the container
     container = docker.create_container(
-        image='aerofs/loader',
+        image='registry.aerofs.com/aerofs/loader',
         name=loader_container_name(deployment),
-        volumes=['/var/run/docker.sock'],
+        volumes=['/var/run/docker.sock', '/repo', '/tag'],
         host_config=docker.create_host_config(
-            binds=['/var/run/docker.sock:/var/run/docker.sock'],
+            binds=['/var/run/docker.sock:/var/run/docker.sock', '/hpc/repo:/repo', '/hpc/tag:/tag'],
             links=[('hpc-port-allocator', 'hpc-port-allocator.service')],
             restart_policy={"Name": "always"}  # Auto restart if loader is killed (e.g. when rebooting the appliance)
         ),
         entrypoint='bash',
-        command=["-c", "([[ -f /target ]] || echo maintenance > /target) && python -u /main.py load /dev/null /dev/null /target"]
+        command=["-c", "([[ -f /target ]] || echo maintenance > /target) && python -u /main.py load /repo /tag /target"]
     )
 
     warnings = container.get('Warnings')
@@ -178,8 +179,13 @@ def delete_containers(deployment):
 
 def delete_deployment(deployment):
     current_app.logger.info("Deleting deployment %s", deployment.subdomain)
+    try:
+        # This may fail if the server is unreachable
+        # Just ignore any errors for now. In the future we might want to ask the user.
+        delete_containers(deployment)
+    except Exception as ex:
+        current_app.logger.warn("Ignoring exception while deleting deployment: %s", ex)
 
-    delete_containers(deployment)
     delete_subdomain(deployment)
 
     db.session.delete(deployment)
