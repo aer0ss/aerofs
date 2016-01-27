@@ -5,15 +5,15 @@
 # Say Goodbye to 'where is the file?'
 
 
-“Where is the file?"<br>
+"Where is the file?"<br>
 "I put it in our folder."<br>
 "What folder?"<br>
 "The one I shared with you last week."<br>
 "I can’t find it."<br>
-“Check your email, I have sent you an invite."<br>
+"Check your email, I have sent you an invite."<br>
 "Can’t you just send the file to me?"<br>
 "OK... hang on... there."<br>
-“Thanks. Does it have the edits I sent last week?"<br>
+"Thanks. Does it have the edits I sent last week?"<br>
 "What edits?"
 
 Eyja brings your work into one place. You will never have to ask 'where is the file?' again.
