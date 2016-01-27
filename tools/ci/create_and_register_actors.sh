@@ -15,6 +15,16 @@ mysql -uroot --password='temp123' < "$ACTOR_POOL_DIR"/actorpool.sql  # clear the
 
 # get bridge interface base ip
 # TODO: take the netmask into account instead of assuming it to be 255.255.255.0
+#
+# Configuring dnsmasq across multiple hosts to all forward to the host on which the
+# VM resides and then make that work inside docker containers is fragile and painful
+# Instead we rely on the presence of the bridge interface and register all actors
+# through their bridge ip
+#
+# TODO: a future iteration of actor provisioning should instead move the registration
+# inside the actor itself, allowing the actor pool to determine the public IP of the
+# actor...
+# This will be especially important when we finally start moving actors off of bigboy
 bridge_ip=$(ifconfig $BRIDGE_IFACE | grep 'inet addr:' | cut -d':' -f 2 | cut -d'.' -f 1-3)
 
 # Linux actors
@@ -25,7 +35,12 @@ bottom=0
 top=$(($CLIENT_COUNT - 1))
 popd
 if [[ $top -ge $bottom ]]; then
-    printf "aerofsbuild-vagrant-%i " $(seq $bottom $top) | "$ACTOR_POOL_DIR"/register.py --os l --vm y --isolated n
+    for i in $(seq $bottom $top) ; do
+        # NB: use the hostonly ip to ssh as this one is guaranteed to be static
+        ip=$(ssh aerofstest@192.168.50.$(( 10 + i)) ifconfig | grep -F "inet addr:${bridge_ip}." | cut -d':' -f2 | cut -d' ' -f 1)
+        register="${register:+$register }$ip"
+    done
+    echo $register | "$ACTOR_POOL_DIR"/register.py --os l --vm y --isolated n
 fi
 
 # Windows actors
@@ -36,12 +51,6 @@ bottom=0
 top=$(($WCLIENT_COUNT - 1))
 popd
 if [[ $top -ge $bottom ]]; then
-    # windows actors do not play well with dnsmasq or whatever piece of magic maps hostname to ips
-    # and their bridged ips have an annoying tendency to change when they are recreated, despite
-    # our best efforts to give them static ips
-    # for robustness, ssh into the VMs to figure out the actual bridged IP
-    # TODO: a future iteration of actor provisioning should instead move the registration to the actor
-    # pool inside the VM itself, allowing the actor pool to determine the public IP of the actor...
     for i in $(seq $bottom $top) ; do
         # NB: use the hostonly ip to ssh as this one is guaranteed to be static
         ip=$(ssh aerofstest@192.168.50.$(( 110 + i)) ipconfig | grep -F "IPv4 Address" | grep -F " : ${bridge_ip}." | cut -d':' -f2)
@@ -51,4 +60,5 @@ if [[ $top -ge $bottom ]]; then
 fi
 
 # OSX actors
-echo osx-1 | "$ACTOR_POOL_DIR"/register.py --os o --vm n --isolated n
+ip=$(ssh aerofstest@osx-1 ifconfig | grep -F "inet ${bridge_ip}." | cut -d' ' -f 2)
+echo $ip | "$ACTOR_POOL_DIR"/register.py --os o --vm n --isolated n
