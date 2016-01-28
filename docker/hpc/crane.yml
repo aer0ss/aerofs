@@ -29,3 +29,11 @@ containers:
       restart: always
       volume:
         - /var/hpc-port-allocator:/state
+
+  hpc-logrotator:
+    image: aerofs/hpc-logrotator
+    run:
+      detach: true
+      restart: always
+      volume:
+        - /var/lib/docker/containers:/var/lib/docker/containers

@@ -42,5 +42,12 @@ docker run --detach --restart=always                               \
     --name=hpc-docker-gen                                          \
     registry.aerofs.com/aerofs/hpc-docker-gen:latest
 
+# logrotator
+docker run --detach --restart=always                               \
+    --volume=/var/lib/docker/containers:/var/lib/docker/containers \
+    --name=hpc-logrotator                                          \
+    registry.aerofs.com/aerofs/hpc-logrotator:latest
+
+
 echo ""
 echo "HPC server configured successfully!"
