@@ -23,9 +23,8 @@ gzip "${VHD}"
 
 # Build QCow2.
 QCOW2="${BASENAME}.qcow2"
-echo "Creating QCOW2 image ${QCOW2} ..."
-qemu-img convert -f vmdk -O qcow2 "${VMDK}" "${QCOW2}"
-gzip "${QCOW2}"
+echo "Creating QCow2 image ${QCOW2} ..."
+qemu-img convert -c -f vmdk -O qcow2 "${VMDK}" "${QCOW2}"
 rm -f "${VMDK}"
 
 # Success!

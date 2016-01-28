@@ -39,7 +39,7 @@ notify_slack() {
 }
 
 upload_artifact ova
-upload_artifact qcow2.gz
+upload_artifact qcow2
 upload_artifact vhd.gz
 notify_slack
 

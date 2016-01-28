@@ -752,7 +752,7 @@ def download_qcow():
 
     return redirect(appliance.qcow_url(version))
 
-@blueprint.route("/aerofs-appliance.vhd", methods=["GET"])
+@blueprint.route("/aerofs-appliance.vhd.gz", methods=["GET"])
 def download_vhd():
     version = appliance.latest_appliance_version()
 

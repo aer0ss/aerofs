@@ -10,7 +10,7 @@ def ova_url(version):
     return "{}/aerofs-appliance-{}.ova".format(_BUCKET_BASE, version)
 
 def qcow_url(version):
-    return "{}/aerofs-appliance-{}.qcow2.gz".format(_BUCKET_BASE, version)
+    return "{}/aerofs-appliance-{}.qcow2".format(_BUCKET_BASE, version)
 
 def vhd_url(version):
     return "{}/aerofs-appliance-{}.vhd.gz".format(_BUCKET_BASE, version)
@@ -48,6 +48,6 @@ def qcow_present_for(version):
     return r.ok
 
 def vhd_present_for(version):
-    qcow = vhd_url(version)
-    r = requests.head(qcow)
+    vhd = vhd_url(version)
+    r = requests.head(vhd)
     return r.ok
