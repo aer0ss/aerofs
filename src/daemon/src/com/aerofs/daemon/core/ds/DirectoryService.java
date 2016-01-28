@@ -215,11 +215,16 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
      */
     public final boolean isDeleted_(@Nonnull OA oa) throws SQLException
     {
+        return deletedParent_(oa) != null;
+    }
+
+    public final @Nullable OID deletedParent_(@Nonnull OA oa) throws SQLException
+    {
         SIndex sidx = oa.soid().sidx();
         while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
             oa = getOA_(new SOID(sidx, oa.parent()));
         }
-        return oa.parent().isTrash();
+        return oa.parent().isTrash() ? oa.soid().oid() : null;
     }
 
     public final boolean isTrashOrDeleted_(@Nonnull SOID soid) throws SQLException

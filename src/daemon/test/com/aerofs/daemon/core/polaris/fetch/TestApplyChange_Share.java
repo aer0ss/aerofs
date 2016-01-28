@@ -26,9 +26,7 @@ import com.aerofs.lib.id.SOKID;
 import org.junit.Test;
 
 import static com.aerofs.daemon.core.polaris.InMemoryDS.*;
-import static com.aerofs.daemon.core.polaris.api.RemoteChange.insert;
-import static com.aerofs.daemon.core.polaris.api.RemoteChange.share;
-import static com.aerofs.daemon.core.polaris.api.RemoteChange.updateContent;
+import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
 import static org.junit.Assert.*;
 
 // TODO: more tests, including:
@@ -907,7 +905,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH),
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
                         folder(LibParam.TRASH, OID.TRASH),
                         folder("bar", bar,
@@ -976,7 +975,8 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH),
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
                 anchor("foolish", foo,
                         folder(LibParam.TRASH, OID.TRASH),
                         folder("bar", bar,
@@ -989,5 +989,144 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         assertHasRemoteContent(shared, baz,
                 new RemoteContent(1, did, new ContentHash(BaseSecUtil.hash(EMPTY)), 0L));
         assertHasContentChanges(shared, baz);
+    }
+
+    @Test
+    public void shouldHandleInsertInOriginalFolder() throws Exception {
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(foo, "baz", baz, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                share(bar),
+                insert(foo, "qux", qux, ObjectType.FILE),
+                share(foo)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo),
+                        folder(bar.toStringFormal(), bar)),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH)),
+                anchor("bargain", bar,
+                        folder(LibParam.TRASH, OID.TRASH)));
+
+    }
+
+    @Test
+    public void shouldHandleRenameInOriginalFolder() throws Exception {
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(foo, "baz", baz, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                share(bar),
+                rename(foo, "bastion", baz),
+                share(foo)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo),
+                        folder(bar.toStringFormal(), bar)),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH)),
+                anchor("bargain", bar,
+                        folder(LibParam.TRASH, OID.TRASH)));
+
+    }
+
+    @Test
+    public void shouldHandleMoveIntoOriginalFolder() throws Exception {
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(OID.ROOT, "baz", baz, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                share(bar),
+                insert(foo, "bastion", baz, ObjectType.FOLDER),
+                remove(OID.ROOT, baz),
+                share(foo)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo),
+                        folder(bar.toStringFormal(), bar)),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH)),
+                anchor("bargain", bar,
+                        folder(LibParam.TRASH, OID.TRASH)));
+
+    }
+
+    @Test
+    public void shouldHandleMoveOutOfOriginalFolder() throws Exception {
+        // restore anchor after unlink
+        try (Trans t = tm.begin_()) {
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+            oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+            t.commit_();
+        }
+
+        // sync changes in root folder
+        apply(sidx,
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(foo, "baz", baz, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                share(bar),
+                insert(OID.ROOT, "bastion", baz, ObjectType.FOLDER),
+                remove(foo, baz),
+                share(foo)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder(LibParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo),
+                        folder(bar.toStringFormal(), bar)),
+                anchor("foolish", foo,
+                        folder(LibParam.TRASH, OID.TRASH)),
+                anchor("bargain", bar,
+                        folder(LibParam.TRASH, OID.TRASH)),
+                folder("bastion", baz));
+
     }
 }

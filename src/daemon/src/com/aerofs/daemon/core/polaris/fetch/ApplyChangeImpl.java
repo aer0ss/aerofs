@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
+import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
@@ -49,7 +50,6 @@ import java.util.Map.Entry;
 
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 import static com.aerofs.daemon.core.ds.OA.Type.DIR;
-import static com.aerofs.daemon.core.ds.OA.Type.FILE;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.google.common.base.Preconditions.checkState;
@@ -234,12 +234,17 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     }
 
     private SIndex locate_(OID migrant, SIndex expect) throws SQLException {
+        if (migrant.isAnchor()) return null;
         for (SIndex sidx : _stores.getAll_()) {
             if (sidx.equals(expect)) continue;
             OA oa = _ds.getOANullable_(new SOID(sidx, migrant));
-            if (oa != null && !oa.isAnchor()) {
-                return sidx;
+            if (oa == null || oa.isAnchor()) continue;
+            OID dp = oa.isExpelled() ? _ds.deletedParent_(oa) : null;
+            // ignore temporary migrated objects that will be deleted by a SHARE op
+            if (dp != null && _sid2sidx.getLocalOrAbsentNullable_(SID.folderOID2convertedStoreSID(dp)) != null) {
+                continue;
             }
+            return sidx;
         }
         return null;
     }
@@ -560,6 +565,36 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         applyMove_(oaTrash, oaChild, oaChild.soid().oid().toStringFormal(), Long.MAX_VALUE, t);
     }
 
+    private void cleanup_(SOID soid, Trans t) throws Exception {
+        final RemoteTreeCache rtc = new RemoteTreeCache(soid.sidx(), soid.oid(), _rpdb);
+        _ds.walk_(soid, true, new IObjectWalker<Boolean>() {
+            @Nullable
+            @Override
+            public Boolean prefixWalk_(Boolean dummy, OA oa) throws Exception {
+                if (oa.soid().equals(soid)) return true;
+                SOID soid = oa.soid();
+                checkState(rtc.isInSharedTree(soid.oid()));
+                if (oa.isFile()) {
+                    _rcdb.deleteUpToVersion_(soid.sidx(), soid.oid(), Long.MAX_VALUE, t);
+                }
+                return true;
+            }
+
+            @Override
+            public void postfixWalk_(Boolean dummy, OA oa) throws Exception {
+                if (oa.soid().equals(soid)) return;
+                if (oa.isAnchor()) {
+                    l.info("delete migrated anchor {}", oa.soid());
+                    _ds.setOAParentAndName_(oa, _ds.getOA_(new SOID(oa.soid().sidx(), OID.TRASH)),
+                            oa.soid().oid().toStringFormal(), t);
+                } else {
+                    l.info("erase migrated object {}", oa.soid());
+                    _os.deleteOA_(oa.soid(), t);
+                }
+            }
+        });
+    }
+
     @Override
     public void share_(SOID soid, Trans t) throws Exception
     {
@@ -571,11 +606,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (oaAnchor != null) {
             // If the anchor is present before the folder is shared, which should only ever happen
             // after an unlink/reinstall wherein shared folders are restored from tag files, the
-            // creation of the original folder and its children will be buffered and they will all
-            // eventually be dropped.
-            // See applyBufferedChanges_
+            // original folder is in the trash and the local subtree should match the remote one
+            // exactly. To reach the same state as in regular sharing, we need to walk this tree
+            // and erase all trace of these objects as they will eventually show up in the new
+            // store (and may even already be there).
             l.warn("anchor present before SHARE: {} {}", soid, oaAnchor);
-            checkState(_ds.getOANullable_(soid) == null);
+            cleanup_(soid, t);
             return;
         }
 
@@ -808,7 +844,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
     }
 
-    private boolean applyBufferedChange_(SIndex sidx, BufferedChange c, long timestamp, Trans t)
+    private void applyBufferedChange_(SIndex sidx, BufferedChange c, long timestamp, Trans t)
             throws Exception {
         RemoteLink lnk = _rpdb.getParent_(sidx, c.oid);
         OA oaChild = _ds.getOANullable_(new SOID(sidx, c.oid));
@@ -822,22 +858,15 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             } else {
                 applyDelete_(oaChild, t);
             }
-            return true;
+            return;
         }
 
         // ensure parent exists
         if (_ds.getOANullable_(new SOID(sidx, lnk.parent)) == null) {
             l.info("apply parent {}{}", sidx, lnk.parent);
             BufferedChange pc = _mbdb.getBufferedChange_(sidx, lnk.parent);
-            checkState(pc == null || pc.type == DIR, "%s", pc);
-            if (pc == null || !applyBufferedChange_(sidx, pc, timestamp, t)) {
-                l.warn("dropping buffered child {}/{}:{}", lnk.parent, c.oid, lnk.name);
-                if (c.type == FILE) {
-                    // remote content is not buffered and needs to be removed when a file is dropped
-                    _rcdb.deleteUpToVersion_(sidx, c.oid, Long.MAX_VALUE, t);
-                }
-                return false;
-            }
+            checkState(pc != null && pc.type == DIR, "%s", pc);
+            applyBufferedChange_(sidx, pc, timestamp, t);
         }
 
         String name = lnk.name;
@@ -845,19 +874,19 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (oaChild == null && c.type == DIR) {
             OA oaAnchor = _ds.getOANullable_(new SOID(sidx, SID.folderOID2convertedAnchorOID(c.oid)));
             if (oaAnchor != null) {
-                // This should only happen in case a user cleanly unlinks and the shared folder
-                // is restored on the first scan after reinstall.
-                // In this case we should simply drop the folder and all its buffered children as
-                // the destination may already have some children and will sync the rest on its own.
-                l.warn("dropping buffered folder w/ matching anchor {}/{}:{}",
-                        lnk.parent, c.oid, name);
-                // NB: we do NOT create the folder under the trash as would normally happen in a
-                // SHARE operation. This is on purpose. Instead the resulting tree will be as though
-                // the user joined the folder instead of being the original sharer. The downside of
-                // this approach is that the tree will be subtly mismatched across devices of the
-                // same user, which is a small price to pay to simplify the handling of this nasty
-                // corner case.
-                return false;
+                // This should only happen in case a user unlinks and the shared folder is restored
+                // on the first scan after reinstall.
+                // Ideally we'd simply drop changes to the migrated tree but this is not safe as
+                // object may move in and out of the subtree before it eventually gets shared.
+                // Instead we have to insert the original folder directly inside the trash and
+                // cleanup the subtree once the SHARe op is received.
+                // NB: this may result in temporary violation of unicity invariant for OIDs (i.e.
+                // a given OID is *NOT* supposed to be in multiple stores at once)
+                // TODO: figure out how to adapt code to cope with that violation
+                l.warn("buffered folder w/ matching anchor {}/{}:{}", lnk.parent, c.oid, name);
+                applyInsert_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), c.type,
+                        null, timestamp, t);
+                return;
             }
         }
 
@@ -875,7 +904,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 alias_(sidx, c.oid, oaConflict, t);
 
                 // no need to insert the child
-                return true;
+                return;
             } else {
                 name = resolveNameConflict_(sidx, lnk, oaConflict, timestamp, t);
             }
@@ -884,7 +913,6 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         // apply remote change
         // NB: applyInsert_ will do a move if the object already exists
         applyInsert_(sidx, c.oid, lnk.parent, name, c.type, c.migrant, timestamp, t);
-        return true;
     }
 
     private String resolveNameConflict_(SIndex sidx, RemoteLink lnk, OA oaConflict, long timestamp,
