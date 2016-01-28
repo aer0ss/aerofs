@@ -1,0 +1,142 @@
+#cloud-config
+coreos:
+  units:
+    - name: docker.service
+      drop-ins:
+        - name: 10-tls-verify.conf
+          content: |
+            [Service]
+            Environment="DOCKER_OPTS=-H=0.0.0.0:2376 --tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem"
+      command: start
+
+write_files:
+  - path: /etc/docker/ca.pem
+    permissions: 0644
+    content: |
+      -----BEGIN CERTIFICATE-----
+      MIIGlTCCBH2gAwIBAgIJAOCnkk6hBWBgMA0GCSqGSIb3DQEBCwUAMIGNMQswCQYD
+      VQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTESMBAGA1UEBxMJUGFsbyBBbHRv
+      MRswGQYDVQQKExJBaXIgQ29tcHV0aW5nIEluYy4xFTATBgNVBAMUDCouYWVyb2Zz
+      LmNvbTEhMB8GCSqGSIb3DQEJARYSc3VwcG9ydEBhZXJvZnMuY29tMB4XDTE2MDEx
+      NDE5MTgwNVoXDTE3MDExMzE5MTgwNVowgY0xCzAJBgNVBAYTAlVTMRMwEQYDVQQI
+      EwpDYWxpZm9ybmlhMRIwEAYDVQQHEwlQYWxvIEFsdG8xGzAZBgNVBAoTEkFpciBD
+      b21wdXRpbmcgSW5jLjEVMBMGA1UEAxQMKi5hZXJvZnMuY29tMSEwHwYJKoZIhvcN
+      AQkBFhJzdXBwb3J0QGFlcm9mcy5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAw
+      ggIKAoICAQDmMEWmy3fGbV437bFROH25ChG4JmHp0KCqQ894UwnnV8pNbkLNOd4t
+      Y/BVWHJ93VHamjsjSjeXVx4hIvC6r3n5waj1doUM/98Xt+dXs+ol2i14hODi1T4L
+      foIDvGtAL90wTz1RyubKgFHhEglXTrBefQq2Xp2bk3nhpt7BkitRInPpBAzDB2Zb
+      /Lg4eVcBpSMMlCvav71MMf+4XmyPBfz9IN4kJWizTtiYmzIAlHRypSboHyvgtpal
+      3pOWkNuqRSUSZJklfhJl7k8xGlM08bnJ9G/74pYk5IPih0npzczyCuoVqshiTcX7
+      VIRTbL7pxTZuQE2UL3p7seJ4ilvJlav0XA6+c4gQ3QA0dhy3Y2St/TzTG2DDcJfR
+      OG/k5u1jmmibQ1vBgA3QgpgdbtxqZuahghRK5gD6viem7vgwt6nT2p4z/Dc5d53/
+      LwKFEDW9LHKZgqd9NO0LrVB2nSwMFhMqoZMV1+qoR/ehJlGMQ6bqY4eTzj/bJhw0
+      ucJDBCEe38t6iDMW7a2PIStjKrMLBYherWwGX9DOJYp0UBHsn5iIc+wzbSHEIXIl
+      7Z+iFUGM26NQZtgUZEaR2ej34My03fwL3kh59G+ig4hmO0M3idP2vP9abavROJeI
+      PYk0+B5a6mTCkyc3FcP+TiW3YSCxsRzeSmMo5GDO3niHo5ZsHZg50wIDAQABo4H1
+      MIHyMB0GA1UdDgQWBBQvx5yESXIAVK2MKJWYUiPEVLK4HjCBwgYDVR0jBIG6MIG3
+      gBQvx5yESXIAVK2MKJWYUiPEVLK4HqGBk6SBkDCBjTELMAkGA1UEBhMCVVMxEzAR
+      BgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCVBhbG8gQWx0bzEbMBkGA1UEChMS
+      QWlyIENvbXB1dGluZyBJbmMuMRUwEwYDVQQDFAwqLmFlcm9mcy5jb20xITAfBgkq
+      hkiG9w0BCQEWEnN1cHBvcnRAYWVyb2ZzLmNvbYIJAOCnkk6hBWBgMAwGA1UdEwQF
+      MAMBAf8wDQYJKoZIhvcNAQELBQADggIBAKF2j4wqAlNCTFBv1+mV9MEOfrlJveVr
+      ATIOPsFXq29U+lW8Jh5SAp21RUa2XIPaT2PCp+oArbw6yJ+yAUPCQkD76tcR4rLh
+      h7n3wgCZ1M4zFI3xASxVdGVCNAaZEdM25l7kf8HFsm3ebs9TxJO9/h2GlkgTBt1l
+      GuayVly1LnFcTfBRIti+Rwsp1pnOaCguzLps1NhY4siSYb5bMw44xeaJTKquhqfl
+      RFjsPSUKydWTFL4vxpPUPV5Kt5JpaoAsAAWW+oJ4Lg2/yJNAPvMtRNiNBslsjdl0
+      MZTBNWEAQJUw5Q/J4CppDDe1zVCNqueMHFIYcr3iZV8OSlC2AZJtmvPs9FKpyRQN
+      lMm8UJm9rmw0IUs+hdpshQhCAwXV7iM+EVlXxFREeY9oRfoh9MLZwaRa/+JODhAU
+      +rlah47tGx9P9jGlfDOazHcfEoXQdnzkggKbCs9iU2fw/p1vnbuPxovPk7AGvIdW
+      ekCxI/1K42WvhOnp9y4OsKqbZMVd7c9vcFHV66WEQCB8dWHDs+Pk9GG6lhuG1JbC
+      dwYRGXrmBlYlnt6PYeDbfVSH91srszm8DF+KR4YQc/FW46W1MzRi5fRcEBX322mQ
+      EbEAOHLo2PVbAsDqKeqsLIUEq+NSAID6wWLrGNMCsiUrw5Yk/JI022COLseEEGyp
+      AKHaEIv1Igur
+      -----END CERTIFICATE-----
+
+  - path: /etc/docker/server.pem
+    permissions: 0644
+    content: |
+      -----BEGIN CERTIFICATE-----
+      MIIFMDCCAxgCCQDsJUfuB2ue6jANBgkqhkiG9w0BAQsFADCBjTELMAkGA1UEBhMC
+      VVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCVBhbG8gQWx0bzEbMBkG
+      A1UEChMSQWlyIENvbXB1dGluZyBJbmMuMRUwEwYDVQQDFAwqLmFlcm9mcy5jb20x
+      ITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAYWVyb2ZzLmNvbTAeFw0xNjAxMTQxOTIw
+      MjZaFw0xNzAxMTMxOTIwMjZaMCYxJDAiBgNVBAMTG0hvc3RlZCBQcml2YXRlIENs
+      b3VkIFNlcnZlcjCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBANPyxrGB
+      N3dTleZ1Ye6Qd+MsigQ2hiHkFRLP1BZROhhYwsJ539Q++7KV7cGeVxkK9Tm60d2M
+      /sot90jd3LAS+Fz/ZXnqkOirhJflOtoPfoJoRef9LH6HEcrrCTnn3nJR6ZR5n0vm
+      g4Ddz7tnM1E6FE8Ql4vAnkm75KowwcW1+FKoOGGi5b0DgatzJjzuX1OnppguF6GR
+      hDima0iIpBePalTioSGjKIkni9I2gLLQ88x9FZqhGcYFLjYbwMBOPJaBTwOhvrum
+      itk0WCcPF7fUjnEWjHUMDLrJLmxB1jJwc1CPXhcCRzz0iX7bZJE3xgky2c3fYeiC
+      RcCghXymgjbOFxMjjym29Jb7FoPWo8hnj2Of6q57I/Vt4ttxUZMoxD0XMnc4BJX7
+      LixwhueCSLRMP4SD3oE8luLu0KVGnK395WXoxFNflohRlaYSngvIdsFGAZsePlYy
+      2Gbk1Th7C8YHLHiwWX2QiBX6lYgx2jf2UyZnoYrNs5AuqP7Vp6et0dH+KThl+S2s
+      jnyTFBceAnHM/DzKpj9R6Nj62nWnTE5AY8izg9gJYkEf5XBtUFQY2e2aGWYZ7JbO
+      3QiFUPv6maV0MZfBhVSHP33Fr8vIEqKWOeXkznU9kjZzjeZFOErsj50zYqxODyZk
+      74S9341sknCsoNi5xLeoFmn6reUqshfzfx25AgMBAAEwDQYJKoZIhvcNAQELBQAD
+      ggIBAOUFdPKnkuSOBd9axlffHNwgLlueMps56HsNoMmk2ixse7Js4j7W42JfO8dN
+      RkQj0FpgpzeaIKZo1/lnnhxRYpz6wzblugnWIBSc9+4lWBHCGPFVDY4yFfaob4/9
+      XzWNG4swUj86PIdE9EzVRKRToA7yu9XFTTTM2XeyLky1ODzBy1brK7SBrM7fiv6L
+      PdyA1wEbE10Y4rtEXzdO9vgAvASE0jE9bumDOKiXbR4Q8uKggoGqtmbgzAUJZ1zp
+      eos1AWwqKomE9hsqRDKGDYWt0fiyMtt5qVq9SqgH8FkkUwNp+7pmtguuHWw2PhqE
+      U5Vu1beCM+KZ5TlejGR4CyTVh12+CZwsvdjCVGqfvcTVRqsCDPn8EC/vK0N5cdkA
+      SnR5Sm7BdqXdGmZDxNkmyRI5ZTfNnAyiKBn3rBF6zrftVrH59IgBIgDjqsvOF5p1
+      21pAy1VW6wSoTDtvKBSwcM8OaM7vBMXIuacfcoRp5JZ0t/Mpg/Dn7fswjruUW1+x
+      aFbvrmdRqazQUqhdV4tsH3WKe/kucB3vwb2YlTOrXmXnCja9bDaPuJjpOjODBzMK
+      J2/P8wXuiQ33P4O9khfAnNGSy/T+Hp8ozTBQUdixwd2g7Rhw4pxSk59/tZF30HdG
+      pHNSngpz4jXIGcJgsxh+EmdkWMfC5xrzFJlvexNotGOTLlBm
+      -----END CERTIFICATE-----
+
+  - path: /etc/docker/server-key.pem
+    permissions: 0600
+    content: |
+      -----BEGIN RSA PRIVATE KEY-----
+      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
+      -----END RSA PRIVATE KEY-----

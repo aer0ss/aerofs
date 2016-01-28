@@ -1,0 +1,46 @@
+This folder contains scripts needed to create a new HPC server
+
+In order to create a new HPC server:
+
+1. Make sure your `secrets` folder contains the following files:
+
+    - aerofs.com.crt    '*.aerofs.com' certificate
+    - aerofs.com.key    '*.aerofs.com' certificate key
+    - hpc-key.pem       SSH private key to connect to the server
+
+    Also make sure your AWS credentials are properly configured, either through the AWS_ACCESS_KEY_ID
+    and AWS_SECRET_ACCESS_KEY environment variables or through the ~/.aws/config file. Refer to
+    http://docs.aws.amazon.com/cli/latest/topic/config-vars.html for more information.
+
+
+2. Launch the server:
+
+    $ python launch_hpc_server.py <server name>
+
+    (run `pip install boto3` first if needed)
+
+    Please note the public / private IP addresses as you will need that later.
+
+
+3. Configure the server:
+
+    Wait a bit until the server is up and running, then:
+
+    $ ./configure_hpc_server.sh <private_ip_address>
+
+    This takes a couple of minutes since it needs to pull all our Docker images.
+
+    If this step fails, feel free to retry it, or SSH into the server to investigate:
+    (ssh -i secrets/hpc-key.pem core@<private_ip>)
+
+    If everything went well, you should be able to SSH in the server and type `docker ps`
+    and you'll see our 3 HPC containers running.
+
+
+4. Add the server to lizard:
+
+    Go to http://enterprise.aerofs.com:8000/hpc_servers
+    and use the Docker URL and Public IP provided on step 2.
+
+    In case you forgot to write it down, you can get the public IP on the AWS EC2 console,
+    and the Docker URL is https://<private_ip>:2376
