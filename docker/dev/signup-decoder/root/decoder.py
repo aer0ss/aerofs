@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 def mysql_ip():
-    cli = Client(base_url='unix://var/run/docker.sock')
+    cli = Client(base_url='unix://var/run/docker.sock', version='1.17')
     for c in cli.containers():
         for n in c['Names']:
             if n.startswith('/mysql'):
