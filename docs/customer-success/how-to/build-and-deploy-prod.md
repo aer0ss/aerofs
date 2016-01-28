@@ -35,13 +35,14 @@ version, use `--release-version` in step 4 below.
    the mount password). For this, also ask Matt.
 
 4. Make and push messaging images to the Registry. To do this, run the
-   following command:
+   following commands:
 
-        ~/repos/aeroim-client/bin/dockerize all
-
+        ~/repos/aeroim-client/bin/aero web build
+        ~/repos/aeroim-client/bin/aero web publish
+        
 5. Package the AeroIM installers into the appliance by running:
 
-        ~/repos/aeroim-client/bin/aero-client package <appliance_version_to_build>
+        ~/repos/aeroim-client/bin/aero desktop build <appliance_version_to_build>
 
 6. Build using:
 
