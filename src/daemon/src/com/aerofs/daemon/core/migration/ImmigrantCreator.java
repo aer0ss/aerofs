@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -136,6 +137,13 @@ public class ImmigrantCreator
         return oid.isRoot() ? _sidx2sid.get_(sidx) : oid;
     }
 
+    public static class ExMigrationDelayed extends ExRetryLater {
+        private static final long serialVersionUID = 0L;
+        public ExMigrationDelayed(String msg) {
+            super(msg);
+        }
+    }
+
     /**
      * This method either moves objects within the same store, or across stores via migration,
      * depending on whether the old sidx is the same as the new one.
@@ -173,9 +181,11 @@ public class ImmigrantCreator
             //    the ack of its INSERT transform and end up restoring the object incorrectly,
             //    which in turn can result in the object being incorrectly deleted if it is migrated
             //    back and forth between two stores.
-            RemoteLink lnk = _rldb.getParent_(soid.sidx(), soid.oid());
-            if (lnk == null) {
-                throw new ExRetryLater("resolve meta before migrate");
+            if (_rldb.getParent_(soid.sidx(), soid.oid()) == null) {
+                throw new ExMigrationDelayed("unresolved src meta: " + soid);
+            }
+            if (!soidToParent.oid().isRoot() && _rldb.getParent_(soidToParent.sidx(), soidToParent.oid()) == null) {
+                throw new ExMigrationDelayed("unresolved dst meta: " + soidToParent);
             }
 
             OA oa = _ds.getOA_(soid);
@@ -196,7 +206,12 @@ public class ImmigrantCreator
                         }
                     }, r -> handle_(f, r), _sameThread);
             // wait for polaris response
-            f.get();
+            try {
+                f.get();
+            } catch (ExecutionException e) {
+                l.info("", e);
+                throw new ExMigrationDelayed(e.getMessage());
+            }
 
             // polaris accepted the move, proceed with local migration
             // NB: it is unfortunate but necessary to do a local migration before receiving the

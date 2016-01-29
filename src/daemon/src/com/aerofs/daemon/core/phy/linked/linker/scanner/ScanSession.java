@@ -5,6 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.first_launch.ScanProgressReporter;
+import com.aerofs.daemon.core.migration.ImmigrantCreator.ExMigrationDelayed;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
@@ -187,54 +188,41 @@ class ScanSession
             l.info("cont.");
         }
 
-        // If we timed out the previous run or this is our first run
-        // make sure remaining paths in sortedPCRoots gets processed.
-        if (_stack.isEmpty()) addRootPathComboToStack_();
+        Set<PathCombo> delayed = new HashSet<>();
+        Set<PathCombo> backupScanned = new HashSet<>(_scanned);
+        LinkedHashSet<PathCombo> backupRoots = new LinkedHashSet<>(_sortedPCRoots);
+        do {
+            // If we timed out the previous run or this is our first run
+            // make sure remaining paths in sortedPCRoots gets processed.
+            if (_stack.isEmpty()) addRootPathComboToStack_();
 
-        // Scan recursively. Stop and request for continuation if needed.
-        try {
-            int potentialUpdates = 0;
-            Trans t = _f._tm.begin_();
+            // Scan recursively. Stop and request for continuation if needed.
+
             try {
-                ElapsedTimer timer = new ElapsedTimer();
-                while (!_stack.isEmpty()) {
-                    try {
-                        potentialUpdates += scan_(_stack.pop(), t);
-                    } catch (ExSplitTrans e) {
-                        potentialUpdates += e._updates;
-                        t = e._t;
-                        if (e.getCause() != null) {
-                            Throwables.propagateIfPossible(e.getCause(), Exception.class);
-                            throw new RuntimeException(e.getCause());
-                        }
-                    }
+                scanLoop_(delayed);
 
-                    if (potentialUpdates > CONTINUATION_UPDATES_THRESHOLD) {
-                        l.info("exceed updates thres. " + potentialUpdates);
-                        break;
-                    }
-                    if (timer.elapsed() > CONTINUATION_DURATION_THRESHOLD) {
-                        l.info("exceed duration thres. " + potentialUpdates);
-                        break;
-                    }
-
-                    // If we have any remaining elements in sortedPCRoots that weren't touched
-                    // by the DFS add them into the stack once we are done scanning one subtree.
-                    if (_stack.isEmpty()) addRootPathComboToStack_();
+                // if we had to skip over any item, the scan session should be considered a failure,
+                // even if some progress was made
+                if (!delayed.isEmpty()) {
+                    throw new Exception("delayed: " + delayed.size());
                 }
-                t.commit_();
-            } finally {
-                t.end_();
+            } catch (Exception e) {
+                // According to {@link Holder#hold_()}, we have to remove all SOIDs held by us on *any*
+                // exception. Note that the objects been removed may include those held in previous
+                // continuations of the same session.
+                _holder.removeAll_();
+                if (e instanceof ExMigrationDelayed) {
+                    l.warn("delayed migration: {}", e.getMessage());
+                    _sortedPCRoots = backupRoots;
+                    _scanned = backupScanned;
+                    _stack.clear();
+                    // retry scanning, this time skipping over the object whose migration failed
+                    continue;
+                }
+                _done = true;
+                throw e;
             }
-        } catch (Exception e) {
-            // According to {@link Holder#hold_()}, we have to remove all SOIDs held by us on *any*
-            // exception. Note that the objects been removed may include those held in previous
-            // continuations of the same session.
-            _holder.removeAll_();
-            _done = true;
-            throw e;
-        }
-
+        } while (!delayed.isEmpty());
 
         ////////
         // Finalization. No actual file operation is allowed beyond this point. All operations
@@ -252,6 +240,44 @@ class ScanSession
             l.info("end");
             _done = true;
             return true;
+        }
+    }
+
+    private void scanLoop_(Set<PathCombo> delayed) throws Exception {
+        int potentialUpdates = 0;
+        Trans t = _f._tm.begin_();
+        try {
+            ElapsedTimer timer = new ElapsedTimer();
+            while (!_stack.isEmpty()) {
+                PathCombo pc = _stack.pop();
+                try {
+                    potentialUpdates += scanFolder_(pc, delayed, t);
+                } catch (ExSplitTrans e) {
+                    potentialUpdates += e._updates;
+                    t = e._t;
+                    Throwable cause = e.getCause();
+                    if (cause != null) {
+                        Throwables.propagateIfPossible(cause, Exception.class);
+                        throw new RuntimeException(cause);
+                    }
+                }
+
+                if (potentialUpdates > CONTINUATION_UPDATES_THRESHOLD) {
+                    l.info("exceed updates thres. " + potentialUpdates);
+                    break;
+                }
+                if (timer.elapsed() > CONTINUATION_DURATION_THRESHOLD) {
+                    l.info("exceed duration thres. " + potentialUpdates);
+                    break;
+                }
+
+                // If we have any remaining elements in sortedPCRoots that weren't touched
+                // by the DFS add them into the stack once we are done scanning one subtree.
+                if (_stack.isEmpty()) addRootPathComboToStack_();
+            }
+            t.commit_();
+        } finally {
+            t.end_();
         }
     }
 
@@ -280,7 +306,7 @@ class ScanSession
         _stack.push(pcRoot);
     }
 
-    private final Set<PathCombo> _scanned = new HashSet<>();
+    private Set<PathCombo> _scanned = new HashSet<>();
 
     /**
      * Scan physical objects under the specified parent folder, stack up child folders if needed.
@@ -288,7 +314,7 @@ class ScanSession
      *
      * @return maximum number of potential updates generated by this scan.
      */
-    private int scan_(PathCombo pcParent, Trans t) throws Exception
+    private int scanFolder_(PathCombo pcParent, Set<PathCombo> delayed, Trans t) throws Exception
     {
         // a given path may not be scanned twice in the same ScanSession
         // otherwise children would be held twice in TimeoutDeletionBuffer, triggering an AE
@@ -312,7 +338,17 @@ class ScanSession
         Trans split = null;
         try {
             for (String nameChild : nameChildren) {
-                if (mightCreate_(pcParent.append(nameChild), t)) ++potentialUpdates;
+                PathCombo pc = pcParent.append(nameChild);
+                if (delayed.contains(pc)) {
+                    l.debug("skip delayed: {}", pc);
+                    continue;
+                }
+                try {
+                    if (mightCreate_(pc, t)) ++potentialUpdates;
+                } catch (ExMigrationDelayed e) {
+                    delayed.add(pc);
+                    throw e;
+                }
 
                 // commit current trans and start a new one when reaching update threshold
                 if (++scannedChildren == CONTINUATION_UPDATES_THRESHOLD) {

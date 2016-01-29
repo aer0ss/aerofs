@@ -1,3 +1,4 @@
 :group migration_group
     core.migration.should_migrate_file_up_down
     core.migration.should_migrate_local_changes
+    core.migration.should_migrate_new_destination
