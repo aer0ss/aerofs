@@ -30,6 +30,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
@@ -841,6 +842,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         BufferedChange c;
         while ((c = _mbdb.getBufferedChange_(sidx, timestamp)) != null) {
             applyBufferedChange_(sidx, c, timestamp, t);
+            ProgressIndicators.get().incrementMonotonicProgress();
         }
     }
 
