@@ -15,7 +15,7 @@ Lizard and the developer's website should be built and deployed every Monday
 
 2. Then deploy puppet as follows:
 
-        ~/repos/aerofs/tools/puppet/deploy puppet.arrowfs.org
+        ~/repos/aerofs/tools/puppet/deploy
 
 3. SSH into `enterprise.aerofs.com`, and run the following two commands:
 

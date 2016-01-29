@@ -9,14 +9,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )"
 PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster
 
-echo ">>> Creating directory to rsync puppet content..."
-ssh ${PUPPET_MASTER} "mkdir -p /tmp/puppet/$USER"
-
 echo ">>> Rsync content from local to temporary directory on server..."
-rsync --exclude ".swp" --delete -avz ${PUPPET_ROOT} ${PUPPET_MASTER}:/tmp/puppet/$USER
+rsync --exclude ".swp" --delete -avz ${PUPPET_ROOT} ${PUPPET_MASTER}:~/
 
 echo ">>> Rsync content from temporary directory on server to master location..."
-ssh ${PUPPET_MASTER} "rsync -rl --delete /tmp/puppet/$USER/puppetmaster/* /etc/puppet"
+ssh ${PUPPET_MASTER} "rsync -rl --delete ~/puppetmaster/* /etc/puppet"
 
 echo ">>> Success! Puppet master updated."
 exit 0
