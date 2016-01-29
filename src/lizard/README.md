@@ -42,7 +42,7 @@ If you're working on Hosted Private Cloud, you need to run the Celery worker to 
 
 1. Make sure redis is running: `$ redis-server /usr/local/etc/redis.conf`
 
-2. Run Celery: `$ ./env/bin/celery worker -b "redis://" -A "lizard.celery_worker.celery" -l DEBUG`
+2. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG`
 
 
 Notes

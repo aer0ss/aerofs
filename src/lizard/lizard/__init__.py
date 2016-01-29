@@ -22,6 +22,15 @@ csrf = CsrfProtect()
 db = SQLAlchemy()
 
 celery = Celery(__name__, broker='redis://', backend='redis://')
+celery.conf.update(
+    CELERY_TASK_SERIALIZER='json',
+    CELERY_ACCEPT_CONTENT=['json'],
+    CELERY_RESULT_SERIALIZER='json',
+    CELERYD_CONCURRENCY=6,
+    CELERY_ACKS_LATE=True,
+    # TODO: Enable Celery error emails so that we get alerts when tasks fail
+    # See: http://docs.celeryproject.org/en/latest/configuration.html#error-e-mails
+)
 
 
 def migrate_database(app):
