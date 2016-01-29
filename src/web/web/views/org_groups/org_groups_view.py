@@ -133,7 +133,8 @@ def json_edit_org_group(request):
                     "one of the provided member email addresses has no user in " +
                     "this organization associated with it."),
             PBException.WRONG_ORGANIZATION:
-                _("Sorry, cannot add member to this organization.")
+                _("External users cannot be added to groups. " +
+                  "Please remove the following email addresses and retry:")
             }
         )
     if len(to_remove) > 0:

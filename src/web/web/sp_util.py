@@ -1,6 +1,7 @@
 import logging
 from aerofs_common.exception import ExceptionReply
 from web.error import expected_error
+from aerofs_sp.gen.common_pb2 import PBException
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +28,10 @@ def exception2error(func, params, type2message_dict):
     except ExceptionReply as e:
         if e.get_type() in type2message_dict:
             message = type2message_dict[e.get_type()]
+            # When a WRONG_ORGANIZATION Exception is thrown, display the names of those who fail
+            # to be added to the group.
+            if e.get_type() == PBException.WRONG_ORGANIZATION:
+                message += "\n\n" + e.get_message()
             expected_error(message, e.get_type_name(), e.get_data())
         else:
             raise e

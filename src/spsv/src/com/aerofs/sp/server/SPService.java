@@ -2574,8 +2574,8 @@ public class SPService implements ISPService
                 .publish();
 
         return createReply(RecertifyDeviceReply.newBuilder()
-                    .setCert(cert.toString())
-                    .build());
+                .setCert(cert.toString())
+                .build());
     }
 
     @Override
@@ -3728,12 +3728,15 @@ public class SPService implements ISPService
         }
 
         List<InvitationEmailer> emails = Lists.newLinkedList();
+        List<String> invalidUsernames = new ArrayList<>();
         for (String userEmail : userEmails) {
             User newMember = _factUser.create(UserID.fromExternal(userEmail));
 
+            // Validate whether a user can be added to the group.
+            // Continue to go through the list to determine all the invalid users.
             if (!_authenticator.isInternalUser(newMember.id())) {
-                throw new ExWrongOrganization(newMember + " is external to this organization, " +
-                        "and not allowed to be in this organization's groups");
+                invalidUsernames.add(newMember.id().getString());
+                continue;
             } else if (newMember.exists() && !newMember.getOrganization().equals(org)) {
                 throw new ExWrongOrganization(newMember + " in wrong org");
             } else if (!newMember.exists()) {
@@ -3747,6 +3750,11 @@ public class SPService implements ISPService
             needsACLUpdate.addAll(updates._affected);
             emails.add(_invitationHelper.createBatchFolderInvitationAndEmailer(group, admin,
                     newMember, updates._folders));
+        }
+
+        // Throw exception with a list of invalid users.
+        if (!invalidUsernames.isEmpty()) {
+            throw new ExWrongOrganization(StringUtils.join(invalidUsernames, "\n"));
         }
 
         _aclPublisher.publish_(needsACLUpdate.build());

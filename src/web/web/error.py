@@ -54,7 +54,7 @@ def _form_json_body(message, type, data):
 
     message = _normalize(message)
 
-    log.error('error type: {}, message: "{}"'.format(type, message))
+    log.error('error type: {}, message: "{}", data: "{}"'.format(type, message, data))
 
     json_map = {
         'type': type,

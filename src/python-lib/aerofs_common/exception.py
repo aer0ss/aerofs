@@ -30,10 +30,13 @@ class ExceptionReply(Exception):
         """
         return self.reply.data
 
-    def __str__(self):
-        description = self.get_type_name()
+    def get_message(self):
+        description = ""
         if self.reply.HasField('plain_text_message_deprecated'):
-            description += u": {0}".format(self.reply.plain_text_message_deprecated)
+            description = u"{0}".format(self.reply.plain_text_message_deprecated)
         elif self.reply.HasField('message_deprecated'):
-            description += u": {0}".format(self.reply.message_deprecated)
+            description = u"{0}".format(self.reply.message_deprecated)
         return description
+
+    def __str__(self):
+        return self.get_type_name() + u": {0}".format(self.get_message())
