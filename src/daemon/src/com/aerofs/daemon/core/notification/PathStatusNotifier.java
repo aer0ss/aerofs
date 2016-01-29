@@ -9,13 +9,11 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.notification.ConflictNotifier.IConflictStateListener;
 import com.aerofs.daemon.core.status.PathFlagAggregator;
 import com.aerofs.daemon.core.status.PathStatus;
-import com.aerofs.daemon.core.transfers.ITransferStateListener;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.ritual_notification.RitualNotificationServer;
@@ -50,21 +48,9 @@ public class PathStatusNotifier implements IConflictStateListener, ISnapshotable
         _ds = ds;
         _rns = rns;
 
-        uls.addListener_(new ITransferStateListener() {
-            @Override
-            public void onTransferStateChanged_(TransferredItem item, TransferProgress progress)
-            {
-                onStateChanged_(item, progress, PathFlagAggregator.Uploading);
-            }
-        });
+        uls.addListener_((item, progress) -> onStateChanged_(item, progress, PathFlagAggregator.Uploading));
 
-        dls.addListener_(new ITransferStateListener() {
-            @Override
-            public void onTransferStateChanged_(TransferredItem item, TransferProgress progress)
-            {
-                onStateChanged_(item, progress, PathFlagAggregator.Downloading);
-            }
-        });
+        dls.addListener_((item, progress) -> onStateChanged_(item, progress, PathFlagAggregator.Downloading));
     }
 
     void sendPathStatusNotification_(Map<Path, PBPathStatus> pathStatuses)
@@ -87,7 +73,7 @@ public class PathStatusNotifier implements IConflictStateListener, ISnapshotable
              * We bury exceptions to comply with ITransferStateListener interface
              * This is safe because upper layers can deal with a temporary inconsistency
              */
-            l.warn(Util.e(e));
+            l.warn("", e);
         }
     }
 

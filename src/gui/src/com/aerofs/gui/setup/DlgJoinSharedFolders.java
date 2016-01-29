@@ -6,7 +6,6 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.proto.Common.PBFolderInvitation;
@@ -88,7 +87,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
             public void onFailure(Throwable throwable)
             {
                 if (!(throwable instanceof ExIndexing)) {
-                    l.warn("list pending folders:" + Util.e(throwable));
+                    l.warn("list pending folders:", throwable);
                     UI.get().show(MessageType.ERROR, throwable.toString());
                 } else {
                     UIGlobals.scheduler().schedule(new AbstractEBSelfHandling()
@@ -230,7 +229,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 try {
                     UIGlobals.ritual().joinSharedFolder(inv.getShareId());
                 } catch (Exception e) {
-                    l.warn("join folder " + inv.getFolderName() + Util.e(e));
+                    l.warn("join folder {}", inv.getFolderName(), e);
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "
                             + inv.getFolderName(), ErrorMessages.e2msgSentenceNoBracketDeprecated(e), null);
                 }

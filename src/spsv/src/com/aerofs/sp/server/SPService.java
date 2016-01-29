@@ -3,6 +3,7 @@ package com.aerofs.sp.server;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
@@ -377,7 +378,7 @@ public class SPService implements ISPService
         user = _session.isAuthenticated() ? _session.getUserNullable().id().getString()
                 : "user unknown";
 
-        l.warn(user + ": " + Util.e(e,
+        l.warn("{}: ", user, BaseLogUtil.suppress(e,
                 ExNoPerm.class,
                 ExBadCredential.class,
                 ExBadArgs.class,

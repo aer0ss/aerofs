@@ -467,7 +467,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             try {
                 watchDaemonProcess(proc);
             } catch (IOException e) {
-                l.info(Util.e(e));
+                l.info("", e);
             }
 
             // Since we returned, the daemon has died. If this was because we stopped the daemon,
@@ -597,7 +597,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         try {
             stop();
         } catch (Exception e) {
-            l.warn("ignored: " + Util.e(e));
+            l.warn("ignored: ", e);
         }
     }
 

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -18,7 +19,6 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.transfers.download.dependence.DownloadDeadlockResolver;
 import com.aerofs.ids.DID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
@@ -220,12 +220,12 @@ public class AsyncDownload extends Download implements IAsyncDownload
                 }
                 throw new ExNoAvailDevice();
             } else {
-                l.info("unsat dep {}->{} from ?: {}", _socid, e._socid, Util.e(e._e));
+                l.info("unsat dep {}->{} from ?:", _socid, e._socid, e._e);
                 throw e;
             }
         } else {
             // the dependency chain could not be followed for a device, try another
-            l.info("unsat dep {}->{} from {}: {}", _socid, e._socid, e._did, Util.e(e._e,
+            l.info("unsat dep {}->{} from {}: ", _socid, e._socid, e._did, BaseLogUtil.suppress(e._e,
                     // suppress its stack trace since it has caused huge logs in Bloomberg
                     // filled with traces from this error:
                     //

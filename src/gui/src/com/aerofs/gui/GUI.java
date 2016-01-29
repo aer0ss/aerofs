@@ -20,7 +20,6 @@ import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -192,7 +191,7 @@ public class GUI implements IUI
 
     private void reportShellExtInstallFailed(Exception e)
     {
-        l.warn("Failed to install shell extension: " + Util.e(e));
+        l.warn("Failed to install shell extension: ", e);
         UI.get().show(MessageType.WARN, "Failed to install the " +
                 OSUtil.get().getShellExtensionName() + ". " + ErrorMessages.e2msgDeprecated(e));
     }

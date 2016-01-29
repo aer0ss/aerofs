@@ -59,7 +59,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     private void runWithAdminPrivileges(String prompt, ArrayList<String> commands) throws IOException, SecurityException
     {
         // To run several commands at once, we concatenate them with ";" and run them through /bin/sh
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         result.addAll(Arrays.asList(
                 AppRoot.abs().concat("/AeroFSsetup"),
                 "--icon=" + AppRoot.abs() + "/../AeroFS.icns",
@@ -152,7 +152,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         try {
             isSymlink = isSymlink(FINDEREXT_DIR + "/Contents");
         } catch (IOException e) {
-            l.warn("isSymlink failed: " + Util.e(e));
+            l.warn("isSymlink failed: ", e);
             isSymlink = true; // in case of failure, assume success since it's not a critical check
         }
 
@@ -175,7 +175,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
      */
     private String getOwner(File file) throws IOException
     {
-        OutArg<String> result = new OutArg<String>();
+        OutArg<String> result = new OutArg<>();
         SystemUtil.execForeground(result, "/bin/sh", "-c",
                 "ls -l " + file.getParent() + " | grep " + file.getName() + " | awk '{print $3}'");
         return result.get().trim();
@@ -193,7 +193,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         try {
             return BaseUtil.hexEncode(SecUtil.hash(f));
         } catch (IOException e) {
-            l.warn("Could not compute hash for " + f + ": " + Util.e(e));
+            l.warn("Could not compute hash for {}", f, e);
             return "";
         }
     }
@@ -233,7 +233,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         if (!destination.exists() || getOwner(destination).equals("root")) {
             if (!silently) {
                 l.debug("Creating the directories for the Finder extension");
-                ArrayList<String> commands = new ArrayList<String>();
+                ArrayList<String> commands = new ArrayList<>();
                 commands.add("mkdir -p " + destination.getPath());
                 commands.add("chown $USER " + destination.getPath());
                 runWithAdminPrivileges(L.product() + " needs your password to install the "
@@ -289,7 +289,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
                 return;
             }
         } catch (IOException e) {
-            l.warn("Unable to launch Finder extension " + Util.e(e));
+            l.warn("Unable to launch Finder extension ", e);
         }
 
         l.debug("Finder extension launched");
@@ -301,7 +301,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         try {
             SystemUtil.execBackground("open", "-R", path);
         } catch (IOException e) {
-            l.warn("showInFolder failed: " + Util.e(e));
+            l.warn("showInFolder failed: ", e);
         }
     }
 

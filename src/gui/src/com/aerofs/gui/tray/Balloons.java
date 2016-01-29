@@ -1,7 +1,6 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -22,7 +21,7 @@ public class Balloons
             impl = OSUtil.isOSX() ? new BalloonsImplGrowl() :
                 new BalloonsImplSWT(icon);
         } catch (Exception e) {
-            l.error("cannot create balloons: " + Util.e(e));
+            l.error("cannot create balloons: ", e);
         }
 
         _impl = impl;

@@ -1,7 +1,6 @@
 package com.aerofs.sp.server.listeners;
 
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
-import com.aerofs.lib.Util;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -21,7 +20,7 @@ public class ConfigurationLifecycleListener
         try {
             ServerConfigurationLoader.initialize("sp");
         } catch (Exception e) {
-            throw new RuntimeException("Configuration server init error: " + Util.e(e));
+            throw new RuntimeException("Configuration server init error", e);
         }
     }
 

@@ -21,7 +21,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.GetActivitiesReply;
@@ -274,7 +273,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
                     {
                         activitiesPopulator.clearAllMenuItems();
                         activitiesPopulator.addErrorMenuItem(S.COULDNT_LIST_ACTIVITIES);
-                        l.warn(Util.e(e));
+                        l.warn("failed to fetch recent activity", e);
                         done();
                     }
 

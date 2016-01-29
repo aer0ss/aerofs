@@ -16,7 +16,6 @@ import com.aerofs.daemon.event.fs.EICreateRoot;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -72,12 +71,13 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
         try {
             callSPToCreateSharedFolder_(f.getName(), sid);
         } catch (Exception e) {
+            l.error("shared folder creation failed", e);
             try {
                 unlinkRoot_(sid, sidx);
             } catch (Exception ex) {
                 // NB: unlinking of a freshly linked root should only ever fail if db or fs
                 // failure of catastrophic proportion occurs
-                l.error("link rollback failed: {} {}", Util.e(ex), Util.e(e));
+                l.error("link rollback failed", ex);
                 throw ex;
             }
             throw e;
@@ -90,7 +90,7 @@ public class HdCreateRoot extends AbstractHdIMC<EICreateRoot>
             _aclsync.syncToLocal_();
         } catch (Exception e) {
             // ACL update is not critical to this call so we can safely ignore a failure
-            l.warn("post-link acl sync failed: {}", Util.e(e));
+            l.warn("post-link acl sync failed: {}", e);
         }
         l.info("linked {} {}", ev._path, sid);
     }

@@ -207,13 +207,7 @@ public class TrayIcon implements ITrayMenuListener
     {
         _notificationReasons.clear();
 
-        GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
-            @Override
-            public void run()
-            {
-                refreshTrayIconImage();
-            }
-        });
+        GUI.get().safeAsyncExec(iconImpl(), this::refreshTrayIconImage);
     }
 
     public void showNotification(NotificationReason reason, boolean b)
@@ -224,13 +218,7 @@ public class TrayIcon implements ITrayMenuListener
             _notificationReasons.remove(reason);
         }
 
-        GUI.get().safeAsyncExec(iconImpl(), new Runnable() {
-            @Override
-            public void run()
-            {
-                refreshTrayIconImage();
-            }
-        });
+        GUI.get().safeAsyncExec(iconImpl(), TrayIcon.this::refreshTrayIconImage);
     }
 
     private final RateLimitedTask _refreshTask = new RateLimitedTask(SLOW_REFRESH_DELAY)
@@ -304,7 +292,7 @@ public class TrayIcon implements ITrayMenuListener
             Point pos = (Point)getLocation.invoke(_ti);
             return new TrayPosition(pos.x, pos.y, Orientation.Top);
         } catch (Exception e) {
-            l.warn("Failed to get tray icon position: " + Util.e(e));
+            l.warn("Failed to get tray icon position: ", e);
 
             newDefectWithLogs("gui.tray_icon.osx")
                     .setMessage("failed to get tray icon position from SWT")
@@ -362,15 +350,10 @@ public class TrayIcon implements ITrayMenuListener
 
             private void updateOnlineStatus(final boolean isOnline)
             {
-                GUI.get().safeAsyncExec(iconImpl(), new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        _isOnline = isOnline;
-                        updateToolTipText();
-                        refreshTrayIconImage();
-                    }
+                GUI.get().safeAsyncExec(iconImpl(), () -> {
+                    _isOnline = isOnline;
+                    updateToolTipText();
+                    refreshTrayIconImage();
                 });
             }
         });
@@ -388,14 +371,9 @@ public class TrayIcon implements ITrayMenuListener
         @Override
         public void onProgressChanged(Progresses progresses)
         {
-            GUI.get().safeAsyncExec(iconImpl(), new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    updateToolTipText();
-                    refreshTrayIconImage();
-                }
+            GUI.get().safeAsyncExec(iconImpl(), () -> {
+                updateToolTipText();
+                refreshTrayIconImage();
             });
         }
     }

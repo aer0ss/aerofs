@@ -19,7 +19,6 @@ import com.aerofs.daemon.transport.lib.IMulticastListener;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -170,7 +169,7 @@ class Multicast implements IMaxcast, ILinkStateListener
                 PBTPHeader pong = stores.newPongMessage(true);
                 if (pong != null) sendControlMessage(pong);
             } catch (IOException e) {
-                l.warn("send ping or pong: " + Util.e(e));
+                l.warn("send ping or pong: ", BaseLogUtil.suppress(e, SocketException.class));
             }
         }
 

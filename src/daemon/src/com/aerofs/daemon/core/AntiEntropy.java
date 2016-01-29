@@ -1,16 +1,20 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExNoAvailDevice;
 import com.aerofs.daemon.core.store.LegacyStore;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.GetVersionsRequest;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
@@ -138,7 +142,8 @@ public class AntiEntropy
             if (s == null || !s.hasOnlinePotentialMemberDevices_()) return;
             req.sendGetVersRequests_(did);
         } catch (Exception e) {
-            l.warn("{} {}", req._sidx, did, e);
+            l.warn("{} {}", req._sidx, did, BaseLogUtil.suppress(e, ExAborted.class,
+                    ExNoAvailDevice.class, ExTimeout.class, ExStreamInvalid.class));
         }
     }
 
@@ -206,7 +211,7 @@ public class AntiEntropy
                 // we tolerate no runtime exceptions
                 throw e;
             } catch (Exception e) {
-                l.warn("{}: {}", s, Util.e(e));
+                l.warn("{}:", s, e);
             }
             return true;
         }

@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -99,7 +98,7 @@ public class EmigrantDetector implements IEmigrantDetector
                 } catch (Exception e) {
                     // it might be a false alarm, as the child may have been downloaded and migrated
                     // before the downloadSync above started the download thread.
-                    l.debug("emigration child dl {}, bug ENG-1287: {}", socidChild, Util.e(e));
+                    l.debug("emigration child dl {}, bug ENG-1287: {}", socidChild, e);
                 }
             }
         }

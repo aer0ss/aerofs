@@ -220,19 +220,12 @@ class DefectUtils
     static File[] getFiles(String absRTRoot, final boolean uploadLogs, final boolean uploadDB,
             final boolean uploadHeapDumps, boolean uploadFilenames, final boolean uploadAllFiles)
     {
-        File[] files = new File(absRTRoot).listFiles(new FilenameFilter()
-        {
-            @Override
-            public boolean accept(File file, String filename)
-            {
-                return uploadAllFiles
-                        || (uploadLogs && filename.endsWith(LibParam.LOG_FILE_EXT))
-                        || (uploadDB && (filename.startsWith(LibParam.OBF_CORE_DATABASE)
-                                               || filename.endsWith("wal")
-                                               || filename.endsWith("shm")))
-                        || (uploadHeapDumps && filename.endsWith(LibParam.HPROF_FILE_EXT));
-            }
-        });
+        File[] files = new File(absRTRoot).listFiles((file, filename) -> uploadAllFiles
+                || (uploadLogs && filename.endsWith(LibParam.LOG_FILE_EXT))
+                || (uploadDB && (filename.startsWith(LibParam.OBF_CORE_DATABASE)
+                                       || filename.endsWith("wal")
+                                       || filename.endsWith("shm")))
+                || (uploadHeapDumps && filename.endsWith(LibParam.HPROF_FILE_EXT)));
 
         if (files == null) {
             l.error("rtroot not found");
@@ -258,7 +251,7 @@ class DefectUtils
             f.deleteOnExit();
             return f;
         } catch (IOException e) {
-            l.warn("create temp file failed: " + e(e));
+            l.warn("create temp file failed: ", e);
             return null;
         }
     }
@@ -268,7 +261,7 @@ class DefectUtils
      */
     private static void writeFileNames(BufferedWriter bw) throws IOException
     {
-        Stack<String> stack = new Stack<String>();
+        Stack<String> stack = new Stack<>();
         stack.push(Cfg.absDefaultRootAnchor());
 
         while (!stack.isEmpty()) {
@@ -294,11 +287,8 @@ class DefectUtils
 
     static void deleteOldHeapDumps()
     {
-        File[] heapDumps = new File(absRTRoot()).listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String filename) {
-                return filename.endsWith(LibParam.HPROF_FILE_EXT);
-            }
+        File[] heapDumps = new File(absRTRoot()).listFiles((file, filename) -> {
+            return filename.endsWith(LibParam.HPROF_FILE_EXT);
         });
         if (heapDumps == null) {
             l.error("rtRoot not found.");

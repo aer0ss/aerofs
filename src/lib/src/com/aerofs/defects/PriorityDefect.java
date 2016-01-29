@@ -119,7 +119,7 @@ public abstract class PriorityDefect
         try {
             Cfg.db().set(CONTACT_EMAIL, contactEmail);
         } catch (SQLException e) {
-            l.warn("Failed to set contact email, ignored: " + Util.e(e));
+            l.warn("Failed to set contact email, ignored: ", e);
         }
     }
 

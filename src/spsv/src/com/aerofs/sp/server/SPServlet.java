@@ -12,7 +12,6 @@ import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.lib.LibParam.REDIS;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.AsyncEmailSender;
@@ -406,7 +405,7 @@ public class SPServlet extends AeroServlet
             _sqlTrans.cleanUp();
             _jedisTrans.cleanUp();
         } catch (Throwable e) {
-            l.warn("exception in reactor: " + Util.e(e));
+            l.warn("exception in reactor: ", e);
             throw new IOException(e.getCause());
         }
 
@@ -433,7 +432,7 @@ public class SPServlet extends AeroServlet
                 rsp.getWriter().print(json.toJSONString());
             }
         } catch (Exception e) {
-            l.warn("Database check error: " + Util.e(e));
+            l.warn("Database check error: ", e);
             throw new IOException(e);
         }
     }

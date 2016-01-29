@@ -308,7 +308,7 @@ public class UIUtil
 
     private static void logAndShowLaunchError(Throwable e)
     {
-        l.warn(Util.e(e));
+        l.warn("", e);
 
         String errMessage;
         if (e instanceof ExUIMessage) errMessage = e.getMessage();
@@ -433,7 +433,7 @@ public class UIUtil
                 }
             }
         } catch (IOException e) {
-            l.warn(Util.e(e));
+            l.warn("", e);
         }
         return null;
     }

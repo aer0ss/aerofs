@@ -15,7 +15,6 @@ import com.aerofs.gui.sharing.Subject.User;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
@@ -344,7 +343,7 @@ public class CompUserList extends Composite
             {
                 setUIBusyState(false);
 
-                l.warn(Util.e(t));
+                l.warn("failed to update role", t);
 
                 if (canHandle(t)) {
                     if (promptUserToSuppressWarning(getShell(), t)) {

@@ -505,9 +505,8 @@ public class BlockStorageDatabase extends AbstractDatabase
             _psDeleteBlock.setBytes(1, chunk.getBytes());
             _psDeleteBlock.execute();
         } catch (SQLException e) {
-            l.warn(Util.e(e));
             DBUtil.close(_psDeleteBlock);
-            _psDeleteBlock =null;
+            _psDeleteBlock = null;
             throw detectCorruption(e);
         }
     }
@@ -525,7 +524,6 @@ public class BlockStorageDatabase extends AbstractDatabase
 
             return new DBIterDeadBlocks(_psGetDeadBlocks.executeQuery());
         } catch (SQLException e) {
-            l.warn(Util.e(e));
             DBUtil.close(_psGetDeadBlocks);
             _psGetDeadBlocks = null;
             throw detectCorruption(e);

@@ -253,7 +253,7 @@ public class Setup
         try {
             UIGlobals.dm().stop();
         } catch (IOException e) {
-            l.warn("cleaning up the old daemon failed: " + Util.e(e));
+            l.warn("cleaning up the old daemon failed: ", e);
         }
 
         // Create default root anchor, if missing
@@ -352,16 +352,11 @@ public class Setup
      */
     private static void addToFavorite(final String rootAnchorPath)
     {
-        ThreadUtil.startDaemonThread("gui-fav", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    OSUtil.get().addToFavorite(rootAnchorPath);
-                } catch (Exception e) {
-                    l.warn("add to fav: " + Util.e(e));
-                }
+        ThreadUtil.startDaemonThread("gui-fav", () -> {
+            try {
+                OSUtil.get().addToFavorite(rootAnchorPath);
+            } catch (Exception e) {
+                l.warn("add to fav: ", e);
             }
         });
     }

@@ -140,7 +140,7 @@ public class LinkerRootMap
                     missingStores.add(e.getKey());
                 }
             } catch (IOException ex) {
-                l.error("failed to add root {} {} {}", e.getKey(), e.getValue(), Util.e(ex));
+                l.error("failed to add root {} {}", e.getKey(), e.getValue(), ex);
 
                 setFailedRootSID_(e.getKey());
                 ExitCode exitCode = (ex instanceof ProbeException)

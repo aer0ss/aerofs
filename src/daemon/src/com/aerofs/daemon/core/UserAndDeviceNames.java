@@ -4,10 +4,7 @@
 
 package com.aerofs.daemon.core;
 
-import com.aerofs.base.BaseUtil;
-import com.aerofs.base.C;
-import com.aerofs.base.ElapsedTimer;
-import com.aerofs.base.Loggers;
+import com.aerofs.base.*;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -18,7 +15,6 @@ import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
@@ -128,7 +124,7 @@ public class UserAndDeviceNames
         try {
             reply = getDevicesInfoFromSP_(dids);
         } catch (Exception e) {
-            l.warn("ignored: " + Util.e(e, IOException.class));
+            l.warn("ignored: ", BaseLogUtil.suppress(e, IOException.class));
             throw e;
         }
 

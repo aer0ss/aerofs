@@ -203,7 +203,7 @@ public final class CommandNotificationSubscriber implements EventHandler
             } catch (Exception e) {
                 error = true;
                 errorCount++;
-                l.error("cmd: unable to process in sync: " + Util.e(e));
+                l.error("cmd: unable to process in sync:", e);
             }
 
             SPBlockingClient spAuthenticated = newAuthenticatedSPClient();

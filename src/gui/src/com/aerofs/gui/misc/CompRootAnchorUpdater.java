@@ -12,7 +12,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
@@ -155,7 +154,7 @@ public class CompRootAnchorUpdater extends Composite
             GUI.get().show(getShell(), MessageType.ERROR,
                     "An error occured while updating the location: " + ErrorMessages.e2msgDeprecated(
                             e));
-            l.warn(Util.e(e));
+            l.warn("failed to update root anchor", e);
             return false;
         }
     }

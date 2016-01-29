@@ -89,7 +89,7 @@ abstract class AbstractLinuxUpdater extends Updater
                                         L.product() + " Client :)";
                     sp.emailUser(subject, body);
                 } catch (Exception e2) {
-                    l.warn("can't send email. ignored: " + Util.e(e));
+                    l.warn("can't send email. ignored: ", e);
                 }
             }
         }

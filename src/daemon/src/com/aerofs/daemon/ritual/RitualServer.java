@@ -5,7 +5,6 @@ import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExUpdating;
@@ -137,7 +136,7 @@ public class RitualServer
             SystemUtil.fatalOnUncheckedException(e.getCause());
 
             // Close the connection when an exception is raised.
-            l.warn("ritual server exception: " + Util.e(e.getCause()));
+            l.warn("ritual server exception: ", e.getCause());
             e.getChannel().close();
         }
 

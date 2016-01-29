@@ -614,7 +614,7 @@ public class LinkedStorage implements IPhysicalStorage
                         try {
                             rf.delete_();
                         } catch (IOException ioe) {
-                            l.warn(Util.e(ioe));
+                            l.warn("", ioe);
                         }
                     }
                 }

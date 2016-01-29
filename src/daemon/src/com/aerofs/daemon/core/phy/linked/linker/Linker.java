@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.fs.EIUnlinkRoot;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
@@ -116,7 +115,7 @@ public class Linker implements ILinker, IListener
             _notifier.start_();
         } catch (IOException e) {
             // TODO: special exit code for Linker start error?
-            SystemUtil.fatal("failed to start linker " + Util.e(e));
+            SystemUtil.fatal(e);
         }
     }
 

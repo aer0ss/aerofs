@@ -1,7 +1,12 @@
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.core.ex.ExAborted;
+import com.aerofs.daemon.core.ex.ExNoAvailDevice;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -336,7 +341,7 @@ public class Collector implements IDumpStatMisc
             } catch (SQLException e) {
                 // filters may be failed to be removed from the db which is not
                 // a big deal
-                l.debug("stop clct 4 {}, ignored: {}", _sidx, Util.e(e));
+                l.debug("stop clct 4 {}, ignored:", _sidx, e);
             }
         }
     }
@@ -413,14 +418,14 @@ public class Collector implements IDumpStatMisc
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
         {
-            String eMsg = Util.e(e);
-            l.debug("cdl {}: {}", socid, eMsg);
+            l.debug("cdl {}: ", socid, BaseLogUtil.suppress(e, ExAborted.class,
+                    ExNoAvailDevice.class, ExTimeout.class, ExStreamInvalid.class));
 
             // For general errors, we want to re-run this collector.
             // Indicate the BFs are dirty for all devices of interest so
             // that they are re-introduced into the next collector iteration.
             for (DID did : _dids) _cfs.setDirtyBit_(did);
-            checkState(!_dids.isEmpty(), "%s %s", socid, eMsg);
+            checkState(!_dids.isEmpty(), "%s %s", socid, e);
             scheduleBackoff_();
             postDownloadCompletionTask_();
         }

@@ -6,9 +6,7 @@ import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.InitErrors;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgUtils;
 import com.aerofs.lib.configuration.ClientConfigurationLoader;
@@ -64,17 +62,8 @@ public class MainUtil
             }));
 
         } catch (Exception e) {
-            // FIXME(jP): Can we remove this? Does it ever work?
-            String msg = "Error starting log subsystem: " + Util.e(e);
-            // I don't know how to output to system.logging on mac/linux. so use
-            // the command line as a quick/dirty approach
-            try {
-                SystemUtil.execForeground("logger", msg);
-            } catch (Exception e2) {
-                // ignored
-            }
-
-            System.err.println(msg);
+            System.err.println("error starting log subsystem");
+            e.printStackTrace(System.err);
             ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
         }
 
@@ -84,8 +73,6 @@ public class MainUtil
             l.debug("profiler: {}", Cfg.profilerStartingThreshold());
         }
     }
-
-
 
     static void createRtRootIfNotExists(String rtRoot)
     {
@@ -157,7 +144,7 @@ public class MainUtil
             fieldSysPath.set(null, null); // force sys_paths to re-evaluate java.library.path
         } catch (Exception e) {
             // ignored
-            l.warn("The property java.library.path could not be set to {} - {}",appRoot, Util.e(e));
+            l.warn("The property java.library.path could not be set to {}", appRoot, e);
         }
     }
 }

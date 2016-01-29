@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -26,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -38,7 +38,6 @@ import java.util.zip.CRC32;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
-import static com.google.common.collect.Sets.newHashSet;
 
 public abstract class Util
 {
@@ -146,59 +145,6 @@ public abstract class Util
     public static void logAllThreadStackTraces()
     {
         l.error("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces());
-    }
-
-    private static Set<Class<?>> s_suppressStackTrace = newHashSet();
-    static {
-        s_suppressStackTrace.add(ExTimeout.class);
-        s_suppressStackTrace.add(ExBadCredential.class);
-    }
-
-    private static Class<?>[] s_suppressStackTraceBaseClasses = new Class<?>[] {
-        SocketException.class,
-    };
-
-    /**
-     * Registered additional exception classes whose stack traces should not be printed on logs
-     */
-    public static void suppressStackTraces(Class<?>... classes)
-    {
-        Collections.addAll(s_suppressStackTrace, classes);
-    }
-
-    // TODO (jP): Remove this method along with Util.e.
-    private static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
-    {
-        for (Class<?> suppress : suppressStackTrace) {
-            if (suppress.isInstance(e)) return false;
-        }
-        if (s_suppressStackTrace.contains(e.getClass())) return false;
-        for (Class<?> excludeBase : s_suppressStackTraceBaseClasses) {
-            if (excludeBase.isInstance(e)) return false;
-        }
-        return true;
-    }
-
-    /**
-     * FIXME(jP): This method should be removed. For logging, please use:
-     *      logger.warn("This bad thing happened", e);
-     * If you want to suppress a stack trace, use:
-     *      logger.info("This ok thing happened", LogUtil.suppress(e));
-     *
-     * Return the logging string of the exception. The string includes the stack trace for all the
-     * exception classses except those defined in s_suppressStackTrace* (see above) and as the
-     * suppressStackTrace parameter.
-     *
-     * @param suppressStackTrace the exception classes of which the stack trace should be
-     * suppressed.
-     */
-    public static String e(Throwable e, Class<?> ... suppressStackTrace)
-    {
-        if (shouldPrintStackTrace(e, suppressStackTrace)) {
-            return Exceptions.getStackTraceAsString(e);
-        } else {
-            return e.getClass().getName() + ": " + e.getMessage();
-        }
     }
 
     public static String quote(Object o)
@@ -594,20 +540,6 @@ public abstract class Util
         return ThreadLocalRandom.current();
     }
 
-    /**
-     * runs a retryable Callable in a new thread (allows you to specify all parameters)
-     */
-    public static void exponentialRetryNewThread(
-            final String name,
-            final long initialRetryInterval,
-            final long maxRetryInterval,
-            final Callable<Void> call,
-            final Class<?> ... excludes)
-    {
-        ThreadUtil.startDaemonThread(name,
-                () -> exponentialRetry(name, initialRetryInterval, maxRetryInterval, call, excludes));
-    }
-
     public static void exponentialRetry(String name, Callable<Void> call, Class<?>... excludes)
     {
         exponentialRetry(name, LibParam.EXP_RETRY_MIN_DEFAULT, LibParam.EXP_RETRY_MAX_DEFAULT, call, excludes);
@@ -635,7 +567,7 @@ public abstract class Util
                 throw e;
 
             } catch (Exception e) {
-                l.warn("{} expo wait:{} cause:{}", name, retryInterval, e(e, excludes));
+                l.warn("{} expo wait:{} cause:{}", name, retryInterval, BaseLogUtil.suppress(e, excludes));
                 ThreadUtil.sleepUninterruptable(retryInterval);
                 retryInterval = Math.min(retryInterval * 2, maxRetryInterval);
             }

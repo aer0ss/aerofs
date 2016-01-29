@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
@@ -75,7 +74,7 @@ public class QuotaEnforcement implements IQuotaEnforcement
                     enforceQuotas_();
                 } catch (Exception e) {
                     // Don't retry on errors. Wait for the next opportunity.
-                    l.warn("error in check quota. ignored. {}", Util.e(e));
+                    l.warn("error in check quota. ignored.", e);
                 }
 
                 _sched.schedule(this, CHECK_QUOTA_INTERVAL);

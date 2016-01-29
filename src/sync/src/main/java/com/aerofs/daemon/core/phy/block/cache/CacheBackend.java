@@ -368,7 +368,7 @@ public class CacheBackend implements IBlockStorageBackend
                 try {
                     writeDirtyMap_();
                 } catch (SQLException e) {
-                    l.error(Util.e(e));
+                    l.error("cache writeback failed", e);
                 }
                 // this has to be run in a core thread
                 _spaceFreer.schedule_();
@@ -424,7 +424,7 @@ public class CacheBackend implements IBlockStorageBackend
                 try {
                     freeSomeSpace_();
                 } catch (SQLException e) {
-                    l.warn(Util.e(e));
+                    l.warn("cache cleanup failed", e);
                 }
             });
             schedule_();
@@ -451,8 +451,8 @@ public class CacheBackend implements IBlockStorageBackend
             long freeSpaceLow = (long)(totalSpace * FREE_SPACE_LOW);
 
             long freeSpace = getFreeSpace();
-            l.debug("free space: " + Util.formatSize(freeSpace) +
-                    " needed: " + Util.formatSize(freeSpaceLow));
+            l.debug("free space: {} needed: {}",
+                    Util.formatSize(freeSpace), Util.formatSize(freeSpaceLow));
             if (freeSpace > freeSpaceLow) return;
 
             long freeSpaceHigh = (long)(totalSpace * FREE_SPACE_HIGH);
@@ -499,7 +499,7 @@ public class CacheBackend implements IBlockStorageBackend
 
                 return length;
             } catch (IOException e) {
-                l.warn(Util.e(e));
+                l.warn("cache removal failed", e);
                 return 0;
             }
         }

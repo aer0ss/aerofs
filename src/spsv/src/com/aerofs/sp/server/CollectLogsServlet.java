@@ -131,7 +131,7 @@ public class CollectLogsServlet extends HttpServlet
 
             resp.setStatus(200);
         } catch (Exception e) {
-            l.error(Util.e(e));
+            l.error("", e);
             resp.setStatus(500);
         }
     }

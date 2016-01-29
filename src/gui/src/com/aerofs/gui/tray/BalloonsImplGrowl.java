@@ -35,7 +35,7 @@ public class BalloonsImplGrowl implements IBalloonsImpl
         try {
             _growl.registerNotifications(_gInfo, _gWarn);
         } catch (UnsatisfiedLinkError e) {
-            l.warn("Failed to load the Growl library: " + Util.e(e));
+            l.warn("Failed to load the Growl library: ", e);
         }
     }
 

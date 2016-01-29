@@ -1,9 +1,9 @@
 package com.aerofs.gui.shellext;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.net.NettyUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
 import com.aerofs.lib.nativesocket.NativeSocketHelper;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -84,7 +84,7 @@ class ShellextServer
                 byte[] message = NettyUtil.toByteArray((ChannelBuffer)e.getMessage());
                 _service.react(message);
             } catch (Exception ex) {
-                l.warn("ShellextServerHandler: Exception " + Util.e(ex));
+                l.warn("failed to handle message", ex);
             }
         }
 
@@ -92,7 +92,7 @@ class ShellextServer
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
             // Close the connection when an exception is raised.
-            l.warn("Unexpected exception: " + Util.e(e.getCause()));
+            l.warn("Unexpected exception: ", BaseLogUtil.suppress(e.getCause(), SocketException.class));
             e.getChannel().close();
         }
     }

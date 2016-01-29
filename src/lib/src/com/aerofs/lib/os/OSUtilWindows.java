@@ -116,7 +116,7 @@ public class OSUtilWindows implements IOSUtil
         }
 
         try {
-            OutArg<String> out = new OutArg<String>();
+            OutArg<String> out = new OutArg<>();
             int exit = SystemUtil.execForeground(out, "reg", "query",
                     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
                     "/v", "Personal");
@@ -137,7 +137,7 @@ public class OSUtilWindows implements IOSUtil
             }
 
         } catch (IOException e) {
-            l.warn(Util.e(e));
+            l.warn("", e);
             return getUserHomeDir();
         }
     }
@@ -418,7 +418,7 @@ public class OSUtilWindows implements IOSUtil
         try {
             SystemUtil.execBackground(arr2);
         } catch (IOException e) {
-            l.warn("showInFolder failed: " + Util.e(e));
+            l.warn("showInFolder failed: ", e);
         }
     }
 

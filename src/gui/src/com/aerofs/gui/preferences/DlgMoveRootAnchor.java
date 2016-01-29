@@ -15,7 +15,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
@@ -124,7 +123,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker
     {
         _compSpin.stop();
 
-        l.warn(Util.e(e));
+        l.warn("failed to relocate root anchor", e);
 
         // Convert exception messages to readable format
         StringBuilder msg = new StringBuilder(e.getMessage() == null || e.getMessage().isEmpty() ?

@@ -4,6 +4,7 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.SID;
 import com.aerofs.cli.CLI;
@@ -15,7 +16,6 @@ import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.formatted.MessageFormatters;
@@ -82,7 +82,7 @@ public class SanityPoller
                     // If we were interrupted and we have not beeen stopped by the stop()
                     // function, this is bad and we must bail.
                     if (!_stopping) {
-                        l.error("Interrupted exception while sleeping in poller: " + Util.e(e));
+                        l.error("Interrupted exception while sleeping in poller: ", e);
                         SystemUtil.fatal(e);
                     }
                 }
@@ -128,7 +128,7 @@ public class SanityPoller
                 notifyMissingRootAnchor_(absPath, sid);
             } catch (Exception ex) {
                 // We can just warn because we will retry later.
-                l.warn("Error occurred while notifying missing root anchor: {}", Util.e(ex));
+                l.warn("Error occurred while notifying missing root anchor: ", ex);
             }
         }
     }
@@ -297,7 +297,7 @@ public class SanityPoller
         try {
             UIGlobals.ritual().heartbeat();
         } catch (Exception e) {
-            l.warn("Rpc call failure ignored: " + Util.e(e, Exception.class));
+            l.warn("Rpc call failure ignored: ", BaseLogUtil.suppress(e));
         }
         UIGlobals.dm().stopIgnoreException();
     }
@@ -310,10 +310,10 @@ public class SanityPoller
         try {
             UIGlobals.dm().start();  // restart the daemon
         } catch (Exception e1) {
+            l.warn("", e1);
             UI.get().show(MessageType.ERROR,
                     "An error occured while starting up " + L.product() +
                             " " + ErrorMessages.e2msgDeprecated(e1));
-            l.warn(Util.e(e1));
         }
     }
 }

@@ -212,7 +212,7 @@ public class PreferencesHelper
                 } catch (ExBadCredential ebc) {
                     l.warn("ExBadCredential", LogUtil.suppress(ebc));
                 } catch (Exception e2) {
-                    l.warn(Util.e(e2));
+                    l.warn("", e2);
                     e = e2;
                 }
 

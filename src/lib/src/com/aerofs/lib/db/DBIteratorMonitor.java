@@ -46,7 +46,7 @@ public class DBIteratorMonitor
         if (TRACKING_ENABLED) {
             if (s_iters != null) {
                 for (Exception e : s_iters.values()) {
-                    l.warn("unclosed db iterator created at:\n" + Util.e(e));
+                    l.warn("unclosed db iterator created at:" + e);
                 }
             }
         }

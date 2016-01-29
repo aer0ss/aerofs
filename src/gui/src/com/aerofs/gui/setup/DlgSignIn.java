@@ -465,7 +465,7 @@ public class DlgSignIn extends TitleAreaDialog
                     break;
                 }
             } catch (IOException e) {
-                l.warn("Installing shell extension failed: " + Util.e(e));
+                l.warn("Installing shell extension failed: ", e);
                 break;
             }
         }

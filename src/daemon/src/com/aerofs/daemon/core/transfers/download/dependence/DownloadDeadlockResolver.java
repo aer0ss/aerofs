@@ -254,7 +254,7 @@ public class DownloadDeadlockResolver
             t.commit_();
         } catch (IOException | ExNotFound e) {
             // Assert false as we want to know when exceptions happen in the DeadlockResolver
-            assert false : Util.e(e) + " " + cycle;
+            throw new AssertionError(cycle.toString(), e);
         }
     }
 

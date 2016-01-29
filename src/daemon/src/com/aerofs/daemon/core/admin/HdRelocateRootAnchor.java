@@ -16,7 +16,6 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
@@ -135,7 +134,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
             t.commit_();
         } catch (Exception e) {
-            l.warn("Move failed. Rollback: " + Util.e(e));
+            l.warn("Move failed. Rollback: ", e);
 
             if (isDefaultRoot) Cfg.db().set(ROOT, absOldRoot);
             // Restart Cfg settings since the daemon keeps running

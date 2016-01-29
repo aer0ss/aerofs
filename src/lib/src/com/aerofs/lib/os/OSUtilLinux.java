@@ -134,12 +134,8 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
      */
     private String readFirstFile(String dir, final Pattern pattern)
     {
-        File[] files = new File(dir).listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File arg0, String name)
-            {
-                return pattern.matcher(name).matches();
-            }
+        File[] files = new File(dir).listFiles((arg0, name) -> {
+            return pattern.matcher(name).matches();
         });
 
         if (files == null || files.length == 0) return "";
@@ -147,7 +143,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         try {
             return Files.toString(files[0], Charsets.UTF_8).trim();
         } catch (IOException e) {
-            l.warn("trying to read " + files[0] + " - " + Util.e(e));
+            l.warn("trying to read {}", files[0], e);
             return "";
         }
     }
@@ -172,29 +168,22 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         InjectableFile tmpFile = factFile.createTempFile(".gtk-bookmarks","$$$");
 
         String currentLine;
-        BufferedReader reader = new BufferedReader(new FileReader(f.getImplementation()));
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(tmpFile.getImplementation()));
-
-            try {
-                while ((currentLine = reader.readLine()) != null) {
+        try (BufferedReader in = new BufferedReader(new FileReader(f.getImplementation()))) {
+            try (BufferedWriter out = new BufferedWriter(new FileWriter(tmpFile.getImplementation()))) {
+                while ((currentLine = in.readLine()) != null) {
                     if (currentLine.contains(path)) continue;
-                    writer.write(currentLine);
+                    out.write(currentLine);
                 }
-            } finally {
-                if (writer != null) writer.close();
             }
             tmpFile.copy(f, false, false);
             tmpFile.deleteOrOnExit();
-        } finally {
-            if (reader != null) reader.close();
         }
     }
 
     @Override
     public String getFileSystemType(String path, OutArg<Boolean> remote) throws IOException
     {
-        OutArg<String> output = new OutArg<String>();
+        OutArg<String> output = new OutArg<>();
         SystemUtil.execForeground(output, "stat", "-f", "--format=%T", path);
         String fstype = output.get().trim();
         remote.set(fstype.equals("nfs"));
@@ -280,7 +269,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
                 }
             }
         } catch (IOException e) {
-            l.warn("showInFolder failed: " + Util.e(e));
+            l.warn("showInFolder failed: ", e);
         }
     }
 

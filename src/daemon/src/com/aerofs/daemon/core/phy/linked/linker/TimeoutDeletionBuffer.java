@@ -18,7 +18,6 @@ import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.C;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -247,7 +246,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                             reschedule_();
                         }
                     } catch (Exception e) {
-                        l.warn(Util.e(e));
+                        l.warn("", e);
                         // Reschedule a later deletion if anything went wrong
                         reschedule_();
                     }

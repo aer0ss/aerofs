@@ -203,7 +203,7 @@ public class HistoryModel
                 }
                 return list;
             } catch (Exception e) {
-                l.warn("ignored exception: " + Util.e(e));
+                l.warn("ignored exception: ", e);
                 return getModelIndexForDefaultRoot();
             }
         } else {
@@ -306,7 +306,7 @@ public class HistoryModel
             children = newArrayList(cm.values());
             Collections.sort(children);
         } catch (Exception e) {
-            l.warn(Util.e(e));
+            l.warn("", e);
         }
         return children;
     }
@@ -345,7 +345,7 @@ public class HistoryModel
             return versions(index);
         } catch (Exception e) {
             // TODO: invalidate index?
-            l.warn(Util.e(e));
+            l.warn("", e);
             return null;
         }
     }

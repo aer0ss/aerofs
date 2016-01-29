@@ -42,7 +42,7 @@ public class Main
         String rtRoot = args[0];
         String prog = args[1];
 
-        List<String> appArgs = new LinkedList<String>();
+        List<String> appArgs = new LinkedList<>();
         for (int i = REQUIRED_ARGS; i < args.length; i++) {
             appArgs.add(args[i]);
         }
@@ -70,9 +70,9 @@ public class Main
                     // exceptions.
                     launchProgram(rtRoot, prog, appArgs.toArray(new String[0]));
                 } catch (Throwable e) {
-                    String message = "failed in main(): " + Util.e(e);
-                    System.err.println(message);
-                    l.error("{}", message, e);
+                    System.err.println("failed in main():");
+                    e.printStackTrace(System.err);
+                    l.error("failed in main():", e);
                     ExitCode.FAIL_TO_LAUNCH.exit();
                 }
             } else {
@@ -98,9 +98,9 @@ public class Main
             l.error(message, e);
             ExitCode.CORRUPTED_DB.exit();
         } catch (Throwable e) {
-            String message = "failed in main(): " + Util.e(e);
-            System.err.println(message);
-            l.error("{}", message, e);
+            System.err.println("failed in main():");
+            e.printStackTrace(System.err);
+            l.error("failed in main():", e);
             ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }

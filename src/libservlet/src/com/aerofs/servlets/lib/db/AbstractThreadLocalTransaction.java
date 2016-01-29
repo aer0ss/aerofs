@@ -5,7 +5,6 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.Util;
 import org.slf4j.Logger;
 
 /**
@@ -26,7 +25,7 @@ public abstract class AbstractThreadLocalTransaction<T extends Throwable>
                 rollback();
             }
         } catch (Throwable e) {
-            l.error("Exception caught when trying to end transaction: " + Util.e(e));
+            l.error("Exception caught when trying to end transaction: ", e);
             // Do nothing. We don't want to throw further exceptions here.
         }
     }

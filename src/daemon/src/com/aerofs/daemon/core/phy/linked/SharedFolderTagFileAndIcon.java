@@ -89,7 +89,7 @@ public class SharedFolderTagFileAndIcon
                 try {
                     deleteTagFileAndIconIn(absPath);
                 } catch (IOException e) {
-                    SystemUtil.fatal("unrecoverable: " + Util.e(e));
+                    SystemUtil.fatal(e);
                 }
             }
         });
@@ -111,7 +111,7 @@ public class SharedFolderTagFileAndIcon
                 try {
                     addTagFileAndIconIn(sid, absPath);
                 } catch (Exception e) {
-                    SystemUtil.fatal("unrecoverable: " + Util.e(e));
+                    SystemUtil.fatal(e);
                 }
             }
         });

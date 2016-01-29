@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.transfers.download;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExNoAvailDevice;
@@ -13,9 +13,9 @@ import com.aerofs.daemon.core.ex.ExWrapped;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
 import org.slf4j.Logger;
 
@@ -64,7 +64,7 @@ public interface IAsyncDownload
             final DID replier = doImpl_();
             notifyListeners_(listener -> listener.onDownloadSuccess_(socid, replier), listeners);
         } catch (ExNoAvailDevice e) {
-            logger.warn(socid + ": " + Util.e(e, ExNoAvailDevice.class));
+            logger.warn("{}: ", socid, BaseLogUtil.suppress(e));
             // This download object tracked all reasons (Exceptions) for why each device was
             // avoided. Thus if the To object indicated no devices were available, then inform
             // the listener about all attempted devices, and why they failed to deliver the socid.
@@ -89,14 +89,13 @@ public interface IAsyncDownload
         if (e._e instanceof ExNoPerm) {
             // collector should only collect permitted components. no_perm may happen when
             // other user just changed the permission before this call.
-            logger.error(socid + ": we have no perm");
+            logger.error("{}: we have no perm", socid);
             throw (ExNoPerm)e._e;
         } else if (e._e instanceof ExSenderHasNoPerm) {
-            logger.error(socid + ": sender has no perm");
+            logger.error("{}: sender has no perm", socid);
             avoidDevice_(e._did, e, from, did2e);
         } else if (e._e instanceof ExNoComponentWithSpecifiedVersion) {
-            logger.info("{} from {}: {}", socid, e._did,
-                    Util.e(e._e, ExNoComponentWithSpecifiedVersion.class));
+            logger.info("{} from {}:", socid, e._did, BaseLogUtil.suppress(e._e));
             avoidDevice_(e._did, e._e, from, did2e);
         } else if (e._e instanceof ExOutOfSpace) {
             throw (ExOutOfSpace)e._e;
@@ -104,7 +103,7 @@ public interface IAsyncDownload
             // TODO: make sure we only abort in case of local I/O error
             throw (IOException)e._e;
         } else {
-            logger.info("gcr fail {} from {}: {}", socid, e._did, Util.e(e._e));
+            logger.info("gcr fail {} from {}: ", socid, e._did, e._e);
 
             onGeneralException(socid, e._e, e._did, from, did2e);
         }
@@ -114,7 +113,7 @@ public interface IAsyncDownload
             Map<DID, Exception> did2e)
     {
         // NB: remote errors in the GCR are wrapped in ExProcessReplyFailed...
-        logger.info("gcc fail {}: {}", socid, Util.e(e._e));
+        logger.info("gcc fail {}: ", socid, e._e);
         onGeneralException(socid, e._e, null, from, did2e);
     }
 
@@ -139,7 +138,8 @@ public interface IAsyncDownload
         if (e instanceof RuntimeException) SystemUtil.fatal(e);
 
         // RTN: retry now
-        logger.warn(socid + ": " + Util.e(e) + " " + replier + " RTN");
+        logger.warn("{} : {} RTN ",socid, replier, BaseLogUtil.suppress(e,
+                ExAborted.class, ExNoAvailDevice.class, ExTimeout.class, ExStreamInvalid.class));
         if (replier != null) avoidDevice_(replier, e, from, did2e);
     }
 

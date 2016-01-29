@@ -17,7 +17,6 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
@@ -172,7 +171,7 @@ public class LinkerRoot
             _f._md.mightDelete_(pc, _f._globalBuffer);
         } catch (Exception e) {
             // On any exception, perform a full scan
-            l.warn("full scan triggered by " + Util.e(e));
+            l.warn("full scan triggered by ", e);
             _ssq.scanAfterDelay_(Collections.singleton(_absRootAnchor), true);
         }
     }

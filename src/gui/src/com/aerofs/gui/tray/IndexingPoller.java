@@ -4,9 +4,9 @@
 
 package com.aerofs.gui.tray;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.sched.IScheduler;
@@ -90,7 +90,8 @@ public class IndexingPoller
             public void onFailure(Throwable t)
             {
                 if (!(t instanceof ExIndexing)) {
-                    l.warn("failed to ping daemon {}", Util.e(t, ClosedChannelException.class));
+                    l.warn("failed to ping daemon", BaseLogUtil.suppress(t,
+                            ClosedChannelException.class));
                 }
                 schedulePingDaemon();
             }

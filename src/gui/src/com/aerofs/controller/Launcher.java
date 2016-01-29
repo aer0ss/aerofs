@@ -176,7 +176,7 @@ public class Launcher
                 try {
                     OSUtil.get().installShellExtension(true);
                 } catch (Exception e) {
-                    l.warn("Shell extension failed to install post-update: " + Util.e(e));
+                    l.warn("Shell extension failed to install post-update: ", e);
                 }
             }
 
@@ -269,7 +269,7 @@ public class Launcher
             try {
                 Cfg.db().set(LAST_LOG_CLEANING, now);
             } catch (SQLException e) {
-                l.warn("ignored: " + Util.e(e));
+                l.warn("ignored: ", e);
             }
         }
     }

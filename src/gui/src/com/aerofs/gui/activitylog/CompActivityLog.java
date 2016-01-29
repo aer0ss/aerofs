@@ -9,7 +9,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
@@ -200,14 +199,7 @@ public class CompActivityLog extends Composite
         _compSpin.start();
         _lblStatus.setText("");
 
-        ThreadUtil.startDaemonThread("gui-actv", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                thdLoadMoreAsync(selection);
-            }
-        });
+        ThreadUtil.startDaemonThread("gui-actv", () -> thdLoadMoreAsync(selection));
     }
 
     private void recalcColumnWidths()
@@ -243,7 +235,7 @@ public class CompActivityLog extends Composite
             _pageToken = reply.hasPageToken() ? reply.getPageToken() : null;
             _maxResult = Math.min(_maxResult * 2, MAX_RESULTS_MAX);
         } catch (Exception e) {
-            l.warn(Util.e(e));
+            l.warn("failed to load more activities", e);
             elems = new Object[] { e };
             hasUnresolved = false;
             selection = null;
@@ -252,35 +244,31 @@ public class CompActivityLog extends Composite
         final Object[] elemsFinal = elems;
         final boolean hasUnresolvedFinal = hasUnresolved;
         final Integer selectionFinal = selection;
-        GUI.get().safeAsyncExec(this, new Runnable() {
-            @Override
-            public void run()
-            {
-                _tv.add(elemsFinal);
-                recalcColumnWidths();
+        GUI.get().safeAsyncExec(this, () -> {
+            _tv.add(elemsFinal);
+            recalcColumnWidths();
 
-                if (selectionFinal != null) {
-                    _tv.getTable().select(selectionFinal);
-                }
+            if (selectionFinal != null) {
+                _tv.getTable().select(selectionFinal);
+            }
 
-                if (_pageToken == null) {
-                    _btnMore.setEnabled(false);
-                    _btnMore.setText("No More");
-                } else {
-                    _btnMore.setEnabled(true);
-                    _btnMore.setVisible(true);
-                }
+            if (_pageToken == null) {
+                _btnMore.setEnabled(false);
+                _btnMore.setText("No More");
+            } else {
+                _btnMore.setEnabled(true);
+                _btnMore.setVisible(true);
+            }
 
-                if (hasUnresolvedFinal) {
-                    _compSpin.warning();
-                    String msg = S.FAILED_FOR_ACCURACY;
-                    _lblStatus.setText(msg);
-                    if (_lblStatus.getBounds().width < GUIUtil.getExtent(getShell(), msg).x) {
-                        getParent().pack();
-                    }
-                } else {
-                    _compSpin.stop();
+            if (hasUnresolvedFinal) {
+                _compSpin.warning();
+                String msg = S.FAILED_FOR_ACCURACY;
+                _lblStatus.setText(msg);
+                if (_lblStatus.getBounds().width < GUIUtil.getExtent(getShell(), msg).x) {
+                    getParent().pack();
                 }
+            } else {
+                _compSpin.stop();
             }
         });
     }
