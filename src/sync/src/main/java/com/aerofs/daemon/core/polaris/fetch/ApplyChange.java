@@ -68,7 +68,7 @@ public class ApplyChange
 
         void share_(SOID soid, Trans t) throws Exception;
 
-        void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t) throws Exception;
+        void applyBufferedChanges_(SIndex sidx, long timestamp) throws Exception;
 
         boolean hasBufferedChanges_(SIndex sidx) throws SQLException;
     }
@@ -180,8 +180,8 @@ public class ApplyChange
         return _impl.hasBufferedChanges_(sidx);
     }
 
-    public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t) throws Exception{
-        _impl.applyBufferedChanges_(sidx, timestamp, t);
+    public void applyBufferedChanges_(SIndex sidx, long timestamp) throws Exception {
+        _impl.applyBufferedChanges_(sidx, timestamp);
     }
 
     private void applyContentChange_(SOID soid, RemoteChange c, Trans t)
@@ -311,9 +311,6 @@ public class ApplyChange
 
         SID sid = _sidx2sid.get_(soid.sidx());
         if (!sid.isUserRoot()) throw new ExProtocolError("nested sharing not supported");
-
-        // apply all buffered changes in the source store before performing migration
-        applyBufferedChanges_(soid.sidx(), Long.MAX_VALUE, t);
 
         _rpdb.removeParent_(soid.sidx(), soid.oid(), t);
 

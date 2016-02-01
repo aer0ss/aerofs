@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.api.Transforms;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
@@ -172,6 +173,10 @@ public class ChangeFetcher
             if (_sidx2sid.get_(sidx).equals(rc.oid)) {
                 rc.oid = OID.ROOT;
             }
+            // apply all buffered changes in the source store before performing migration
+            if (rc.transformType == Type.SHARE) {
+                applyBufferedChanges_(sidx, Long.MAX_VALUE);
+            }
             try (Trans t = _tm.begin_()) {
                 DID did = new DID(rc.originator);
                 _listeners.forEach(l -> {
@@ -198,9 +203,6 @@ public class ChangeFetcher
     {
         // NB: can throw for exp retry
         l.debug("apply buffered {} {}", sidx, timestamp);
-        try (Trans t = _tm.begin_()) {
-            _at.applyBufferedChanges_(sidx, timestamp, t);
-            t.commit_();
-        }
+        _at.applyBufferedChanges_(sidx, timestamp);
     }
 }

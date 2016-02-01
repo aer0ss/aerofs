@@ -23,6 +23,7 @@ import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.core.polaris.InMemoryDS;
 import com.aerofs.daemon.core.polaris.PolarisClient;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
+import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
@@ -355,11 +356,14 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         int min = state.changes.size();
         state.add(sidx, changes);
         long maxLTS = state.changes.size();
-        try (Trans t = tm.begin_()) {
-            for (RemoteChange rc : state.changes.subList(min, state.changes.size())) {
-                ac.apply_(sidx, rc, maxLTS, t);
+        for (RemoteChange rc : state.changes.subList(min, state.changes.size())) {
+            if (rc.transformType == Type.SHARE) {
+                ac.applyBufferedChanges_(sidx, Long.MAX_VALUE);
             }
-            t.commit_();
+            try (Trans t = tm.begin_()) {
+                ac.apply_(sidx, rc, maxLTS, t);
+                t.commit_();
+            }
         }
     }
 

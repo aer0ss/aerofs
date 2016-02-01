@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
@@ -59,6 +60,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 {
     private static final Logger l = Loggers.getLogger(ApplyChangeImpl.class);
 
+    private final TransManager _tm;
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final Expulsion _expulsion;
@@ -92,8 +94,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                            StoreHierarchy stores, StoreCreator sc, IMapSID2SIndex sid2sidx,
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
                            LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
-                           PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb)
+                           PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb,
+                           TransManager tm)
     {
+        _tm = tm;
         _ds = ds;
         _ps = ps;
         _expulsion = expulsion;
@@ -836,13 +840,28 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         return _mbdb.getBufferedChange_(sidx, Long.MAX_VALUE) != null;
     }
 
+    private final static int SPLIT_TRANS_THRESHOLD = 500;
+
     @Override
-    public void applyBufferedChanges_(SIndex sidx, long timestamp, Trans t)
+    public void applyBufferedChanges_(SIndex sidx, long timestamp)
             throws Exception {
+        int n = 0;
         BufferedChange c;
-        while ((c = _mbdb.getBufferedChange_(sidx, timestamp)) != null) {
-            applyBufferedChange_(sidx, c, timestamp, t);
-            ProgressIndicators.get().incrementMonotonicProgress();
+        Trans t = _tm.begin_();
+        try {
+            while ((c = _mbdb.getBufferedChange_(sidx, timestamp)) != null) {
+                applyBufferedChange_(sidx, c, timestamp, t);
+                if (++n > SPLIT_TRANS_THRESHOLD) {
+                    t.commit_();
+                    t.end_();
+                    n = 0;
+                    t = _tm.begin_();
+                }
+                ProgressIndicators.get().incrementMonotonicProgress();
+            }
+            t.commit_();
+        } finally {
+            t.end_();
         }
     }
 

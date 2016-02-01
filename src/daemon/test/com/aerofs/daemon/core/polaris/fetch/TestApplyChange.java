@@ -152,7 +152,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(p, "baz", a, ObjectType.FILE),
                 insert(p, "qux", b, ObjectType.FILE)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         mds.expect(rootSID,
@@ -180,7 +180,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "baz", c, ObjectType.FOLDER),
                 remove(p, c)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         mds.expect(rootSID, folder("foo", p), folder("baz", c));
@@ -201,7 +201,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(p, "bar", c, ObjectType.FOLDER),
                 rename(p, "baz", c)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         mds.expect(rootSID,
@@ -224,7 +224,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(p, "bar", c, ObjectType.FOLDER),
                 remove(p, c)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         mds.expect(rootSID,
@@ -315,7 +315,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 0, t);
+        ac.applyBufferedChanges_(sidx, 0);
 
         // verify
         assertNotPresent(oid);
@@ -335,7 +335,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", oid, ObjectType.FOLDER),
                 rename(OID.ROOT, "bar", oid)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         mds.expect(rootSID,
@@ -402,7 +402,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", oid, ObjectType.FOLDER),
                 remove(OID.ROOT, oid)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         // verify
         OA oa = ds.getOANullable_(new SOID(sidx, oid));
@@ -429,7 +429,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         assertNotPresent(alias);
         mds.expect(rootSID,
@@ -454,7 +454,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", oid, ObjectType.FILE),
                 updateContent(oid, did, h, 0L, 42L)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         assertNotPresent(alias);
         mds.expect(rootSID,
@@ -487,7 +487,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", oid, ObjectType.FILE),
                 updateContent(oid, did, h, 0L, 42L)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         assertNotPresent(alias);
         mds.expect(rootSID,
@@ -522,7 +522,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", oid, ObjectType.FILE),
                 updateContent(oid, did, h0, 0L, 42L)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         assertNotPresent(alias);
         mds.expect(rootSID,
@@ -562,7 +562,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertHasRemoteLink(a, p, "baz", 3);
         assertIsBuffered(true, gp, p, a);
 
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         mds.expect(rootSID,
                 folder("foo", gp,
@@ -602,7 +602,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(p, "bar", c, ObjectType.STORE),
                 remove(OID.ROOT, c)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
@@ -631,7 +631,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         verify(ps, never()).newFolder_(ds.resolve_(new SOID(sidx, oid)));
 
@@ -646,7 +646,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "bar", bar, ObjectType.FILE)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         OID local = OID.generate();
         try (Trans t = tm.begin_()) {
@@ -660,7 +660,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", remote, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         mds.expect(rootSID,
                 folder("foo", remote),
@@ -689,7 +689,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", remote, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 42, t);
+        ac.applyBufferedChanges_(sidx, 42);
 
         mds.expect(rootSID,
                 folder("foo", remote),
@@ -709,7 +709,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
                 insert(OID.ROOT, "bar", bar, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 1, t);
+        ac.applyBufferedChanges_(sidx, 1);
 
         mds.expect(rootSID,
                 folder("foo", foo),
@@ -726,10 +726,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 rename(OID.ROOT, "baz", bar)
         );
-        try (Trans t = tm.begin_()) {
-            ac.applyBufferedChanges_(sidx, 42, t);
-            t.commit_();
-        }
+        ac.applyBufferedChanges_(sidx, 42);
 
         mds.expect(rootSID,
                 folder("foo", foo),
@@ -766,7 +763,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         apply(
                 insert(OID.ROOT, "foo", remote, ObjectType.FOLDER)
         );
-        ac.applyBufferedChanges_(sidx, 1, t);
+        ac.applyBufferedChanges_(sidx, 1);
 
         mds.expect(rootSID,
                 folder("foo (2)", remote),
@@ -799,7 +796,7 @@ public class TestApplyChange extends AbstractTestApplyChange
         assertTrue(mbdb.isBuffered_(new SOID(sidx, b)));
         assertTrue(mbdb.isBuffered_(new SOID(sidx, a)));
 
-        ac.applyBufferedChanges_(sidx, 5, t);
+        ac.applyBufferedChanges_(sidx, 5);
 
         mds.expect(rootSID,
                 folder("bar", a),
@@ -826,7 +823,7 @@ public class TestApplyChange extends AbstractTestApplyChange
                 insert(p, "3.jpg", OID.generate(), ObjectType.FILE),
                 rename(OID.ROOT, "Old Pictures", p)
         );
-        ac.applyBufferedChanges_(sidx, 5, t);
+        ac.applyBufferedChanges_(sidx, 5);
 
         assertOAEquals(p, OID.ROOT, "Old Pictures", OA.Type.DIR);
 
