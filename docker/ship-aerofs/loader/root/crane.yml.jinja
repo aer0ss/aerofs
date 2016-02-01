@@ -36,6 +36,7 @@ containers:
       volume:
         # datatimectl needs dbus access
         - /var/run/dbus:/var/run/dbus
+        - /usr/bin/timedatectl:/usr/bin/timedatectl:ro
         - /etc/systemd/timesyncd.conf.d:/etc/systemd/timesyncd.conf.d
       volumes-from:
         - data
