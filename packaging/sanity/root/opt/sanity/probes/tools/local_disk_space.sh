@@ -12,7 +12,7 @@ required_space=$2
 
 # This will round down to the nearest GB (1028 MB) block
 # available.
-disk_space=$(df -B 1073741824 $path | awk 'NR == 2 {print $4}')
+disk_space=$(df -B 1G $path | awk 'NR == 2 {print $4}')
 
 # Check to see if df could get details about path
 if [ -z $disk_space ]

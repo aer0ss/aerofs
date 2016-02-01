@@ -3,7 +3,9 @@ FROM aerofs/base.python2.7
 MAINTAINER AeroFS "support@aerofs.com"
 
 # TODO (WW) use bash rather than nc. See container-scripts/service-barrier
-RUN apk --update add netcat-openbsd &&\
+RUN apk --update add \
+        coreutils \
+        netcat-openbsd &&\
     rm -rf /var/cache/apk/*
 
 ADD root/opt/sanity/requirements-exact.txt /
