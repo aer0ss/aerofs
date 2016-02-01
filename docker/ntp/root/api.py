@@ -22,6 +22,17 @@ def internal_error(error):
     return 'An internal server error has occurred. Check logs for more info.', 500
 
 
+def set_ntp(on):
+    call([
+        'dbus-send',
+        '--system',
+        '--dest=org.freedesktop.timedate1',
+        '/org/freedesktop/timedate1',
+        'org.freedesktop.timedate1.SetNTP',
+        'boolean:' + on,
+        'boolean:false'
+    ])
+
 def reload_ntp():
     server = Configuration('http://config.service:5434', service_name='ntp').server_properties()['ntp.server']
 
@@ -35,14 +46,14 @@ def reload_ntp():
             unlink(NTP_CONF)
 
     print "Stopping NTP client..."
-    call(['timedatectl', 'set-ntp', 'false'])
+    set_ntp('false')
 
     if server:
         print "Skipping clock..."
         call(['sntpc', '-b', server])
 
     print "Starting NTP client..."
-    call(['timedatectl', 'set-ntp', 'true'])
+    set_ntp('true')
 
 
 def call(cmd):
