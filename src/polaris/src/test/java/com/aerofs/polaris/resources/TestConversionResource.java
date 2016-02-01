@@ -1023,10 +1023,10 @@ public class TestConversionResource {
         Random random = new Random();
         random.nextBytes(hash);
         random.nextBytes(hash2);
-        batch = new TransformBatch(Lists.newArrayList(
+        ops = Lists.newArrayList(
                 new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)),
-                new TransformBatchOperation(child2, new UpdateContent(0L, hash2, 200L, 512L, version))));
-        submitBatchSuccessfully(store, batch);
+                new TransformBatchOperation(child2, new UpdateContent(0L, hash2, 200L, 512L, version)));
+        submitOpsSuccessFullyWithin(store, ops, 10);
 
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
         assertThat(t.transforms.size(), equalTo(10));

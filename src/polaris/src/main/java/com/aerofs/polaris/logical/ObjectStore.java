@@ -598,7 +598,7 @@ public final class ObjectStore {
         // rename the child to the new name within the same tree
         long transformTimestamp = renameChild(dao, device, parent, childOid, newChildName);
 
-        LOGGER.info("rename {} in {}", childOid, currentChildName, newChildName, parentOid);
+        LOGGER.info("rename {} in {}", childOid, parentOid);
 
         // return the latest version of the *parent* object
         return new Updated(transformTimestamp, getExistingObject(dao, parentOid));
