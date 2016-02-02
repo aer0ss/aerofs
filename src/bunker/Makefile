@@ -1,6 +1,7 @@
 IMAGE_NAME = aerofs/bunker
 
-RSYNC = rsync -a --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
+# NB: follow symlinks, some files in src/bunker/web point to src/web/web
+RSYNC = rsync -a --copy-unsafe-links --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
 
 image:
 	$(MAKE) -C ../web/web
