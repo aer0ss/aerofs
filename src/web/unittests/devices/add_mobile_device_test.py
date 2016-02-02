@@ -12,7 +12,7 @@ class AddMobileDeviceTest(TestBase):
         self.setup_common()
 
         code = MobileAccessCode(accessCode = 'fake_oauth_token')
-        self.sp_rpc_stub.get_mobile_access_code = Mock(return_value=code)
+        self.sp_rpc_stub.get_access_code_for_mobile = Mock(return_value=code)
 
 
     ### TESTS ###

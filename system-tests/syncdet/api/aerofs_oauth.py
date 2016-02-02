@@ -14,7 +14,7 @@ def get_nonce():
     from aerofs_sp import sp as sp_service
     sp = sp_service.connect()
     sp.sign_in()
-    return sp.get_mobile_access_code()
+    return sp.get_access_code()
 
 
 def get_auth_code(bifrost_url=None,

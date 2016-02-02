@@ -3134,9 +3134,11 @@ public class SPService implements ISPService
      * an attacker can sign in one device as if they were you.
      *
      * Authorization nonces auto-expire if not used in N seconds.
+     *
+     * @param auditMobileAppAuth specifies whether to log an audit event for mobile app
+     *                           authorization.
      */
-    @Override
-    public ListenableFuture<MobileAccessCode> getMobileAccessCode()
+    private ListenableFuture<MobileAccessCode> generateAccessCode(boolean auditMobileAppAuth)
             throws Exception
     {
         // this function requires User-level authentication
@@ -3146,9 +3148,55 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         if (!userExists) throw new ExNotFound("Attempt to create device auth for non-existent user");
-        return createReply(MobileAccessCode.newBuilder()
-                .setAccessCode(_accessCodeProvider.createAccessCodeForUser(user))
-                .build());
+
+        ListenableFuture<MobileAccessCode> reply = createReply(MobileAccessCode.newBuilder()
+                                                    .setAccessCode(_accessCodeProvider
+                                                    .createAccessCodeForUser(user))
+                                                    .build());
+
+        // generate a mobile app authorization event if this access code was generated to authorize
+        // the mobile app. Audit after the reply is built, in case it fails.
+        if (auditMobileAppAuth)
+        {
+            _auditClient.event(AuditClient.AuditTopic.DEVICE, "device.mobile.code")
+                    .add("user", user.id())
+                    .publish();
+        }
+
+        return reply;
+    }
+
+    /**
+     * Generate a device authorization nonce to authorize a single API client.
+     *
+     * NOTE: Use getAccessCodeForMobile when generating codes for authorizing the mobile apps
+     */
+    @Override
+    public ListenableFuture<MobileAccessCode> getAccessCode()
+            throws Exception
+    {
+        return generateAccessCode(false);
+    }
+
+    /**
+     * Generate a device authorization nonce to authorize a mobile app and log an audit event for
+     * indicating a code was generated to authorize the mobile app.
+     *
+     * NOTE: Use getAccessCode when generating codes for reasons other than authorizing the
+     *       mobile apps.
+     */
+    @Override
+    public ListenableFuture<MobileAccessCode> getAccessCodeForMobile()
+            throws Exception
+    {
+        return generateAccessCode(true);
+    }
+
+    @Override
+    public ListenableFuture<MobileAccessCode> noop4()
+            throws Exception
+    {
+        throw new ExProtocolError("GetMobileAccessCode has been removed");
     }
 
     /**

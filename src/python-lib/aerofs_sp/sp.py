@@ -66,8 +66,8 @@ class _SPServiceWrapper(object):
     def ignore_shared_folder_invitation(self, sid):
         self._service.ignore_shared_folder_invitation(sid)
 
-    def get_mobile_access_code(self):
-        return self._service.get_mobile_access_code().accessCode
+    def get_access_code(self):
+        return self._service.get_access_code().accessCode
 
     def add_user_to_whitelist(self, userid):
         return self._service.add_user_to_whitelist()

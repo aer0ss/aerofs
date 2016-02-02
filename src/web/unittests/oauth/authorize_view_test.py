@@ -38,7 +38,7 @@ def mock_requests_get(url, **kwargs):
         raise ValueError
 
 
-def mock_sp_get_mobile_access_code(**kwargs):
+def mock_sp_get_access_code(**kwargs):
     class Response(object):
         pass
     r = Response()
@@ -50,7 +50,7 @@ class AuthorizeViewTest(TestBase):
 
     def setUp(self):
         self.setup_common()
-        self.sp_rpc_stub.get_mobile_access_code = Mock(side_effect=mock_sp_get_mobile_access_code)
+        self.sp_rpc_stub.get_access_code = Mock(side_effect=mock_sp_get_access_code)
         requests.get = Mock(side_effect=mock_requests_get)
 
     def _make_req(self, params):

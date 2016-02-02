@@ -564,13 +564,9 @@ service SPService {
     rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
 
 
-    // Generate an access code that can be used to request an access token for a mobile device.
-    // The access code will be valid for a short time. Each access code can be used
-    // only once to generate an access token.
-    //
-    // TODO: configure and document access code lifetime; currently 3 minutes.
-    // Required Auth Level: User
-    rpc GetMobileAccessCode(Void) returns (MobileAccessCode);
+    // this call was GetMobileAccessCode and is now removed.
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove
+    rpc Noop4(Void) returns (MobileAccessCode);
 
     // Given a valid API access code, get the user attributes to be cached
     // for the user account. This will implicitly invalidate the access code so it cannot
@@ -897,6 +893,20 @@ service SPService {
     //   ExNoPerm if the current user isn't a manager of the containing store
     //
     rpc SetUrlRequireLogin(SetUrlRequireLoginCall) returns (Void);
+
+    // Generates an access code for authorizing a mobile app. The access code will be valid for a
+    // short time. Each access code can be used only once to generate an access token.
+    //
+    // Required Auth Level: User
+    rpc GetAccessCodeForMobile(Void) returns (MobileAccessCode);
+
+    // Generates an access code authorizing API clients. The access code will be valid for a short
+    // time. Each access code can be used only once to generate an access token.
+    //
+    // Required Auth Level: User
+    rpc GetAccessCode(Void) returns (MobileAccessCode);
+
+
 }
 
 message SetDeviceOSFamilyAndNameCall {

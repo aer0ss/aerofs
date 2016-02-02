@@ -90,7 +90,7 @@ def get_mobile_access_code(request):
 
 def generate_mobile_access_code(request):
     sp = get_rpc_stub(request)
-    reply = sp.get_mobile_access_code()
+    reply = sp.get_access_code_for_mobile()
     return reply.accessCode
 
 # The CA cert for public deployment. Ideally we should read this cert from the file rather than hard coding it here.

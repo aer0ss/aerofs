@@ -57,10 +57,8 @@ class BifrostClient(object):
             util.flash_error(request, _get_error_message_for_bifrost_resonse(resp))
 
     def get_new_oauth_token(self, mobile_access_code, client_id, client_secret, expires_in=0, scopes=None):
-        # N.B. the get_mobile_access_code RPC returns a proof-of-identity nonce that
-        # Bifrost uses for authentication. It was originally designed for a mobile app
-        # and its original name remains to maintain backwards compatibility.
-        # Obtain one with get_rpc_stub(request).get_mobile_access_code().accessCode
+        # The get_access_code RPC returns a proof-of-identity nonce that Bifrost uses for
+        # authentication. Obtain one with get_rpc_stub(request).get_access_code().accessCode
         data={
             'grant_type': 'authorization_code',
             'code': mobile_access_code,

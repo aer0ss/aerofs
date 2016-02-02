@@ -12,6 +12,8 @@ import com.aerofs.proto.Sp.MobileAccessCode;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.util.concurrent.ListenableFuture;
+import java.util.ArrayList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +36,15 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
         session.setBasicAuthDate(System.currentTimeMillis());
     }
 
+    private ArrayList<ListenableFuture<MobileAccessCode>> newCodeList() throws Exception
+    {
+        ArrayList<ListenableFuture<MobileAccessCode>> list =
+                new ArrayList<ListenableFuture<MobileAccessCode>>();
+        list.add(service.getAccessCode());
+        list.add(service.getAccessCodeForMobile());
+        return list;
+    }
+
     @Before
     public void setup() throws Exception
     {
@@ -53,9 +64,15 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     }
 
     @Test(expected = ExNotAuthenticated.class)
-    public void testShouldFailIfNotSignedIn() throws Exception
+    public void testCodeShouldFailIfNotSignedIn() throws Exception
     {
-        service.getMobileAccessCode().get();
+        service.getAccessCode().get();
+    }
+
+    @Test(expected = ExNotAuthenticated.class)
+    public void testMobileAppCodeShouldFailIfNotSignedIn() throws Exception
+    {
+        service.getAccessCodeForMobile().get();
     }
 
     @Test
@@ -63,10 +80,13 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     {
         setUser(user);
 
-        MobileAccessCode auth = service.getMobileAccessCode().get();
-        assertNotNull( auth );
-        assertNotNull( auth.getAccessCode() );
-        assertFalse( auth.getAccessCode().isEmpty() );
+        for (ListenableFuture<MobileAccessCode> accessCode : newCodeList())
+        {
+            MobileAccessCode auth = accessCode.get();
+            assertNotNull( auth );
+            assertNotNull( auth.getAccessCode() );
+            assertFalse( auth.getAccessCode().isEmpty() );
+        }
     }
 
     @Test
@@ -75,20 +95,23 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
         for (User sessionUser : newArrayList(user, admin))
         {
             setUser(sessionUser);
-            MobileAccessCode auth = service.getMobileAccessCode().get();
-            session.deauthorize();
 
-            AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
-                    "My Test Device").get();
+            for (ListenableFuture<MobileAccessCode> accessCode : newCodeList()){
+                MobileAccessCode auth = accessCode.get();
+                session.deauthorize();
 
-            assertNotNull( attrs );
-            assertNotNull( attrs.getUserId() );
-            assertNotNull( attrs.getOrgId() );
-            assertEquals( sessionUser.id().getString(), attrs.getUserId() );
-            assertEquals( org.id().toString(), attrs.getOrgId() );
-            // hard-coding this so we can avoid querying the sql database to determine whether
-            //   the session user is the admin.
-            assertEquals( sessionUser == admin, attrs.getIsOrgAdmin() );
+                AuthorizeAPIClientReply attrs = service.authorizeAPIClient(auth.getAccessCode(),
+                        "My Test Device").get();
+
+                assertNotNull( attrs );
+                assertNotNull( attrs.getUserId() );
+                assertNotNull( attrs.getOrgId() );
+                assertEquals( sessionUser.id().getString(), attrs.getUserId() );
+                assertEquals( org.id().toString(), attrs.getOrgId() );
+                // hard-coding this so we can avoid querying the sql database to determine whether
+                //   the session user is the admin.
+                assertEquals( sessionUser == admin, attrs.getIsOrgAdmin() );
+            }
         }
     }
 
@@ -96,29 +119,33 @@ public class TestSP_AuthorizeAPIClient extends AbstractSPTest
     public void testShouldConsumeNonce() throws Exception
     {
         setUser(user);
-        MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.deauthorize();
+        for (ListenableFuture<MobileAccessCode> accessCode : newCodeList()){
+            MobileAccessCode auth = accessCode.get();
+            session.deauthorize();
 
-        service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
-
-        try {
             service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
-            fail();
-        } catch (ExExternalAuthFailure eeaf) { /* expected */ }
+
+            try {
+                service.authorizeAPIClient(auth.getAccessCode(), "My Test Device").get();
+                fail();
+            } catch (ExExternalAuthFailure eeaf) { /* expected */ }
+        }
     }
 
     @Test
     public void testShouldDisallowSecondSignin() throws Exception
     {
         setUser(user);
-        MobileAccessCode auth = service.getMobileAccessCode().get();
-        session.deauthorize();
+        for (ListenableFuture<MobileAccessCode> accessCode : newCodeList()){
+            MobileAccessCode auth = accessCode.get();
+            session.deauthorize();
 
-        setUser(user);
-        try {
-            service.authorizeAPIClient(auth.getAccessCode(), "My Test Device");
-            fail("Expected excepted");
-        } catch (ExNoPerm enp) { /* expected */ }
+            setUser(user);
+            try {
+                service.authorizeAPIClient(auth.getAccessCode(), "My Test Device");
+                fail("Expected excepted");
+            } catch (ExNoPerm enp) { /* expected */ }
+        }
     }
 
     @Test(expected = ExExternalAuthFailure.class)

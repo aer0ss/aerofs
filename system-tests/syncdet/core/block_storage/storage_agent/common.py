@@ -6,7 +6,7 @@ def get_oauth_token_for_user(user):
     sp = sp_service.connect()
     sp.sign_in(actor=user)
     auth_code = aerofs_oauth.get_auth_code(
-            nonce=sp.get_mobile_access_code(),
+            nonce=sp.get_access_code(),
             state="Hello, everybody? Hello, everybody!",
             verify=False
     )

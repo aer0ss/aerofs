@@ -12,7 +12,7 @@ def get_new_shelob_token(request):
     client_id = 'aerofs-shelob'
     client_secret = request.registry.settings["oauth.shelob_client_secret"]
     sp_client = get_rpc_stub(request)
-    access_code = sp_client.get_mobile_access_code().accessCode
+    access_code = sp_client.get_access_code().accessCode
     bifrost_client = get_bifrost_client(request)
     return bifrost_client.get_new_oauth_token(access_code,
             client_id, client_secret, expires_in=0, scopes=[

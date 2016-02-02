@@ -19,7 +19,7 @@ def _get_access_code(cfg, username, password):
 
     try:
         sp_conn.credential_sign_in(username, password)
-        ac_response = sp_conn.get_mobile_access_code()
+        ac_response = sp_conn.get_access_code()
     except Exception as e:
         sys.exit('Error signing in with the username/credential given:\n\t' + str(e.reply))
     else:

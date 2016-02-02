@@ -85,7 +85,7 @@ def app_authorization(request):
 
     # get identity nonce so user can request an access code
     sp = util.get_rpc_stub(request)
-    nonce = sp.get_mobile_access_code().accessCode
+    nonce = sp.get_access_code().accessCode
 
     # get shared folder names, for fined-grained scopes
     shares = {}

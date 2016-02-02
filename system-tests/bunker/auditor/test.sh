@@ -37,7 +37,7 @@ info "Validating Audit stream data..."
 OUTPUT="$(docker logs ${CONTAINER})"
 
 KEY1='"event":"user.signin"'
-KEY2='"event":"device.mobile.code"'
+KEY2='"event":"device.access.code"'
 KEY3='"event":"device.certify"'
 KEY4="\"user\":\"${USERID}\""
 

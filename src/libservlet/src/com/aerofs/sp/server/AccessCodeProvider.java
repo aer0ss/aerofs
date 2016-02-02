@@ -27,10 +27,8 @@ public class AccessCodeProvider
 
     public String createAccessCodeForUser(User user)
     {
-        l.info("Gen mobile access code for {}", user.id());
-
-        // TODO(AS): Add a mechanism to differentiate between callers of getMobileAccessCode.
-        _auditClient.event(AuditClient.AuditTopic.DEVICE, "device.mobile.code")
+        l.info("Gen access code for {}", user.id());
+        _auditClient.event(AuditClient.AuditTopic.DEVICE, "device.access.code")
                 .add("user", user.id())
                 .add("timeout", TIMEOUT_SEC)
                 .publish();

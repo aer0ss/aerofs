@@ -6,7 +6,7 @@ from syncdet.case import local_actor
 def main():
     sp = sp_client.connect()
     sp.sign_in()
-    code = sp.get_mobile_access_code()
+    code = sp.get_access_code()
     print('access_code: {}'.format(code))
 
     r = requests.post('https://' + local_actor().aero_host + '/auth/token', {
