@@ -33,9 +33,10 @@ if [ $? -ne 0 ] ; then
 fi
 
 echo "Moving to resource/client..."
-rm -rf $thisdir/../../../../resource/client/shellext/osx/sync.appex
+rm -rf $thisdir/../../../../tools/build/osx/aerofs.app.template/Contents/Plugins/sync.appex
 # cp -r is BAD, prefer cp -a or cp -R for OSX compatibility; man 1 cp
-cp -a $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex $thisdir/../../../../resource/client/shellext/osx
+cp -a $thisdir/../Build/Products/Release/finder.app/Contents/PlugIns/sync.appex \
+    $thisdir/../../../../tools/build/osx/aerofs.app.template/Contents/Plugins/
 
 echo
 echo "SUCCESS."

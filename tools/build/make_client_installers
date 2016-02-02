@@ -277,10 +277,6 @@ function make_osx_packages() {
 
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -a "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}/"
-    if is_client ; then
-        # Move the Finder Sync app extension into the Mac App's Plugin directory within the temp directory created above
-        mv "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_APP_DIR}"/sync.appex "${DMG_TEMP_DIR}/${local_OSX_LOCAL_MAC_PLUGINS_DIR}"/sync.appex
-    fi
 
     if $SIGNED ; then
         echo ">> sign app for Mac App Store"
