@@ -1,15 +1,15 @@
 IMAGE_NAME = aerofs/web
 
 BUILD_ROOT = buildroot
-SYNC_ROOT = syncroot
-SYNC_DIR = syncroot/opt/web
-FILES = $(shell find -L web -type f)
-VERSION_FILE = syncroot/opt/repackaging/installers/original/current.ver
+RSYNC = rsync -a --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
 
-image: base .make-source $(BUILD_ROOT)
+image: .make-source
+	mkdir -p buildroot/opt/web buildroot/opt/repackaging/installers/original
+	$(RSYNC) ../../out.gradle/packages/current.ver buildroot/opt/repackaging/installers/original/
+	$(RSYNC) --exclude node_modules --exclude static-src web buildroot/opt/web/
 	docker build -t $(IMAGE_NAME) .
 
-.PHONY: image base lib proto .make-source $(SYNC_ROOT)
+.PHONY: image base lib proto .make-source
 
 base: lib
 	$(MAKE) -C ../../docker/base/python2.7
@@ -21,22 +21,3 @@ proto:
 .make-source:
 	$(MAKE) -C web
 
-$(BUILD_ROOT): $(SYNC_ROOT) $(FILES:%=$(SYNC_DIR)/%) $(VERSION_FILE)
-	rsync --archive --checksum --no-times --delete $</ $@
-	-rm -rf $<
-
-# TODO (WW) move everything from 'web' to 'root' folder
-$(SYNC_ROOT):
-	-rm -rf $@
-	mkdir -p $@
-
-$(SYNC_DIR)/%: %
-	mkdir -p $(@D)
-	cp $< $@
-
-$(VERSION_FILE): ../../out.gradle/packages/current.ver
-	mkdir -p $(@D)
-	cp $< $@
-
-../../out.gradle/packages/current.ver:
-	../../invoke write_version

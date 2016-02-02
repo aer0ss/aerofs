@@ -97,19 +97,6 @@ $(DEST)/js/compiled/%.js: $(SRC)/$(JS)/%.js install
 
 #concatenation, watch the changes in $(DEST)/js/compiled/%.js turn it into bundled.js
 
-# Copy files from static-src to static.
-# $(DEST)/%: $(SRC)/%
-# 	mkdir -p $(@D)
-# 	cp -R $< $@
-
-FOLDERS_SRC=$(SRC)/shelob \
-	$(SRC)/strider \
-	$(SRC)/fellowship \
-	$(SRC)/saruman \
-	$(SRC)/shadowfax
-
-FILES_SRC=$(shell find -L $(FOLDERS_SRC) -type f)
-
 $(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
 	$(SRC)/shelob/js/controllers.js \
 	$(SRC)/shelob/js/directives.js \

@@ -2,10 +2,11 @@ IMAGE_NAME = aerofs/config
 ROOT = buildroot
 
 LICENSING_LIB_DIR = ../../src/licensing
+RSYNC = rsync -a --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
 
-image: $(FILES:%=$(ROOT)/%)
-	$(MAKE) -C $(LICENSING_LIB_DIR)
-	../../tools/lazy-copy.sh $(LICENSING_LIB_DIR)/build $(ROOT)/sdist
+image:
+	mkdir -p buildroot
+	$(RSYNC) $(LICENSING_LIB_DIR) buildroot/
 	docker build -t $(IMAGE_NAME) .
 
 .PHONY: image
