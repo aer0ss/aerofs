@@ -6,6 +6,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.gui.sharing.invitee.DlgInviteUsers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -330,7 +331,7 @@ public class GUIUtil
         String toastMsg = "A link has been created for " + path.last() +
                 " and copied to your clipboard (Click to view)";
         // Notify the user and open link in browser if clicked.
-        UI.get().notify(MessageType.INFO, toastMsg, () -> GUIUtil.launch(linkUrl));
+        UI.get().notify(MessageType.INFO, toastMsg, new NotifMessage(NotifMessage.LAUNCH, linkUrl));
     }
 
     private static void copyLinkToClipboard(String linkUrl)

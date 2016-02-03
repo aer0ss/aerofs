@@ -171,6 +171,11 @@ public abstract class OSUtil
         return get().getOSFamily() == OSFamily.OSX;
     }
 
+    public static boolean isOSXMountainLionOrNewer()
+    {
+        return isOSX() && Integer.valueOf(getOSVersion().split("\\.")[1]) >= 8;
+    }
+
     public static boolean isOSXYosemiteOrNewer()
     {
         return isOSX() && getOSVersion().matches("10.((1[0-9]+)|([2-9][0-9]+)).?[0-9]*");

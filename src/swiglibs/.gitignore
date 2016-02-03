@@ -1,4 +1,5 @@
 build
 gen
+gradle.properties
 *.user
 *_wrap.cpp

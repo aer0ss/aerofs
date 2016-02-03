@@ -9,6 +9,7 @@ import com.aerofs.controller.ExLaunchAborted;
 import com.aerofs.controller.Launcher;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
@@ -292,10 +293,9 @@ public class UIUtil
 
         finishLaunch(postLaunch);
 
-        Runnable onClick = null;
-
+        NotifMessage onClick = null;
         if (!L.isMultiuser()) {
-            onClick = () -> GUIUtil.launch(Cfg.absDefaultRootAnchor());
+            onClick = new NotifMessage(NotifMessage.LAUNCH, Cfg.absDefaultRootAnchor());
         }
 
         UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", onClick);

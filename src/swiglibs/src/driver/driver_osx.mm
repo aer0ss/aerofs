@@ -1,16 +1,88 @@
 #import <Cocoa/Cocoa.h>
 
+#include <assert.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <sys/mount.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
+
 #include "AeroFS.h"
 #include "Driver.h"
-#include <sys/param.h>
-#include <sys/mount.h>
-#include <sys/sysctl.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdbool.h>
-#include <errno.h>
+#include "notif.h"
+
+bool socket_initialized = NO;
+
+@interface NotificationDelegate : NSObject <NSUserNotificationCenterDelegate>
+@end
+
+@implementation NotificationDelegate
+- (void) userNotificationCenter:(NSUserNotificationCenter *)center didDeliverNotification:(NSUserNotification *)notification
+{}
+
+- (BOOL) userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification
+{
+    return YES;
+}
+
+- (void) userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
+{
+    if ([notification.userInfo objectForKey:@"notif"] != nil) {
+        NSLog(@"sending notif event");
+
+        if (!socket_initialized) {
+            init_socket([[NSString stringWithFormat:@"%@/%@/%@", NSHomeDirectory(), @"Library/Application Support/AeroFS", @"notif.sock"] UTF8String]);
+            socket_initialized = YES;
+        }
+        send_message([notification.userInfo[@"notif"] UTF8String]);
+    }
+}
+@end
 
 namespace Driver {
+
+NotificationDelegate *delegate = [[NotificationDelegate alloc] init];
+
+void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {
+    tstring cTitle;
+    tstring cSubtitle;
+    tstring cMessage;
+
+    if (!(AeroFS::jstr2tstr(&cTitle, env, title) &&
+          AeroFS::jstr2tstr(&cSubtitle, env, subtitle) &&
+          AeroFS::jstr2tstr(&cMessage, env, message))) {
+        NSLog(@"failed to convert notif strings");
+        return;
+    }
+
+    NSUserNotificationCenter *ns = [NSUserNotificationCenter defaultUserNotificationCenter];
+    if (ns == nil) {
+        NSLog(@"no notif center");
+        return;
+    }
+
+    [ns setDelegate:delegate];
+
+    NSLog(@"sending notif");
+    NSUserNotification *notif = [[NSUserNotification alloc] init];
+    [notif setTitle:[[NSString alloc] initWithUTF8String:cTitle.c_str()]];
+    [notif setSubtitle:[[NSString alloc] initWithUTF8String:cSubtitle.c_str()]];
+    [notif setInformativeText:[[NSString alloc] initWithUTF8String:cMessage.c_str()]];
+    [notif setSoundName:NSUserNotificationDefaultSoundName];
+
+    if (notif_message != NULL) {
+        tstring cNotif;
+        AeroFS::jstr2tstr(&cNotif, env, notif_message);
+
+        NSString *jNotif = [[NSString alloc] initWithUTF8String:cNotif.c_str()];
+        [notif setUserInfo:@{@"notif":jNotif}];
+    }
+
+    [notif setDeliveryDate:[[NSDate date] dateByAddingTimeInterval:delay]];
+    [ns scheduleNotification:notif];
+    [notif release];
+}
 
 void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
 {

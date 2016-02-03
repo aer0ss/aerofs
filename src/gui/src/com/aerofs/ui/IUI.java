@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.lib.ex.ExNoConsole;
 
 /**
@@ -94,12 +95,12 @@ public interface IUI {
     /**
      * NB onClick may or may not run in the GUI thread
      */
-    void notify(MessageType mt, String msg, Runnable onClick);
+    void notify(MessageType mt, String msg, NotifMessage onClick);
 
     /**
      * NB onClick may or may not run in the GUI thread
      */
-    void notify(MessageType mt, String title, String msg, Runnable onClick);
+    void notify(MessageType mt, String title, String msg, NotifMessage onClick);
 
     boolean hasVisibleNotifications();
 

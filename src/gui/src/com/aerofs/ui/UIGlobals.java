@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.Lazy;
 import com.aerofs.gui.TransferState;
+import com.aerofs.gui.notif.NotifService;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.tray.Progresses;
 import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
@@ -27,6 +28,7 @@ public final class UIGlobals
 {
     private static RitualClientProvider s_ritualProvider =
             new RitualClientProvider(new RitualSocketFile());
+    private static NotifService s_notif;
     private static ShellextService s_shellext;
 
     // N.B. constructing RNC requires the Cfg port base file to be ready. Thus it is not constructed
@@ -49,13 +51,18 @@ public final class UIGlobals
 
     private static Factory _idm;
 
-    public static void initialize_(boolean createShellextService, LaunchArgs launchArgs)
+    public static void initialize_(boolean createServices, LaunchArgs launchArgs)
     {
-        if (createShellextService) {
+        if (createServices) {
+            s_notif = new NotifService(s_ritualProvider);
             s_shellext = new ShellextService(s_ritualProvider);
         }
         _idm = new Factory(launchArgs);
     }
+
+    public static NotifService notif() { return s_notif; }
+
+    public static boolean hasNotifService() { return s_notif == null; }
 
     public static ShellextService shellext() { return s_shellext; }
 

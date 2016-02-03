@@ -59,7 +59,8 @@ public class Cfg
     public static enum NativeSocketType {
         RITUAL ("ritual"),
         RITUAL_NOTIFICATION ("rns"),
-        SHELLEXT ("shellext");
+        SHELLEXT ("shellext"),
+        NOTIF ("notif");
 
         private String fileName;
 

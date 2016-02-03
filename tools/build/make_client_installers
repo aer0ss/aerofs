@@ -294,7 +294,6 @@ function make_osx_packages() {
         # the checked-in resource, and must update the signature whenever we
         # modify anything under the .osax folder.
         #codesign --force --sign "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
-        codesign --force --sign "Air Computing, Inc." "${DMG_TEMP_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/Growl.framework/Versions/A"
         codesign --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
                  --force \
                  --sign "Air Computing, Inc." \

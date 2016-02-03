@@ -1,6 +1,7 @@
 package com.aerofs.cli;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
@@ -375,14 +376,14 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void notify(MessageType mt, String msg, Runnable onClick)
+    public void notify(MessageType mt, String msg, NotifMessage onClick)
     {
         notify(mt, null, msg, onClick);
     }
 
     @Override
     public void notify(MessageType mt, String title, String msg,
-            Runnable onClick)
+            NotifMessage onClick)
     {
         show(mt, (title == null ? "" : title + " | ") + msg);
     }

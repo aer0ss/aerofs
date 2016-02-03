@@ -22,7 +22,6 @@ dependencies {
     compile 'com.aerofs:jline:2.13'
     compile 'org.javaswift:joss:0.9.8'
     compile 'com.amazonaws:aws-java-sdk-s3:1.9.32'
-    compile name: 'growlbindings-1.4'
     compile name: 'org.eclipse.jface_3.5.1.M20090826-0800'
     compile name: 'org.eclipse.core.commands_3.5.0.I20090525-2000'
     compile name: 'org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100'

@@ -111,6 +111,11 @@ int getFileSystemType(JNIEnv * j, jstring path, void * buffer, int bufLen);
  */
 void setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
 
+/**
+ * OSX 10.8+ : NSNotificationCenter
+ */
+void scheduleNotification(JNIEnv * j, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message);
+
 struct TrayPosition {
     int x;
     int y;

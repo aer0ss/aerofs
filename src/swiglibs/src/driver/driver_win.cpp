@@ -228,6 +228,8 @@ int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
     return retval;
 }
 
+void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {}
+
 void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
 {
     tstring path;
@@ -430,11 +432,11 @@ HWND getTrayWindow()
     HWND trayWnd = FindWindow(_T("Shell_TrayWnd"), NULL);
 
     if (trayWnd) {
-        WindowToFind trayNotify = {_T("TrayNotifyWnd"), NULL};
+        WindowToFind trayNotify = {(TCHAR *)_T("TrayNotifyWnd"), NULL};
         EnumChildWindows(trayWnd, enumChildWindowCallback, (LPARAM) &trayNotify);
 
         if (trayNotify.hWnd && IsWindow(trayNotify.hWnd)) {
-            WindowToFind toolbarWnd = {_T("ToolbarWindow32"), NULL};
+            WindowToFind toolbarWnd = {(TCHAR *)_T("ToolbarWindow32"), NULL};
             EnumChildWindows(trayNotify.hWnd, enumChildWindowCallback, (LPARAM) &toolbarWnd);
             if (toolbarWnd.hWnd) {
                 return toolbarWnd.hWnd;

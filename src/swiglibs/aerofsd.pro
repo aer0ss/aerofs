@@ -25,7 +25,9 @@ macx {
     INCLUDEPATH += "/System/Library/Frameworks/JavaVM.framework/Headers"
     QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -arch x86_64
 
+    QMAKE_OBJECTIVE_CXXFLAGS += -mmacosx-version-min=10.7 -arch x86_64
     # Linker settings
+    QMAKE_LFLAGS += -mmacosx-version-min=10.7
     LIBS += -L"$$PWD/3rd_party/lib/osx/"
     LIBS += -lssl.1.0.0 -lcrypto.1.0.0 -framework AppKit
 }
@@ -74,6 +76,8 @@ win32 {
 }
 
 macx {
+    SOURCES += src/driver/notif.cpp
+    HEADERS += src/driver/notif.h
     OBJECTIVE_SOURCES += \
         src/driver/driver_osx.mm
 }

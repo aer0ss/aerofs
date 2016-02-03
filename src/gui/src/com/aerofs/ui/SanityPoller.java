@@ -165,14 +165,7 @@ public class SanityPoller
                     "If the disk is full, please free up more disk space by deleting unused " +
                     "files and then restart AeroFS.";
 
-            if (UI.isGUI()) {
-                // use a notification because it is less disruptive. However, this also increases
-                // the complexity of the logic.
-                UI.get().notify(MessageType.WARN, title, message,
-                        () -> askUserToIgnoreDiskFullErrors(details));
-            } else {
-                askUserToIgnoreDiskFullErrors(details);
-            }
+            askUserToIgnoreDiskFullErrors(details);
         }
     }
 

@@ -2,10 +2,11 @@ package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.base.C;
 import com.aerofs.gui.AeroFSDialog;
-import com.aerofs.gui.GUI;
-import com.aerofs.gui.GUIUtil;
-import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.conflicts.DlgConflicts;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil.AbstractListener;
+import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.AbstractTrayMenu;
 import com.aerofs.gui.tray.ITrayMenu;
@@ -44,6 +45,15 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     {
         super(icon, rebuildDisposition);
         Preconditions.checkState(_indexingPoller != null);
+
+        try {
+            UIGlobals.notif().start_();
+        } catch (Exception e) {
+            newDefectWithLogs("notif")
+                    .setMessage("can't start notif worker")
+                    .setException(e)
+                    .sendAsync();
+        }
 
         // Delay start of the shellext service to avoid spamming
         // daemon with status requests while it is busy indexing...
@@ -155,7 +165,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             if (absPath != null) {
                 UI.get().notify(MessageType.INFO,
                         "You have joined the shared folder \"" + UIUtil.sharedFolderName(p, null) + "\"",
-                        () -> GUIUtil.launch(absPath));
+                        new NotifMessage(NotifMessage.LAUNCH, absPath));
             }
             break;
         case Type.SHARED_FOLDER_KICKOUT_VALUE:

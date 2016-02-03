@@ -3,7 +3,7 @@ apply plugin: 'maven'
 
 group = 'com.aerofs'
 archivesBaseName = 'aerofsd'
-version = '0.1.0'
+version = '0.3.2'
 
 task resources << {
     mkdir("${projectDir}/build")

@@ -11,6 +11,7 @@ import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.setup.DlgSignIn;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
@@ -180,16 +181,10 @@ public class GUI implements IUI
                 "Install " + OSUtil.get().getShellExtensionName() + "?",
                 "Please click here if you would like to install the "
                         + OSUtil.get().getShellExtensionName() + ".",
-                () -> {
-                    try {
-                        OSUtil.get().installShellExtension(false);
-                    } catch (Exception e) {
-                        reportShellExtInstallFailed(e);
-                    }
-                });
+                new NotifMessage(NotifMessage.INSTALL_SHELLEXT));
     }
 
-    private void reportShellExtInstallFailed(Exception e)
+    public void reportShellExtInstallFailed(Exception e)
     {
         l.warn("Failed to install shell extension: ", e);
         UI.get().show(MessageType.WARN, "Failed to install the " +
@@ -598,14 +593,14 @@ public class GUI implements IUI
     }
 
     @Override
-    public void notify(MessageType mt, String msg, Runnable onClick)
+    public void notify(MessageType mt, String msg, NotifMessage onClick)
     {
         notify(mt, L.product(), msg, onClick);
     }
 
     @Override
     public void notify(final MessageType mt, final String title, final String msg,
-            final Runnable onClick)
+            final NotifMessage onClick)
     {
         asyncExec(() -> {
             if (_st != null) _st.getBalloons().add(mt, title, msg, onClick);

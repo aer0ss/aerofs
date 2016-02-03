@@ -1,6 +1,9 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.notif.NotifMessage;
+import com.aerofs.gui.notif.NotifService;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -21,7 +24,7 @@ public class BalloonsImplSWT implements IBalloonsImpl
     }
 
     @Override
-    public void add(MessageType mt, String title, String msg, final Runnable onClick)
+    public void add(MessageType mt, String title, String msg, NotifMessage onClick)
     {
         int icon;
         switch (mt) {
@@ -39,7 +42,7 @@ public class BalloonsImplSWT implements IBalloonsImpl
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    onClick.run();
+                    NotifService.execNotifFunc(onClick.getType(), onClick.getPayload());
                 }
             });
         }

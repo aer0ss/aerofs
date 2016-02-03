@@ -1,6 +1,7 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -18,7 +19,7 @@ public class Balloons
     {
         IBalloonsImpl impl = null;
         try {
-            impl = OSUtil.isOSX() ? new BalloonsImplGrowl() :
+            impl = OSUtil.isOSXMountainLionOrNewer() ? new BalloonsImplOSX() :
                 new BalloonsImplSWT(icon);
         } catch (Exception e) {
             l.error("cannot create balloons: ", e);
@@ -33,7 +34,7 @@ public class Balloons
      * @param msg
      *            the text to be shown in the balloon
      */
-    public void add(MessageType mt, String title, String msg, Runnable onClick)
+    public void add(MessageType mt, String title, String msg, NotifMessage onClick)
     {
         if (_impl != null) _impl.add(mt, title, msg, onClick);
     }

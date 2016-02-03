@@ -1,0 +1,11 @@
+Vagrant.configure(2) do |config|
+  config.vm.box = "aerofs-windows"
+  config.vm.box_url = "http://vagrant.arrowfs.org/aerofs-windows.box"
+
+  config.vm.synced_folder "~/repos", "/repos"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+    vb.memory = "2048"
+  end
+end

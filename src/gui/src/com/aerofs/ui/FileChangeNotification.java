@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.base.C;
+import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -128,13 +129,7 @@ public class FileChangeNotification
 
         final String path = UIUtil.absPathNullable(Path.fromPB(_recents.get(0)));
         if (path != null) {
-            UI.get().notify(MessageType.INFO, title, msg, new Runnable() {
-                @Override
-                public void run()
-                {
-                    OSUtil.get().showInFolder(path);
-                }
-            });
+            UI.get().notify(MessageType.INFO, title, msg, new NotifMessage(NotifMessage.OPEN, path));
         }
 
         _recents.clear();

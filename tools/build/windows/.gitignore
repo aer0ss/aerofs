@@ -1,0 +1,4 @@
+package/aerofs-windows.box
+package/box.ovf
+package/box-disk1.vmdk
+.vagrant/*
