@@ -16,3 +16,6 @@ $PWD/apt-cacher-ng/stop.sh
 # pypi caching
 $PWD/devpi/stop.sh
 
+# apk cache
+$PWD/alpinx/stop.sh
+
