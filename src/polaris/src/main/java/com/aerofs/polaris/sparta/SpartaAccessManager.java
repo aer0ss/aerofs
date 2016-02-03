@@ -18,6 +18,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -37,14 +39,12 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.ws.rs.core.MediaType;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -240,6 +240,32 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
             return false;
         }
     }
+
+    public Collection<DID> getStorageAgentDIDs()
+    {
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/users/:2/devices", SPARTA_API_VERSION));
+        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
+
+        try (CloseableHttpResponse response = client.execute(get)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+
+            if (statusCode == HttpStatus.SC_OK) {
+                try (InputStream content = response.getEntity().getContent()) {
+                    Device[] devices = mapper.readValue(content, Device[].class);
+                    Set<DID> dids = Sets.newHashSetWithExpectedSize(devices.length);
+                    for (Device device : devices) dids.add(new DID(UniqueID.fromStringFormal(device.id)));
+                    return dids;
+                }
+            } else {
+                LOGGER.warn("fail retrieve TSSA devices, sc:{}", statusCode);
+                return Sets.newHashSetWithExpectedSize(0);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("IO exception with sparta to find tssa devices", e);
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private static class UserStore
     {

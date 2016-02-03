@@ -4,8 +4,11 @@ import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.batch.location.LocationUpdateType;
+import com.aerofs.polaris.api.notification.SyncedLocation;
 import com.aerofs.polaris.logical.ObjectStore;
+import com.aerofs.polaris.notification.StoreInformationNotifier;
 
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
@@ -20,9 +23,11 @@ import javax.ws.rs.core.Context;
 public final class LocationResource {
 
     private final ObjectStore objectStore;
+    private final StoreInformationNotifier notifier;
 
-    public LocationResource(@Context ObjectStore objectStore) {
+    public LocationResource(@Context ObjectStore objectStore, @Context StoreInformationNotifier notifier) {
         this.objectStore = objectStore;
+        this.notifier = notifier;
     }
 
     @POST
@@ -32,6 +37,13 @@ public final class LocationResource {
             @PathParam("version") @Min(0) long version,
             @PathParam("did") DID did) {
         objectStore.performLocationUpdate(principal.getUser(), LocationUpdateType.INSERT, oid, version, did);
+
+        if(principal.getUser().isTeamServerID()) {
+            UniqueID sid = objectStore.inTransaction(dao -> {
+                return objectStore.getStore(dao, oid);
+            });
+            notifier.notify("sync/" + sid.toStringFormal(), new SyncedLocation(oid, version).getBytes(), SyncedLocation.SIZE);
+        }
     }
 
     @DELETE

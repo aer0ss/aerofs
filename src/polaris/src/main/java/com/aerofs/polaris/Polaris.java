@@ -40,6 +40,7 @@ import com.aerofs.polaris.sparta.SpartaConfiguration;
 import com.aerofs.polaris.ssmp.SSMPPublisher;
 import com.aerofs.rest.util.MimeTypeDetector;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -47,6 +48,7 @@ import org.skife.jdbi.v2.DBI;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+
 import java.io.IOException;
 import java.net.URI;
 
@@ -111,14 +113,16 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(cacert).to(ICertificateProvider.class);
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
-                bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).in(Singleton.class);
-                bind(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
+                bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).
+                    to(BinaryPublisher.class).in(Singleton.class);
+                bind(SpartaAccessManager.class).to(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
                         .to(DeviceResolver.class).to(FolderSharer.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);
                 bind(MimeTypeDetector.class).to(MimeTypeDetector.class).in(Singleton.class);
                 bind(MetadataBuilder.class).to(MetadataBuilder.class).in(Singleton.class);
+                bind(StoreInformationNotifier.class).to(StoreInformationNotifier.class).in(Singleton.class);
             }
         });
 

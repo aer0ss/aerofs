@@ -1,12 +1,7 @@
 package com.aerofs.polaris.logical;
 
 import com.aerofs.baseline.db.TransactionIsolation;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.Identifiers;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
@@ -23,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
+
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.ResultIterator;
 import org.slf4j.Logger;
@@ -32,6 +28,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
@@ -989,7 +986,7 @@ public final class ObjectStore {
      * </ul>
      *
      * @param user user id updating the list of devices
-     * @param updateType {@link LocationUpdateType#INSERT} to add {@code did} to
+     * @param operationType {@link LocationUpdateType#INSERT} to add {@code did} to
      *                   the list of devices or {@link LocationUpdateType#REMOVE}
      *                   to remove {@code did} from the list of devices
      * @param oid object for which the location list should be updated
@@ -998,18 +995,18 @@ public final class ObjectStore {
      * @throws NotFoundException if the {@code object} for which the location list should be updated does not exist
      * @throws AccessException if {@code user} cannot update the list of locations for {@code oid}, {@code version}
      */
-    public void performLocationUpdate(UserID user, LocationUpdateType updateType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
+    public void performLocationUpdate(UserID user, LocationUpdateType operationType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
         AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
         inTransaction(dao -> {
-            performLocationUpdate(dao, accessToken, updateType, oid, version, did);
+            performLocationUpdate(dao, accessToken, operationType, oid, version, did);
             return null;
         });
     }
 
-    private void performLocationUpdate(DAO dao, AccessToken accessToken, LocationUpdateType updateType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
+    private void performLocationUpdate(DAO dao, AccessToken accessToken, LocationUpdateType operationType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
         checkAccessGranted(dao, accessToken, oid, Access.READ, Access.WRITE);
 
-        switch (updateType) {
+        switch (operationType) {
             case INSERT:
                 insertLocation(dao, oid, version, did);
                 break;
@@ -1017,7 +1014,7 @@ public final class ObjectStore {
                 removeLocation(dao, oid, version, did);
                 break;
             default:
-                throw new IllegalArgumentException("unhandled location update type " + updateType.name());
+                throw new IllegalArgumentException("unhandled location update type " + operationType.name());
         }
     }
 
