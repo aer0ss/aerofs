@@ -7,33 +7,14 @@ import (
 	"time"
 )
 
-func GetUserMessages(tx *sql.Tx, from, to string) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?) ORDER BY time", from, to, to, from)
+func GetMessages(tx *sql.Tx, cid string) []Message {
+	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? ORDER BY time", cid)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseMessageRows(tx, rows)
 }
 
-func GetGroupMessages(tx *sql.Tx, gid string) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? ORDER BY time", gid)
-	errors.PanicAndRollbackOnErr(err, tx)
-	return parseMessageRows(tx, rows)
-}
-
-func UserMessageExists(tx *sql.Tx, mid int64, from, to string) bool {
-	err := tx.QueryRow("SELECT 1 FROM messages WHERE id=? AND ((from_id=? AND to_id=?) OR (from_id=? AND to_id=?))",
-		mid, from, to, to, from,
-	).Scan(new(int))
-
-	if err == sql.ErrNoRows {
-		return false
-	}
-	errors.PanicAndRollbackOnErr(err, tx)
-	return true
-}
-
-func GroupMessageExists(tx *sql.Tx, mid int64, gid string) bool {
-	err := tx.QueryRow("SELECT 1 FROM messages WHERE id=? AND to_id=?", mid, gid).Scan(new(int))
-
+func MessageExists(tx *sql.Tx, mid int64, cid string) bool {
+	err := tx.QueryRow("SELECT 1 FROM messages WHERE id=? AND to_id=?", mid, cid).Scan(new(int))
 	if err == sql.ErrNoRows {
 		return false
 	}

@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 const MAX_AVATAR_SIZE = 64 * 1024 // 64KB
@@ -117,7 +116,7 @@ func BuildRoutes(
 
 	ws.Route(ws.GET("/{uid}/pinned").Filter(filters.UserIsTarget).To(ctx.getPinned).
 		Doc("Get the list of pinned conversations").
-		Notes("This returns a list of group and user ids that have been pinned").
+		Notes("This returns a list of convo ids that have been pinned by the user").
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
 		Returns(200, "List of pinned ids", IdList{}).
 		Returns(401, "Invalid authorization", nil).
@@ -129,9 +128,9 @@ func BuildRoutes(
 
 	ws.Route(ws.PUT("/{uid}/pinned/{cid}").Filter(filters.UserIsTarget).To(ctx.pinConvo).
 		Doc("Pin a conversation").
-		Notes("User must be a member of any group they wish to pin").
+		Notes("User must be a member of any convo they wish to pin").
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Param(ws.PathParameter("cid", "User id or group id of conversation to pin").DataType("string")).
+		Param(ws.PathParameter("cid", "Convo id of conversation to pin").DataType("string")).
 		Returns(200, "Conversation pinned", nil).
 		Returns(401, "Invalid authorization", nil).
 		Returns(403, "Forbidden", nil).
@@ -141,7 +140,7 @@ func BuildRoutes(
 		Doc("Unpin a conversation").
 		Notes("This request is idempotent and may return 200 even if the conversation was never originally pinned").
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Param(ws.PathParameter("cid", "User id or group id of conversation to unpin").DataType("string")).
+		Param(ws.PathParameter("cid", "Convo id of conversation to unpin").DataType("string")).
 		Returns(200, "Conversation not pinned", nil).
 		Returns(401, "Invalid authorization", nil).
 		Returns(403, "Forbidden", nil))
@@ -152,53 +151,13 @@ func BuildRoutes(
 
 	ws.Route(ws.POST("/{uid}/typing/{cid}").Filter(filters.UserIsTarget).To(ctx.postTyping).
 		Doc("Mark the user as \"typing\" in a conversation").
-		Notes("User must be a member of any group in which they are typing").
+		Notes("User must be a member of any convo in which they are typing").
 		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Param(ws.PathParameter("cid", "User id or group id of conversation").DataType("string")).
+		Param(ws.PathParameter("cid", "Convo id of conversation").DataType("string")).
 		Returns(200, "Marked as \"typing\"", nil).
 		Returns(401, "Invalid authorization", nil).
 		Returns(403, "Forbidden", nil).
 		Returns(404, "Not Found", nil))
-
-	//
-	// path: /users/{uid}/messages
-	//
-
-	ws.Route(ws.GET("/{uid}/messages").To(ctx.getMessages).
-		Doc("Get all messages exchanged with a user").
-		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Returns(200, "A list of messages exchanged", MessageList{}).
-		Returns(401, "Invalid authorization", nil).
-		Returns(404, "User not found", nil))
-
-	ws.Route(ws.POST("/{uid}/messages").To(ctx.newMessage).
-		Doc("Send a new message to a user").
-		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Reads(MessageWritable{}).
-		Returns(200, "The newly-created message", Message{}).
-		Returns(400, "Missing required key", nil).
-		Returns(401, "Invalid authorization", nil).
-		Returns(404, "User not found", nil))
-
-	//
-	// path: /users/{uid}/receipts
-	//
-
-	ws.Route(ws.GET("/{uid}/receipts").To(ctx.getReceipts).
-		Doc("Get last read receipt for both members of the conversation").
-		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Returns(200, "Last-read receipts for both users", LastReadReceiptList{}).
-		Returns(401, "Invalid authorization", nil).
-		Returns(404, "User not found", nil))
-
-	ws.Route(ws.POST("/{uid}/receipts").To(ctx.updateReceipt).
-		Doc("Set the last read message id for the 1v1 conversation").
-		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
-		Reads(LastReadReceiptWritable{}).
-		Returns(200, "The created last-read receipt", LastReadReceipt{}).
-		Returns(400, "Missing required key", nil).
-		Returns(401, "Invalid authorization", nil).
-		Returns(404, "Given message id not found in conversation", nil))
 
 	return ws
 }
@@ -296,65 +255,6 @@ func (ctx *context) updateUser(request *restful.Request, response *restful.Respo
 	broadcast.SendUserEvent(ctx.broadcaster, uid)
 }
 
-func (ctx *context) getMessages(request *restful.Request, response *restful.Response) {
-	uid := request.PathParameter("uid")
-	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
-
-	tx := dao.BeginOrPanic(ctx.db)
-	if !dao.UserExists(tx, uid) {
-		response.WriteHeader(404)
-		tx.Rollback()
-		return
-	}
-	messages := dao.GetUserMessages(tx, caller, uid)
-	dao.CommitOrPanic(tx)
-
-	response.WriteEntity(MessageList{Messages: messages})
-}
-
-// Returns nil if any required params are missing or invalid
-func readMessageParams(request *restful.Request) *MessageWritable {
-	params := new(MessageWritable)
-	err := request.ReadEntity(params)
-	if err != nil || params.Body == "" {
-		return nil
-	}
-	return params
-}
-
-func (ctx *context) newMessage(request *restful.Request, response *restful.Response) {
-	uid := request.PathParameter("uid")
-	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
-
-	params := readMessageParams(request)
-	if params == nil {
-		response.WriteErrorString(400, "Missing \"body\" key")
-		return
-	}
-
-	tx := dao.BeginOrPanic(ctx.db)
-	callerUser := dao.GetUser(tx, caller, ctx.lastOnlineTimes)
-	if !dao.UserExists(tx, uid) {
-		response.WriteHeader(404)
-		tx.Rollback()
-		return
-	}
-	message := &Message{
-		Time: time.Now(),
-		Body: params.Body,
-		From: caller,
-		To:   uid,
-	}
-	message = dao.InsertMessage(tx, message)
-	dao.CommitOrPanic(tx)
-	response.WriteEntity(message)
-	broadcast.SendUserMessageEvent(ctx.broadcaster, caller, uid)
-
-	if ctx.lastOnlineTimes.IsOffline(uid) {
-		go ctx.pushNotifier.NotifyNewMessage(callerUser, []string{uid})
-	}
-}
-
 func (ctx *context) getAvatar(request *restful.Request, response *restful.Response) {
 	uid := request.PathParameter("uid")
 
@@ -385,54 +285,6 @@ func (ctx *context) updateAvatar(request *restful.Request, response *restful.Res
 	broadcast.SendUserAvatarEvent(ctx.broadcaster, uid)
 }
 
-func (ctx *context) getReceipts(request *restful.Request, response *restful.Response) {
-	uid := request.PathParameter("uid")
-	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
-
-	tx := dao.BeginOrPanic(ctx.db)
-	if !dao.UserExists(tx, uid) {
-		response.WriteHeader(404)
-		tx.Rollback()
-		return
-	}
-	receipts := dao.GetUserReceipts(tx, caller, uid)
-	dao.CommitOrPanic(tx)
-
-	response.WriteEntity(LastReadReceiptList{LastRead: receipts})
-}
-
-// Returns nil if any required params are missing or invalid
-func parseUpdateReceiptParams(request *restful.Request) *LastReadReceiptWritable {
-	params := new(LastReadReceiptWritable)
-	err := request.ReadEntity(params)
-	if err != nil || params.MessageId == 0 {
-		return nil
-	}
-	return params
-}
-
-func (ctx *context) updateReceipt(request *restful.Request, response *restful.Response) {
-	uid := request.PathParameter("uid")
-	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
-	params := parseUpdateReceiptParams(request)
-	if params == nil {
-		response.WriteErrorString(400, "Request body must have \"messageId\" key")
-		return
-	}
-
-	tx := dao.BeginOrPanic(ctx.db)
-	if !dao.UserMessageExists(tx, params.MessageId, caller, uid) {
-		response.WriteHeader(404)
-		tx.Rollback()
-		return
-	}
-	receipt := dao.SetReceipt(tx, caller, uid, params.MessageId)
-	dao.CommitOrPanic(tx)
-
-	response.WriteEntity(receipt)
-	broadcast.SendUserMessageReadEvent(ctx.broadcaster, caller, uid)
-}
-
 func (ctx *context) getPinned(request *restful.Request, response *restful.Response) {
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
@@ -448,7 +300,7 @@ func (ctx *context) pinConvo(request *restful.Request, response *restful.Respons
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
-	if !dao.UserExists(tx, cid) && !dao.GroupExists(tx, cid) {
+	if !dao.UserExists(tx, cid) && !dao.ConvoExists(tx, cid) {
 		tx.Rollback()
 		response.WriteHeader(404)
 		return
@@ -473,21 +325,16 @@ func (ctx *context) postTyping(request *restful.Request, response *restful.Respo
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
-	if dao.UserExists(tx, cid) {
-		tx.Commit()
-		broadcast.SendUserTypingEvent(ctx.broadcaster, caller, cid)
-		return
-	}
-	group := dao.GetGroup(tx, cid)
-	if group == nil {
+	convo := dao.GetConvo(tx, cid, caller)
+	if convo == nil {
 		response.WriteHeader(404)
 		tx.Rollback()
 		return
-	} else if !group.HasMember(caller) {
+	} else if !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
 		tx.Rollback()
 		return
 	}
-	broadcast.SendGroupTypingEvent(ctx.broadcaster, caller, group.Id, group.Members)
+	broadcast.SendTypingEvent(ctx.broadcaster, caller, cid, convo.Members)
 	dao.CommitOrPanic(tx)
 }

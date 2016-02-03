@@ -47,7 +47,7 @@ func BuildRoutes(db *sql.DB, broadcaster broadcast.Broadcaster, checkUserFilter 
 		Returns(200, "Bot info", Bot{}).
 		Returns(401, "Invalid authorization", nil).
 		Returns(403, "Forbidden", nil).
-		Returns(404, "Group does not exist", nil))
+		Returns(404, "Convo does not exist", nil))
 
 	//
 	// path: /bots/{bid}
@@ -75,18 +75,18 @@ func (ctx *context) newBot(request *restful.Request, response *restful.Response)
 	// read params
 	params := new(BotWritable)
 	err := request.ReadEntity(params)
-	if err != nil || params.Name == "" || params.GroupId == "" {
-		response.WriteErrorString(400, "Request body must have \"name\" and \"groupId\" keys")
+	if err != nil || params.Name == "" || params.ConvoId == "" {
+		response.WriteErrorString(400, "Request body must have \"name\" and \"convoId\" keys")
 		return
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
-	if !dao.GroupExists(tx, params.GroupId) {
+	if !dao.ConvoExists(tx, params.ConvoId) {
 		tx.Rollback()
-		response.WriteErrorString(404, "No group with id "+params.GroupId)
+		response.WriteErrorString(404, "No convo with id "+params.ConvoId)
 		return
 	}
-	bot := dao.NewBot(tx, params.Name, params.GroupId)
+	bot := dao.NewBot(tx, params.Name, params.ConvoId)
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(bot)
@@ -114,7 +114,7 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
-	// ensure bot exists and get group id
+	// ensure bot exists and get convo id
 	bot := dao.GetBot(tx, bid)
 	if bot == nil {
 		tx.Rollback()
@@ -122,16 +122,16 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 		return
 	}
 
-	group := dao.GetGroup(tx, bot.GroupId)
 	msg := &Message{
 		Time: time.Now(),
 		Body: params.Body,
 		From: bid,
-		To:   bot.GroupId,
+		To:   bot.ConvoId,
 	}
 	msg = dao.InsertMessage(tx, msg)
+	members := dao.GetMembers(tx, bot.ConvoId)
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(msg)
-	broadcast.SendGroupMessageEvent(ctx.broadcaster, bot.GroupId, group.Members)
+	broadcast.SendMessageEvent(ctx.broadcaster, bot.ConvoId, members)
 }

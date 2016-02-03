@@ -14,46 +14,32 @@ func SendUserEvent(b Broadcaster, uid string) {
 	broadcastSimpleEvent(b, "USER", uid)
 }
 
-func SendUserMessageEvent(b Broadcaster, from string, to string) {
-	multicastSimpleEvent(b, "USER_MESSAGE", to, []string{from})
-	multicastSimpleEvent(b, "USER_MESSAGE", from, []string{to})
-}
-
 func SendUserAvatarEvent(b Broadcaster, uid string) {
 	broadcastSimpleEvent(b, "USER_AVATAR", uid)
 }
 
-func SendUserMessageReadEvent(b Broadcaster, reader string, other string) {
-	multicastSimpleEvent(b, "USER_MESSAGE_READ", other, []string{reader})
-	multicastSimpleEvent(b, "USER_MESSAGE_READ", reader, []string{other})
-}
-
-func SendGroupEvent(b Broadcaster, gid string, members []string) {
+func SendConvoEvent(b Broadcaster, cid string, members []string) {
 	if members == nil {
-		broadcastSimpleEvent(b, "GROUP", gid)
+		broadcastSimpleEvent(b, "CONVO", cid)
 	} else {
-		multicastSimpleEvent(b, "GROUP", gid, members)
+		multicastSimpleEvent(b, "CONVO", cid, members)
 	}
 }
 
-func SendGroupMessageEvent(b Broadcaster, gid string, members []string) {
-	multicastSimpleEvent(b, "GROUP_MESSAGE", gid, members)
+func SendMessageEvent(b Broadcaster, cid string, members []string) {
+	multicastSimpleEvent(b, "MESSAGE", cid, members)
 }
 
-func SendGroupMessageReadEvent(b Broadcaster, gid string, members []string) {
-	multicastSimpleEvent(b, "GROUP_MESSAGE_READ", gid, members)
+func SendMessageReadEvent(b Broadcaster, cid string, members []string) {
+	multicastSimpleEvent(b, "MESSAGE_READ", cid, members)
 }
 
 func SendBotEvent(b Broadcaster, bid string) {
 	broadcastSimpleEvent(b, "BOT", bid)
 }
 
-func SendGroupTypingEvent(b Broadcaster, uid string, gid string, members []string) {
-	multicastEventWithPayload(b, "TYPING", uid, gid, members)
-}
-
-func SendUserTypingEvent(b Broadcaster, uid string, cid string) {
-	multicastEventWithPayload(b, "TYPING", uid, uid, []string{cid})
+func SendTypingEvent(b Broadcaster, uid string, cid string, members []string) {
+	multicastEventWithPayload(b, "TYPING", uid, cid, members)
 }
 
 func SendLastOnlineEvent(b Broadcaster, uid string) {

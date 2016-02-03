@@ -11,7 +11,7 @@ import (
 	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
 	"aerofs.com/sloth/resource/commands"
-	"aerofs.com/sloth/resource/groups"
+	"aerofs.com/sloth/resource/convos"
 	"aerofs.com/sloth/resource/keepalive"
 	pushResource "aerofs.com/sloth/resource/push"
 	"aerofs.com/sloth/resource/token"
@@ -122,7 +122,7 @@ func main() {
 		checkUserFilter,
 		updateLastOnlineFilter,
 	))
-	restful.Add(groups.BuildRoutes(
+	restful.Add(convos.BuildRoutes(
 		db,
 		broadcaster,
 		lastOnlineTimes,

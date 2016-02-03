@@ -4,6 +4,8 @@ import (
 	"aerofs.com/sloth/errors"
 	. "aerofs.com/sloth/structs"
 	"database/sql"
+	"encoding/json"
+	"time"
 )
 
 // Return if a row exists
@@ -48,4 +50,21 @@ func InsertCommand(tx *sql.Tx, params *Command) error {
 		` VALUES (?,?,?,?,?,?)`,
 		params.Command, params.Method, params.URL, params.Token, params.Syntax, params.Description)
 	return err
+}
+
+func InsertCommandExecutedMessage(tx *sql.Tx, command, cid, msg string) *Message {
+	bytes, err := json.Marshal(map[string]string{
+		"type": "COMMAND_EXECUTED",
+		"text": msg,
+	})
+	if err != nil {
+		return nil
+	}
+	return InsertMessage(tx, &Message{
+		Time:   time.Now(),
+		From:   command,
+		To:     cid,
+		Body:   string(bytes),
+		IsData: true,
+	})
 }

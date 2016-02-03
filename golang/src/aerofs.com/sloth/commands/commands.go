@@ -1,7 +1,6 @@
-package commandhandler
-
-// Used to facilitate the parsing and handling of messages that contain a slash
-// command inside of them
+// Package commands is used to facilitate the parsing and handling of messages
+// that contain a slash command
+package commands
 
 import (
 	"aerofs.com/sloth/dao"
@@ -16,18 +15,18 @@ import (
 	"strings"
 )
 
-type CommandHandler struct {
+type Handler struct {
 	db *sql.DB
 }
 
-func NewCommandHandler(db *sql.DB) *CommandHandler {
-	return &CommandHandler{db: db}
+func NewHandler(db *sql.DB) *Handler {
+	return &Handler{db: db}
 }
 
 // A message is a slash command if:
-//  - prefixed with '/'
-//  -  the text command exists in the commands table
-func (h *CommandHandler) IsSlashCommand(msg string) bool {
+//  - prefixed with '/', AND
+//  - the text command exists in the commands table
+func (h *Handler) IsSlashCommand(msg string) bool {
 	if msg[0] != '/' {
 		return false
 	}
@@ -45,7 +44,7 @@ func (h *CommandHandler) IsSlashCommand(msg string) bool {
 }
 
 // Given a slash command, return the command, message, error
-func (h *CommandHandler) HandleCommand(from, to, body string) (string, string, error) {
+func (h *Handler) HandleCommand(from, to, body string) (string, string, error) {
 	// Check command existence
 	bodyCmd, bodyText := parseMessage(body)
 	tx := dao.BeginOrPanic(h.db)
@@ -58,7 +57,7 @@ func (h *CommandHandler) HandleCommand(from, to, body string) (string, string, e
 	dao.CommitOrPanic(tx)
 
 	// Construct request
-	// TODO : Should we serialize more values similar to Slack and Hughes work?
+	// TODO : Should we serialize more values similar to Slack and Hugues' work?
 	data := url.Values{
 		"token":      []string{cmd.Token},
 		"command":    []string{cmd.Command},

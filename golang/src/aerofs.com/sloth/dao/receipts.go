@@ -7,19 +7,13 @@ import (
 	"time"
 )
 
-func GetUserReceipts(tx *sql.Tx, from, to string) []LastReadReceipt {
-	rows, err := tx.Query("SELECT user_id,msg_id,time FROM last_read WHERE (user_id=? AND convo_id=?) OR (user_id=? AND convo_id=?)", from, to, to, from)
+func GetReceipts(tx *sql.Tx, cid string) []LastReadReceipt {
+	rows, err := tx.Query("SELECT user_id,msg_id,time FROM last_read WHERE convo_id=?", cid)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseReceiptRows(tx, rows)
 }
 
-func GetGroupReceipts(tx *sql.Tx, gid string) []LastReadReceipt {
-	rows, err := tx.Query("SELECT user_id,msg_id,time FROM last_read WHERE convo_id=?", gid)
-	errors.PanicAndRollbackOnErr(err, tx)
-	return parseReceiptRows(tx, rows)
-}
-
-func SetReceipt(tx *sql.Tx, caller, convoId string, mid int64) *LastReadReceipt {
+func SetReceipt(tx *sql.Tx, caller, cid string, mid int64) *LastReadReceipt {
 	receipt := LastReadReceipt{
 		UserId:    caller,
 		MessageId: mid,
@@ -27,7 +21,7 @@ func SetReceipt(tx *sql.Tx, caller, convoId string, mid int64) *LastReadReceipt 
 	}
 	_, err := tx.Exec("INSERT INTO last_read (user_id,convo_id,msg_id,time) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE msg_id=?, time=?",
 		caller,
-		convoId,
+		cid,
 		mid,
 		receipt.Time.UnixNano(),
 		mid,

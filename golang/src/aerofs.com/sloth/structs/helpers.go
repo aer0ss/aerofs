@@ -1,7 +1,7 @@
 package structs
 
-func (g *Group) HasMember(uid string) bool {
-	for _, val := range g.Members {
+func (c *Convo) HasMember(uid string) bool {
+	for _, val := range c.Members {
 		if val == uid {
 			return true
 		}
@@ -9,15 +9,15 @@ func (g *Group) HasMember(uid string) bool {
 	return false
 }
 
-func (g *Group) AddMember(uid string) {
-	if g.Members == nil {
-		g.Members = make([]string, 0)
+func (c *Convo) AddMember(uid string) {
+	if c.Members == nil {
+		c.Members = make([]string, 0)
 	}
 	// ensure idempotency
-	for _, val := range g.Members {
+	for _, val := range c.Members {
 		if val == uid {
 			return
 		}
 	}
-	g.Members = append(g.Members, uid)
+	c.Members = append(c.Members, uid)
 }

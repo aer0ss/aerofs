@@ -17,15 +17,19 @@ type User struct {
 type Bot struct {
 	Id      string `json:"id"`
 	Name    string `json:"name"`
-	GroupId string `json:"groupId"`
+	ConvoId string `json:"convoId"`
 }
 
-type Group struct {
-	Id          string    `json:"id"`
-	CreatedTime time.Time `json:"createdTime"`
-	Name        string    `json:"name"`
-	IsPublic    bool      `json:"isPublic"`
-	Members     []string  `json:"members"`
+type Convo struct {
+	Id          string           `json:"id"`
+	Type        string           `json:"type"`
+	IsPinned    bool             `json:"isPinned"`
+	Receipts    map[string]int64 `json:"receipts,omitempty"`
+	Sid         string           `json:"sid,omitempty"`
+	CreatedTime time.Time        `json:"createdTime"`
+	Name        string           `json:"name,omitempty"`
+	IsPublic    bool             `json:"isPublic"`
+	Members     []string         `json:"members"`
 }
 
 type Message struct {
@@ -69,13 +73,17 @@ type UserWritable struct {
 
 type BotWritable struct {
 	Name    string `json:"name"`
-	GroupId string `json:"groupId"`
+	ConvoId string `json:"convoId"`
 }
 
-type GroupWritable struct {
+type DirectConvoWritable struct {
+	Members []string `json:"members"`
+}
+
+type GroupConvoWritable struct {
+	Members  []string `json:"members"`
 	Name     *string  `json:"name"`
 	IsPublic *bool    `json:"isPublic"`
-	Members  []string `json:"members"`
 }
 
 type MessageWritable struct {
@@ -102,8 +110,8 @@ type CommandWritable struct {
 // Returning a struct containing an array of structs is a workaround.
 //
 
-type GroupList struct {
-	Groups []Group `json:"groups"`
+type ConvoList struct {
+	Convos map[string]Convo `json:"convos"`
 }
 
 type UserList struct {
@@ -138,17 +146,14 @@ type Event struct {
 	// valid resource values:
 	// - "USER"
 	// - "USER_AVATAR"
-	// - "USER_MESSAGE"
-	// - "USER_MESSAGE_READ"
-	// - "GROUP"
-	// - "GROUP_MESSAGE"
-	// - "GROUP_MESSAGE_READ"
+	// - "CONVO"
+	// - "MESSAGE"
 	// - "LAST_ONLINE"
 	// - "BOT"
 	// - "TYPING"
 	Resource string `json:"resource"`
 
-	// ID of the modified user or group
+	// ID of the modified user or convo
 	Id string `json:"id"`
 
 	// Optional payload for transmitting additional info
