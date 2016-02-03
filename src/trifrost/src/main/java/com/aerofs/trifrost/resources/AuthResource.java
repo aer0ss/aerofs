@@ -71,8 +71,8 @@ public final class AuthResource {
             mailSender.sendPublicEmail(MAIL_FROM_ADDR, MAIL_FROM_NAME,
                     claimedEmail.email,
                     null,
-                    "Your AeroIM Authorization Code: " + authCode,
-                    "Enter this authorization code to access AeroIM: " + authCode,
+                    "Your Eyja Authorization Code: " + authCode,
+                    "Enter this authorization code to access Eyja: " + authCode,
                     null);
 
             logger.info("verification code {} for user {}", authCode, claimedEmail.email);

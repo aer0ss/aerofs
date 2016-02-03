@@ -67,28 +67,28 @@ mkdir -p $INSTALLERS/modified
 version="$(cat $INSTALLERS/original/current.ver | awk -F'=' '{print $2}')"
 echo "Repackaging version $version:"
 
-if [ -f $INSTALLERS/original/aeroim/AeroIM-$version.dmg ]; then
-    echo "Repackaging AeroIM OSX installer..."
+if [ -f $INSTALLERS/original/eyja/Eyja-$version.dmg ]; then
+    echo "Repackaging Eyja OSX installer..."
     $TOOLS/osx/add_file_to_image.sh \
-        $INSTALLERS/original/aeroim/AeroIM-$version.dmg \
-        $INSTALLERS/modified/AeroIM-$version.dmg \
+        $INSTALLERS/original/eyja/Eyja-$version.dmg \
+        $INSTALLERS/modified/Eyja-$version.dmg \
         $SITE_PROP \
-        /AeroIM.app/Contents/Resources/site-config.properties # sibling to app.asar
+        /Eyja.app/Contents/Resources/site-config.properties # sibling to app.asar
 else
-    echo "Skipping missing AeroIM OSX installer..."
+    echo "Skipping missing Eyja OSX installer..."
 fi
 
 for arch in ia32 x64
 do
-    if [ -f $INSTALLERS/original/aeroim/AeroIM-linux-$arch-$version.tar.bz2 ]; then
-        echo "Repackaging AeroIM Linux $arch installer..."
+    if [ -f $INSTALLERS/original/eyja/eyja-linux-$arch-$version.tar.bz2 ]; then
+        echo "Repackaging Eyja Linux $arch installer..."
         $TOOLS/linux/add_file_to_tgz.sh \
-            $INSTALLERS/original/aeroim/AeroIM-linux-$arch-$version.tar.bz2 \
-            $INSTALLERS/modified/AeroIM-linux-$arch-$version.tar.gz \
+            $INSTALLERS/original/eyja/eyja-linux-$arch-$version.tar.bz2 \
+            $INSTALLERS/modified/eyja-linux-$arch-$version.tar.gz \
             $SITE_PROP \
-            AeroIM-linux-$arch/resources/site-config.properties # sibling to app.asar
+            eyja-linux-$arch/resources/site-config.properties # sibling to app.asar
     else
-        echo "Skipping missing AeroIM Linux $arch installer..."
+        echo "Skipping missing Eyja Linux $arch installer..."
     fi
 done
 
@@ -190,10 +190,10 @@ fi
 
 echo "Making symlinks to versioned packages for unversioned paths..."
 pushd $INSTALLERS/modified > /dev/null
-# AeroIM
-ln -s AeroIM-$version.dmg                    AeroIM.dmg
-ln -s AeroIM-linux-ia32-$version.tar.gz      AeroIM-linux-ia32.tar.gz
-ln -s AeroIM-linux-x64-$version.tar.gz       AeroIM-linux-x64.tar.gz
+# Eyja
+ln -s Eyja-$version.dmg                      Eyja.dmg
+ln -s eyja-linux-ia32-$version.tar.gz        eyja-linux-ia32.tar.gz
+ln -s eyja-linux-x64-$version.tar.gz         eyja-linux-x64.tar.gz
 # Windows
 ln -s AeroFSInstall-${version}.exe           AeroFSInstall.exe
 ln -s AeroFSTeamServerInstall-${version}.exe AeroFSTeamServerInstall.exe

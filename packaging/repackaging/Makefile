@@ -13,9 +13,9 @@ image: .copy-packages
 SRC_PKGS_DIR = ../../out.gradle/packages
 DST_PKGS_DIR = $(ROOT)/opt/repackaging/installers/original
 
-# Copy AeroIM packages
-AEROIM_SRC_DIR = $(HOME)/repos/aeroim-client/dist/final
-AEROIM_DST_DIR = $(DST_PKGS_DIR)/aeroim
+# Copy Eyja packages
+EYJA_SRC_DIR = $(HOME)/repos/aeroim-client/dist/final
+EYJA_DST_DIR = $(DST_PKGS_DIR)/eyja
 
 PKGS = $(shell ls $(SRC_PKGS_DIR))
 DST_PKGS = $(PKGS:%=$(DST_PKGS_DIR)/%)
@@ -27,6 +27,6 @@ endif
 	# Remove old files from buildroot. TODO (WW) use the buildroot-syncroot approach
 	rm -rf $(DST_PKGS_DIR)/*
 	../../tools/lazy-copy.sh $(SRC_PKGS_DIR) $(DST_PKGS_DIR)
-	../../tools/lazy-copy.sh $(AEROIM_SRC_DIR) $(AEROIM_DST_DIR) ||: # don't fail if aeroim not present
+	../../tools/lazy-copy.sh $(EYJA_SRC_DIR) $(EYJA_DST_DIR) ||: # don't fail if eyja not present
 
 .PHONY: image .copy-packages
