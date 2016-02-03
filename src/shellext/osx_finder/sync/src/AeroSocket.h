@@ -5,7 +5,7 @@
 @interface AeroSocket : NSObject<GCDAsyncSocketDelegate> {
 @private
     GCDAsyncSocket* asyncSocket;
-    NSString* sockFile;
+    NSURL* sockFile;
 }
 
 -(void) connectToServerOnSocket:(NSString*)sockFile;

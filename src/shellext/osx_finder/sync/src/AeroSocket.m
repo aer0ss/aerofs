@@ -35,16 +35,23 @@ static BOOL shouldReconnectIfDisconnected = NO;
 
 -(void) connectToServerOnSocket:(NSString*) theSockFile
 {
-    sockFile = theSockFile;
+    sockFile = [[NSURL URLWithString:theSockFile] copy];
     [self reconnect];
 }
 
 -(void) reconnect
 {
-    [self disconnect];
-    asyncSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
-    [asyncSocket connectToUrl:[NSURL URLWithString:sockFile] withTimeout:DEFAULT_TIMEOUT error:nil];
-    [self listenForMessage];
+    @try {
+        [self disconnect];
+        asyncSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:dispatch_get_main_queue()];
+        [asyncSocket connectToUrl:sockFile withTimeout:DEFAULT_TIMEOUT error:nil];
+        [self listenForMessage];
+    }
+    @catch (NSException *exception) {
+        if (shouldReconnectIfDisconnected) {
+            [self reconnect];
+        }
+    }
 }
 
 /**
@@ -53,11 +60,13 @@ static BOOL shouldReconnectIfDisconnected = NO;
 */
 -(void) disconnect
 {
-    [asyncSocket setDelegate:nil];
-    [asyncSocket setDelegateQueue:nil];
-    [asyncSocket disconnect];
-    asyncSocket = nil;
     shouldReconnectIfDisconnected = NO;
+    if (asyncSocket != nil) {
+        [asyncSocket setDelegate:nil];
+        [asyncSocket setDelegateQueue:nil];
+        [asyncSocket disconnect];
+        asyncSocket = nil;
+    }
 }
 
 /**
