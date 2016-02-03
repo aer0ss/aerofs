@@ -14,21 +14,26 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
 import com.aerofs.ritual_notification.RitualNotificationClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIGlobals;
+import com.aerofs.ui.UIUtil;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.*;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -123,6 +128,7 @@ public class TrayIcon implements ITrayMenuListener
         _rnc = new RitualNotificationClient(new RitualNotificationSocketFile());
 
         addOnlineStatusListener();
+        addRootStoreSyncStatusListener();
         UIGlobals.progresses().addListener(_progressListener);
 
         updateToolTipText();
@@ -213,6 +219,53 @@ public class TrayIcon implements ITrayMenuListener
         }
 
         GUI.get().safeAsyncExec(iconImpl(), TrayIcon.this::refreshTrayIconImage);
+    }
+
+    public void addRootStoreSyncStatusListener()
+    {
+        _rnc.addListener(new IRitualNotificationListener()
+        {
+            @Override
+            public void onNotificationReceived(PBNotification notification)
+            {
+                if (notification.getType() == Type.PATH_STATUS) {
+                    checkArgument(notification.hasPathStatus());
+
+                    PBPathStatusEvent event = notification.getPathStatus();
+                    for (int i = 0; i < event.getPathCount(); i++) {
+                        String path = UIUtil.absPathNullable(Path.fromPB(event.getPath(i)));
+                        if(Cfg.absDefaultRootAnchor().equals(path)) {
+                            updateRootStoreSyncStatus(event.getStatus(i).getSync() == Sync.IN_SYNC
+                                        ? RootStoreSyncStatus.IN_SYNC : RootStoreSyncStatus.UNKNOWN);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onNotificationChannelBroken()
+            {
+                updateRootStoreSyncStatus(RootStoreSyncStatus.UNKNOWN);
+            }
+
+            private void updateRootStoreSyncStatus(final RootStoreSyncStatus newStatus)
+            {
+                l.trace("updateRootStoreSyncStatus: " + newStatus.name());
+                GUI.get().safeAsyncExec(iconImpl(), new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        l.trace("run updateRootStoreSyncStatus: " + newStatus.name());
+                        if (newStatus != _syncStatus) {
+                            l.trace("new Status: " + newStatus.name());
+                            _syncStatus = newStatus;
+                            refreshTrayIconImage();
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private final RateLimitedTask _refreshTask = new RateLimitedTask(SLOW_REFRESH_DELAY)

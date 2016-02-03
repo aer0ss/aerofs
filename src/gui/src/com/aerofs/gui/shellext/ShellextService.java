@@ -13,12 +13,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
-import com.aerofs.proto.Shellext.GreetingCall;
-import com.aerofs.proto.Shellext.LinkSharingEnabled;
-import com.aerofs.proto.Shellext.PathStatusNotification;
-import com.aerofs.proto.Shellext.RootAnchorNotification;
-import com.aerofs.proto.Shellext.ShellextCall;
-import com.aerofs.proto.Shellext.ShellextNotification;
+import com.aerofs.proto.Shellext.*;
 import com.aerofs.proto.Shellext.ShellextNotification.Type;
 import com.aerofs.ritual.RitualClientProvider;
 import com.google.common.collect.Lists;
@@ -96,8 +91,9 @@ public class ShellextService
         _server.send(notification.toByteArray());
     }
 
-    protected void notifyPathStatus(String path, PBPathStatus status)
-    {
+    protected void notifyPathStatus(String path, PBPathStatus status) {
+        l.trace("enter notifyPathStatus for path = {}, status = {}",
+                path, status.getSync().name());
         if (path.isEmpty()) return;
         PathStatusNotification st = PathStatusNotification.newBuilder()
                 .setPath(path)

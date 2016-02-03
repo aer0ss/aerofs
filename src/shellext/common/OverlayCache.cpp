@@ -1,14 +1,17 @@
 ﻿#include "OverlayCache.h"
 
 #if defined(_MSC_VER)
-typedef unsigned char uint8_t;
-typedef unsigned long uint32_t;
+//typedef unsigned char uint8_t;
+//typedef unsigned long uint32_t;
 #define ROTL32(x,y)     _rotl(x,y)
 #define FORCE_INLINE    __forceinline
 
 // Some version of VS stdlib define min/max as macros, bad bad stupid VS...
 #undef max
 
+#include <stdint.h>
+#include <stdlib.h>
+#include <algorithm>
 #else   // defined(_MSC_VER)
 
 #include <stdint.h>

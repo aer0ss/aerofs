@@ -21,7 +21,6 @@ static Overlay overlayForStatus(PBPathStatus* status)
     if (status.flags & PBPathStatus_FlagConflict)       return CONFLICT;
     switch (status.sync) {
         case PBPathStatus_SyncInSync:                   return IN_SYNC;
-        case PBPathStatus_SyncPartialSync:              return IN_SYNC;
         case PBPathStatus_SyncOutSync:                  return OUT_SYNC;
         default: break;
     }
@@ -201,9 +200,6 @@ static Overlay overlayForStatus(PBPathStatus* status)
         // TODO: clear placeholders after a cooldown period?
         // cache hit: convert integer to enum
         status = (Overlay)val;
-    }
-    if (![self shouldEnableTestingFeatures]) {
-        if (status != UPLOADING && status != DOWNLOADING && status != CONFLICT) return NONE;
     }
     return status;
 }

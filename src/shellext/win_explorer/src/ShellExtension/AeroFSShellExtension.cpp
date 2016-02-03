@@ -180,7 +180,6 @@ static int overlayForStatus(const PBPathStatus& status) {
 	if (status.flags() & PBPathStatus_Flag_CONFLICT)	return O_Conflict;
 	switch (status.sync()) {
 		case PBPathStatus_Sync_OUT_SYNC:				return O_OutSync;
-		case PBPathStatus_Sync_PARTIAL_SYNC:			return O_InSync;
 		case PBPathStatus_Sync_IN_SYNC:					return O_InSync;
 		default: break;
 	}
@@ -215,9 +214,6 @@ Overlay AeroFSShellExtension::overlay(const std::wstring& path)
 		// TODO: clear placeholders (O_None) after a cooldown period?
 	}
 
-	if (!shouldEnableTestingFeatures()) {
-		if (status != O_Downloading && status != O_Uploading && status != O_Conflict) return O_None;
-	}
 	return (Overlay)status;
 }
 
@@ -455,5 +451,3 @@ STDAPI DllInstall(BOOL install, LPCWSTR cmdLine)
 
 	return hr;
 }
-
-
