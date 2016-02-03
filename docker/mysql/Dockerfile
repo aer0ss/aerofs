@@ -1,9 +1,13 @@
-FROM mysql:5.6
+FROM aerofs/base
 
-MAINTAINER AeroFS "support@aerofs.com"
+RUN apk --update add mariadb mariadb-client && \
+    rm -rf /var/cache/apk/*
 
-ENV MYSQL_ALLOW_EMPTY_PASSWORD 1
+COPY root /
 
-ENTRYPOINT [ "/container-scripts/restart-on-error", "/entrypoint.sh", "mysqld" ]
+VOLUME /var/lib/mysql
 
-COPY buildroot /
+EXPOSE 3306
+
+ENTRYPOINT [ "/container-scripts/restart-on-error", "/entrypoint.sh" ]
+CMD [ "mysqld_safe" ]

@@ -3,7 +3,7 @@
 # This script sequentially runs all test.sh found in the current folder and subfolders.
 # Folders in the IGNORE list are ignored. The IP of the appliance is passed to all test.sh
 # as the only parameter.
-#
+set -e
 
 IGNORE="
     syncdet
