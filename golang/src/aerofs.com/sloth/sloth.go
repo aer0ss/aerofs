@@ -70,6 +70,7 @@ func main() {
 	dbParams := "charset=utf8mb4"
 	db := mysql.CreateConnectionWithParams(dbDSN, dbName, dbParams)
 	db.SetMaxOpenConns(MAX_OPEN_DB_CONNS)
+	db.SetMaxIdleConns(0)
 	defer db.Close()
 
 	var pushNotifier push.Notifier
