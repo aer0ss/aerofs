@@ -189,6 +189,7 @@ class ScanSession
         }
 
         Set<PathCombo> delayed = new HashSet<>();
+        Deque<PathCombo> backupStack = new LinkedList<>(_stack);
         Set<PathCombo> backupScanned = new HashSet<>(_scanned);
         LinkedHashSet<PathCombo> backupRoots = new LinkedHashSet<>(_sortedPCRoots);
         do {
@@ -215,7 +216,7 @@ class ScanSession
                     l.warn("delayed migration: {}", e.getMessage());
                     _sortedPCRoots = backupRoots;
                     _scanned = backupScanned;
-                    _stack.clear();
+                    _stack = backupStack;
                     // retry scanning, this time skipping over the object whose migration failed
                     continue;
                 }
