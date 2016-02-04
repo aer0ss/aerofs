@@ -69,8 +69,6 @@ import org.hamcrest.Matcher;
 import org.jboss.netty.util.Timer;
 import org.junit.After;
 import org.junit.Before;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

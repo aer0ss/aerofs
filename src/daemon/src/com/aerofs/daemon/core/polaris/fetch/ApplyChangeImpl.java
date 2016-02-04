@@ -601,8 +601,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     }
 
     @Override
-    public void share_(SOID soid, Trans t) throws Exception
-    {
+    public void share_(SOID soid, Trans t) throws Exception {
         SID sid = SID.folderOID2convertedStoreSID(soid.oid());
         OID anchor = SID.storeSID2anchorOID(sid);
         SOID soidAnchor = new SOID(soid.sidx(), anchor);
@@ -644,76 +643,88 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             _exdb.deleteExpelledObject_(soid, t);
         }
 
+        // detect external root
+        SIndex sidxTo = _sid2sidx.getNullable_(sid);
+
         // NB: ideally we wouldn't do that when the anchor is expelled but it's simpler to create
         // the store, do the regular migration and then delete it than it would be to handle an
         // expelled destination in every parts of the migration...
-        _sc.addParentStoreReference_(sid, soid.sidx(), oa.name(), t);
-
-        SIndex sidxTo = _sid2sidx.get_(sid);
-        SOID soidToRoot = new SOID(sidxTo, OID.ROOT);
-
-        if (oa.isExpelled()) {
-            // HACK: mark root dir as expelled to prevent ImmigrantCreator from trying to update
-            // physical objects
-            _ds.setExpelled_(soidToRoot, true, t);
-        } else {
+        if (sidxTo == null || !oa.isExpelled()) {
+            _sc.addParentStoreReference_(sid, soid.sidx(), oa.name(), t);
             _ps.newFolder_(p).updateSOID_(soidAnchor, t);
             IPhysicalFolder pf = _ps.newFolder_(p.substituteLastSOID(soidAnchor));
             pf.create_(MAP, t);
             pf.promoteToAnchor_(sid, MAP, t);
         }
 
-        // meta changes for the original folder should be moved to anchor
-        _mcdb.updateChanges_(soid.sidx(), soid.oid(), anchor, t);
+        if (sidxTo != null) {
+            // anchor did not exist but store does
+            // can happen on Linked TS
+            l.warn("store already present before SHARE {} {}", sid, sidxTo);
+            cleanup_(soid, t);
+        } else {
 
-        /**
-         * here be dragons
-         *
-         * assumption:
-         * SHARE op is received once the migration is completed server-side, i.e. as if the local
-         * snapshot of the remote tree (RemoteLinkDatabase) had been atomically migrated
-         *
-         * 1. recursively walk local migrated subtree
-         *      - is object is remote migrated subtree
-         *          yes: preserve OID, version, and all meta changes
-         *          no:
-         *              - is object know remotely?
-         *                  yes: assign new OID in target store, delete in source store
-         *                  no: preserve OID, consolidate meta changes to a single insert
-         * 2. recursively walk remote migrated subtree
-         *      - replicate in target store
-         *      - check if object is in local migrated tree (i.e. target store)
-         *          yes: nothing to do
-         *          no:  assign new OID in source store, delete in target store
-         * 3. go through local meta changes to source store in order, filtering out those that do
-         *    not affect objects in migrated subtree
-         *      - check if new parent is in migrated subtree
-         *          yes: move change to target store
-         *          no:  drop change FIXME: this is not 100% safe
-         *
-         *
-         * issues:
-         *   - complex and somewhat brittle
-         *   - full subtree walk in a single transaction
-         *      -> slow, blocking processing of other core events
-         *      -> risk of crash wo/ incremental progress
-         */
-        // migrate children
-        // TODO: deferred/incremental
-        RemoteTreeCache cache = new RemoteTreeCache(soid.sidx(), soid.oid(), _rpdb);
+            sidxTo = _sid2sidx.get_(sid);
+            SOID soidToRoot = new SOID(sidxTo, OID.ROOT);
 
-        for (OID c :_ds.getChildren_(soid)) {
-            SOID soidChild = new SOID(soid.sidx(), c);
-            OA oaChild = _ds.getOA_(soidChild);
-            _imc.createImmigrantRecursively_(p, soidChild, soidToRoot, oaChild.name(), MAP, cache, t);
-        }
+            if (oa.isExpelled()) {
+                // HACK: mark root dir as expelled to prevent ImmigrantCreator from trying to update
+                // physical objects
+                _ds.setExpelled_(soidToRoot, true, t);
+            }
 
-        copyRemoteTree_(soid.sidx(), soid.oid(), OID.ROOT, sidxTo, t);
-        moveMetaChanges_(soid.sidx(), soid.oid(), sidxTo, cache, t);
+            // meta changes for the original folder should be moved to anchor
+            _mcdb.updateChanges_(soid.sidx(), soid.oid(), anchor, t);
 
-        // remove store if the anchor is expelled
-        if (oa.isExpelled()) {
-            _sd.removeParentStoreReference_(sidxTo, soid.sidx(), p, MAP, t);
+            /**
+             * here be dragons
+             *
+             * assumption:
+             * SHARE op is received once the migration is completed server-side, i.e. as if the local
+             * snapshot of the remote tree (RemoteLinkDatabase) had been atomically migrated
+             *
+             * 1. recursively walk local migrated subtree
+             *      - is object is remote migrated subtree
+             *          yes: preserve OID, version, and all meta changes
+             *          no:
+             *              - is object know remotely?
+             *                  yes: assign new OID in target store, delete in source store
+             *                  no: preserve OID, consolidate meta changes to a single insert
+             * 2. recursively walk remote migrated subtree
+             *      - replicate in target store
+             *      - check if object is in local migrated tree (i.e. target store)
+             *          yes: nothing to do
+             *          no:  assign new OID in source store, delete in target store
+             * 3. go through local meta changes to source store in order, filtering out those that do
+             *    not affect objects in migrated subtree
+             *      - check if new parent is in migrated subtree
+             *          yes: move change to target store
+             *          no:  drop change FIXME: this is not 100% safe
+             *
+             *
+             * issues:
+             *   - complex and somewhat brittle
+             *   - full subtree walk in a single transaction
+             *      -> slow, blocking processing of other core events
+             *      -> risk of crash wo/ incremental progress
+             */
+            // migrate children
+            // TODO: deferred/incremental
+            RemoteTreeCache cache = new RemoteTreeCache(soid.sidx(), soid.oid(), _rpdb);
+
+            for (OID c : _ds.getChildren_(soid)) {
+                SOID soidChild = new SOID(soid.sidx(), c);
+                OA oaChild = _ds.getOA_(soidChild);
+                _imc.createImmigrantRecursively_(p, soidChild, soidToRoot, oaChild.name(), MAP, cache, t);
+            }
+
+            copyRemoteTree_(soid.sidx(), soid.oid(), OID.ROOT, sidxTo, t);
+            moveMetaChanges_(soid.sidx(), soid.oid(), sidxTo, cache, t);
+
+            // remove store if the anchor is expelled
+            if (oa.isExpelled()) {
+                _sd.removeParentStoreReference_(sidxTo, soid.sidx(), p, MAP, t);
+            }
         }
 
         // complete deletion of original folder

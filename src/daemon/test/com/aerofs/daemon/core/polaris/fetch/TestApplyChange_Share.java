@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
@@ -11,11 +10,13 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
+import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.IDBIterator;
@@ -24,6 +25,8 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import org.junit.Test;
+
+import java.util.Properties;
 
 import static com.aerofs.daemon.core.polaris.InMemoryDS.*;
 import static com.aerofs.daemon.core.polaris.api.RemoteChange.*;
@@ -1128,5 +1131,45 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
                         folder(LibParam.TRASH, OID.TRASH)),
                 folder("bastion", baz));
 
+    }
+
+    @Test
+    public void shouldHandleShareForExistingRoot() throws Exception {
+        Properties ts = new Properties();
+        ts.setProperty("labeling.isMultiuser", "true");
+        L.set(ts);
+
+        try {
+            SID sid = SID.folderOID2convertedStoreSID(foo);
+
+            try (Trans t = tm.begin_()) {
+                inj.getInstance(StoreCreator.class).createRootStore_(sid, "foo", t);
+                t.commit_();
+            }
+
+            SIndex shared = mds.sm.get_(sid);
+
+            apply(shared,
+                    insert(OID.ROOT, "bar", bar, ObjectType.FOLDER)
+            );
+
+            apply(sidx,
+                    insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                    insert(foo, "baz", baz, ObjectType.FOLDER),
+                    insert(foo, "bar", bar, ObjectType.FOLDER),
+                    share(foo)
+            );
+
+            LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+            mds.expect(rootSID,
+                    folder(LibParam.TRASH, OID.TRASH,
+                            folder(foo.toStringFormal(), foo)),
+                    anchor("foo", foo,
+                            folder(LibParam.TRASH, OID.TRASH),
+                            folder("bar", bar)));
+        } finally {
+            L.set(new Properties());
+        }
     }
 }
