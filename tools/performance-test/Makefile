@@ -2,12 +2,13 @@ APPLIANCE := `ansible/hosts/appliance | jq ' .appliance[0] ' | tr -d '"'`
 METRICS := ~/metrics
 
 
+.PHONY: $(METRICS)
 $(METRICS):
 	rsync -avz -e 'ssh -i ansible/aws.pem' core@$(APPLIANCE):/home/core/metrics/ $(METRICS)
 
 
 metrics.png: http_successes.png logical_objects.png transform.png transform_slope.png
-	convert \( logical_objects.png transform.png -append \) \( http_successes.png transform_slope.png -append \) +append large.png
+	convert \( logical_objects.png transform.png -append \) \( http_successes.png transform_slope.png -append \) +append $@
 
 http_successes.png: $(METRICS)
 	./plotter.py --metrics=$< --output=$@ http.request.success.1min-rate http.request.success.5min-rate http.request.success.15min-rate
@@ -23,7 +24,6 @@ transform_slope.png: $(METRICS)
 
 
 clean:
-	rm -rf $(METRICS)
 	rm -f metrics.png
 	rm -f http_successes.png
 	rm -f logical_objects.png
