@@ -11,6 +11,7 @@ import com.aerofs.lib.event.Prio;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -40,5 +41,15 @@ public class Scheduler implements IScheduler
     {
         _executor.schedule(() -> _sink.enqueueBlocking(ev, Prio.LO),
                 relativeTimeInMSec, TimeUnit.MILLISECONDS);
+    }
+
+    public AtomicBoolean scheduleCancellable(final IEvent ev, long relativeTimeInMSec)
+    {
+        final AtomicBoolean done = new AtomicBoolean();
+        _executor.schedule(() -> {
+            if (!done.compareAndSet(false, true)) return;
+            _sink.enqueueBlocking(ev, Prio.LO);
+        }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
+        return done;
     }
 }

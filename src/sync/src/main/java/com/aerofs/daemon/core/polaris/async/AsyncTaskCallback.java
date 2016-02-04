@@ -8,7 +8,7 @@ package com.aerofs.daemon.core.polaris.async;
  * Callback object invoked on completion of an {@link AsyncTask}
  *
  * This is mostly used to control scheduling of recurring tasks by
- * {@link AsyncWorkScheduler}
+ * {@link AsyncWorkGroupScheduler}
  */
 public interface AsyncTaskCallback
 {

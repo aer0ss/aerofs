@@ -8,10 +8,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.IScheduler;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * This class serves as a very simple stripped down single threaded scheduler for the GUI. Only
@@ -37,8 +34,8 @@ public class UIScheduler implements IScheduler
     public void schedule(final IEvent ev, long relativeTimeInMSec)
     {
         _executor.schedule(() -> {
-        assert ev instanceof AbstractEBSelfHandling;
-        ((AbstractEBSelfHandling) ev).handle_();
-    }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
+            assert ev instanceof AbstractEBSelfHandling;
+            ((AbstractEBSelfHandling) ev).handle_();
+        }, relativeTimeInMSec, TimeUnit.MILLISECONDS);
     }
 }

@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.polaris.fetch;
 
-import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.polaris.async.AsyncWorkScheduler;
+import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
+import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler.TaskState;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
@@ -21,10 +21,10 @@ public class ChangeFetchScheduler
     public static class Factory
     {
         private final ChangeFetcher _fetcher;
-        private final CoreScheduler _sched;
+        private final AsyncWorkGroupScheduler _sched;
 
         @Inject
-        public Factory(ChangeFetcher fetcher, CoreScheduler sched)
+        public Factory(ChangeFetcher fetcher, AsyncWorkGroupScheduler sched)
         {
             _fetcher = fetcher;
             _sched = sched;
@@ -38,13 +38,13 @@ public class ChangeFetchScheduler
 
     private final Factory _f;
     private final SIndex _sidx;
-    private final AsyncWorkScheduler _sched;
+    private final TaskState _sched;
 
     private ChangeFetchScheduler(Factory f, SIndex sidx)
     {
         _f = f;
         _sidx = sidx;
-        _sched = new AsyncWorkScheduler("fetch[" + _sidx + "]", _f._sched, cb -> {
+        _sched = f._sched.register_("fetch[" + _sidx + "]", cb -> {
             try {
                 _f._fetcher.fetch_(_sidx, cb);
             } catch (Throwable t) {
