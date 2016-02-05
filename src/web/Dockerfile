@@ -4,6 +4,20 @@ MAINTAINER AeroFS "support@aerofs.com"
 
 COPY root/requirements-exact.txt /
 
+RUN apk -U add --virtual deps \
+        build-base \
+        git \
+        python-dev \
+        libqrencode-dev &&\
+    git clone https://github.com/aerofs/fastqrcode.git &&\
+    cd fastqrcode &&\
+    python setup.py install &&\
+    cd .. &&\
+    rm -rf fastqrcode &&\
+    apk del deps &&\
+    apk add libqrencode &&\
+    rm -rf /var/cache/apk/*
+
 RUN \
     apk --update add \
         py-crypto \

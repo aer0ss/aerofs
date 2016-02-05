@@ -9,7 +9,7 @@ from pyramid.response import Response
 from pyramid.renderers import render_to_response
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
-import qrcode
+import fastqrcode as qrcode
 
 from web.util import get_rpc_stub, flash_error, flash_success
 from web.cryptobox import crypto_box, crypto_box_open
@@ -107,15 +107,13 @@ def two_factor_setup_post(request):
     secret = base64.b32encode(shared_secret)
     label = "AeroFS%3A%20{}".format(authenticated_userid(request))
     url = "otpauth://{}/{}?secret={}".format("totp", label, secret)
-    qr = qrcode.QRCode(
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=6,
+    qr = qrcode.encode(url,
+        ec_level=qrcode.ERROR_CORRECT_L,
+        module_size=6,
         border=4,
     )
-    qr.add_data(url)
-    qr.make(fit=True)
     buf = BytesIO()
-    qr.make_image().save(buf, "png")
+    qr.save(buf, "png")
     qr_image_data = "data:image/png;base64,{}".format(base64.b64encode(buf.getvalue()))
 
     # Encrypt the secret so that we can embed it in the POST form.  This way we

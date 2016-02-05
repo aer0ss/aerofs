@@ -3,7 +3,7 @@ import base64
 import struct
 import hashlib
 
-import qrcode
+import fastqrcode as qrcode
 from pyramid.view import view_config
 from pyramid.response import Response
 from pyramid.exceptions import Forbidden
@@ -68,16 +68,13 @@ def get_mobile_access_code(request):
 
     # Return the access code in the appropriate format
     if token_format == 'qrcode':
-        qr = qrcode.QRCode(
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=6,
+        qr = qrcode.encode(code,
+            ec_level=qrcode.ERROR_CORRECT_L,
+            module_size=6,
             border=4,
         )
-        qr.add_data(code)
-        qr.make(fit=True)
-
         response = Response(content_type='image/png', cache_expires=0)
-        qr.make_image().save(response.body_file, 'png')
+        qr.save(response.body_file, 'png')
 
     elif token_format == 'text':
         # We enclose the code between '[[[' and ']]]' because Safari on iOS copies the text as rich text with a
