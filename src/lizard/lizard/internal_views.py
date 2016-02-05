@@ -1,6 +1,7 @@
 import datetime
 import stripe
 import tarfile
+import requests
 from StringIO import StringIO
 from aerofs_licensing import unicodecsv
 from lizard import db, csrf, appliance, notifications, forms, models, hpc
@@ -336,6 +337,17 @@ def upload_bundle():
                 for admin in license_request.customer.admins:
                     print "emailing", admin, "about new license"
                     notifications.send_license_available_email(admin)
+
+                    # log new license in salesforce/pardot
+                    pardot_params = {
+                        'email' : admin.email.encode('utf-8'),
+                        'aerofs_license_type__c' : "Teams" if license_request.is_trial else "Business",
+                        'aerofs_number_of_users__c' : license_request.seats,
+                        'aerofs_product_expiration_date__c' : license_request.expiry_date,
+                        'aerofs_license_created_date__c' : license_request.create_date
+                    }
+                    requests.get("https://go.pardot.com/l/32882/2016-01-25/4pp6mq", params=pardot_params)
+
                 # Prefer committing after sending the emails.In the case of a failure, admins listed
                 # before the one triggering the failure will get duplicate emails, but if you commit
                 # before sending the mails and there's an email failure, that message to the user
