@@ -19,6 +19,14 @@ def call_crane(cmd, target):
     subprocess.check_call(print_args(args))
 
 
+def modify_image(image, cmd):
+    args = ['echo', 'FROM {}\nRUN {}'.format(image, cmd)]
+    dockerfile = subprocess.Popen(print_args(args), stdout=subprocess.PIPE)
+
+    args = ['docker', 'build', '-t', image, '-']
+    subprocess.check_call(print_args(args), stdin=dockerfile.stdout)
+
+
 def my_container_id():
     """
     :return ID of the current container. It assumes the host didn't alter the hostname when launching the container.

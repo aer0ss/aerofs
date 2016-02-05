@@ -4,7 +4,7 @@ set -ex
 die_usage() {
     (set +x
         echo "Usage: $0 <output_formats> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> ['nopush']"
-        echo "       <output_formats> is a comma separated list of output formatS. Only 'cloudinit' and 'preloaded' are supported."
+        echo "       <output_formats> is a comma separated list of output formats. Only 'cloudinit' and 'preloaded' are supported."
         echo "                Example: 'preloaded,cloudinit'"
         echo "       <path_to_extra_files> The path to a folder that holds files to be copied to the root of the target host."
         echo "                The files are added to the cloud-config file so you may expect consistent results across all"

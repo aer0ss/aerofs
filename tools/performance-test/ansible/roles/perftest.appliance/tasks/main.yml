@@ -27,17 +27,17 @@
 
 - name: Import build script
   copy:
-    src: build-appliance.sh
-    dest: "{{ ansible_home }}/build-appliance.sh"
+    src: build.sh
+    dest: "{{ ansible_home }}/build.sh"
     mode: "u+x"
-  register: build_appliance_file
+  register: build_file
 
-- name: Import test script
+- name: Import reconfigure script
   copy:
-    src: test-appliance.sh
-    dest: "{{ ansible_home }}/test-appliance.sh"
+    src: reconfigure.sh
+    dest: "{{ ansible_home }}/reconfigure.sh"
     mode: "u+x"
-  register: test_appliance_file
+  register: reconfigure_file
 
 - name: Create host folder for repos
   file:
@@ -79,23 +79,21 @@
   register: need_build_appliance
   ignore_errors: True
 
-- name: Update aero-teamcity-agent
-  command: docker pull aerofs/aero-teamcity-agent
-  when: need_build_appliance | failed
-
-# Once the 'add_host' is actually supported by ansible/docker, we can use that.
-# Until then, enjoy this ugly hack.
-- name: Create appliance and dev client
-  command: >-
-    docker run --name=dev-build
-               --dns=172.17.42.1 --dns=172.16.0.83
-               --add-host share.syncfs.com:172.17.42.1
-               -v=/var/run/docker.sock:/var/run/docker.sock
-               -v={{ private_key.stat.path }}:/root/.ssh/id_rsa
-               -v={{ build_appliance_file.dest }}:/build-appliance.sh
-               -v={{ repos_dir.path }}:/repos
-               aerofs/aero-teamcity-agent:latest
-               /build-appliance.sh
+- name: Build containers
+  docker:
+    name: dev-build
+    image: aerofs/aero-teamcity-agent:latest
+    command: /build.sh
+    # N.B. to test a specific commit, replace the above line with:
+    # command: /build.sh COMMITISH
+    state: started
+    pull: missing
+    detach: false
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "{{ ansible_home }}/.ssh/id_rsa:/root/.ssh/id_rsa"
+      - "{{ build_file.dest }}:/build.sh"
+      - "{{ repos_dir.path }}:/repos"
   when: need_build_appliance | failed
 
 - name: Start emulator
@@ -114,18 +112,19 @@
     mode: "0644"
   become: true
 
-# See above.
-- name: Test appliance and dev client to create new user
+# Once the 'add_host' is actually supported by ansible/docker, we can use that.
+# Until then, we need to specify the docker command as a `command` target
+# rather than a `docker` target. Sorry.
+- name: Reconfigure appliance and dev client to create new user
   command: >-
-    docker run --name=dev-test
-               --dns=172.17.42.1 --dns=172.16.0.83
+    docker run --name=dev-reconfigure
                --add-host share.syncfs.com:172.17.42.1
                -v=/var/run/docker.sock:/var/run/docker.sock
-               -v={{ private_key.stat.path }}:/root/.ssh/id_rsa
-               -v={{ test_appliance_file.dest }}:/test-appliance.sh
+               -v={{ ansible_home }}/.ssh/id_rsa:/root/.ssh/id_rsa
+               -v={{ reconfigure_file.dest }}:/reconfigure.sh
                -v={{ repos_dir.path }}:/repos
                aerofs/aero-teamcity-agent:latest
-               /test-appliance.sh
+               /reconfigure.sh
   when: need_build_appliance | failed
 
 - name: Mark docker appliance as provisioned

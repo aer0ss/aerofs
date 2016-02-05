@@ -10,10 +10,19 @@ if [ ! -d $REPO_DIR ]
 then
     git clone --depth=1 $GERRIT_URL $REPO_DIR
 else
-    ( cd $REPO_DIR && git pull )
+    ( cd $REPO_DIR && git reset --hard HEAD && git pull origin master )
 fi
 
-# starting the cache may sometimes exit 1, better to brute force it into working here than break the build process
+# allow us to checkout specific commits
+if [ $# -gt 0 ] ; then
+    (set +e
+        cd $REPO_DIR && git pull origin master --unshallow || true )
+    ( cd $REPO_DIR && git checkout $1 )
+
+fi
+
+# starting the cache may sometimes exit 1, better to brute force it into
+# working here than break the build process
 (set +e
     for i in {1..5}; do $REPO_DIR/tools/cache/start.sh && break || sleep 5; done
 )

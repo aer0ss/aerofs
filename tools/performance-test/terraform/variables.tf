@@ -2,12 +2,6 @@ variable "aws_access_key" {}
 variable "aws_secret_key" {}
 variable "aws_ssh_key" {}
 
-variable "ami" {
-  default = {
-    coreos = "ami-9d5894f6"
-  }
-}
-
 variable "subnet" {
   default = {
     internal_production = "subnet-2ff94b42"

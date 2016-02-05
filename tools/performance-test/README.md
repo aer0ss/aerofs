@@ -54,7 +54,7 @@ To stop the tests, kill the clients, and stop recording metrics, run
 
 Once the test has started, a `metrics` folder will be created on the appliance.
 This folder will be periodically updated with new metrics; the best way to get
-these metrics is to run `make ~/metrics`. This will rsync the metrics folder
+these metrics is to run `make metrics`. This will rsync the metrics folder
 onto your machine.
 
 The `plotter.py` program can be used to plot various metrics against each

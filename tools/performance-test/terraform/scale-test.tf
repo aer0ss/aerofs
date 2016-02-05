@@ -5,8 +5,8 @@ provider "aws" {
 }
 
 resource "aws_instance" "appliance" {
-    ami = "ami-9d5894f6"
-    instance_type = "m3.large"
+    ami = "ami-05ffb06f"
+    instance_type = "m3.2xlarge"
     key_name = "${var.aws_ssh_key}"
     vpc_security_group_ids = ["${aws_security_group.perftest.id}"]
     subnet_id = "${var.subnet.polaris_perftest}"
@@ -20,7 +20,7 @@ resource "aws_instance" "appliance" {
 }
 
 resource "aws_instance" "client" {
-    count = "10"
+    count = "50"
     ami = "ami-d05e75b8"
     instance_type = "t2.micro"
     key_name = "${var.aws_ssh_key}"

@@ -3,7 +3,8 @@ import yaml
 import jinja2
 import requests
 import os.path
-from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix
+import psutil
+from common import MODIFIED_YML_PATH, modify_image, my_image_name, my_container_name, my_subdomain, my_container_prefix
 
 CRANE_JINJA_PATH = '/crane.yml.jinja'
 CRANE_YML_PATH = '/crane.yml'
@@ -62,6 +63,7 @@ def modify_yaml(repo, tag, my_container=None, remove_loader_container=True):
 
     tagged_loader_container = rename_container(loader_container, tag)
     add_repo_and_tag_to_images(containers, repo, tag)
+    modify_images(containers, tagged_loader_container, my_container, tag)
     modify_links(containers, tagged_loader_container, my_container, tag)
     modify_volumes_from(containers, tagged_loader_container, my_container, tag)
 
@@ -148,10 +150,26 @@ def modify_groups(groups, tagged_loader_container, my_container, tag):
         groups[k] = [loader_pattern.sub(my_container, c) for c in groups[k]]
 
 
+def modify_images(containers, tagged_loader_container, my_container, tag):
+    """
+    Perform any container touch-ups based on environment.
+    """
+    if my_subdomain():
+        # Keep the mysql container light in HPC.
+        # N.B. this assumes the default mysql config is light enough for HPC.
+        pass
+    elif psutil.virtual_memory().total >= 3 * 1024 * 1024 * 1024:
+        # When running with more than 3GB of memory, we can afford to give a
+        # bit more to MySQL.
+        modify_image(
+            containers['mysql']['image'],
+            ('sed -i '
+             '"s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" '
+             '"/etc/mysql/my.cnf"'))
+
+
 def rename_container(c, tag):
     """
     See also: patterns defined in modify_links()
     """
     return '{}{}{}'.format(my_container_prefix(), c, container_suffix(tag))
-
-

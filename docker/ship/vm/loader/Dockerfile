@@ -8,6 +8,7 @@ RUN apk --update add \
         python \
         py-flask \
         py-jinja2 \
+        py-psutil \
         py-requests \
         py-yaml &&\
     rm -rf /var/cache/apk/*

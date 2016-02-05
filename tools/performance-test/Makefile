@@ -1,5 +1,5 @@
 APPLIANCE := `ansible/hosts/appliance | jq ' .appliance[0] ' | tr -d '"'`
-METRICS := ~/metrics
+METRICS := ./metrics/
 
 
 .PHONY: $(METRICS)
@@ -24,6 +24,7 @@ transform_slope.png: $(METRICS)
 
 
 clean:
+	rm -rf $(METRICS)
 	rm -f metrics.png
 	rm -f http_successes.png
 	rm -f logical_objects.png
