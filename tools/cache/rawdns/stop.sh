@@ -3,6 +3,9 @@
 docker stop rawdns
 docker rm --force rawdns
 
+# detect docker bridge IP
+BRIDGE=$(docker run --rm alpine:3.3 ip route | grep default | cut -d ' ' -f 3)
+
 VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 
 if docker-machine ls "$VM" &>/dev/null ; then
@@ -19,12 +22,21 @@ if docker-machine ls "$VM" &>/dev/null ; then
 
     # remove dns config inserted by start.sh
     if [[ "$os" == "b2d" ]] ; then
-        docker-machine ssh $VM "grep -v -F 'EXTRA_ARGS=\"--dns 172.17.42.1' $profile | sudo tee ${profile}.old ; \
-            sudo mv ${profile}.old ${profile}"
-
-        # restart docker daemon (the init script is borked and cannot restart properly...)
+        docker-machine ssh $VM <<EOF
+        grep -v -F 'EXTRA_ARGS="--dns $BRIDGE' $profile | sudo tee ${profile}.old
+        sudo mv ${profile}.old ${profile}
         echo "restarting docker daemon"
-        docker-machine restart $VM; sleep 5
+        sudo /etc/init.d/docker stop
+        while sudo /etc/init.d/docker status | grep -F "is running" &>/dev/null ; do
+            sleep 1
+        done
+        echo "stopped"
+        sudo /etc/init.d/docker start
+        while sudo /etc/init.d/docker status | grep -F "is not running" &>/dev/null ; do
+            sleep 1
+        done
+        echo "started"
+EOF
     elif [[ "$os" == "b2d-ng" ]] ; then
         docker-machine ssh $VM "cat $service | sed 's/\\\$EXTRA_ARGS//' | sudo tee ${service}.old ; \
             sudo mv ${service}.old ${service} ; \

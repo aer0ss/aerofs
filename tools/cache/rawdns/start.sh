@@ -84,12 +84,21 @@ if docker-machine ls "$VM" &>/dev/null ; then
 
     if [[ "$os" == "b2d" ]] ; then
         # configure docker daemon to use rawdns resolver
-        docker-machine ssh $VM "echo 'EXTRA_ARGS=\"--userland-proxy=false --dns $BRIDGE \$EXTRA_ARGS\"' | sudo tee -a $profile"
-
+        # boot2docker init script doesn't do a proper restart... need to do it oursevles...
+        docker-machine ssh $VM <<EOF
+        echo 'EXTRA_ARGS="--userland-proxy=false --dns $BRIDGE \$EXTRA_ARGS"' | sudo tee -a $profile
         echo "restarting docker daemon"
-        docker-machine ssh $VM "sudo /etc/init.d/docker restart"
-        # wait a few seconds because the init script exits early
-        sleep 5
+        sudo /etc/init.d/docker stop
+        while sudo /etc/init.d/docker status | grep -F "is running" &>/dev/null ; do
+            sleep 1
+        done
+        echo "stopped"
+        sudo /etc/init.d/docker start
+        while sudo /etc/init.d/docker status | grep -F "is not running" &>/dev/null ; do
+            sleep 1
+        done
+        echo "started"
+EOF
     elif [[ "$os" == "b2d-ng" ]] ; then
         # update EXTRA_ARGS to use rawdns resolver [idempotent]
         extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns $BRIDGE\""
