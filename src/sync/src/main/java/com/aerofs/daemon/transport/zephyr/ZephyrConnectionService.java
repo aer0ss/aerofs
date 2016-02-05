@@ -373,7 +373,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
             return;
         }
 
-        l.debug("{} <-sig ms:{} m{}", did, handshake.getSourceZephyrId(), handshake.getDestinationZephyrId());
+        l.debug("{} <-sig ms:{} md:{}", did, handshake.getSourceZephyrId(), handshake.getDestinationZephyrId());
 
         // FIXME (AG): I'm not a fan of this entire block because of 1) notification ordering and 2) trying to be too smart
         //

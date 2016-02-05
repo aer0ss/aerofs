@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.ExTimeout;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.CoreProtocolReactor.Handler;
 import com.aerofs.daemon.core.net.device.Devices;
 import com.aerofs.daemon.core.net.device.Devices.DeviceAvailabilityListener;
@@ -21,16 +22,15 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.CoreExecutor;
 import com.aerofs.daemon.link.LinkStateService;
+import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.CfgTimeout;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * RPC: Remote Procedure Calls
@@ -50,13 +50,25 @@ public class RPC implements Handler, DeviceAvailabilityListener {
         private static final long serialVersionUID = 1L;
     }
 
-    private static class ResponseWaiter
-    {
-        TCB _tcb;
-        DigestedMessage _response;
+    private class ResponseWaiter implements Timable<ResponseWaiter> {
+        int _rcpid;
+        FutureCallback<DigestedMessage> _cb;
+        Timeouts<ResponseWaiter>.Timeout _timeout;
+
+        @Override
+        public int compareTo(ResponseWaiter o) {
+            return Long.compare(_rcpid, o._rcpid);
+        }
+
+        @Override
+        public void timeout_() {
+            _waiters.remove(_rcpid);
+            _cb.onFailure(new ExTimeout());
+        }
     }
 
     private final TransportRoutingLayer _trl;
+    private final Timeouts<ResponseWaiter> _timeouts;
 
     private final Map<Integer, ResponseWaiter> _waiters = Maps.newTreeMap();
     private final Map<DID, Set<Integer>> _bydid = new HashMap<>();
@@ -78,11 +90,12 @@ public class RPC implements Handler, DeviceAvailabilityListener {
     }
 
     @Inject
-    public RPC(TransportRoutingLayer trl, CoreExecutor coreExecutor, LinkStateService lss,
-               CfgTimeout cfgTimeout, Devices devices, PauseSync pause)
+    public RPC(TransportRoutingLayer trl, CoreScheduler sched, CoreExecutor coreExecutor,
+               LinkStateService lss, CfgTimeout cfgTimeout, Devices devices, PauseSync pause)
     {
         _trl = trl;
         _pause = pause;
+        _timeouts = new Timeouts<>(sched);
         devices.addListener_(this);
         lss.addListener((previous, current, added, removed) -> {
             if (current.isEmpty()) {
@@ -92,27 +105,18 @@ public class RPC implements Handler, DeviceAvailabilityListener {
         _cfgTimeout = cfgTimeout;
     }
 
-    private DigestedMessage receiveResponse_(int rpcid, Token tk, String reason)
-        throws ExTimeout, ExAborted, ExProtocolError
-    {
-        assert !_waiters.containsKey(rpcid);
+    public void asyncRequest_(Endpoint ep, PBCore request, FutureCallback<DigestedMessage> handler)
+            throws ExLinkDown {
+        if (_pause.isPaused()) throw new ExLinkDown();
 
+        int rpcid = request.getRpcid();
         ResponseWaiter waiter = new ResponseWaiter();
-        waiter._tcb = TC.tcb();
+        waiter._rcpid = rpcid;
+        waiter._cb = handler;
+        waiter._timeout = _timeouts.add_(waiter, _cfgTimeout.get());
+
+        add_(ep.did(), rpcid);
         _waiters.put(rpcid, waiter);
-
-        try {
-            tk.pause_(_cfgTimeout.get(), reason);
-        } finally {
-            _waiters.remove(rpcid);
-        }
-
-        DigestedMessage response = waiter._response;
-        assert response != null;
-
-        l.debug("got response rid:{} ep:{}", rpcid, response.ep());
-
-        return response;
     }
 
     public DigestedMessage issueRequest_(DID did, PBCore request, Token tk, String reason)
@@ -120,14 +124,38 @@ public class RPC implements Handler, DeviceAvailabilityListener {
     {
         if (_pause.isPaused()) throw new ExLinkDown();
 
-        Endpoint ep = null;
+        Endpoint ep = _trl.sendUnicast_(did, request);
+        if (ep == null) throw new ExDeviceUnavailable(did.toString());
+
+        int rpcid = request.getRpcid();
+        TCB tcb = TC.tcb();
+        OutArg<DigestedMessage> resp = new OutArg<>();
+
+        asyncRequest_(ep, request, new FutureCallback<DigestedMessage>() {
+            @Override
+            public void onSuccess(DigestedMessage response) {
+                l.debug("got response rid:{} ep:{}", rpcid, response.ep());
+                resp.set(response);
+                tcb.resume_();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                tcb.abort_(t);
+            }
+        });
         try {
-            ep = _trl.sendUnicast_(did, request);
-            add_(did, request.getRpcid());
-            return receiveResponse_(request.getRpcid(), tk, reason);
-        } catch (ExTimeout e) {
-           l.warn("timeout rid:{} t:{} ep:{}", request.getRpcid(), CoreProtocolUtil.typeString(request), ep);
+            tk.pause_(reason);
+            return resp.get();
+        } catch (ExAborted e) {
+            Throwable t = e.getCause();
+            if (t instanceof ExTimeout) {
+                l.warn("timeout rid:{} t:{} ep:{}", rpcid, CoreProtocolUtil.typeString(request), ep);
+                throw (ExTimeout)t;
+            }
             throw e;
+        } finally {
+            _waiters.remove(rpcid);
         }
     }
 
@@ -141,7 +169,7 @@ public class RPC implements Handler, DeviceAvailabilityListener {
     /**
      * @return false if the reply is spurious or is ignored
      */
-    public boolean processResponse_(DigestedMessage msg)
+    private boolean processResponse_(DigestedMessage msg)
             throws ExProtocolError
     {
         if (!msg.pb().hasRpcid()) {
@@ -155,8 +183,9 @@ public class RPC implements Handler, DeviceAvailabilityListener {
         ResponseWaiter waiter = _waiters.remove(rpcid);
 
         if (waiter != null) {
-            waiter._response = msg;
-            return waiter._tcb.resume_();
+            waiter._timeout.cancel_();
+            waiter._cb.onSuccess(msg);
+            return true;
         } else {
             l.warn("spurious response rid:{} ep:{}", rpcid, msg.ep());
             return false;
@@ -170,7 +199,9 @@ public class RPC implements Handler, DeviceAvailabilityListener {
         for (Integer rpcid : rpcs) {
             ResponseWaiter w = _waiters.remove(rpcid);
             if (w == null) break;
-            w._tcb.abort_(new ExDeviceUnavailable(did.toString()));
+            // TODO: submit separate core event if multiple RPCs are cancelled?
+            w._timeout.cancel_();
+            w._cb.onFailure(new ExDeviceUnavailable(did.toString()));
         }
     }
 
@@ -187,7 +218,9 @@ public class RPC implements Handler, DeviceAvailabilityListener {
 
         Exception e = new ExLinkDown();
         for (ResponseWaiter waiter : _waiters.values()) {
-            waiter._tcb.abort_(e);
+            // TODO: submit separate core event if multiple RPCs are cancelled?
+            waiter._timeout.cancel_();
+            waiter._cb.onFailure(e);
         }
 
         // Remove all the entries to prevent further notification on them after this method

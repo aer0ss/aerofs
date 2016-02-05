@@ -71,7 +71,7 @@ public abstract class CoreProtocolUtil
         return message.hasExceptionResponse() ? typeString + ":E" + exceptionTypeString(message.getExceptionResponse().getType()) : typeString;
     }
 
-    private static String typeString(PBCore.Type type)
+    static String typeString(PBCore.Type type)
     {
         return Integer.toString(type.getNumber());
     }

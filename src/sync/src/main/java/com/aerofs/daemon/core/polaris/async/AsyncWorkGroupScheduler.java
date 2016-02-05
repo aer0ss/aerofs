@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.polaris.async;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
@@ -238,7 +239,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
                     _timeout = 0;
                     activate_();
                 } else {
-                    l.debug("{} already sched", _name);
+                    l.trace("{} already sched", _name);
                 }
             } else {
                 checkState(_state == IDLE);
@@ -286,7 +287,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
         }
 
         private Throwable suppress(Throwable t) {
-            return BaseLogUtil.suppress(t, ExRetryLater.class, SocketException.class,
+            return BaseLogUtil.suppress(t, ExRetryLater.class, SocketException.class, ExNoPerm.class,
                     ClosedChannelException.class, UnresolvedAddressException.class);
         }
 
@@ -308,8 +309,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
                 if (_timeout > 0) {
                     _delayed.remove(this);
                 }
-                _delay = Math.min(LibParam.EXP_RETRY_MAX_DEFAULT,
-                        Math.max(_delay * 2, LibParam.EXP_RETRY_MIN_DEFAULT));
+                _delay = Math.min(LibParam.EXP_RETRY_MAX_DEFAULT, Math.max(_delay * 2, 250));
                 l.info("{} retry in {}", _name, _delay, suppress(t));
                 if (_delayed.isEmpty()) {
                     if (_schedF != null) {

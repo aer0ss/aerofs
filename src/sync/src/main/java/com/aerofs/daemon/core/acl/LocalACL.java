@@ -62,14 +62,15 @@ public class LocalACL
      */
     public boolean check_(UserID subject, SIndex sidx, Permissions permissions) throws SQLException
     {
+        // special treatment for local user to avoid race-induced exp-retry delays
+        if (subject.equals(_cfgLocalUser.get())) {
+            // READ access to all stores on his own devices
+            if (Permissions.VIEWER.covers(permissions)) return true;
+            // WRITE access to root store
+            if (_sidx2sid.get_(sidx).equals(SID.rootSID(subject))) return true;
+        }
         Permissions permissionsActual = get_(sidx).get(subject);
-        boolean allowed = permissionsActual != null && permissionsActual.covers(permissions);
-
-        // always allow the local user to operate on root stores, so that newly installed
-        // devices can instantly start syncing with other devices without waiting for ACL to be
-        // downloaded.
-        return allowed || (subject.equals(_cfgLocalUser.get())
-                                   && _sidx2sid.get_(sidx).equals(SID.rootSID(subject)));
+        return permissionsActual != null && permissionsActual.covers(permissions);
     }
 
     public void checkThrows_(UserID subject, SIndex sidx, Permissions permissions)

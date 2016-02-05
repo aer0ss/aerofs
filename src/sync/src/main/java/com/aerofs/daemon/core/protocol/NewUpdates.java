@@ -2,9 +2,7 @@ package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExProtocolError;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.net.CoreProtocolReactor;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -24,7 +22,6 @@ public class NewUpdates implements CoreProtocolReactor.Handler
     private static final Logger l = Loggers.getLogger(NewUpdates.class);
 
     private final IMapSID2SIndex _sid2sidx;
-    private final LocalACL _lacl;
     private final Impl _impl;
 
     public interface Impl {
@@ -32,10 +29,9 @@ public class NewUpdates implements CoreProtocolReactor.Handler
     }
 
     @Inject
-    public NewUpdates(IMapSID2SIndex sid2sidx, LocalACL lacl, Impl impl)
+    public NewUpdates(IMapSID2SIndex sid2sidx, Impl impl)
     {
         _sid2sidx = sid2sidx;
-        _lacl = lacl;
         _impl = impl;
     }
 
@@ -53,13 +49,11 @@ public class NewUpdates implements CoreProtocolReactor.Handler
         PBNewUpdates pb = msg.pb().getNewUpdates();
         SIndex sidx = _sid2sidx.getThrows_(new SID(BaseUtil.fromPB(pb.getStoreId())));
 
-        // see Rule 2 in acl.md. Note that the maxcast sender can forge the device id
-        // (unless maxcast messages are signed). therefore this is not a security measure.
-        // see more in acl.md.
-        if (!_lacl.check_(msg.user(), sidx, Permissions.EDITOR)) {
-            l.warn("{} ({}) on {} has no editor perm for {}", msg.did(), msg.user(), sidx);
-            return;
-        }
+        // NB: no ACL check on incoming mcast
+        //  - TCP mcast can be forged trivially since the messages are not signed
+        //  - mcast do not contain any state, they are pure signals to take further action
+        //    like GetVersion or GetFilter, which will do appropriate ACL checks
+        //  - race between ACL propagation and mcast could lead to mcast being discarded
 
         _impl.handle_(sidx, msg.did(), pb);
     }
