@@ -1,6 +1,7 @@
 import re
+import requests
 from flask import current_app
-from lizard import db
+from lizard import celery, db
 from models import HPCDeployment, HPCServer
 from docker import Client, tls
 from sqlalchemy.exc import IntegrityError
@@ -10,7 +11,7 @@ from hpc_config import configure_deployment, reboot, repackage
 
 class DeploymentAlreadyExists(Exception):
     def __init__(self):
-        self.msg =  "Sorry, that name is already taken. Please try another name."
+        self.msg = "Sorry, that name is already taken. Please try another name."
         Exception.__init__(self)
 
     def __str__(self):
@@ -33,12 +34,9 @@ def get_docker_client(deployment):
 def create_deployment(customer, subdomain):
     """
     Create a new deployment for a given customer at a given subdomain.
-
-    This is a 2-step process: we first add the deployment in the database and then we create the loader container on the
-    host server.
     """
 
-    # Step 1: add the deployment to the DB
+    # Add the deployment to the DB
 
     server = pick_server()
 
@@ -59,23 +57,17 @@ def create_deployment(customer, subdomain):
         # Parse the error message... yes it's dirty but it's the only way
         raise DeploymentAlreadyExists() if re.match('UNIQUE.*subdomain', ex.orig.message) else ex
 
-    # Step 2. Create the loader container.
-
-    # Rolling back the transaction is tricky here. There are some complicated edge cases (like: what if the network goes
-    # down after we created the loader container on the server but before we started it? In order to properly rollback
-    # we would have to delete the container, but that's impossible now since the network is down).
-    #
-    # For now, we just let a human decide how to rollback. In the future, we may improve this.
-
-    create_loader(deployment)
-
+    # Create the subdomain on Route 53
     create_subdomain(deployment)
 
-    # Start a chain of Celery tasks to configure the appliance
-    # Wait 10s before starting to make sure everything is up and running
-    (configure_deployment.s(deployment.subdomain) |
-     reboot.s() |
-     repackage.s()).apply_async(countdown=10)
+    # Start a chain of celery tasks to configure the deployment
+    (
+        sail.si(subdomain) |
+        configure_deployment.si(subdomain) |
+        reboot.si(subdomain) |
+        repackage.si(subdomain)
+
+    ).apply_async()
 
 
 def create_route53_change(deployment, delete=False):
@@ -105,9 +97,6 @@ def create_subdomain(deployment):
 
     current_app.logger.info("Created subdomain %s", response)
 
-    # id = response['ChangeInfo']['Id']
-    # TODO use route53.get_change(Id=id) to monitor subdomain creation progress
-
 
 def delete_subdomain(deployment):
     """
@@ -122,32 +111,27 @@ def delete_subdomain(deployment):
         current_app.logger.warn("Deleting subdomain failed - ignoring. %s", ex)
 
 
-def loader_container_name(deployment):
-    # Note: this must be kept in sync with ~/repos/aerofs/docker/ship/vm/loader/root/common.py
-    return '{}-hpc-loader'.format(deployment.subdomain)
-
-
-def create_loader(deployment):
+@celery.task()
+def sail(subdomain):
     """
-    Creates and starts the loader container for a given deployment
-    Throws an exception if the container already exists
+    Runs the hpc-sail container which will take care of configuring and starting the loader
     """
-    current_app.logger.info("Creating loader container for subdomain %s on host %s", deployment.subdomain, deployment.server.docker_url)
+    deployment = HPCDeployment.query.get(subdomain)
+    if deployment is None:
+        raise Exception("Deployment '{}' not found in the database".format(subdomain))
+
+    current_app.logger.info("Running hpc-sail for subdomain %s on host %s", deployment.subdomain, deployment.server.docker_url)
 
     docker = get_docker_client(deployment)
 
     # Create the container
     container = docker.create_container(
-        image='registry.aerofs.com/aerofs/loader',
-        name=loader_container_name(deployment),
-        volumes=['/var/run/docker.sock', '/repo', '/tag'],
+        image='registry.aerofs.com/aerofs/hpc-sail',
+        volumes=['/var/run/docker.sock', '/hpc/deployments/'],
         host_config=docker.create_host_config(
-            binds=['/var/run/docker.sock:/var/run/docker.sock', '/hpc/repo:/repo', '/hpc/tag:/tag'],
-            links=[('hpc-port-allocator', 'hpc-port-allocator.service')],
-            restart_policy={"Name": "always"}  # Auto restart if loader is killed (e.g. when rebooting the appliance)
+            binds=['/var/run/docker.sock:/var/run/docker.sock', '/hpc/deployments/:/hpc/deployments/'],
         ),
-        entrypoint='bash',
-        command=["-c", "([[ -f /target ]] || echo maintenance > /target) && python -u /main.py load /repo /tag /target"]
+        command=[deployment.subdomain]
     )
 
     warnings = container.get('Warnings')
@@ -155,7 +139,26 @@ def create_loader(deployment):
         current_app.logger.warn("Docker warnings: %s", warnings)
 
     # Start the container
-    docker.start(container = container.get('Id'))
+    container_id = container.get('Id')
+    docker.start(container=container_id)
+
+    # Wait up to an hour for hpc-sail to finish. It can take that long if hpc-sail needs to pull new images.
+    try:
+        exit_code = docker.wait(container_id, 3600)
+    except requests.exceptions.ReadTimeout:
+        current_app.logger.warn("hpc-sail timed out for subdomain {}".format(subdomain))
+        exit_code = -2
+
+    # Show the container logs in case of failure
+    if exit_code != 0:
+        logs = docker.logs(container_id, tail=100)
+        current_app.logger.warn("""hpc-sail failed for subdomain {}. Exit code {}. Logs:
+        ##################################
+        {}
+        ##################################""".format(subdomain, exit_code, logs))
+
+    # Delete the hpc-sail container
+    docker.remove_container(container_id)
 
 
 def delete_containers(deployment):

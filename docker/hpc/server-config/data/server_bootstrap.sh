@@ -5,20 +5,10 @@
 # Move the certs to the correct location
 mkdir -p /hpc/certs && mv /home/core/aerofs.com.crt /home/core/aerofs.com.key /hpc/certs/
 
-# Create the repo file
-echo 'registry.aerofs.com' > /hpc/repo
+# Pull the hpc-sail container so that lizard will be able to use it
+docker pull registry.aerofs.com/aerofs/hpc-sail:latest
 
-# Create the tag file. This file contains the version number of the AeroFS appliance that we will run.
-# In an ideal world, this file should be per-deployment, but for now we force all deployments on a single
-# server to run on the same version, to make things easier.
-TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $(cat /hpc/repo)/aerofs/loader tag)
-echo ${TAG} > /hpc/tag
-
-# Pull the Docker images we will be using to speed up the launch of the first deployment
-IMAGES=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $(cat /hpc/repo)/aerofs/loader images)
-for i in ${IMAGES}; do IMAGE="$(cat /hpc/repo)/${i}:$(cat /hpc/tag)" && docker pull "${IMAGE}"; done
-
-# Run our HPC containers
+# Create and run our HPC docker containers:
 
 # Port allocator
 docker run --detach --restart=always                               \

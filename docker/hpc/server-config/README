@@ -1,4 +1,4 @@
-This folder contains scripts needed to create a new HPC server
+This folder contains scripts needed to create a new HPC server on EC2
 
 In order to create a new HPC server:
 
@@ -34,7 +34,7 @@ In order to create a new HPC server:
     (ssh -i secrets/hpc-key.pem core@<private_ip>)
 
     If everything went well, you should be able to SSH in the server and type `docker ps`
-    and you'll see our 3 HPC containers running.
+    and you'll see our 4 HPC containers running.
 
 
 4. Add the server to lizard:

@@ -59,7 +59,7 @@ Switch into the lizard database with `use lizard;`
 
 Then run the following:
   `UPDATE license
-  SET license.blob=LOAD_FILE('~/repos/aerofs/system-tests/webdriver-lib/root/test.license') 
+  SET license.blob=LOAD_FILE('/Users/<your_username>/aerofs/tools/test.license')
   WHERE license.customer_id=<test_user_id>;`
 
 Notes

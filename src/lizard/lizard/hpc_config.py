@@ -104,8 +104,6 @@ def configure_deployment(self, subdomain):
                          data={'zephyr.address': 'zephyr.aerofs.com:8888'})
         r.raise_for_status()
 
-        return subdomain  # so that this task can be chained with other tasks
-
     except Exception as e:
         # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
         # Wait 30s and retry
@@ -149,8 +147,6 @@ def reboot(self, subdomain):
 
             time.sleep(2)
 
-        return subdomain  # so that this task can be chained with other tasks
-
     except Exception as e:
         raise self.retry(exc=e, countdown=30, max_retries=10)
 
@@ -182,8 +178,6 @@ def repackage(self, subdomain):
         #Let them know they have an appliance
         admin = models.Admin.query.get(session.deployment.customer_id)
         notifications.send_hpc_trial_setup_email(admin, session.base_url)
-
-        return subdomain  # so that this task can be chained with other tasks
 
     except Exception as e:
         raise self.retry(exc=e, countdown=30, max_retries=10)

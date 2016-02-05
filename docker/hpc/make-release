@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-IMAGES="hpc-docker-gen hpc-port-allocator hpc-reverse-proxy hpc-logrotator"
+IMAGES="hpc-docker-gen hpc-port-allocator hpc-reverse-proxy hpc-logrotator hpc-sail"
 REGISTRY=registry.aerofs.com:5050
 
 PWD="$(dirname "$0")"
