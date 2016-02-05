@@ -57,11 +57,7 @@
                                   </button>
                                   <ul class="dropdown-menu" role="menu">
                                     <li>
-                                        <a ng-click="manage(folder)">
-                                        <span class="glyphicon glyphicon-user"></span>
-                                        <span ng-if="folder.is_privileged">Manage Members</span>
-                                        <span ng-if="!folder.is_privileged">View Members</span>
-                                      </a>
+                                        <aero-shared-folder-manager folder=folder me=me></aero-shared-folder-manager>
                                     </li>
                                     <li ng-if="folder.is_member">
                                       <a ng-click="leave(folder)">
@@ -125,13 +121,12 @@
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.tpl.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-filter-0.5.7.min.js')}"></script>
     <script type="text/javascript">
-        canAdminister = "${can_administer}" == "True" ? true : false;
-        hasPagination = "${has_pagination}" == "True" ? true: false;
+        canAdminister = "${can_administer}" == "True";
+        hasPagination = "${has_pagination}" == "True";
         dataUrl = "${data_url}";
         setPermUrl = "${request.route_path('json.set_shared_folder_perm')}";
-        addMemberUrl = "${request.route_path('json.add_shared_folder_perm')}";
-        removeMemberUrl = "${request.route_path('json.delete_shared_folder_perm')}";
         leaveFolderUrl = "${request.route_path('json.leave_shared_folder')}";
         destroyFolderUrl = "${request.route_path('json.destroy_shared_folder')}";
         rejoinFolderUrl = "${request.route_path('json.accept_folder_invitation')}";

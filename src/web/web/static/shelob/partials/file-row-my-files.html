@@ -60,8 +60,9 @@
                        ng-click="startMove(object)"
                        class="redo action action-move"
                        ng-class="{'disabled': isOldIE }"><span class="glyphicon glyphicon-arrow-right"></span> Move</a></li>
-                    <li><a ng-href="/shared_folders" ng-show="object.is_shared"
-                       class="action action-manage"><span class="glyphicon glyphicon-share"></span> Manage sharing</a></li>
+                    <li ng-show="object.type == 'folder'">
+                       <aero-shared-folder-manager folder=object me=user></aero-shared-folder-manager>
+                    </li>
                     <li class="divider"></li>
                     <li><a
                        ng-click="startDelete(object)"

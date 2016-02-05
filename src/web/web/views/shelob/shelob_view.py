@@ -16,7 +16,7 @@ def get_new_shelob_token(request):
     bifrost_client = get_bifrost_client(request)
     return bifrost_client.get_new_oauth_token(access_code,
             client_id, client_secret, expires_in=0, scopes=[
-                'files.read', 'files.write', 'acl.read'
+                'files.read', 'files.write', 'acl.read', 'acl.write'
             ]
     )
 

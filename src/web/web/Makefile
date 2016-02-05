@@ -102,7 +102,9 @@ $(DEST)/shelob.js: $(SRC)/shelob/js/app.js \
 	$(SRC)/shelob/js/directives.js \
 	$(SRC)/shelob/js/filters.js \
 	$(SRC)/shelob/js/services.js \
-	$(SRC)/shelob/js/config/config_private.js
+	$(SRC)/shelob/js/config/config_private.js \
+	$(SRC)/shadowfax/directives.js \
+	$(SRC)/shadowfax/filters.js
 	cat $^ > $@
 
 $(DEST)/fellowship.js: $(SRC)/fellowship/app.js \
@@ -120,7 +122,10 @@ $(DEST)/saruman.js: $(SRC)/saruman/app.js \
 $(DEST)/shadowfax.js: $(SRC)/shadowfax/app.js \
 	$(SRC)/shadowfax/controllers.js \
 	$(SRC)/shadowfax/pagination.js \
-	$(SRC)/shadowfax/filters.js
+	$(SRC)/shadowfax/filters.js \
+	$(SRC)/shadowfax/directives.js \
+	$(SRC)/shelob/js/services.js \
+	$(SRC)/shelob/js/config/config_private.js
 	cat $^ > $@
 
 $(DEST)/strider.js: $(SRC)/strider/app.js \

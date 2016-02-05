@@ -1,0 +1,6 @@
+<a ng-click="openModal()">
+    <span class="glyphicon glyphicon-user"></span>
+    <span ng-show="folder.is_privileged && folder.is_shared">Manage Sharing</span>
+    <span ng-show="!folder.is_privileged && folder.is_shared">View Members</span>
+    <span ng-show="folder.is_privileged && !folder.is_shared">Share Folder</span>
+</a>

@@ -157,9 +157,9 @@ function getClientsOfflineErrorText() {
     'use strict';
     var supportUrl = 'https://support.aerofs.com/hc/en-us/articles/202492734';
     return '<p>Your AeroFS clients are not currently reachable from ' +
-	'the web.</p><p>To access your files from this page, please ' +
-	'make sure at least one of your AeroFS desktop clients or ' +
-	'your organization\'s Team Server is ' +
+        'the web.</p><p>To access your files from this page, please ' +
+        'make sure at least one of your AeroFS desktop clients or ' +
+        'your organization\'s Team Server is ' +
         'online and <a href=\'' + supportUrl + '\' target=\'_blank\'>' +
         'has API access enabled</a>.</p>';
 }

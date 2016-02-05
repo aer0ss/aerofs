@@ -46,7 +46,6 @@ describe('Shelob Directives', function () {
             });
 
             it('has correct defaults', function (){
-                var scope = element.isolateScope();
                 expect(element.find(".dropdown-menu li:nth(0)").text()).toContain("Add Expiration Time");
                 expect(element.find(".dropdown-menu li:nth(1)").text()).toContain('Expires: Never');
                 expect(element.find(".dropdown-menu li:nth(2)").text()).toContain('Add Password');
@@ -80,11 +79,9 @@ describe('Shelob Directives', function () {
                 $httpBackend
                     .whenPOST("/set_url_require_login")
                     .respond(200, {});
-
-
             });
 
-            it('sends a post to server to set login to opposite of current value', function () {
+            it('sends a post to server to toggle set login', function () {
                 var scope = element.isolateScope();
 
                 //False -> True

@@ -23,7 +23,7 @@ class JsonSharedFolderPermTest(TestBase):
         params = {
             'subject_id': 'test_user_id',
             'is_group': False,
-            'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
+            'store_id': '857c56eb92810c139323798cc1d0b8e8',
             'folder_name': 'test_folder_name',
             'permissions': [],
             'suppress_sharing_rules_warnings': True
@@ -43,7 +43,7 @@ class JsonSharedFolderPermTest(TestBase):
         params = {
             'subject_id': 'test_user_id',
             'is_group': False,
-            'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
+            'store_id': '857c56eb92810c139323798cc1d0b8e8',
             'permissions': [],
             'suppress_sharing_rules_warnings': True
         }
@@ -62,7 +62,7 @@ class JsonSharedFolderPermTest(TestBase):
         params = {
             'subject_id': 'test_user_id',
             'is_group': False,
-            'store_id': 'QURGDLXVTIGZHJ5JQMOB4DIVEM======',
+            'store_id': '857c56eb92810c139323798cc1d0b8e8',
         }
         request = self.create_dummy_request(json_body=params)
 

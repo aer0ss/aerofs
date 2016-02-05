@@ -1,13 +1,17 @@
 <div class="modal-header">
         <button type="button" class="close" ng-click="ok()">×</button>
-    <h4><span ng-show="is_privileged">Manage "{{folder.name}}" Members</span><span ng-hide="is_privileged">"{{folder.name}}" Members</span></h4>
+    <h4>
+        <span ng-show="folder.is_privileged && folder.is_shared">Manage "{{folder.name}}" Members</span>
+        <span ng-show="!folder.is_privileged && folder.is_shared">"{{folder.name}}" Members</span>
+        <span ng-show="folder.is_privileged && !folder.is_shared">Share "{{folder.name}}"</span>
+    </h4>
 </div>
 <div class="modal-body">
     <div class="alert alert-danger alert-dismissable"
         ng-show="error">
         <span ng-bind="error"></span>
     </div>
-    <div class="my-table">
+    <div class="my-table" ng-show="folder.people.length > 0">
         <div class="my-table-head row">
             <div class="col-sm-6 col-xs-8">
                 Member
@@ -17,8 +21,8 @@
             </div>
         </div>
         <div class="my-table-body">
-            <div class="row my-row" 
-                ng-repeat="entity in people | orderBy:['is_pending', '-is_owner', '-can_edit', 'is_group', 'email', 'group_name']">
+            <div class="row my-row"
+                ng-repeat="entity in folder.people track by $index| orderBy:['is_pending', '-is_owner', '-can_edit', 'is_group', 'email', 'group_name']">
                 <div class="col-sm-6 col-xs-8">
                     <span ng-if='!entity.is_group'>
                         <span ng-hide="entity.is_pending">{{entity|myName}}
@@ -34,13 +38,13 @@
                     </span>
                 </div>
                 <div class="col-sm-6 col-xs-4">
-                    <span ng-hide="canAdminister || (is_privileged && entity.email != me)">
+                    <span ng-hide="canAdminister || (folder.is_privileged && entity.email != me)">
                         <span ng-show="entity.is_owner && entity.can_edit">Owner</span>
                         <span ng-show="!entity.is_owner && entity.can_edit">Editor</span>
                         <span ng-show="!entity.is_owner && !entity.can_edit">Viewer</span>
                         <span ng-show="entity.is_owner && !entity.can_edit">Manager</span>
                     </span>
-                    <div class="btn-group" ng-show="canAdminister || (is_privileged && entity.email != me)">
+                    <div class="btn-group" ng-show="canAdminister || (folder.is_privileged && entity.email != me)">
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                             <span ng-show="entity.is_owner && entity.can_edit">Owner</span>
                             <span ng-show="!entity.is_owner && entity.can_edit">Editor</span>
@@ -61,7 +65,7 @@
                                 Viewer <span class="help">(read)</span>
                             </a></li>
                             <li class="divider"></li>
-                            <li><a href="#" ng-click="remove(entity)">Remove from folder</a></li>
+                            <li><a href="#" ng-click="remove(entity, $index)">Remove from folder</a></li>
                         </ul>
                     </div>
                 </div>
@@ -76,20 +80,20 @@
         </div>
     </div>
     <div class="row">
-        <form id="modal-invite-form" role="form" method="post" 
-            ng-if="is_privileged" 
+        <form id="modal-invite-form" role="form" method="post"
+            ng-if="folder.is_privileged"
             ng-submit="inviteMembers(invitees, inviteeRole); invitees = '';">
             <div class="col-xs-12">
                 <strong>Invite new members:</strong></div>
             <div id="invite-user-inputs" class="col-sm-6 col-xs-12">
-                <div id="modal-invitee-email" 
+                <div id="modal-invitee-email"
                     aero-typeahead
                     label=""
                     ng-model="invitees"
                     async-data="{{getUsersAndGroupsURL}}"
                     placeholder="Name or email address"
                     title="Invite users and groups by name or email"
-                    ></div>
+                ></div>
             </div>
             <div class="col-sm-2 col-xs-6">
                 <input type="hidden" id="modal-invite-role">

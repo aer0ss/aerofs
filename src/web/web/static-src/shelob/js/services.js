@@ -42,6 +42,7 @@ shelobServices.factory('Token', ['$http', '$q', '$log', 'OutstandingRequestsCoun
     // will be a promise that will be resolved with the token when the response is
     // received, so we return that promise.
     get: function() {
+
         if (token === null) {
             token = $q.defer();
             OutstandingRequestsCounter.push();
@@ -304,20 +305,17 @@ shelobServices.factory('MyStores', ['$log', 'API', function($log, API) {
         return _root;
     }
 
-    function _getManagedShares() {
-        // TODO: invalidate the cached promise every...30 seconds?
-        if (_managedShares === null) {
-            _managedShares = API.get('/users/me/shares')
-                .then(function(response) {
-                    var managed = [];
-                    for (var i = 0; i < response.data.length; i++) {
-                        if (response.data[i].caller_effective_permissions.indexOf('MANAGE') > -1) {
-                            managed.push(response.data[i].id);
-                        }
+    function _getShares() {
+        _managedShares = API.get('/users/me/shares', {}, {version: '1.3'}) //Get groups
+            .then(function(response) {
+                var managed = [];
+                for (var i = 0; i < response.data.length; i++) {
+                    if (response.data[i].caller_effective_permissions.indexOf('MANAGE') > -1) {
+                        managed.push(response.data[i].id);
                     }
-                    return managed;
-                });
-        }
+                }
+            return {managed: managed, all: response.data};
+        });
         return _managedShares;
     }
 
@@ -328,7 +326,7 @@ shelobServices.factory('MyStores', ['$log', 'API', function($log, API) {
         // return a list of the SIDs of the user's shared folders where the user has
         // MANAGE privileges.
         // N.B. does NOT include the user's root store
-        getManagedShares: _getManagedShares,
+        getShares: _getShares,
     }
 }]);
 

@@ -66,7 +66,7 @@ describe('Shelob Controllers', function() {
             $httpBackend.whenPOST('/json_new_token').respond('newtoken');
             $httpBackend.whenGET('/api/v1.3/shares/root/urls').respond({ urls: [] });
             $httpBackend.whenGET('/api/v1.2/shares/root').respond({});
-            $httpBackend.whenGET('/api/v1.2/users/me/shares').respond({});
+            $httpBackend.whenGET('/api/v1.3/users/me/shares').respond({});
         }));
 
         beforeEach(function() {

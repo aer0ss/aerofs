@@ -25,12 +25,13 @@ module.exports = function(config) {
       '../../web/static/js/angular-lib/angular/angular.min.js',
       '../../web/static/js/angular-lib/angular/angular-*.js',
       '../../web/static/js/angular-lib/angular-ui/*.js',
+      '../../web/static/js/angular-lib/angular*.js',
       'lib/**/*.js',
       '../../web/static-src/js/aerofs.js',
       '../../web/static-src/shelob/js/**/*.js',
       'unit/stubs.js',
       'unit/*Spec.js',
-        '../../web/static/shelob/**/*.html',
+      '../../web/static/shelob/**/*.html',
     ],
 
 

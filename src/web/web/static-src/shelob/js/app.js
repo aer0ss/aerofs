@@ -2,10 +2,14 @@ var shelobApp = angular.module('shelobApp', [
     'ngRoute',
     'ui.bootstrap',
     'treeControl',
+    'angular.filter',
+    'typeahead',
     'shelobControllers',
     'shelobServices',
     'shelobDirectives',
-    'shelobFilters'
+    'shelobFilters',
+    'shadowfaxDirectives',
+    'shadowfaxFilters'
 ]);
 
 shelobApp.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {

@@ -8,6 +8,15 @@ module.exports = function(config) {
     // frameworks to use
     frameworks: ['jasmine','ng-scenario'],
 
+    //directive preprocessors
+    preprocessors: {
+      '../../web/static/shadowfax/**/*.html': ['ng-html2js']
+    },
+
+    ngHtml2JsPreprocessor: {
+      stripPrefix: '.*/web',
+      moduleName: 'templates'
+    },
 
     // list of files / patterns to load in the browser
     files: [
@@ -15,11 +24,16 @@ module.exports = function(config) {
       '../../web/static/js/jquery.*.js',
       '../../web/static/js/angular-lib/angular/angular.min.js',
       '../../web/static/js/angular-lib/angular/angular-*.js',
-      '../../web/static/js/compiled/aerofs.js',
+      '../../web/static/js/angular-lib/angular-ui/*.js',
+      '../../web/static/js/angular-lib/angular*.js',
       '../lib/**/*.js',
+      '../../web/static/js/compiled/aerofs.js',
+      '../../web/static/ng-modules/typeahead/typeahead.js',
+      '../../web/static/shelob.js',
       '../../web/static/shadowfax.js',
       'unit/stubs.js',
       'unit/*Spec.js',
+      '../../web/static/shadowfax/**/*.html',
     ],
 
 
@@ -72,7 +86,8 @@ module.exports = function(config) {
     plugins : [
         'karma-phantomjs-launcher',
         'karma-jasmine',
-        'karma-ng-scenario'
+        'karma-ng-scenario',
+        'karma-ng-html2js-preprocessor',
     ],
   });
 };

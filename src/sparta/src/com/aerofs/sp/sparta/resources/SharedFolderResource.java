@@ -675,7 +675,6 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         return Response.created(URI.create(location))
                 .entity(toPendingMember(user, req, sf.getSharerNullable(user)))
-                .tag(new EntityTag(aclEtag(user), true))
                 .build();
     }
 

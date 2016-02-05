@@ -15,7 +15,7 @@ describe('Shadowfax Controllers', function () {
             $rootScope = $injector.get('$rootScope');
             $controller = $injector.get('$controller');
             $httpBackend = $injector.get('$httpBackend');
-            
+
             //TODO: pull out into helper file or something (MB)
             modalObject = {
                 result: {then: jasmine.createSpy('modalObject.result.then')}
@@ -42,7 +42,7 @@ describe('Shadowfax Controllers', function () {
                         "last_name": "Turner",
                         "is_owner": true,
                         "is_group": false,
-                        "email": "michelle+test@aerofs.com",
+                        "email": "tina.turner@aerofs.com",
                         "is_pending": false
                         }
                     ],
@@ -53,10 +53,10 @@ describe('Shadowfax Controllers', function () {
                         "last_name": "Lasto",
                         "is_owner": false,
                         "is_group": false,
-                        "email": "abigailship@127.0.0.1",
+                        "email": "abigailship@aerofs.com",
                         "is_pending": true
                     }],
-                    "sid": "C2MN55E5EYD6HEF6X5W7DSK4D4======",
+                    "sid": "857c56eb92810c139323798cc1d0b8e8",
                     "is_member": true,
                     "is_left": false,
                     "is_privileged": 1

@@ -1,7 +1,7 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$location', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter', 'LinkPassword',
-        function ($scope, $rootScope, $http, $location, $log, $routeParams, $window, $modal, $sce, $q, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter, LinkPassword) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$location', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', '$filter', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter', 'LinkPassword',
+        function ($scope, $rootScope, $http, $location, $log, $routeParams, $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter, LinkPassword) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -64,15 +64,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     };
 
     // initialize managedShares array and populate it when the data arrives
+    $scope.allShares = [];
     $scope.managedShares = [];
-    $q.all({
-            rootSid: MyStores.getRoot(),
-            managedShares: MyStores.getManagedShares()
-        }).then(function(r) {
-            $scope.managedShares = r.managedShares.concat([r.rootSid]);
-        });
 
-    $scope.isManagedObject = function(object) {
+    $scope.isManagedObject = function (object) {
         var sid = $scope.derefAnchor(object).substring(0, 32);
         for (var i = 0; i < $scope.managedShares.length; i++) {
             if (sid == $scope.managedShares[i]) return true;
@@ -138,6 +133,11 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                 _populateLinks();
             }
 
+            return $q.all({
+                rootSid: MyStores.getRoot(),
+                shares: MyStores.getShares()
+            });
+
         }, function(response) {
             OutstandingRequestsCounter.pop();
             if ($scope.currentShare.token && response.status == 404) {
@@ -157,6 +157,10 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             } else {
                 _handleFailure(response);
             }
+        }).then(function (r) {
+            $scope.managedShares = r.shares.managed.concat([r.rootSid]);
+            $scope.allShares = r.shares.all;
+            _populateShares();
         });
     };
 
@@ -637,7 +641,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
 
     /* Link-based sharing methods */
     // attaches links to their associated files and folders
-    function _populateLinks() {
+    function _populateLinks () {
         var o, l;
         links = $scope.links;
         for (var i = 0; i < $scope.objects.length; i++) {
@@ -658,6 +662,50 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         }
         // remove placed links from the list
         $scope.links = links;
+    }
+
+    function _populateShares () {
+        var allSharesById = $scope.allShares.length ? $filter('groupBy')($scope.allShares, 'id') : {};
+        $scope.objects.forEach(function (object) {
+            if (object.type =='folder') {
+                object.is_privileged = $scope.isManagedObject(object);
+                object.people = [];
+
+                if (object.is_shared && !allSharesById[object.sid]) {
+                    object.is_shared = false;
+                }
+
+                if (allSharesById[object.sid] && allSharesById[object.sid].length) {
+                    object.people = object.people.concat(
+                        allSharesById[object.sid][0].members.map(function (m) {
+                            m.is_pending = false;
+                            m.is_group = !m.email;
+                            m.is_owner = m.permissions.indexOf('MANAGE') > -1;
+                            m.can_edit = m.permissions.indexOf('WRITE') > -1;
+                            return m
+                        }).concat(
+                            allSharesById[object.sid][0].pending.map(function (p) {
+                                p.is_pending = true;
+                                p.is_group = !p.email;
+                                p.is_owner = p.permissions.indexOf('MANAGE') > -1;
+                                p.can_edit = p.permissions.indexOf('WRITE') > -1;
+                                return p
+                            })
+                        ).concat(
+                            allSharesById[object.sid][0].groups.map(function(g) {
+                                g.is_pending = g.is_pending || false;
+                                g.is_group = true;
+                                g.is_owner = g.permissions.indexOf('MANAGE') > -1;
+                                g.can_edit = g.permissions.indexOf('WRITE') > -1;
+                                return g
+                            })
+                        )
+                    );
+                }
+
+            }
+        });
+        sharesPopulated = true;
     }
 
     // Needed to print the sharing URL

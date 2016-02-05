@@ -26,12 +26,10 @@ log = logging.getLogger(__name__)
 
 
 def _encode_store_id(sid):
-    return base64.b32encode(sid)
-
+    return sid.encode('hex')
 
 def _decode_store_id(encoded_sid):
-    return base64.b32decode(encoded_sid)
-
+    return encoded_sid.decode('hex')
 
 @view_config(
     route_name = 'my_shared_folders',
@@ -265,7 +263,8 @@ def _sp_reply2json(folders, privileger, session_user, request, total=None, offse
             'sid': escape(id),
             'is_privileged': 1 if privileger(folder, session_user) else 0,
             'is_member': is_mine,
-            'is_left': _is_left(folder, user)
+            'is_left': _is_left(folder, user),
+            'is_shared': True
         })
 
     if not total:
