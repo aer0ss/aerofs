@@ -13,3 +13,4 @@ from crane_yml import render_crane_yml
 
 with open(join(base_dir, 'crane.yml'), 'wb') as f:
 	f.write(render_crane_yml(join(base_dir, 'ship-aerofs/loader/root/crane.yml.jinja')))
+    f.flush()
