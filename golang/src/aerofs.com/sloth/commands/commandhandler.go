@@ -24,21 +24,30 @@ func NewCommandHandler(db *sql.DB) *CommandHandler {
 	return &CommandHandler{db: db}
 }
 
-func IsSlashCommand(msg string) bool {
-	return msg[0] == '/'
+// A message is a slash command if:
+//  - prefixed with '/'
+//  -  the text command exists in the commands table
+func (h *CommandHandler) IsSlashCommand(msg string) bool {
+	if msg[0] != '/' {
+		return false
+	}
+
+	cmd, _ := parseMessage(msg)
+	tx := dao.BeginOrPanic(h.db)
+	_, err := dao.GetCommand(tx, cmd)
+	if err != nil {
+		tx.Rollback()
+		return false
+	}
+
+	dao.CommitOrPanic(tx)
+	return true
 }
 
 // Given a slash command, return the command, message, error
 func (h *CommandHandler) HandleCommand(from, to, body string) (string, string, error) {
-	// Retrieve command
-	i := strings.IndexByte(body, ' ')
-	if i == -1 {
-		i = len(body)
-	}
-	bodyCmd := body[1:i]
-	bodyText := strings.TrimSpace(body[i:])
-
 	// Check command existence
+	bodyCmd, bodyText := parseMessage(body)
 	tx := dao.BeginOrPanic(h.db)
 	cmd, err := dao.GetCommand(tx, bodyCmd)
 	if err != nil {
@@ -97,4 +106,19 @@ func (h *CommandHandler) HandleCommand(from, to, body string) (string, string, e
 	}
 
 	return cmd.Command, respMsg.Text, nil
+}
+
+//
+// private
+//
+
+// Parse a message for a command and its arguments
+func parseMessage(msg string) (string, string) {
+	i := strings.IndexByte(msg, ' ')
+	if i == -1 {
+		i = len(msg)
+	}
+	cmd := msg[1:i]
+	cmd_args := strings.TrimSpace(msg[i:])
+	return cmd, cmd_args
 }

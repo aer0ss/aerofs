@@ -426,8 +426,8 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 
 	// Parse for slash commands
 	// If a slash command, create a message for the command response, not the input
-	if commandhandler.IsSlashCommand(message.Body) {
-		h := commandhandler.NewCommandHandler(ctx.db)
+	h := commandhandler.NewCommandHandler(ctx.db)
+	if h.IsSlashCommand(message.Body) {
 
 		// Perform request
 		cmd, response, err := h.HandleCommand(message.From, message.To, message.Body)
