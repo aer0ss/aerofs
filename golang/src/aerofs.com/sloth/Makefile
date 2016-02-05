@@ -24,4 +24,4 @@ push:
 clean:
 	rm -f ./sloth
 
-.phony: image push clean
+.PHONY: image push clean
