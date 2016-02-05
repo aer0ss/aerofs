@@ -167,7 +167,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
     }
 
     public class TaskState implements Comparable<TaskState>, AsyncTaskCallback {
-        private int _state = IDLE;
+        private int _state = STOPPED;
         private long _delay = 0;
         private long _timeout = 0;
         private final String _name;
