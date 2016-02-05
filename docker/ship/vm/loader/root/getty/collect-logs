@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# This script is required for collecting logs via shipenterprise console.
+# This file should be kept in sync with https://github.com/aerofs/collect-logs
+
+set -e
+
+TMP="/tmp/aero-collect-logs"
+TMP_LOGS="${TMP}/logs"
+LOG_FILENAME="aerofs-appliance-logs.tar.gz"
+
+ipv4_address_of_appliance() {
+    ip addr show $1 | grep -E '^ +inet ' | head -2 | awk '{print $2}' | sed -e '1d' | sed 's/\/..//'
+}
+
+available_tmp_disk_space() {
+    df | grep /tmp | awk '{print $4}'
+}
+
+mkdir -p ${TMP_LOGS}
+cd ${TMP}
+
+# Collect logs from the docker containers.
+echo "Collecting logs from Aero docker containers..."
+
+CONTAINERS=$(docker ps -a | rev | awk 'NR > 1 {print $1}'| rev)
+
+for container in ${CONTAINERS}
+do
+    if [ $(available_tmp_disk_space) -eq 0 ]
+    then
+        echo "Log collection failed! The '/tmp' filesystem is full."
+        exit 1
+    fi
+    docker logs -t ${container} > ${TMP_LOGS}/${container}.log 2>&1
+done
+
+# Compress logs into a tarball
+echo "Compressing logs..."
+
+tar -zcf ${LOG_FILENAME} -C ${TMP_LOGS} .
+chmod +r ${LOG_FILENAME}
+rm -rf ${TMP_LOGS}
+
+if [ -f /ship/loader/getty/bashttpd ];
+then
+    cp /ship/loader/getty/bashttpd ${TMP}
+else
+    wget -q https://raw.githubusercontent.com/aerofs/aero-collect-logs/master/bashttpd
+    chmod +x bashttpd
+fi
+
+# Start a simple HTTP server to serve up the logs files.
+echo "serve_file ${TMP}/${LOG_FILENAME}" > bashttpd.conf
+
+echo "Serving log file over HTTP on port 8080..."
+echo "Point your web browser to '$(ipv4_address_of_appliance):8080' to download the file."
+printf "\nPress CTRL+C to return to the main menu."
+
+nohup ncat -klp 8080 -e ${TMP}/bashttpd >/dev/null 2>&1
+
+cd -
+rm -rf ${TMP}

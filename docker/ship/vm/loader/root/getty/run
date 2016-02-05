@@ -4,6 +4,7 @@
 STATIC_NETWORK_FILE=/etc/systemd/network/10-ship-static.network
 DHCP_NETWORK_FILE=/etc/systemd/network/10-ship-dhcp.network
 CLOUD_CONFIG_FILE=/usr/share/oem/cloud-config.yml
+COLLECT_LOGS_SCRIPT=/ship/loader/getty/collect-logs
 
 function default_iface() {
     # Example output: enp0s17.
@@ -71,15 +72,15 @@ function is_override_selected() {
 
 function validated_read_iface() {
     local PROMPT=$1
-   
+
     while true; do
         echo -n "${PROMPT} (Available Interfaces: [${IFACES[0]}] ${IFACES[@]:1}): " >&2
         local input_iface && read input_iface
 
-	if [ "${input_iface}" = "" ]; then 
+	if [ "${input_iface}" = "" ]; then
 	    echo "${IFACES[0]}"
 	    break
-	
+
 	elif is_valid_iface "${input_iface}" || is_override_selected "${input_iface}"; then
 	    echo "${input_iface}"
             break
@@ -189,7 +190,7 @@ function wait_for_dhcp_network(){
             break
         elif [ ${RETRY} = 10 ]; then
             echo "DHCP configuration failed. Rebooting system anyway."
-            # Sleep for 5 seconds to give the user some time to read the config failed message.  
+            # Sleep for 5 seconds to give the user some time to read the config failed message.
             sleep 5
             break
         else
@@ -225,6 +226,9 @@ function interact() {
         ;;
     4)
         systemctl poweroff
+        ;;
+    5)  echo "Log Collection Selected"
+        bash ${COLLECT_LOGS_SCRIPT}
         ;;
     logs)
         "$(dirname $0)/logs" "$(cat $(dirname $0)/tag)"
@@ -281,6 +285,7 @@ function welcome_screen() {
     echo  "2. Use Static IP ${STATIC_SELECTED}"
     echo  "3. Reboot System"
     echo  "4. Shutdown System"
+    echo  "5. Collect Appliance Logs ${COLLECT_LOGS_SELECTED}"
     echo -n "? "
 }
 
