@@ -474,6 +474,7 @@ func (ctx *context) postTyping(request *restful.Request, response *restful.Respo
 
 	tx := dao.BeginOrPanic(ctx.db)
 	if dao.UserExists(tx, cid) {
+		tx.Commit()
 		broadcast.SendUserTypingEvent(ctx.broadcaster, caller, cid)
 		return
 	}
