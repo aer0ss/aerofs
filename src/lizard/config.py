@@ -14,3 +14,4 @@ with open(csrf_keyfile) as f:
     SECRET_KEY = f.read()
 
 RELEASE_VERSION_FILE = os.path.join(basedir, 'state', 'release_version')
+SQLALCHEMY_TRACK_MODIFICATIONS = False
