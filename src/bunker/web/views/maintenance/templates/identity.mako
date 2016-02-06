@@ -14,36 +14,65 @@
 
 <%
     authenticator = conf['lib.authenticator']
-    open_signup = str2bool(conf['open_signup'])
+    if conf['signup_restriction'] == "":
+        signup_restriction = 'USER_INVITED'
+    else:
+        signup_restriction = conf['signup_restriction']
     # Use the local namespace so the method scripts() can access it
     local.local_auth = authenticator == 'local_credential'
     local.ldap_group_sync_schedule_enum = conf['ldap.groupsyncing.schedule_enum']
 %>
 
 <div class="page-block">
-    <h2>Allow Open Signup</h2>
+    <h2>New User Invitations</h2>
+</div>
 
-    <p>By default AeroFS restricts users from signing up unless they have an invitation. Here, you can allow anyone to sign up.</p>
+<form id="signup-restriction-form" method="POST" onsubmit="submitSignupRestrictionForm(); return false;">
+    ${csrf.token_input()}
 
-    <form id="signup-form" method="POST" onsubmit="submitSignupForm(); return false;">
-        ${csrf.token_input()}
-        <div class="row">
-            <div class="col-sm-12">
-                <label class="checkbox">
-                    <input type='hidden' name='open_signup' value='false'>
-                    <input type='checkbox' name='open_signup' value='true'
-                        %if open_signup:
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="radio">
+                <label>
+                    <input type='radio' name='signup_restriction' value='UNRESTRICTED'
+                        %if signup_restriction == 'UNRESTRICTED':
+                           checked
+                        %endif
+                    >
+                    New users can signup on their own at <b><a href="https://${conf['base.host.unified']}"
+                        target="_blank" style="color:#00A5C1">
+                        https://${conf['base.host.unified']}</a></b>
+                </label>
+            </div>
+
+            <div class="radio">
+                <label>
+                    <input type='radio' name='signup_restriction' value='USER_INVITED'
+                        %if signup_restriction == 'USER_INVITED':
                             checked
                         %endif
                     >
-                    Allow anyone to sign up
+                    Only existing AeroFS users can invite new users
                 </label>
             </div>
-        </div>
 
-        <button type="submit" id="save-opensignup" class="btn btn-primary">Save</button>
-    </form>
-</div>
+            <div class="radio">
+                <label>
+                    <input type='radio' name='signup_restriction' value='ADMIN_INVITED'
+                        %if signup_restriction == 'ADMIN_INVITED':
+                           checked
+                        %endif
+                    >
+                    Only AeroFS administrators can invite new users
+                </label>
+            </div>
+
+            <button type="submit" id="save-signup-restriction" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+</form>
+
+<hr>
 
 <div class="page-block">
     <h2>Identity Management</h2>
@@ -694,18 +723,20 @@
             }
         }
 
-        function submitSignupForm() {
+        function submitSignupRestrictionForm() {
             var $progressModal = $('#identity-modal');
             $progressModal.modal('show');
             var always = function() {
                 $progressModal.modal('hide');
             };
 
-            $.post('${request.route_path('json_set_open_signup')}',
-                    $('#signup-form').serialize())
+            console.log($('#signup-restriction-form').serialize());
+
+            $.post('${request.route_path('json_set_signup_restriction')}',
+                    $('#signup-restriction-form').serialize())
             .done(function() {
                 reboot('current', function() {
-                    showSuccessMessage('Updated Open Signup Settings.');
+                    showSuccessMessage('Updated New User Invitation Restrictions.');
                     always();
                 },
                 ## fail

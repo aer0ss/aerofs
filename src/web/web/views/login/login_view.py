@@ -104,7 +104,7 @@ def login_view(request):
 
     openid_enabled = _is_openid_enabled(request)
     disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
-    open_signup = str2bool(settings.get('open_signup', False))
+    open_signup = settings.get('signup_restriction', "USER_INVITED") == "UNRESTRICTED"
     external_login_enabled = settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
 
     if not is_configuration_completed():

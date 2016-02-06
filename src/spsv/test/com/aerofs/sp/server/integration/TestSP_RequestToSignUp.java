@@ -29,7 +29,7 @@ public class TestSP_RequestToSignUp extends AbstractSPTest
     public static void setOpenSignup()
     {
         Properties props = new Properties();
-        props.put("open_signup", "true");
+        props.put("signup_restriction", "UNRESTRICTED");
         ConfigurationProperties.setProperties(props);
         defaultProps = props;
     }
@@ -62,7 +62,7 @@ public class TestSP_RequestToSignUp extends AbstractSPTest
     public void shouldSupportInvitationOnlySignUp() throws Exception
     {
         Properties props = new Properties();
-        props.put("open_signup", "false");
+        props.put("signup_restriction", "USER_INVITED");
         ConfigurationProperties.setProperties(props);
         rebuildSPService();
 

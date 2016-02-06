@@ -168,7 +168,9 @@ def json_invite_user(request):
             PBException.ALREADY_EXIST:
                 _("The user is already a member of your organization."),
             PBException.EMPTY_EMAIL_ADDRESS:
-                _("The email address can't be empty.")
+                _("The email address can't be empty."),
+            PBException.NO_PERM:
+                _("You can only invite a new user if you are an admin.")
         }
     )
 

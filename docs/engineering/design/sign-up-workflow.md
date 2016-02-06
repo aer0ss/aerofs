@@ -109,7 +109,7 @@ user needs to manually request for signup, before he can join the system.
 ## Case 1
 
 By default, manually-provisioned users are not allowed to request for signup unless 
-the configuration property `open_signup` is true
+the configuration property `signup_restriction` is 'UNRESTRICTED'
 (see [here](../conf_properties.html) for detail).
 
 If it is allowed, the system sends a **signup verification email** with a signup code.

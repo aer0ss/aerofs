@@ -90,17 +90,17 @@ def json_set_identity_options(request):
     return HTTPOk()
 
 @view_config(
-    route_name='json_set_open_signup',
+    route_name='json_set_signup_restriction',
     permission='maintain',
     renderer='json',
     request_method='POST'
 )
-def json_set_open_signup(request):
-    log.info("set open signup")
+def json_set_signup_restriction(request):
+    log.info("set signup restriction")
 
-    open_signup = request.params['open_signup']
+    signup_restriction = request.params['signup_restriction']
     conf = get_conf_client(request)
-    conf.set_external_property('open_signup', open_signup)
+    conf.set_external_property('signup_restriction', signup_restriction)
 
     return HTTPOk()
 

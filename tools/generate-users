@@ -26,8 +26,8 @@ function setup() {
 
     # HACK ALERT !!!
     echo "Setting up..."
-    docker exec config sed -i "s/open_signup=.*$//g" "/opt/config/properties/external.properties"
-    docker exec config sh -c "/bin/echo \"open_signup=true\" >> /opt/config/properties/external.properties"
+    docker exec config sed -i "s/signup_restriction=.*$//g" "/opt/config/properties/external.properties"
+    docker exec config sh -c "/bin/echo \"signup_restriction=UNRESTRICTED\" >> /opt/config/properties/external.properties"
     # N.B. license_seats will be absent on first run so this line will do no-op.
     # In subsequent runs of this script, we'll strip output from previous runs before adding a new line.
     docker exec config sed -i "s/license_seats=.*$//g" "/opt/config/properties/external.properties"

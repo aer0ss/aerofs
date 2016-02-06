@@ -8,6 +8,7 @@ import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
 import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.*;
 import com.aerofs.gui.GUI.ISWTWorker;
@@ -163,7 +164,8 @@ public class DlgInvite extends AeroFSDialog
                                     new ErrorMessage(ExAlreadyExist.class, "The user is " +
                                             "already a member of your organization."),
                                     new ErrorMessage(ExAlreadyInvited.class, "The user is " +
-                                            "already invited to join your organization."));
+                                            "already invited to join your organization."),
+                                    new ErrorMessage(ExNoPerm.class, e.getMessage()));
 
                             setStatus("");
                             setInProgress(false);

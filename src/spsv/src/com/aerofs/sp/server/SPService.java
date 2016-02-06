@@ -183,10 +183,6 @@ public class SPService implements ISPService
 
     private final InvitationHelper _invitationHelper;
 
-    // Whether to allow self sign-ups via RequestToSignUp()
-    private final Boolean OPEN_SIGNUP =
-            getBooleanProperty("open_signup", false);
-
     // If true, server will start a periodic job to sync groups with LDAP endpoint representation
     public final boolean LDAP_GROUP_SYNCING_ENABLED =
             getBooleanProperty("ldap.groupsyncing.enabled", false) &&
@@ -327,6 +323,18 @@ public class SPService implements ISPService
         public static int getValue()
         {
             return getSchedule().hours;
+        }
+    }
+
+    private enum NewUserSignupRestrictions
+    {
+        UNRESTRICTED,
+        USER_INVITED,
+        ADMIN_INVITED;
+
+        public static NewUserSignupRestrictions getRestrictionLevel()
+        {
+            return valueOf(getNonEmptyStringProperty("signup_restriction", "USER_INVITED"));
         }
     }
 
@@ -1360,6 +1368,11 @@ public class SPService implements ISPService
         for (SubjectPermissions srp : srps) {
             if (srp._subject instanceof UserID) {
                 User sharee = _factUser.create((UserID)srp._subject);
+
+                if (!sharee.exists() && !isAllowedToInviteNewUsers(sharer)) {
+                    throw new ExNoPerm(sharee.id() + " is currently not invited to AeroFS." +
+                            " Please contact your AeroFS administrator to invite the user.");
+                }
                 Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
                 AffectedAndNeedsEmail updates = sf.addUserWithGroup(sharee, null, actualPermissions, sharer);
                 affected.addAll(updates._affected);
@@ -1385,7 +1398,7 @@ public class SPService implements ISPService
                         sf, sharer, updates._users, permissions, note, folderName));
 
                 // Audit event for each invitation.
-                for (User sharee : group.listMembers()) {
+                for (User sharee :  group.listMembers()) {
                     events.add(auditSharing(sf, sharer, "folder.invite")
                             .add("target", sharee.id())
                             .embed("role", permissions.toArray()));
@@ -2323,7 +2336,8 @@ public class SPService implements ISPService
 
         // If it's an invitation-only system, only allow the first user to self sign up
         // (via the setup UI).
-        if (!OPEN_SIGNUP && _factUser.hasUsers()) {
+        if (NewUserSignupRestrictions.getRestrictionLevel() != NewUserSignupRestrictions.UNRESTRICTED
+                && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
         }
         if (!_authenticator.isLocallyManaged(user.id())) {
@@ -2352,6 +2366,12 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
+    private boolean isAllowedToInviteNewUsers(User inviter) throws SQLException, ExNotFound
+    {
+        return inviter.isAdmin() ||
+                NewUserSignupRestrictions.getRestrictionLevel() != NewUserSignupRestrictions.ADMIN_INVITED;
+    }
+
     @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws Exception
@@ -2365,7 +2385,9 @@ public class SPService implements ISPService
         l.info("{} sends organization invite to {}", inviter, invitee);
 
         InvitationEmailer emailer;
-        if (!invitee.exists()) {
+        if (!isAllowedToInviteNewUsers(inviter)) {
+            throw new ExNoPerm("You can only invite a new user if you are an admin.");
+        } else if (!invitee.exists()) {
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
             // signup code with the organization invitation. See signUpWithCode() on how this association is
             // consumed.

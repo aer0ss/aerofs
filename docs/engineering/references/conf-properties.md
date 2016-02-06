@@ -241,13 +241,13 @@ Timeout value, in milliseconds, for a response from SMTP commands.
 
 Timeout value, in milliseconds, for a connection to the outbound SMTP server.
 
-    open_signup=false
+    signup_restriction=(UNRESTRICTED | USER_INVITED | ADMIN_INVITED)
 
 Whether to allow self sign-ups. Otherwise, users must be invited by existing users
 (either administrators or folder owners) to join the system.
 
     show_quota_options=false
-    
+
 Whether to display quota options on the Web user interface (under organization management).
 
 ### OpenID properties
