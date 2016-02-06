@@ -5,7 +5,7 @@
 archivesBaseName = 'aerofs-sync'
 
 test {
-    // Daemon tests can be parallelized safely.
+    // tests can be parallelized safely.
     maxParallelForks = 8
 }
 

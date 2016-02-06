@@ -53,7 +53,7 @@ public final class TestTCPUnicast
 
     private static final Logger l = LoggerFactory.getLogger(TestTCPUnicast.class);
 
-    private static final long CHANNEL_CONNECT_TIMEOUT = 5 * C.SEC; // this can be fairly fast because both devices are on the local machine
+    private static final long CHANNEL_CONNECT_TIMEOUT = 1 * C.SEC; // this can be fairly fast because both devices are on the local machine
     private static final byte[] TEST_DATA = "hello".getBytes(Charsets.US_ASCII);
     private static final byte[][] TEST_PAYLOAD = TransportProtocolUtil.newDatagramPayload(TEST_DATA);
 
@@ -522,7 +522,9 @@ public final class TestTCPUnicast
         Thread senderThread = new Thread(() -> {
             while(keepWriting.get()) {
                 try {
-                    localChannel.write(TransportProtocolUtil.newDatagramPayload(TEST_DATA));
+                    for (int i = 0; i < 10; ++i) {
+                        localChannel.write(TransportProtocolUtil.newDatagramPayload(TEST_DATA));
+                    }
                     Thread.sleep(1);
                 } catch (InterruptedException e) {
                     break;
@@ -533,7 +535,7 @@ public final class TestTCPUnicast
 
         l.info("started sending thread");
 
-        Thread.sleep(30000);
+        Thread.sleep(5000);
 
         // close via the remote side
         // this will force a close event to be fired via the netty I/O thread
