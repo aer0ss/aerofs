@@ -15,7 +15,7 @@ if BRIDGE_IFACE
 end
 
 local_key = %x(cut -d ' ' -f 2 ~/.ssh/id_rsa.pub).strip()
-agent_key = %x(cat ~/agents-build-kit/agents2actors.pub).strip()
+agent_key = %x(cut -d ' ' -f 2 ~/agents-build-kit/agents2actors.pub).strip()
 
 # workaround: facter/puppet barfs if the agent key is empty, failing to provision
 # event the local key, which is a problem for running syncdet on dev machines as
