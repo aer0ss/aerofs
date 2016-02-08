@@ -1,6 +1,8 @@
 package convos
 
 import (
+	"aerofs.com/sloth/aero-clients/lipwig"
+	"aerofs.com/sloth/aero-clients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"
@@ -20,6 +22,8 @@ type context struct {
 	lastOnlineTimes *lastOnline.Times
 	pushNotifier    push.Notifier
 	commandHandler  *commands.Handler
+	spartaClient    *sparta.Client
+	lipwigClient    *lipwig.Client
 }
 
 //
@@ -33,6 +37,8 @@ func BuildRoutes(
 	pushNotifier push.Notifier,
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
+	spartaClient *sparta.Client,
+	lipwigClient *lipwig.Client,
 
 ) *restful.WebService {
 	ctx := &context{
@@ -41,6 +47,8 @@ func BuildRoutes(
 		lastOnlineTimes: lastOnlineTimes,
 		pushNotifier:    pushNotifier,
 		commandHandler:  commands.NewHandler(db),
+		spartaClient:    spartaClient,
+		lipwigClient:    lipwigClient,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)

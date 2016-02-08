@@ -3,6 +3,9 @@ package main
 import (
 	"aerofs.com/service"
 	"aerofs.com/service/mysql"
+	"aerofs.com/sloth/aero-clients/lipwig"
+	"aerofs.com/sloth/aero-clients/polaris"
+	"aerofs.com/sloth/aero-clients/sparta"
 	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
@@ -16,6 +19,8 @@ import (
 	pushResource "aerofs.com/sloth/resource/push"
 	"aerofs.com/sloth/resource/token"
 	"aerofs.com/sloth/resource/users"
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"github.com/emicklei/go-restful"
@@ -38,6 +43,31 @@ const HTTP_CLIENT_POOL_SIZE = 20
 const MAX_OPEN_DB_CONNS = 30
 
 //
+// Lipwig Client Config
+//
+
+func getTlsConfig() *tls.Config {
+	config, err := service.NewConfigClient("sloth").Get()
+	errors.PanicOnErr(err)
+	rawCacert, ok := config["config.loader.base_ca_certificate"]
+	if !ok {
+		panic("missing ca cert config")
+	}
+	hostname, ok := config["base.host.unified"]
+	if !ok {
+		panic("missing hostname config")
+	}
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM([]byte(rawCacert)) {
+		panic("unable to parse CA cert")
+	}
+	return &tls.Config{
+		ServerName: hostname,
+		RootCAs:    certPool,
+	}
+}
+
+//
 // Main
 //
 
@@ -45,8 +75,8 @@ func main() {
 	var port int
 	var host, dbHost, dbName string
 	var swaggerFilePath string
-	var verifier string
-	var pushEnabled bool
+	var verifier, deploymentSecret string
+	var pushEnabled, fileUpdatesEnabled bool
 
 	// wait for dependent containers
 	service.ServiceBarrier()
@@ -59,7 +89,14 @@ func main() {
 	flag.StringVar(&swaggerFilePath, "swagger", os.Getenv("HOME")+"/repos/swagger-ui/dist", "Path to swagger-ui files; if missing, swagger will not be invoked.")
 	flag.StringVar(&verifier, "verifier", "bifrost", "Token verifier to use. Currently \"bifrost\" or \"echo\"")
 	flag.BoolVar(&pushEnabled, "pushEnabled", true, "Set false to disable push notifications")
+	flag.BoolVar(&fileUpdatesEnabled, "fileUpdatesEnabled", true, "Set false to disable file update subscriptions")
+	flag.StringVar(&deploymentSecret, "deploymentSecret", "", "Set deployment secret instead of reading from disk")
 	flag.Parse()
+
+	// read deployment secret from disk if not provided by command-line arg
+	if deploymentSecret == "" {
+		deploymentSecret = service.ReadDeploymentSecret()
+	}
 
 	// format url strings
 	portStr := ":" + strconv.Itoa(port)
@@ -104,6 +141,17 @@ func main() {
 		tokenVerifier = auth.NewBifrostTokenVerifier(tokenCache)
 	}
 
+	// create http clients for aero services
+	polarisClient := polaris.NewClient(deploymentSecret)
+	spartaClient := sparta.NewClient(deploymentSecret)
+
+	// subscribe to SSMP - polaris
+	var lipwigClient *lipwig.Client
+	if fileUpdatesEnabled {
+		tlsConfig := getTlsConfig()
+		lipwigClient = lipwig.Start(tlsConfig, db, deploymentSecret, polarisClient, spartaClient)
+	}
+
 	// intitialize shared filters
 	checkUserFilter := filters.CheckUser(tokenVerifier)
 	updateLastOnlineFilter := filters.UpdateLastOnline(lastOnlineTimes, broadcaster)
@@ -129,6 +177,8 @@ func main() {
 		pushNotifier,
 		checkUserFilter,
 		updateLastOnlineFilter,
+		spartaClient,
+		lipwigClient,
 	))
 	restful.Add(keepalive.BuildRoutes(
 		checkUserFilter,

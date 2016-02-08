@@ -60,7 +60,7 @@ func (p *pool) Do(r *http.Request) <-chan *Response {
 			responseChan <- &Response{R: resp, Err: err}
 			return
 		}
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			responseChan <- &Response{R: resp, Err: err}
 			return

@@ -143,6 +143,7 @@ func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {
 		Name:        *p.Name,
 		IsPublic:    *p.IsPublic,
 		Members:     p.Members,
+		Sid:         p.Sid,
 	}
 	insertNewConvo(tx, c, CHANNEL)
 	for _, uid := range c.Members {
@@ -236,15 +237,15 @@ func InsertMemberRemovedMessage(tx *sql.Tx, cid, uid, caller string, time time.T
 
 // GetGroupSids returns the sids of all group convos bound to a shared folder
 func GetGroupSids(tx *sql.Tx) []string {
-	rows, err := tx.Query("SELECT sid FROM convos WHERE sid IS NOT NULL AND type=?", CHANNEL)
+	rows, err := tx.Query("SELECT LOWER(HEX(sid)) FROM convos WHERE sid IS NOT NULL AND type=?", CHANNEL)
 	defer rows.Close()
 	errors.PanicAndRollbackOnErr(err, tx)
 	var sids []string
 	for rows.Next() {
-		var sid []byte
+		var sid string
 		err := rows.Scan(&sid)
 		errors.PanicAndRollbackOnErr(err, tx)
-		sids = append(sids, hex.EncodeToString(sid))
+		sids = append(sids, sid)
 	}
 	return sids
 }
@@ -266,8 +267,7 @@ func parseConvoRow(tx *sql.Tx, row Row) *Convo {
 	}
 	errors.PanicAndRollbackOnErr(err, tx)
 	if sid != nil {
-		s := hex.EncodeToString(sid)
-		c.Sid = s
+		c.Sid = hex.EncodeToString(sid)
 	}
 	c.Type = toTypeString(ctype)
 	c.CreatedTime = time.Unix(0, timeNanos)
@@ -287,8 +287,9 @@ func isPinned(tx *sql.Tx, cid, uid string) bool {
 }
 
 func insertNewConvo(tx *sql.Tx, c *Convo, ctype int) {
+	sid := hexDecode(tx, c.Sid)
 	_, err := tx.Exec("INSERT INTO convos (id, type, created_time, name, is_public, sid) VALUES (?,?,?,?,?,?)",
-		c.Id, ctype, c.CreatedTime.UnixNano(), c.Name, c.IsPublic, hexDecode(tx, &c.Sid))
+		c.Id, ctype, c.CreatedTime.UnixNano(), c.Name, c.IsPublic, sid)
 	if ctype == DIRECT && errors.UniqueConstraintFailed(err) {
 		return
 	}
@@ -324,7 +325,7 @@ func getMembers(tx *sql.Tx, cid string) []string {
 // this function panics unless there exists exactly one matching convo.
 func getCidForSid(tx *sql.Tx, sid string) string {
 	var cid string
-	err := tx.QueryRow("SELECT id FROM convos WHERE sid=?", hexDecode(tx, &sid)).Scan(&cid)
+	err := tx.QueryRow("SELECT id FROM convos WHERE sid=?", hexDecode(tx, sid)).Scan(&cid)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return cid
 }
@@ -366,11 +367,11 @@ func values(m map[string]Convo) []Convo {
 	return slice
 }
 
-func hexDecode(tx *sql.Tx, s *string) []byte {
-	if s == nil {
+func hexDecode(tx *sql.Tx, s string) []byte {
+	if s == "" {
 		return nil
 	}
-	sid, err := hex.DecodeString(*s)
+	sid, err := hex.DecodeString(s)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return sid
 }
