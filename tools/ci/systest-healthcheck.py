@@ -25,5 +25,6 @@ if __name__ == "__main__":
     print "check actors..."
     for addr in addresses:
         print " > check actor @ {}".format(addr)
+        os.system("ssh-keygen -f ~/.ssh/known_hosts -R {}".format(addr))
         assert os.system("ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no aerofstest@{} exit".format(addr)) == 0
 
