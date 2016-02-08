@@ -22,7 +22,7 @@ def archive_container_logs(request):
     if exists(LOG_ARCHIVE_PATH):
         unlink(LOG_ARCHIVE_PATH)
 
-    cli = Client(base_url='unix://var/run/docker.sock')
+    cli = Client(base_url='unix://var/run/docker.sock', version='1.17')
 
     # Move it to a separate, background process if archiving takes too long.
     with ZipFile(LOG_ARCHIVE_PATH, 'w') as z:

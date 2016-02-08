@@ -16,7 +16,8 @@ RUN apk --update add \
         mariadb-client \
         py-crypto \
         py-mysqldb \
-        py-psutil &&\
+        py-psutil \
+	tar &&\
     rm -rf /var/cache/apk/*
 
 COPY root/requirements-exact.txt /
