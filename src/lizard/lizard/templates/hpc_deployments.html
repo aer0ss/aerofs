@@ -25,18 +25,48 @@
             });
          }
     }
+
+    function extend_license(subdomain) {
+        duration = prompt("How many days would you like to add to the license?")
+        newDuration = +$("#remainingTime").text() + +duration;
+
+        $.ajax({
+            url: '/hpc_extend_license/' + subdomain,
+            method: 'POST',
+            data: {'newDuration' : newDuration },
+            success: function(result) {
+                // Like the flash message, we want to display it only 8 secondes
+                $("#flash-msg-success").html('The license has been extended').show(0)
+                $("#flash-msg-success").delay(8e3)
+                $("#flash-msg-success").hide(0)
+                $("#remainingTime").html(result["status"])
+            },
+            error: function(result) {
+                $("#flash-msg-error").html('Extending the license failed. Please refresh this page and try again.').show(0)
+                $("#flash-msg-error").delay(8e3)
+                $("#flash-msg-error").hide(0)
+            }
+        });
+    }
+
 </script>
     <table class="table">
         <tr>
             <th>Customer</th>
             <th>Subdomain</th>
+            <th>Remaining days</th>
             <th>Action</th>
         </tr>
         {% for deployment in deployments %}
             <tr id="row-{{ deployment.subdomain }}">
                 <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
                 <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
-                <td><a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a></td>
+                <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}" id="remainingTime"> {{deployment.get_days_until_expiry() }}</a></td>
+                <td>
+                    <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a>
+                    <b> or </b>
+                    <a href="#" onclick="extend_license('{{ deployment.subdomain }}'); return false;">Extend license</a>
+                </td>
             </tr>
         {% endfor %}
     </table>

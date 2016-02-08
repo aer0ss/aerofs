@@ -3,10 +3,12 @@ import stripe
 import tarfile
 import requests
 from StringIO import StringIO
+from hpc_config import reboot
 from aerofs_licensing import unicodecsv
 from lizard import db, csrf, appliance, notifications, forms, models, hpc
 from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
-    flash
+    flash, jsonify
+
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 @blueprint.route("/", methods=["GET"])
@@ -359,6 +361,7 @@ def upload_bundle():
         return redirect(url_for(".queues"))
     return render_template('upload_bundle.html', form=form)
 
+
 @blueprint.route("/release", methods=["GET", "POST"])
 def release():
     form = forms.ReleaseForm()
@@ -417,6 +420,30 @@ def hpc_deployment_delete(subdomain):
     deployment = models.HPCDeployment.query.get_or_404(subdomain)
     hpc.delete_deployment(deployment)
     return Response('ok', 200)
+
+
+@blueprint.route("/hpc_extend_license/<string:subdomain>", methods=["POST"])
+def extend_license(subdomain):
+    duration = int(request.form['newDuration'])
+
+    # Update the expiry date in the license table
+    deployment = models.HPCDeployment.query.get_or_404(subdomain)
+    deployment.set_days_until_expiry(duration)
+
+    # Generate a license request.
+    license = deployment.customer.newest_filled_license()
+    license.state = models.License.states.PENDING
+
+    db.session.commit()
+
+    # The license signing script will automatically download the license
+    # requests and sign them 10 times per second.
+
+    # Rebooting the appliance
+    # Wait a couple of seconds to make sure the license has been granted then
+    # reboot the appliance with the new license.
+    reboot.si(subdomain).apply_async(countdown=10)
+    return jsonify({'status': duration})
 
 
 @blueprint.route("/hpc_servers", methods=["GET", "POST"])

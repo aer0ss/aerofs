@@ -323,9 +323,6 @@ class HPCDeployment(db.Model, TimeStampedMixin):
     # On which server is this running?
     server_id = db.Column(db.Integer, db.ForeignKey('hpc_server.id'), nullable=False)
 
-    # When the deployment expires
-    expiry_date = db.Column(db.DateTime, nullable=True)
-
     # When the appliance was set up
     appliance_setup_date = db.Column(db.DateTime, nullable=True)
 
@@ -333,23 +330,29 @@ class HPCDeployment(db.Model, TimeStampedMixin):
     def full_hostname(self):
         return '{}.{}'.format(self.subdomain, current_app.config['HPC_DOMAIN'])
 
+    # we are talking here about the expiry of the license
     def set_days_until_expiry(self, d):
-        e = datetime.datetime.today().date() + datetime.timedelta(days=d)
-        self.expiry_date = datetime.datetime.combine(e, datetime.time.min)
+        license = self.customer.newest_filled_license()
+        license.set_days_until_expiry(d)
 
     def get_days_until_expiry(self):
         today = datetime.datetime.today().date()
         start_of_today = datetime.datetime(year=today.year, month=today.month, day=today.day)
-        days = (self.expiry_date - start_of_today).days
+        # In case there are no filled licenses
+        try:
+            days = (self.customer.newest_filled_license().expiry_date - start_of_today).days
+        except AttributeError:
+            return "No filled licenses"
+
         return -1 if days < 0 else days
 
     def has_expired(self):
         today = datetime.datetime.today().date()
         start_of_today = datetime.datetime(year=today.year, month=today.month, day=today.day)
-        return start_of_today >= self.expiry_date
+        return start_of_today >= self.customer.newest_filled_license().expiry_date
 
     def __repr__(self):
-        return "<HPCDeployment '{}' expires: '{}'>".format(self.subdomain, self.expiry_date.strftime('%Y-%m-%d'))
+        return "<HPCDeployment '{}' expires: '{}'>".format(self.subdomain, self.customer.newest_filled_license.strftime('%Y-%m-%d'))
 
 
 class HPCServer(db.Model, TimeStampedMixin):
