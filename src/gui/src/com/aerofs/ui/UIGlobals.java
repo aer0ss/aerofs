@@ -2,11 +2,9 @@ package com.aerofs.ui;
 
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.Lazy;
-import com.aerofs.base.analytics.Analytics;
 import com.aerofs.gui.TransferState;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.tray.Progresses;
-import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.lib.nativesocket.RitualSocketFile;
 import com.aerofs.ritual.IRitualClientProvider;
@@ -48,7 +46,6 @@ public final class UIGlobals
 
     private static final SanityPoller s_rap = new SanityPoller();
     private static final UIScheduler s_sched = new UIScheduler();
-    private static final Analytics s_analytics = new Analytics(new DesktopAnalyticsProperties());
 
     private static Factory _idm;
 
@@ -91,6 +88,4 @@ public final class UIGlobals
     {
         return s_ritualProvider.getNonBlockingClient();
     }
-
-    public static Analytics analytics() { return s_analytics; }
 }

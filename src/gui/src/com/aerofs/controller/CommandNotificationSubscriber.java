@@ -7,7 +7,6 @@ package com.aerofs.controller;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ssl.SSLEngineFactory;
@@ -383,8 +382,6 @@ public final class CommandNotificationSubscriber implements EventHandler
     private void unlinkSelf()
             throws Exception
     {
-        UIGlobals.analytics().track(SimpleEvents.UNLINK_DEVICE);
-
         tryCreateSeedFiles();
 
         UnlinkUtil.unlink();
@@ -395,8 +392,6 @@ public final class CommandNotificationSubscriber implements EventHandler
     private void unlinkAndWipeSelf()
             throws Exception
     {
-        UIGlobals.analytics().track(SimpleEvents.UNLINK_AND_WIPE);
-
         UnlinkUtil.unlink();
 
         // Delete Root Anchor.

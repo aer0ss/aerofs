@@ -3,7 +3,6 @@ package com.aerofs.gui;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.history.DlgHistory;
@@ -80,17 +79,9 @@ public class GUIUtil
 
     public static abstract class AbstractListener implements Listener
     {
-        IAnalyticsEvent _analyticsEvent;
-
-        public AbstractListener(@Nullable IAnalyticsEvent analyticsEvent)
-        {
-            _analyticsEvent = analyticsEvent;
-        }
-
         @Override
         public void handleEvent(Event event)
         {
-            if (_analyticsEvent != null) UIGlobals.analytics().track(_analyticsEvent);
             handleEventImpl(event);
         }
 

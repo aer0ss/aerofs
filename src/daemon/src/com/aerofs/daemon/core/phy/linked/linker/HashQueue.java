@@ -8,9 +8,6 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents.FileSavedEvent;
-import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -29,7 +26,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -95,7 +91,6 @@ public class HashQueue
     private final TransManager _tm;
     private final TokenManager _tokenManager;
     private final Injector _inj; // late binding of BranchDeleter to work around circular dep...
-    private final AnalyticsEventCounter _saveCounter;
 
     enum State
     {
@@ -259,7 +254,6 @@ public class HashQueue
             }
             l.info("change {} content {} {}", soid, oldHash, newHash);
             _vu.update_(new SOCKID(k, CID.CONTENT), t);
-            _saveCounter.inc();
         }
     }
 
@@ -298,7 +292,7 @@ public class HashQueue
 
     @Inject
     public HashQueue(CoreScheduler sched, DirectoryService ds, VersionUpdater vu, TransManager tm,
-                     TokenManager tokenManager, Injector inj, Analytics analytics)
+                     TokenManager tokenManager, Injector inj)
     {
         _sched = sched;
         _ds = ds;
@@ -306,13 +300,6 @@ public class HashQueue
         _tm = tm;
         _inj = inj;
         _tokenManager = tokenManager;
-        _saveCounter = new AnalyticsEventCounter(analytics) {
-            @Override
-            public IAnalyticsEvent createEvent(int count)
-            {
-                return new FileSavedEvent(count);
-            }
-        };
     }
 
     /**

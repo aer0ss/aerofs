@@ -7,7 +7,6 @@ package com.aerofs.gui.sharing.invitee;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.analytics.AnalyticsEvents.FolderInviteSentEvent;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExMemberLimitExceeded;
 import com.aerofs.base.ex.ExNoPerm;
@@ -251,8 +250,6 @@ public class CompInviteUsers extends Composite
                 if (_notifyOnSuccess) {
                     UI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT);
                 }
-
-                UIGlobals.analytics().track(new FolderInviteSentEvent(invitees.size()));
             }
 
             @Override

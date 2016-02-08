@@ -7,7 +7,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.audit.client.MockAuditClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
@@ -213,7 +212,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Mock SharedFolderNotificationEmailer sharedFolderNotificationEmailer;
 
-    @Mock Analytics analytics;
     @Spy protected IdentitySessionManager identitySessionManager = new IdentitySessionManager(jedisProvider);
     @Spy protected SharingRulesFactory sharingRules = new SharingRulesFactory(authenticator,
             factUser, sharedFolderNotificationEmailer);
@@ -329,7 +327,6 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 requestToSignUpEmailer,
                 twoFactorEmailer,
                 commandQueue,
-                analytics,
                 identitySessionManager,
                 authenticator,
                 sharingRules,

@@ -4,9 +4,7 @@
 
 package com.aerofs.gui.invite;
 
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
+
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.defects.Defects;
@@ -14,7 +12,6 @@ import com.aerofs.gui.*;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExAlreadyInvited;
-import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.error.ErrorMessage;
 import com.aerofs.ui.error.ErrorMessages;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -52,13 +49,6 @@ public class DlgInvite extends AeroFSDialog
 
     private class CompInvite extends Composite
     {
-        private final ClickEvent INVITE_COWORKER_CLICKED
-                = new ClickEvent(Action.INVITE_COWORKER, Source.DESKTOP_GUI);
-        private final ClickEvent INVITE_COWORKER_SUCCEEDED
-                = new ClickEvent(Action.INVITE_COWORKER_SUCCEEDED, Source.DESKTOP_GUI);
-        private final ClickEvent INVITE_COWORKER_FAILED
-                = new ClickEvent(Action.INVITE_COWORKER_FAILED, Source.DESKTOP_GUI);
-
         private final Composite _cmpInvite;
         private final Label     _lblInvite;
         private final Text      _txtInvite;
@@ -117,8 +107,6 @@ public class DlgInvite extends AeroFSDialog
                 @Override
                 public void widgetSelected(SelectionEvent e)
                 {
-                    UIGlobals.analytics().track(INVITE_COWORKER_CLICKED);
-
                     final String email = getInput();
 
                     setStatus(S.INVITE_STATUS_INVITING);
@@ -138,8 +126,6 @@ public class DlgInvite extends AeroFSDialog
                         @Override
                         public void okay()
                         {
-                            UIGlobals.analytics().track(INVITE_COWORKER_SUCCEEDED);
-
                             Defects.newMetric("gui.invite.success")
                                     .sendAsync();
 
@@ -152,8 +138,6 @@ public class DlgInvite extends AeroFSDialog
                         @Override
                         public void error(Exception e)
                         {
-                            UIGlobals.analytics().track(INVITE_COWORKER_FAILED);
-
                             Defects.newMetric("gui.invite.failure")
                                     .setMessage(e.toString())
                                     .setException(e)

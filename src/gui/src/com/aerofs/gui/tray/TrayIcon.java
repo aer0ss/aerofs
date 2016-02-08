@@ -1,9 +1,6 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
@@ -44,9 +41,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class TrayIcon implements ITrayMenuListener
 {
     private static final Logger l = Loggers.getLogger(TrayIcon.class);
-
-    private static final ClickEvent TRAY_ICON_DEFAULT_ACTION = new ClickEvent( Action.TRAY_ICON_DEFAULT_ACTION, Source.TASKBAR);
-    private static final ClickEvent TRAY_ICON_CLICKED = new ClickEvent(Action.TRAY_ICON, Source.TASKBAR);
 
     private static final String TOOLTIP_PREFIX = L.product();
     private static final String DEFAULT_TOOLTIP = TOOLTIP_PREFIX + " " + Cfg.ver() +
@@ -97,7 +91,7 @@ public class TrayIcon implements ITrayMenuListener
             _ti = new TrayItem(tray, SWT.NONE);
 
             if (!OSUtil.isOSX()) {
-                _ti.addListener(SWT.DefaultSelection, new AbstractListener(TRAY_ICON_DEFAULT_ACTION) {
+                _ti.addListener(SWT.DefaultSelection, new AbstractListener() {
                     @Override
                     public void handleEventImpl(Event event)
                     {
@@ -106,7 +100,7 @@ public class TrayIcon implements ITrayMenuListener
                 });
             }
 
-            Listener showMenu = new AbstractListener(TRAY_ICON_CLICKED) {
+            Listener showMenu = new AbstractListener() {
                 @Override
                 public void handleEventImpl(Event event)
                 {

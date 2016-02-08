@@ -6,7 +6,6 @@ package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.ids.DID;
@@ -34,8 +33,6 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 
-import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.INSTALL_CLIENT;
-import static com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents.REINSTALL_CLIENT;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
 import static com.aerofs.defects.Defects.newDefectWithLogsNoCfg;
 import static com.aerofs.lib.cfg.CfgDatabase.*;
@@ -100,8 +97,6 @@ public class Setup
             setupSingleUserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig,
                     client, apiAccess);
 
-            UIGlobals.analytics().track(isReinstall ? REINSTALL_CLIENT : INSTALL_CLIENT);
-
         } catch (Exception e) {
             handleSetupException(userId, e);
         }
@@ -117,16 +112,6 @@ public class Setup
 
             setupMultiuserImpl(userId, rootAnchorPath, deviceName, storageType, backendConfig, client,
                     apiAccess);
-
-            // Send event for S3 Setup
-            if (backendConfig != null && backendConfig._storageType == StorageType.S3) {
-                UIGlobals.analytics().track(SimpleEvents.ENABLE_S3);
-            }
-            // Send event for Swift Setup
-            if (backendConfig != null && backendConfig._storageType == StorageType.SWIFT) {
-                UIGlobals.analytics().track(SimpleEvents.ENABLE_SWIFT);
-            }
-            UIGlobals.analytics().track(SimpleEvents.INSTALL_TEAM_SERVER);
 
         } catch (Exception e) {
             handleSetupException(userId, e);

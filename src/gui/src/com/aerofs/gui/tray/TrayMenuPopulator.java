@@ -4,9 +4,6 @@
 
 package com.aerofs.gui.tray;
 
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.GUIUtil.AbstractListener;
@@ -29,13 +26,6 @@ import org.eclipse.swt.widgets.MenuItem;
 // TODO: move utility methods to AbstractTrayMenu and remove this class
 public class TrayMenuPopulator
 {
-    private static final ClickEvent APPLY_UPDATE_CLICKED
-            = new ClickEvent(Action.APPLY_UPDATE, Source.TASKBAR);
-    private static final ClickEvent EXIT_CLICKED
-            = new ClickEvent(Action.EXIT, Source.TASKBAR);
-    private static final ClickEvent INVITE_COWORKER_CLICKED
-            = new ClickEvent(Action.INVITE_COWORKER_MENU, Source.TASKBAR);
-
     private final Menu _rootMenu;
 
     public TrayMenuPopulator(Menu rootMenu)
@@ -92,7 +82,7 @@ public class TrayMenuPopulator
 
     public void addHelpMenuItems()
     {
-        addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener(null)
+        addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -101,7 +91,7 @@ public class TrayMenuPopulator
             }
         });
 
-        addMenuItem("Support Center", new AbstractListener(null)
+        addMenuItem("Support Center", new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -112,7 +102,7 @@ public class TrayMenuPopulator
 
         addMenuSeparator();
 
-        addMenuItem(S.TXT_TRANSPORT_DIAGNOSTICS_TITLE, new AbstractListener(null)
+        addMenuItem(S.TXT_TRANSPORT_DIAGNOSTICS_TITLE, new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -123,7 +113,7 @@ public class TrayMenuPopulator
 
         addMenuSeparator();
 
-        addMenuItem("About " + L.product(), new AbstractListener(null)
+        addMenuItem("About " + L.product(), new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -136,7 +126,7 @@ public class TrayMenuPopulator
     public void addApplyUpdateMenuItem()
     {
         addWarningMenuItem(S.BTN_APPLY_UPDATE,
-                new AbstractListener(APPLY_UPDATE_CLICKED)
+                new AbstractListener()
                 {
                     @Override
                     protected void handleEventImpl(Event event)
@@ -155,7 +145,7 @@ public class TrayMenuPopulator
     public void addExitMenuItem(String fullProductName)
     {
         addMenuItem((OSUtil.isWindows() ? "Exit" : "Quit") + " " +
-               fullProductName, new AbstractListener(EXIT_CLICKED)
+               fullProductName, new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)
@@ -186,7 +176,7 @@ public class TrayMenuPopulator
 
     public void addInviteCoworkerMenuItem()
     {
-        addMenuItem(S.INVITE_TITLE + "...", new AbstractListener(INVITE_COWORKER_CLICKED)
+        addMenuItem(S.INVITE_TITLE + "...", new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)

@@ -4,7 +4,6 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.audit.client.IAuditorClient;
 import com.aerofs.base.AuditParam;
 import com.aerofs.base.TimerUtil;
-import com.aerofs.base.analytics.IAnalyticsPlatformProperties;
 import com.aerofs.daemon.core.activity.ClientAuditEventReporter;
 import com.aerofs.daemon.core.activity.IClientAuditEventReporter;
 import com.aerofs.daemon.core.activity.LegacyOutboundEventLogger;
@@ -45,7 +44,6 @@ import com.aerofs.daemon.lib.db.ver.*;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.lib.NioChannelFactories;
-import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
@@ -121,7 +119,6 @@ public class CoreModule extends AbstractModule
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(IAuditDatabase.class).to(AuditDatabase.class);
-        bind(IAnalyticsPlatformProperties.class).to(DesktopAnalyticsProperties.class);
         bind(IRoundTripTimes.class).toInstance(new RoundTripTimes());
         bind(IVersionUpdater.class).to(VersionUpdater.class);
 

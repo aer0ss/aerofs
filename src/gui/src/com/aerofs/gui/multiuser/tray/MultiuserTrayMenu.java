@@ -4,9 +4,6 @@
 
 package com.aerofs.gui.multiuser.tray;
 
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -26,9 +23,6 @@ import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
-    private static final ClickEvent MANAGE_ORGANIZATION_CLICKED
-            = new ClickEvent(Action.MANAGE_ORGANIZATION, Source.TASKBAR);
-
     public MultiuserTrayMenu(TrayIcon icon, RebuildDisposition buildOrReuse)
     {
         super(icon, buildOrReuse);
@@ -115,8 +109,7 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
     {
         String organizationUsersUrl = getStringProperty("base.www.organization_users_url");
 
-        trayMenuPopulator.addMenuItem("Manage Organization", new AbstractListener(
-                MANAGE_ORGANIZATION_CLICKED)
+        trayMenuPopulator.addMenuItem("Manage Organization", new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)

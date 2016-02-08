@@ -5,7 +5,6 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
-import com.aerofs.base.analytics.Analytics;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -149,7 +148,6 @@ public class SPServlet extends HttpServlet
 
     private final JedisEpochCommandQueue _commandQueue;
 
-    private final Analytics _analytics;
     private final InvitationReminderEmailer _invitationReminderEmailer;
 
     private final SharedFolderNotificationEmailer _sfnEmailer;
@@ -227,7 +225,6 @@ public class SPServlet extends HttpServlet
         _identitySessionManager = new IdentitySessionManager(_jedisConProvider);
         _jedisTrans = new JedisThreadLocalTransaction(_jedisConProvider);
         _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
-        _analytics = new Analytics(new SPAnalyticsProperties(_session));
         _invitationReminderEmailer = new InvitationReminderEmailer();
         _sfnEmailer = new SharedFolderNotificationEmailer();
         _sfRules = new SharingRulesFactory(_authenticator, _factUser, _sfnEmailer);
@@ -273,7 +270,6 @@ public class SPServlet extends HttpServlet
                 _requestToSignUpEmailer,
                 _twoFactorEmailer,
                 _commandQueue,
-                _analytics,
                 _identitySessionManager,
                 _authenticator,
                 _sfRules,

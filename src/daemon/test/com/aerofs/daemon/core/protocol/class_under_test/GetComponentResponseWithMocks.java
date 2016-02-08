@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.protocol.class_under_test;
 
-import com.aerofs.base.analytics.Analytics;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -61,7 +60,7 @@ public class GetComponentResponseWithMocks extends AbstractClassUnderTestWithMoc
     private final CoreScheduler _sched = mock(CoreScheduler.class);
     private final ContentReceiver _rc = new ContentReceiver(_pvc, _ps, mock(DownloadState.class),
             _iss, _tm, _sched);
-    private final ContentProvider _provider = new DaemonContentProvider(_ds, _ps, _ccdb, mock(Analytics.class));
+    private final ContentProvider _provider = new DaemonContentProvider(_ds, _ps, _ccdb);
 
     public final LegacyCausality _legacyCausality = new LegacyCausality(_ds, _nvc, _bd);
     public final MetaUpdater _mu = new MetaUpdater();

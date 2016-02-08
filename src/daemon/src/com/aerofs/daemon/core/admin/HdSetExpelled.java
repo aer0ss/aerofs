@@ -1,7 +1,5 @@
 package com.aerofs.daemon.core.admin;
 
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -17,25 +15,22 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
     private final Expulsion _expulsion;
     private final DirectoryService _ds;
     private final TransManager _tm;
-    private final Analytics _analytics;
     private final IPhysicalStorage _ps;
 
     @Inject
     public HdSetExpelled(Expulsion expulsion, DirectoryService ds, IPhysicalStorage ps,
-            TransManager tm, Analytics analytics)
+            TransManager tm)
     {
         _expulsion = expulsion;
         _ds = ds;
         _ps = ps;
         _tm = tm;
-        _analytics = analytics;
     }
 
     @Override
     protected void handleThrows_(EISetExpelled ev) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._path);
-        _analytics.track(ev._expelled ? SimpleEvents.EXCLUDE_FOLDER : SimpleEvents.INCLUDE_FOLDER);
         try (Trans t = _tm.begin_()) {
             // explicit expulsion is used to save space so we should not simply move files to rev
             // but completely delete them

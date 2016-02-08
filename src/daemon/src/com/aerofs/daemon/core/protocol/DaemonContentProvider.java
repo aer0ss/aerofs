@@ -1,9 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents;
-import com.aerofs.base.analytics.IAnalyticsEvent;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.CA;
@@ -17,7 +14,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.analytics.AnalyticsEventCounter;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -36,22 +32,15 @@ public class DaemonContentProvider implements ContentProvider {
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
     private ContentChangesDatabase _ccdb;
-    private final AnalyticsEventCounter _conflictCounter;
+
 
     @Inject
     public DaemonContentProvider(DirectoryService ds, IPhysicalStorage ps,
-                                 ContentChangesDatabase ccdb, Analytics analytics)
+                                 ContentChangesDatabase ccdb)
     {
         _ds = ds;
         _ps = ps;
         _ccdb = ccdb;
-        _conflictCounter = new AnalyticsEventCounter(analytics) {
-            @Override
-            public IAnalyticsEvent createEvent(int count)
-            {
-                return new AnalyticsEvents.FileConflictEvent(count);
-            }
-        };
     }
 
     @Override
@@ -174,12 +163,6 @@ public class DaemonContentProvider implements ContentProvider {
         long mtime = _ps.apply_(prefix, pf, wasPresent, replyMTime, t);
 
         if (ca == null) {
-            if (!k.kidx().isMaster()) {
-                // record creation of conflict branch here instead of in DirectoryService
-                // Aliasing and Migration may recreate them and we only want to record each
-                // conflict once
-                _conflictCounter.inc();
-            }
             _ds.createCA_(k.soid(), k.kidx(), t);
         }
         _ds.setCA_(k, len, mtime, h, t);

@@ -1,9 +1,6 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.base.C;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -38,15 +35,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotificationListener, ITrayMenu
 {
-    private static final ClickEvent RESOLVE_CONFLICTS
-            = new ClickEvent(Action.RESOLVE_CONFLICTS, Source.TASKBAR);
-    private static final ClickEvent RESOLVE_UNSYNCABLE_FILES
-            = new ClickEvent(Action.RESOLVE_UNSYNCABLE_FILES, Source.TASKBAR);
-    private static final ClickEvent PAUSE_SYNCING
-            = new ClickEvent(Action.PAUSE_SYNCING, Source.TASKBAR);
-    private static final ClickEvent RESUME_SYNCING
-            = new ClickEvent(Action.RESUME_SYNCING, Source.TASKBAR);
-
     private volatile int _conflictCount = 0;
     private volatile int _unsyncableFilesCount = 0;
 
@@ -190,7 +178,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                 "conflicts were found");
 
         trayMenuPopulator.addWarningMenuItem(label,
-                new AbstractListener(RESOLVE_CONFLICTS)
+                new AbstractListener()
                 {
                     @Override
                     protected void handleEventImpl(Event event)
@@ -206,7 +194,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
                 "unsyncable files were found");
 
         trayMenuPopulator.addWarningMenuItem(label,
-                new AbstractListener(RESOLVE_UNSYNCABLE_FILES)
+                new AbstractListener()
                 {
                     @Override
                     protected void handleEventImpl(Event event)
@@ -221,7 +209,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         final boolean paused = _prs.isPaused();
         String strPauseOrResume = paused ? "Resume Syncing" : "Pause syncing for an hour";
         trayMenuPopulator.addMenuItem(strPauseOrResume,
-                new AbstractListener(paused ? RESUME_SYNCING : PAUSE_SYNCING)
+                new AbstractListener()
                 {
                     @Override
                     protected void handleEventImpl(Event event)

@@ -11,8 +11,6 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
-import com.aerofs.base.analytics.Analytics;
-import com.aerofs.base.analytics.AnalyticsEvents.SignUpEvent;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.*;
 import com.aerofs.base.id.GroupID;
@@ -174,7 +172,6 @@ public class SPService implements ISPService
     private final JedisEpochCommandQueue _commandQueue;
     private final JedisThreadLocalTransaction _jedisTrans;
     private final CommandDispatcher _commandDispatcher;
-    private final Analytics _analytics;
 
     private final IdentitySessionManager _identitySessionManager;
     private final Authenticator _authenticator;
@@ -218,7 +215,6 @@ public class SPService implements ISPService
             RequestToSignUpEmailer requestToSignUpEmailer,
             TwoFactorEmailer twoFactorEmailer,
             JedisEpochCommandQueue commandQueue,
-            Analytics analytics,
             IdentitySessionManager identitySessionManager,
             Authenticator authenticator,
             SharingRulesFactory sharingRules,
@@ -274,7 +270,6 @@ public class SPService implements ISPService
 
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans, ssmp);
-        _analytics = checkNotNull(analytics);
 
         _rateLimiter = rateLimiter;
 
@@ -2890,8 +2885,6 @@ public class SPService implements ISPService
 
         // Unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-
-        _analytics.track(new SignUpEvent(user.id()));
 
         // N.B. do not remove the sign up invitation code so users can retry signing up using the
         // same link in the signup verification email. See this method's caller for detail.

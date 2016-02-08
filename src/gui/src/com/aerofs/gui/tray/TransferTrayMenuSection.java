@@ -35,7 +35,7 @@ public class TransferTrayMenuSection extends DynamicTrayMenuComponent
     private String _transferProgress;    // non-null if transfer is in progress
     private Menu _lastMenu;
 
-    private AbstractListener _handleClick = new AbstractListener(null)
+    private AbstractListener _handleClick = new AbstractListener()
     {
         private DlgTransfers dialog;
 

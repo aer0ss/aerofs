@@ -5,9 +5,6 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Action;
-import com.aerofs.base.analytics.AnalyticsEvents.ClickEvent.Source;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIExecutor;
@@ -50,14 +47,6 @@ import java.util.List;
 public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentListener
 {
     protected static Logger l = Loggers.getLogger(AbstractTrayMenu.class);
-
-    private static final ClickEvent OPEN_AEROFS_FOLDER
-            = new ClickEvent(Action.OPEN_AEROFS_FOLDER, Source.TASKBAR);
-    private static final ClickEvent PREFERENCES
-            = new ClickEvent(Action.PREFERENCES, Source.TASKBAR);
-    // this event is used by both subclasses
-    protected static final ClickEvent MANAGE_SHARED_FOLDER
-            = new ClickEvent(Action.MANAGE_SHARED_FOLDER, Source.TASKBAR);
 
     protected final TrayIcon _icon;
 
@@ -219,7 +208,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
     protected void addOpenFolderMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
         trayMenuPopulator.addMenuItem("Open " + L.brand() + " Folder",
-                new AbstractListener(OPEN_AEROFS_FOLDER) {
+                new AbstractListener() {
             @Override
             protected void handleEventImpl(Event event)
             {
@@ -231,7 +220,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
     protected void createSharedFoldersMenu(TrayMenuPopulator trayMenuPopulator)
     {
         trayMenuPopulator.addMenuItem("Manage Shared Folders...",
-                new AbstractListener(MANAGE_SHARED_FOLDER) {
+                new AbstractListener() {
                     @Override
                     protected void handleEventImpl(Event event)
                     {
@@ -308,7 +297,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
                     {
                         activitiesPopulator.addMenuSeparator();
 
-                        activitiesPopulator.addMenuItem("Show More...", new AbstractListener(null) {
+                        activitiesPopulator.addMenuItem("Show More...", new AbstractListener() {
                             @Override
                             protected void handleEventImpl(Event event)
                             {
@@ -322,7 +311,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
     protected void addBriefActivityEntry(final PBActivity a, final int idx,
             TrayMenuPopulator populator)
     {
-        populator.addMenuItem(a.getMessage(), new AbstractListener(null) {
+        populator.addMenuItem(a.getMessage(), new AbstractListener() {
             @Override
             protected void handleEventImpl(Event event)
             {
@@ -338,7 +327,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
     protected void addVersionHistoryMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
-        trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener(null) {
+        trayMenuPopulator.addMenuItem("Sync History...", new AbstractListener() {
             @Override
             protected void handleEventImpl(Event event)
             {
@@ -349,7 +338,7 @@ public abstract class AbstractTrayMenu implements ITrayMenu, ITrayMenuComponentL
 
     protected void addPreferencesMenuItem(TrayMenuPopulator trayMenuPopulator)
     {
-        trayMenuPopulator.addPreferencesMenuItem(new AbstractListener(PREFERENCES)
+        trayMenuPopulator.addPreferencesMenuItem(new AbstractListener()
         {
             @Override
             protected void handleEventImpl(Event event)

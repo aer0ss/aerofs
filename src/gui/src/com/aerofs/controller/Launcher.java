@@ -6,8 +6,6 @@ package com.aerofs.controller;
 
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.analytics.AnalyticsEvents.SimpleEvents;
-import com.aerofs.base.analytics.AnalyticsEvents.UpdateEvent;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.defects.Defects;
 import com.aerofs.gui.GUIUtil;
@@ -158,7 +156,6 @@ public class Launcher
                     destroySingletonSocket();
                     throw e;
                 }
-                UIGlobals.analytics().track(SimpleEvents.SIGN_IN);
             }
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -210,8 +207,6 @@ public class Launcher
      */
     private static void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
     {
-        UIGlobals.analytics().track(new UpdateEvent(Cfg.db().get(LAST_VER)));
-
         String downloadUrl = getStringProperty("base.www.download_url");
 
         // After an update, verify that all checksums match

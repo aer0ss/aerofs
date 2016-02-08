@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
-import com.aerofs.base.analytics.Analytics;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -63,7 +62,6 @@ public class TestMightCreateOperations extends AbstractMightCreateTest
     @Mock ObjectCreator oc;
     @Mock InjectableFile.Factory factFile;
     @Mock SharedFolderTagFileAndIcon sfti;
-    @Mock Analytics analytics;
     @Mock IDeletionBuffer delBuffer;
     @Mock SIDMap sm;
     @Mock CoreScheduler sched;
