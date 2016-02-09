@@ -45,7 +45,7 @@ public final class TestTCPDualClientChannelThreadSafety
 
     private static final Logger l = LoggerFactory.getLogger(TestTCPDualClientChannelThreadSafety.class);
 
-    private static final int WAIT_UNTIL_CLOSE_INTERVAL = 10000;
+    private static final int WAIT_UNTIL_CLOSE_INTERVAL = 2000;
 
     //--------------------------------------------------------------------------------------------//
 

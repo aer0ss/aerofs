@@ -535,7 +535,7 @@ public final class TestTCPUnicast
 
         l.info("started sending thread");
 
-        Thread.sleep(5000);
+        Thread.sleep(2000);
 
         // close via the remote side
         // this will force a close event to be fired via the netty I/O thread
