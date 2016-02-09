@@ -113,7 +113,7 @@ license file.
 
 We should email each of the admins known to enterprise.aerofs.com, just as we would in the case of a software update.
 
-OPTIONALly, we may want to display a warning on web pages viewed by admins.
+OPTIONALlY, we may want to display a warning on web pages viewed by admins.
 
 ## License renewal (previous license has not yet expired)
 
@@ -145,7 +145,7 @@ that uploaded the license file is authorized to make configuration changes.
 
 The setup service MUST, upon receiving a new license file, add the key-value
 pairs relevant to license enforcement to standard config service responses for
-servers.  For a stanard license, this includes at a minimum `license_type`,
+servers.  For a standard license, this includes at a minimum `license_type`,
 `license_valid_until`, and `license_seats`. Services with more
 granular licensing will use the values exposed through the configuration
 service to configure their restrictions (for example, SP limiting active user

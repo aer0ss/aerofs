@@ -8,7 +8,7 @@
     from web.auth import is_admin
     from pyramid.security import authenticated_userid
     from web.util import str2bool
-    from web.util import get_folder_invitation_count
+    from web.util import get_folder_invitation_count, get_days_until_license_expires
 %>
 
 <div class="row">
@@ -89,26 +89,27 @@
 </%block>
 
 <%block name="top_navigation_bar_desktop">
-        <li class="pull-right dropdown visible-lg nav-link">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                ${authenticated_userid(request)} <b class="caret"></b>
-            </a>
-            <ul class="dropdown-menu">
-                ## Remember to update top_navigation_bar_mobile() when adding items
-                <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
-                <li><a href="${request.route_path('settings')}">Settings</a></li>
-                <li><a href="${request.route_path('logout')}">Sign out</a></li>
-            </ul>
-        <li class="pull-right dropdown visible-lg nav-link">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                ${render_download_text()} <b class="caret"></b>
-            </a>
-            % if is_admin(request):
-                ${render_download_links(True)}
-            % else:
-                ${render_download_links(False)}
-            % endif
-        </li>
+    <li class="pull-right dropdown visible-lg nav-link">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            ${authenticated_userid(request)} <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+            ## Remember to update top_navigation_bar_mobile() when adding items
+            <li><a href="${request.route_path('access_tokens')}">My apps</a></li>
+            <li><a href="${request.route_path('settings')}">Settings</a></li>
+            <li><a href="${request.route_path('logout')}">Sign out</a></li>
+        </ul>
+    </li>
+    <li class="pull-right dropdown visible-lg nav-link">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            ${render_download_text()} <b class="caret"></b>
+        </a>
+        % if is_admin(request):
+            ${render_download_links(True)}
+        % else:
+            ${render_download_links(False)}
+        % endif
+    </li>
 </%block>
 
 <%block name="custom_banner_display">
@@ -121,6 +122,38 @@
             <span id="flash-msg-info-body">${ banner_text | n,escape_html_except_anchors }</span>
         </div>
     %endif
+</%block>
+
+<%block name="banner">
+    <%
+        days = get_days_until_license_expires(request.registry.settings)
+        show_license_warning = is_admin and days <= 30
+    %>
+    % if show_license_warning:
+        <% day_string = 'day' if days == 1 else 'days'%>
+        <%
+            state = 'alert-info'
+            if days <= 7:
+                state = 'alert-danger'
+        %>
+
+        <div id="license-expires-banner" class="top-banner ${ state }">
+            <p class="message">
+                % if days > 0:
+                    Your license expires in <strong>${ days } ${ day_string }</strong>.
+                % elif days == 0:
+                    Your license expires <strong>today</strong>.
+                % else:
+                    Your license has expired.
+                % endif
+                Please log-in to your <a href="https://enterprise.aerofs.com/" target="_blank">
+                account dashboard </a> to update your license, or <a href="mailto:support@aerofs.com">
+                contact support</a> for help.
+            </p>
+            <span class="close glyphicon glyphicon-remove"></span>
+        </div>
+    % endif
+
 </%block>
 
 <%def name="home_url()">
@@ -280,6 +313,13 @@
 
 <%block name="layout_scripts">
     <script type="text/javascript">
+        $(document).ready(function () {
+            var cookie = document.cookie;
+            if (cookie.indexOf("license_modal_closed") == -1) {
+                $('.top-banner').show();
+            }
+        });
+
         $("#invite-coworker").submit(function() {
             var emailAddress = $('#invite-coworker-email').val();
             jQuery.ajax({
@@ -297,6 +337,18 @@
                 }
             });
             return false;
+        });
+
+        $(".top-banner .close").on('click', function () {
+
+            // Show them the message every day, but if they close out,
+            // don't show them more than once in the same day
+            var date = new Date();
+            date.setHours(24,0,0,0);
+
+            document.cookie = "license_modal_closed=true; expires=" + date.toUTCString() + "; path=/";
+
+            $(this).parent().hide();
         });
     </script>
 </%block>

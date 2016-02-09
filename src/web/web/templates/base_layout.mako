@@ -104,6 +104,7 @@
     ## height is less than the window height ("sticky" footer)
     <div id="wrapper">
         ## Horizontal navigation bar
+        <%block name="banner"/>
         <div class="container top-nav-wrapper">
             <div class="row">
                 <div class="col-sm-3 logo-wrapper">

@@ -7,6 +7,7 @@ import re
 import logging
 import markupsafe
 import smtplib
+import datetime
 from email.mime.text import MIMEText
 from aerofs_common.constants import DEFAULT_MIN_PASSWORD_LENGTH, DEFAULT_IS_NUMBERS_LETTERS_REQUIRED, CONFIG_COMPLETED_FLAG_FILE
 
@@ -238,6 +239,12 @@ def get_settings_nonempty(settings, key, default=None):
     str_value = settings.get(key, '')
     return str_value if str_value != '' else default
 
+def get_days_until_license_expires(settings):
+    expiry_date = datetime.datetime.strptime(get_settings_nonempty(settings, 'license_valid_until'), "%Y-%m-%d")
+    today = datetime.datetime.today().date()
+    start_of_today = datetime.datetime(year=today.year, month=today.month, day=today.day)
+    days = (expiry_date - start_of_today).days
+    return -1 if days < 0 else days
 
 class CustomizableHTMLParser(HTMLParser):
     def __init__(self):
