@@ -16,6 +16,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBNewUpdates;
@@ -41,18 +42,20 @@ public class NewUpdatesSender
     private final IMapSIndex2SID _sidx2sid;
     private final LocalACL _lacl;
     private final CfgLocalUser _cfgLocalUser;
+    private final CfgUsePolaris _cfgUsePolaris;
 
     private final Set<SIndex> _updated = Sets.newHashSet();
     private final DelayedScheduler _dsNewUpdateMessage;
 
     @Inject
     public NewUpdatesSender(TransportRoutingLayer trl, IMapSIndex2SID sidx2sid, LocalACL lacl,
-            CfgLocalUser cfgLocalUser, CoreScheduler sched)
+            CfgLocalUser cfgLocalUser, CoreScheduler sched, CfgUsePolaris usePolaris)
     {
         _trl = trl;
         _sidx2sid = sidx2sid;
         _lacl = lacl;
         _cfgLocalUser = cfgLocalUser;
+        _cfgUsePolaris = usePolaris;
 
         // TODO: refine delay pattern?
         _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
@@ -88,7 +91,8 @@ public class NewUpdatesSender
         }
 
         // see Rule 3 in acl.md
-        if (!_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
+        // NB: post-Phoenix, content changes are centrally validated so any VIEWER can serve them
+        if (!_cfgUsePolaris.get() && !_lacl.check_(_cfgLocalUser.get(), sidx, Permissions.EDITOR)) {
             l.info("we have no editor perm for {}", sidx);
             return;
         }

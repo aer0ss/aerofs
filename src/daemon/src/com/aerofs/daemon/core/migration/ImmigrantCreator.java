@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
-import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;

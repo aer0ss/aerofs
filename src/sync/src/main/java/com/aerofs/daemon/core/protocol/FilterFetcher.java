@@ -197,7 +197,6 @@ public class FilterFetcher
 
             @Override
             public void onFailure(Throwable t) {
-                l.debug("failure", BaseLogUtil.suppress(t, ExLinkDown.class, ExDeviceUnavailable.class));
                 cb.onFailure_(t);
             }
         });
@@ -281,7 +280,7 @@ public class FilterFetcher
             ds.req.addAll(failed);
 
             if (failed.size() == sidxs.size()) {
-                throw new ExRetryLater("incomplete filter fetch");
+                throw new ExRetryLater("incomplete filter fetch: " + failed);
             }
         }
     }
