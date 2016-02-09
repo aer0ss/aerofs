@@ -292,7 +292,7 @@ public final class ObjectStore {
      * {@code startTimestamp} for the shared folder or store store identified
      * by {@code store}.
      *
-     * @param user user id of the user requesting the transforms
+     * @param user user id of the user requesting the transforms, null if don't need to check auth
      * @param store shared folder or root store for which you want to get a list of transforms
      * @param startTimestamp logical timestamp <em>after</em> which to start retrieving transforms
      * @param maxReturnedResultCount maximum number of transforms to return
@@ -300,8 +300,8 @@ public final class ObjectStore {
      * @throws NotFoundException if the {@code store} for which transforms should be retrieved does not exist
      * @throws AccessException if {@code user} cannot list transforms for {@code store}
      */
-    public Transforms getTransforms(UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
-        AccessToken accessToken = checkAccess(user, store, Access.READ);
+    public Transforms getTransforms(@Nullable UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
+        AccessToken accessToken = user == null ? new AccessToken(UserID.fromInternal("internal service"), Sets.newHashSet(store), Access.READ) : checkAccess(user, store, Access.READ);
         return inTransaction(dao -> {
             long available = dao.transforms.getLatestLogicalTimestamp();
             List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);

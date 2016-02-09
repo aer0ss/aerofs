@@ -63,7 +63,7 @@ public class AbstractRestTest {
 
     @BeforeClass
     public static void commonSetup() throws Exception {
-        bifrost = new Bifrost(bifrostInjector(), "aa23e7fb907fa7f839f6f418820159ab");
+        bifrost = new Bifrost(bifrostInjector(), PolarisTestServer.DEPLOYMENT_SECRET);
         bifrost.start();
     }
 

@@ -1,5 +1,6 @@
 package com.aerofs.polaris;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.auth.server.cert.AeroDeviceCert;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
@@ -71,6 +72,13 @@ public abstract class PolarisHelpers {
                         AUTHORIZATION, getHeaderValue(userString, deviceString),
                         AERO_DNAME_HEADER, String.format("G=test.aerofs.com/CN=%s", AeroDeviceCert.getCertificateCName(userString, deviceString)),
                         AERO_VERIFY_HEADER, AERO_VERIFY_SUCCEEDED_HEADER_VALUE
+                )).build();
+    }
+
+    public static RequestSpecification newAuthedServiceSpec(String service) {
+        return new RequestSpecBuilder().addHeaders(
+                ImmutableMap.of(
+                        AUTHORIZATION, AeroService.getHeaderValue(service, PolarisTestServer.DEPLOYMENT_SECRET)
                 )).build();
     }
 

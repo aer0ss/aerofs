@@ -1,5 +1,6 @@
 package com.aerofs.polaris.resources;
 
+import com.aerofs.auth.server.AeroPrincipal;
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.auth.server.Roles;
 import com.aerofs.ids.UniqueID;
@@ -18,7 +19,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-@RolesAllowed(Roles.USER)
+@RolesAllowed({Roles.SERVICE, Roles.USER})
 @Path("/transforms")
 @Singleton
 public final class TransformsResource {
@@ -35,11 +36,11 @@ public final class TransformsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     public Transforms getTransforms(
-            @Context AeroUserDevicePrincipal principal,
+            @Context AeroPrincipal principal,
             @PathParam("oid") UniqueID store,
             @QueryParam("since") @Min(-1) long since,
             @QueryParam("count") @Min(1) int requestedResultCount) {
         int resultCount = Math.min(requestedResultCount, maxReturnedTransforms);
-        return objectStore.getTransforms(principal.getUser(), store, since, resultCount);
+        return objectStore.getTransforms((principal instanceof AeroUserDevicePrincipal ? ((AeroUserDevicePrincipal) principal).getUser() : null), store, since, resultCount);
     }
 }

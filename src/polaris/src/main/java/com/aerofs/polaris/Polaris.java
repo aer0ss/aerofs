@@ -1,11 +1,14 @@
 package com.aerofs.polaris;
 
 import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
+import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
 import com.aerofs.auth.server.cert.AeroOAuthAuthenticator;
 import com.aerofs.auth.server.cert.AeroOAuthPrincipalBinder;
 import com.aerofs.auth.server.shared.AeroService;
+import com.aerofs.auth.server.shared.AeroServiceSharedSecretAuthenticator;
+import com.aerofs.auth.server.shared.AeroServiceSharedSecretPrincipalBinder;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.baseline.ConstraintViolationExceptionMapper;
@@ -127,12 +130,15 @@ public class Polaris extends Service<PolarisConfiguration> {
         // setup resource authorization
         environment.addAuthenticator(new AeroOAuthAuthenticator(tokenVerifier()));
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());
+        environment.addAuthenticator(new AeroServiceSharedSecretAuthenticator(new SharedSecret(deploymentSecret)));
         environment.addAdminProvider(new AeroDeviceCertPrincipalBinder());
         environment.addAdminProvider(new AeroOAuthPrincipalBinder());
         environment.addAdminProvider(new AeroUserDevicePrincipalBinder());
+        environment.addAdminProvider(new AeroServiceSharedSecretPrincipalBinder());
         environment.addServiceProvider(new AeroDeviceCertPrincipalBinder());
         environment.addServiceProvider(new AeroUserDevicePrincipalBinder());
         environment.addServiceProvider(new AeroOAuthPrincipalBinder());
+        environment.addServiceProvider(new AeroServiceSharedSecretPrincipalBinder());
 
         // register singleton providers
         environment.addAdminProvider(DBIExceptionMapper.class);

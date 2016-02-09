@@ -37,6 +37,7 @@ public final class PolarisTestServer extends ExternalResource {
     //
     // configuration and urls
     //
+    public static final String DEPLOYMENT_SECRET = "aa23e7fb907fa7f839f6f418820159ab";
 
     private static final PolarisConfiguration CONFIGURATION = Configuration.loadYAMLConfigurationFromResourcesUncheckedThrow(Polaris.class, "polaris_test_server.yml");
 
@@ -128,7 +129,7 @@ public final class PolarisTestServer extends ExternalResource {
 
         @Override
         protected String getDeploymentSecret(PolarisConfiguration configuration) throws IOException {
-            return "aa23e7fb907fa7f839f6f418820159ab";
+            return DEPLOYMENT_SECRET;
         }
 
         @Override

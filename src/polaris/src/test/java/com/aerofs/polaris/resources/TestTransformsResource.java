@@ -359,6 +359,19 @@ public final class TestTransformsResource {
         }
     }
 
+    @Test
+    public void shouldAcceptServiceAuthToGetTransforms() {
+        SID store = SID.generate();
+        OID folder = PolarisHelpers.newFolder(verified, store, "folder_1");
+
+        Transforms applied = PolarisHelpers.getTransforms(PolarisHelpers.newAuthedServiceSpec("service"), store, -1, 10);
+        assertThat(applied.transforms, hasSize(1));
+        assertThat(applied.maxTransformCount, is(1L));
+
+        Transform transform = applied.transforms.get(0);
+        assertThat(transform, matchesMetaTransform(1, DEVICE, store, TransformType.INSERT_CHILD, 1, folder, ObjectType.FOLDER, "folder_1", null));
+    }
+
     public static Matcher<? super Transform> matchesMetaTransform(
             final long logicalTimestamp,
             final DID originator,
