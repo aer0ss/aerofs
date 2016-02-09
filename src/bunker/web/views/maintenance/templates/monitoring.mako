@@ -57,7 +57,18 @@ given below.</p>
         <p>Automated systems can provide credentials in an HTTP Authorization header:</p>
 
         <pre>curl -H 'Authorization: Basic ${base64_str}' ${base_url}/monitor</pre>
-        </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+        <p>In addition, for simpler integration with 3rd party monitoring tools, you might opt to
+        make use of HTTP status codes. This endpoint will return a HTTP 200 when all services are
+        online and healthy, and a 500 otherwise. For example, you can use curl to get only the
+        status code as follows:</p>
+
+        <pre>curl -s -H 'Authorization: Basic ${base64_str}' -o /dev/null -w "%{http_code}" ${base_url}/monitor</pre>
+        </div>
     </div>
 </%def>
 

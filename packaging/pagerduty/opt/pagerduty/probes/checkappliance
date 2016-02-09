@@ -1,0 +1,15 @@
+#!/bin/bash
+HOST=$1
+TOKEN=$2
+
+function get_monitor_url()
+{
+    echo https://$HOST/monitor
+}
+
+URL=$(get_monitor_url)
+
+if [ "$(curl -s -H "Authorization: Basic $TOKEN" -o /dev/null -w "%{http_code}" $URL)" != "200" ]
+then
+    exit 1
+fi

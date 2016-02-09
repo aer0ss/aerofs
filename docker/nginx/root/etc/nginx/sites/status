@@ -1,15 +1,15 @@
 location /monitor {
-    # default route is to the basic sanity service
+    # Default route is to the basic sanity service.
     rewrite /monitor$ /$1 break;
 
-    # allow suffixes after the /monitor endpoint
+    # Allow suffixes after the /monitor endpoint.
     rewrite /monitor/(.*) /$1 break;
 
     auth_basic "Monitoring";
-    # This must agree with the value in MonitoringPasswordUpdateTask
+    # This must agree with the value in MonitoringPasswordUpdateTask.
     auth_basic_user_file /status.htpasswd;
 
-    # proxies to the sanity service
+    # Proxies to the sanity service.
     proxy_pass http://status.service:8000;
     proxy_cache off;
     proxy_buffering off;

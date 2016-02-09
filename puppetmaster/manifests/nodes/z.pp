@@ -33,6 +33,7 @@ node "z.arrowfs.org" inherits default {
   # Every 10 minutes.
   pagerduty::probe::base{[
     # Production
+    "appliance checkappliance share.aerofs.com bW9uaXRvcjpHM2lYUlRTRllzRkllREszNlRmQVZVYWdWYnBDZHVPcQ==",
     "rocklog url http://rocklog.aerofs.com/",
     "web url https://www.aerofs.com",
     "web url https://hybrid.aerofs.com/login",
