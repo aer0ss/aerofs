@@ -16,7 +16,7 @@ if [ "$1" = 'mysqld_safe' ]; then
 		chown -R mysql: "$DATADIR"
 
 		echo 'Initializing database'
-		mysql_install_db --user=mysql --datadir="$DATADIR"
+		mysql_install_db --user=mysql --datadir="$DATADIR" --basedir="/usr"
 		echo 'Database initialized'
 
 		"$@" --skip-networking &
