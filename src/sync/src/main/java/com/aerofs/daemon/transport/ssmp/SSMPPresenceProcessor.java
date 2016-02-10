@@ -28,27 +28,16 @@ public class SSMPPresenceProcessor implements ConnectionListener, EventHandler {
 
     @Override
     public void eventReceived(SSMPEvent ev) {
-        switch (ev.type) {
-            case SUBSCRIBE:
-                try {
-                    DID did = new DID(ev.from.toString());
-                    SID sid = new SID(ev.to.toString());
-                    updateStores(true, did, sid);
-                } catch (ExInvalidID ex) {
-                    l.warn("unexpected presence {} {}", ev.from, ev.to);
-                }
-                break;
-            case UNSUBSCRIBE:
-                try {
-                    DID did = new DID(ev.from.toString());
-                    SID sid = new SID(ev.to.toString());
-                    updateStores(false, did, sid);
-                } catch (ExInvalidID ex) {
-                    l.warn("unexpected presence {} {}", ev.from, ev.to);
-                }
-                break;
-            default:
-                break;
+        try {
+            DID did = new DID(ev.from.toString());
+            SID sid = new SID(ev.to.toString());
+            switch (ev.type) {
+                case SUBSCRIBE:   updateStores(true, did, sid);  break;
+                case UNSUBSCRIBE: updateStores(false, did, sid); break;
+                default: break;
+            }
+        } catch (ExInvalidID ex) {
+            l.warn("unexpected presence {} {}", ev.from, ev.to);
         }
     }
 

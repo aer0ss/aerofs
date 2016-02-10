@@ -103,6 +103,10 @@ public final class ACLNotificationSubscriber implements ConnectionListener, Even
 
     @Override
     public void eventReceived(SSMPEvent e) {
+        if (!e.from.isAnonymous()) {
+            l.warn("ignore acl msg {} {}", e.from, e.to);
+            return;
+        }
         checkState(_topic.equals(e.to), "topic: act:%s exp:%s", e.to, _topic);
 
         l.info("recv t:{}", e.to);

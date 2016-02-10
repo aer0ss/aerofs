@@ -131,7 +131,10 @@ public final class CommandNotificationSubscriber implements EventHandler
     public void eventReceived(SSMPEvent ev)
     {
         l.debug("cmd: notification received");
-        if (ev.type != Type.UCAST) return;
+        if (ev.type != Type.UCAST || !ev.from.isAnonymous()) {
+            l.warn("ignore cm msg {} {}", ev.from, ev.to);
+            return;
+        }
 
         Command command;
         try {
@@ -145,7 +148,7 @@ public final class CommandNotificationSubscriber implements EventHandler
         // stored in the db. After all operations have been completed, store the new max
         // command ID for next time and send an ack.
 
-        l.debug("cmd notification: epoch=" + command.getEpoch() + " type=" + command.getType());
+        l.debug("cmd notification: epoch={} type={}", command.getEpoch(), command.getType());
         scheduleSingleCommandExecution(command);
     }
 
