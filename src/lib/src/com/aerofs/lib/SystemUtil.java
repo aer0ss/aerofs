@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.UnresolvedAddressException;
 
 import static com.aerofs.defects.Defects.*;
 
@@ -192,7 +193,8 @@ public abstract class SystemUtil
      */
     public static void fatalOnUncheckedException(Throwable e) throws Error
     {
-        if (e instanceof RuntimeException || e instanceof Error) fatal(e);
+        if ((e instanceof RuntimeException && !(e instanceof UnresolvedAddressException))
+                || e instanceof Error) fatal(e);
     }
 
     //

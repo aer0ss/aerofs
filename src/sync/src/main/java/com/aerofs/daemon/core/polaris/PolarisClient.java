@@ -36,6 +36,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URI;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.UnresolvedAddressException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -187,7 +188,7 @@ public class PolarisClient
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent ev)
         {
-            l.warn("ex", BaseLogUtil.suppress(ev.getCause(),
+            l.warn("ex", BaseLogUtil.suppress(ev.getCause(), UnresolvedAddressException.class,
                     ClosedChannelException.class, SocketException.class));
             ctx.getChannel().close();
         }
