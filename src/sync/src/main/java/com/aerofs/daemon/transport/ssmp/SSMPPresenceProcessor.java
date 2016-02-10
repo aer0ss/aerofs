@@ -9,6 +9,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.ssmp.SSMPClient.ConnectionListener;
 import com.aerofs.ssmp.SSMPEvent;
 import com.aerofs.ssmp.EventHandler;
+import com.aerofs.ssmp.SSMPEvent.Type;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -28,14 +29,11 @@ public class SSMPPresenceProcessor implements ConnectionListener, EventHandler {
 
     @Override
     public void eventReceived(SSMPEvent ev) {
+        if (ev.type != Type.SUBSCRIBE && ev.type != Type.UNSUBSCRIBE) return;
         try {
             DID did = new DID(ev.from.toString());
             SID sid = new SID(ev.to.toString());
-            switch (ev.type) {
-                case SUBSCRIBE:   updateStores(true, did, sid);  break;
-                case UNSUBSCRIBE: updateStores(false, did, sid); break;
-                default: break;
-            }
+            updateStores(ev.type == Type.SUBSCRIBE, did, sid);
         } catch (ExInvalidID ex) {
             l.warn("unexpected presence {} {}", ev.from, ev.to);
         }
