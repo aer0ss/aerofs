@@ -138,7 +138,21 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         this.linkStateService = linkStateService;
         this.signallingService = signallingService;
         this.unicastListener = unicastListener;
-        this.directory = new ChannelDirectory(transport, this);
+        this.directory = new ChannelDirectory(transport, this) {
+            @Override
+            public ChannelFuture chooseActiveChannel(DID did)
+                    throws ExTransportUnavailable, ExDeviceUnavailable {
+                // DirectoryChannel does not require outside synchronization. However, it
+                // allows for more than one channel being created (if multiple threads arrive at
+                // the zero-available state simultaneously). Zephyr does not want more than one
+                // channel instance per DID, so we give the channel directory a stronger guarantee.
+                // Lock ordering is important: always lock this first. ChannelDirectory will not
+                // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
+                synchronized (this) {
+                    return super.chooseActiveChannel(did);
+                }
+            }
+        };
         directory.setDeviceConnectionListener(deviceConnectionListener);
         this.locationManager = locationManager;
         this.roundTripTimes = roundTripTimes;
@@ -281,7 +295,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
     public Object send(DID did, byte[][] bss, @Nullable IResultWaiter wtr)
             throws ExTransportUnavailable, ExDeviceUnavailable {
         l.trace("{} send cke:{}", did, null);
-        Channel channel = chooseActiveChannel(did);
+        Channel channel = directory.chooseActiveChannel(did).getChannel();
 
         // can happen because the upper layer hasn't yet been notified of a disconnection
         if (channel == null) {
@@ -404,23 +418,11 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         }
     }
 
-    private Channel chooseActiveChannel(DID did) throws ExTransportUnavailable, ExDeviceUnavailable {
-        synchronized (this) {
-            // DirectoryChannel does not require outside synchronization. However, it
-            // allows for more than one channel being created (if multiple threads arrive at
-            // the zero-available state simultaneously). Zephyr does not want more than one
-            // channel instance per DID, so we give the channel directory a stronger guarantee.
-            // Lock ordering is important: always lock this first. ChannelDirectory will not
-            // reach back to the Unicast infrastructure with the ChannelDirectory monitor held.
-            return directory.chooseActiveChannel(did).getChannel();
-        }
-    }
-
     private void consumeHandshake(DID did, ZephyrHandshake handshake)
             throws ExDeviceUnavailable, ExHandshakeFailed, ExHandshakeRenegotiation
     {
         try {
-            Channel channel = chooseActiveChannel(did);
+            Channel channel = directory.chooseActiveChannel(did).getChannel();
             getZephyrClient(channel).consumeHandshake(handshake);
         } catch (ExTransportUnavailable exTransportUnavailable) {
             throw new ExDeviceUnavailable("cannot reach " + did);
