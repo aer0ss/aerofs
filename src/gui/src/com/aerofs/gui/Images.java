@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -382,7 +383,43 @@ public class Images {
                 + (_isHDPI.get() ? "@2x" : "")
                 + ".png";
         Image img = get(filename);
+
+        /**
+         * Let OSX handle the augmentation of the alpha channels on our icon by telling it to treat our
+         * icon as a template - useful for dark theme.  This is for all icons except the inverted
+         * icon used as the highlight image as it doesn't look as good when we let OSX change it.
+         */
+        if (OSUtil.isOSXYosemiteOrNewer() && !filename.contains("inverted")) {
+            setTemplateImage(img);
+        }
+
         return img != null ? img : get("tray.png");
+    }
+
+    private static void setTemplateImage(Image img) {
+        /** We want to call the underlying setTemplate method on NSImage, but that isn't
+         * exposed to us via SWT, so we will send the message straight to objective c via SWT's
+         * internal library. Note that this may break in future versions of SWT if these methods go away.*/
+        try {
+            // First get the internal OS class for cocoa. This lets us send messages to objective C
+            Class<?> OS = Class.forName("org.eclipse.swt.internal.cocoa.OS");
+
+            Method objc_msgSend = OS.getMethod("objc_msgSend", long.class, long.class, boolean.class);
+            Method sel_registerName = OS.getMethod("sel_registerName", String.class);
+
+            // img.handle is an instance of NSImage. We want its id.
+            Object imgHandle = img.getClass().getField("handle").get(img);
+            Object imgId = imgHandle.getClass().getField("id").get(imgHandle);
+
+            // this tells OSX to treat our image as a template.
+            Object message = sel_registerName.invoke(null, "setTemplate:");
+
+            objc_msgSend.invoke(null, imgId, message, true);
+
+        } catch (Exception e) {
+            Loggers.getLogger(Images.class)
+                    .error("failed to send setTemplate message.", e);
+        }
     }
 
     /**
