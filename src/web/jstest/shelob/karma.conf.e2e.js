@@ -41,6 +41,7 @@ module.exports = function(config) {
         '/static/shelob/': 'http://localhost:9876/base/e2e/static/shelob/',
         '/static-src/shadowfax/': 'http://localhost:9876/base/e2e/static-src/shadowfax/',
         '/static/shadowfax/': 'http://localhost:9876/base/e2e/static/shadowfax/',
+        '/static/': 'http://localhost:9876/base/e2e/static/',
         '/static/js/': 'http://localhost:9876/base/e2e/static/js/',
         '/static/ng-modules/': 'http://localhost:9876/base/e2e/static/ng-modules/',
     },

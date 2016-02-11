@@ -1,7 +1,7 @@
 describe('Shelob Controllers', function() {
 
     var httpProvider;
-
+    
     beforeEach(module('shelobControllers'));
     beforeEach(module('shelobServices', function($httpProvider) {
         /*
@@ -21,10 +21,10 @@ describe('Shelob Controllers', function() {
             };
         });
     }));
-
+   
     describe('FileListCtrl', function() {
 
-        var $httpBackend, $rootScope, $controller, routeParams, modal, FileListCtrl;
+        var $httpBackend, $rootScope, $controller, $q, API, routeParams, modal, FileListCtrl;
         var modalObject;
         var folder_1, folder_2, file, folder_1_object, folder_2_object, file_object;
         enableLinksharing = true;
@@ -42,10 +42,12 @@ describe('Shelob Controllers', function() {
             $httpBackend = $injector.get('$httpBackend');
             $rootScope = $injector.get('$rootScope');
             $controller = $injector.get('$controller');
-
+            $q = $injector.get('$q');
+            API = $injector.get('API');
             routeParams = jasmine.createSpy('routeParams');
             routeParams.oid = 'root';
             modal = jasmine.createSpy('modal');
+
             // mock for IE-version-checking JQuery call
             // because oh my god wtf karma
             $ = function(blah) {
@@ -59,24 +61,57 @@ describe('Shelob Controllers', function() {
                 result: {then: jasmine.createSpy('modalObject.result.then')}
             };
             modal.open = jasmine.createSpy('modal.open').andReturn(modalObject);
-
-            FileListCtrl = $controller('FileListCtrl', {'$scope': $rootScope, '$routeParams': routeParams, '$modal': modal});
-
-            $httpBackend.whenPOST(/\/json_token(\?t=[01]?.?\d*)?/).respond('token');
-            $httpBackend.whenPOST('/json_new_token').respond('newtoken');
-            $httpBackend.whenGET('/api/v1.3/shares/root/urls').respond({ urls: [] });
-            $httpBackend.whenGET('/api/v1.2/shares/root').respond({});
-            $httpBackend.whenGET('/api/v1.3/users/me/shares').respond({});
-        }));
-
-        beforeEach(function() {
+          
+            // Initial root folder state
             folder_1 = {id: 'folder1id', name: "folder 1", is_shared: false};
             folder_2 = {id: 'folder2id', name: "folder 2", is_shared: false};
             file = {id: 'fileid', name: "filename", last_modified: 'today'};
-            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/?\?fields=children,path(&.*)?/).respond(200,
-                    {name:'AeroFS', id: 'root', path: {folders: []}, children: {folders: [folder_1, folder_2], files: [file]}});
-            $httpBackend.flush();
 
+            // Spy setup
+            spyOn(API.folder, 'getMetadata')
+              .andReturn(
+                $q.when( 
+                  { data : {
+                      name:'AeroFS',
+                      id: 'root', 
+                      path: {folders: []}, 
+                      children: { 
+                        folders: [folder_1, folder_2], 
+                        files: [file]
+                      }  
+                    },
+                  status : 200
+                })
+              );
+
+            // /shares/{sid}/urls
+            spyOn(API, 'getLinks')
+              .andReturn($q.when({data : {urls : []}}));
+            
+            // users/{email}/shares
+            spyOn(API.sf, 'list')
+              .andReturn($q.when({data : {}}));
+
+            // shares/{id}
+            spyOn(API.sf, 'getMetadata')
+              .andReturn($q.when({data : {}}));
+
+            // Still requires $httpBackend since certain services (tokenService) 
+            // still use $http
+            $httpBackend.whenPOST(/\/json_token(\?t=[01]?.?\d*)?/).respond('token');
+            $httpBackend.whenPOST('/json_new_token').respond('newtoken');
+            
+            FileListCtrl = $controller('FileListCtrl', {'$scope': $rootScope, '$routeParams': routeParams, '$modal': modal});
+            $rootScope.$digest();
+
+            expect(API.folder.getMetadata).toHaveBeenCalled();
+            expect(API.getLinks).toHaveBeenCalled();
+            
+            $httpBackend.whenPOST(/\/json_token(\?t=[01]?.?\d*)?/).respond('token');
+            $httpBackend.whenPOST('/json_new_token').respond('newtoken');
+        }));
+
+        beforeEach(function() {
             folder_1_object = get_object_by_id(folder_1.id);
             expect(folder_1_object).not.toBeNull();
 
@@ -88,144 +123,209 @@ describe('Shelob Controllers', function() {
         });
 
         it("should rename folder when submitRename is called", function () {
+            spyOn(API.folder, 'move').andReturn(
+              $q.when(
+                { data : {
+                    id: folder_1.id,
+                    name: 'newname'
+                  }
+                }
+            ));
 
             folder_1_object.newName = 'newname';
             $rootScope.submitRename(folder_1_object);
+            $rootScope.$digest();
 
-            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {parent: 'root', name: 'newname'})
-                    .respond(200, {id: folder_1.id, name: 'newname'});
-            $httpBackend.flush();
-
+            expect(API.folder.move).toHaveBeenCalled();
             expect($rootScope.objects[0].name).toBe('newname');
         });
 
         it("should not rename folder to empty string", function () {
+            spyOn(API.folder, 'move');
+
             folder_1_object.newName = '';
             $rootScope.submitRename(folder_1_object);
+            $rootScope.$digest();
 
-            $httpBackend.verifyNoOutstandingRequest();
-
+            expect(API.folder.move).not.toHaveBeenCalled();
             expect(folder_1_object.name).toBe(folder_1.name);
         });
 
         it("should not rename folder to old name", function () {
+            spyOn(API.folder, 'move');
+
             folder_1_object.newName = folder_1.name;
             $rootScope.submitRename(folder_1_object);
+            $rootScope.$digest();
 
-            $httpBackend.verifyNoOutstandingRequest();
+            expect(API.folder.move).not.toHaveBeenCalled();
             expect(folder_1_object.name).toBe(folder_1.name);
         });
 
         it("should fail when folder new name conflicts", function () {
             window.showErrorMessage = jasmine.createSpy();
+            spyOn(API.folder, 'move').andReturn($q.reject({status : 409}));
 
             folder_1_object.newName = 'newname';
             $rootScope.submitRename(folder_1_object);
+            $rootScope.$digest();
 
-            // respond as if there were a name conflict
-            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {parent: 'root', name: 'newname'}).respond(409);
-            $httpBackend.flush();
-
+            expect(API.folder.move).toHaveBeenCalled();
             expect(window.showErrorMessage).toHaveBeenCalled();
             expect(folder_1_object.name).toBe(folder_1.name);
         });
 
         it("should move folder into sibling", function() {
-            $rootScope.startMove(folder_1);
+            spyOn(API.folder, 'listChildren').andReturn($q.when(
+              { status : 200,
+                data : {
+                  folders: [folder_1, folder_2], 
+                  files: []
+                }
+              }
+            ));
+
+            spyOn(API.folder, 'move').andCallFake(function() {
+              return $q.when(
+              { status : 200,
+                data : folder_1});
+            });
+
+            $rootScope.startMove(folder_1_object);
+            $rootScope.$digest();
+
             expect(modal.open).toHaveBeenCalled();
-            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
+            expect(API.folder.listChildren).toHaveBeenCalled();           
 
             // move folder_1 into folder_2
             $rootScope.submitMove(folder_1_object, folder_2);
-            $httpBackend.expectPUT('/api/v1.2/folders/' + folder_1.id, {name: folder_1.name, parent: folder_2.id})
-                    .respond(200, folder_1);
-            $httpBackend.flush();
+            $rootScope.$digest();
 
             // verify that the view was updated to remove folder_1
+            expect(API.folder.move).toHaveBeenCalledWith(folder_1.id, folder_2.id, folder_1.name);
             expect(get_object_by_id(folder_1.id)).toBeNull();
         });
 
         it("should move file into sibling", function() {
-            $rootScope.startMove(file_object);
-            expect(modal.open).toHaveBeenCalled();
-            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
+            spyOn(API.folder, 'listChildren').andReturn($q.when(
+              { status : 200,
+                data : {
+                  folders: [folder_1, folder_2], 
+                  files: []
+                }
+              }
+            ));
+            spyOn(API.file, 'move').andReturn($q.when(
+              { status : 200,
+                data : file}
+            ));
 
+            $rootScope.startMove(file_object);
+            $rootScope.$digest();
+            expect(modal.open).toHaveBeenCalled();
+            expect(API.folder.listChildren).toHaveBeenCalled();
+ 
             // move file into folder_1
             $rootScope.submitMove(file_object, folder_1);
-            $httpBackend.expectPUT('/api/v1.2/files/' + file.id, {name: file.name, parent: folder_1.id})
-                .respond(200, file);
-            $httpBackend.flush();
+            $rootScope.$digest();
 
             // verify that the view was updated to remove folder_1
+            expect(API.file.move).toHaveBeenCalledWith(file.id, folder_1.id, file.name);
             expect(get_object_by_id(file.id)).toBeNull();
         });
 
         it("should not move folder into itself", function() {
             window.showErrorMessage = jasmine.createSpy();
+            spyOn(API.folder, 'listChildren').andReturn($q.when(
+              { status : 200,
+                data : {
+                  folders: [folder_1, folder_2],
+                  files: []
+                }
+              }
+            ));
+            spyOn(API.folder, 'move');
 
             $rootScope.startMove(file);
+            $rootScope.$digest();
+
             expect(modal.open).toHaveBeenCalled();
-            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
+            expect(API.folder.listChildren).toHaveBeenCalled();           
 
             // move folder_1 into folder_1
             $rootScope.submitMove(folder_1_object, folder_1);
-
-            $httpBackend.verifyNoOutstandingRequest();
+            $rootScope.$digest();
 
             expect(window.showErrorMessage).toHaveBeenCalled();
-
+            expect(API.folder.move).not.toHaveBeenCalled();
             // verify that the view was not updated to remove folder_1
             expect(get_object_by_id(folder_1.id)).not.toBeNull();
         });
 
         it("should not move a folder to the same location", function() {
+            spyOn(API.folder, 'listChildren').andReturn($q.when(
+              { status : 200,
+                data :  {
+                  folders: [folder_1, folder_2],
+                  files: []
+                }
+              }
+            ));
+            spyOn(API.folder, 'move');
+
             $rootScope.startMove(file);
+            $rootScope.$digest();
             expect(modal.open).toHaveBeenCalled();
-            $httpBackend.expectGET(/\/api\/v1.2\/folders\/root\/children(\?.*)?/).respond(200, {folders: [folder_1, folder_2], files: []});
 
             // move folder_1 into root
-            $rootScope.submitMove(folder_1_object, {id: ''});
-            $httpBackend.verifyNoOutstandingRequest();
+            $rootScope.submitMove(folder_1_object, {id: 'root'});
+            $rootScope.$digest();
+            expect(API.folder.move).not.toHaveBeenCalled();
 
             // verify that the view was not updated to remove folder_1
             expect(get_object_by_id(folder_1.id)).not.toBeNull();
         });
 
         it("should prompt user for confirmation when delete button is clicked", function() {
+            spyOn(API.folder, 'remove');
+
             $rootScope.startDelete(folder_1_object);
+            $rootScope.$digest();
             expect(modal.open).toHaveBeenCalled();
-            $httpBackend.verifyNoOutstandingRequest();
+
+            expect(API.folder.remove).not.toHaveBeenCalled();
         });
 
         it("should delete folder when intent to delete is confirmed", function() {
+            spyOn(API.folder, 'remove').andReturn($q.when({status : 204}));
+
             $rootScope.submitDelete(folder_1_object);
-            $httpBackend.expectDELETE('/api/v1.2/folders/' + folder_1.id).respond(204);
-            $httpBackend.flush();
+            $rootScope.$digest();
+            
+            expect(API.folder.remove).toHaveBeenCalled();
             expect(get_object_by_id(folder_1.id)).toBeNull();
         });
 
         it("should delete file when intent to delete is confirmed", function() {
+            spyOn(API.file, 'remove').andReturn($q.when({status : 204}));
+
             $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(204);
-            $httpBackend.flush();
+            $rootScope.$digest();
+
+            expect(API.file.remove).toHaveBeenCalled();
             expect(get_object_by_id(file.id)).toBeNull();
         });
 
         it("should not remove file from view when deletion fails", function() {
             window.showErrorMessage = jasmine.createSpy();
-            $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(404);
-            $httpBackend.flush();
-            expect(get_object_by_id(file.id)).not.toBeNull();
-            expect(window.showErrorMessage).toHaveBeenCalled();
-        });
+            spyOn(API.file, 'remove').andReturn($q.reject({status : 404}));
 
-        it("should reset the outstanding request count after the API call finishes", function() {
-            expect($rootScope.outstandingRequests).toBe(0);
             $rootScope.submitDelete(file_object);
-            $httpBackend.expectDELETE('/api/v1.2/files/' + file.id).respond(200);
-            $httpBackend.flush();
-            expect($rootScope.outstandingRequests).toBe(0);
+            $rootScope.$digest();
+
+            expect(get_object_by_id(file.id)).not.toBeNull();
+            expect(API.file.remove).toHaveBeenCalled();
+            expect(window.showErrorMessage).toHaveBeenCalled();
         });
     });
 });

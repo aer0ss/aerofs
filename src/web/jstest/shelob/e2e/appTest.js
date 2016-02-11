@@ -1,5 +1,5 @@
 angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
-.run(function($httpBackend) {
+.run(function($httpBackend, $q, API) {
     // these tests assume a daemon responds with the following AeroFS folder:
     //
     // empty_folder/
@@ -21,8 +21,10 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
     var anotherfile_obj = {id:"42b42b42b", name:"anotherfile", last_modified: "2013-12-14T02:19:59Z", mime_type: "not/a/mime/type"};
 
     // mock out the API responses according to the folder structure describe above
-    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/root\/?\?fields=children,path(&.*)?$/).respond(
-        {
+    sinon.stub(API.folder, 'getMetadata', function(id, fields) {
+      switch (id) {
+        case 'root':
+          return $q.when({data : {
             name: 'AeroFS',
             id: 'root',
             path: {folders: []},
@@ -30,10 +32,10 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
                 folders: [empty_folder_obj, other_folder_obj],
                 files: [website_html_obj]
             }
-        }
-    );
-    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/01a01a01a\/?\?fields=children,path(&.*)?$/).respond(
-        {
+          }});
+          break;
+        case '01a01a01a': 
+          return $q.when( {data : {
             name: empty_folder_obj.name,
             id: empty_folder_obj.id,
             is_shared: empty_folder_obj.is_shared,
@@ -42,10 +44,10 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
                 folders: [],
                 files: [],
             }
-        }
-    );
-    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/9f89f89f8\/?\?fields=children,path(&.*)?$/).respond(
-        {
+          }});
+          break;
+        case '9f89f89f8':
+          return $q.when({data : {
             name: other_folder_obj.name,
             id: other_folder_obj.id,
             path: {folders: [root_folder_obj]},
@@ -53,10 +55,10 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
                 folders: [deeper_folder_obj],
                 files: [textfile_txt_obj, otherfile_obj, anotherfile_obj],
             }
-        }
-    );
-    $httpBackend.whenGET(/^\/api\/v1.2\/folders\/78f78f78f\/?\?fields=children,path(&.*)?$/).respond(
-        {
+          }});
+          break;
+        case '78f78f78f':
+          return $q.when({ data : {
             name: deeper_folder_obj.name,
             id: deeper_folder_obj.id,
             path: {folders: [root_folder_obj, other_folder_obj]},
@@ -64,20 +66,18 @@ angular.module('shelobAppTest', ['ngMockE2E', 'shelobApp'])
                 folders: [],
                 files: [],
             }
+          }});
         }
-    );
-
-    $httpBackend.whenGET(/^\/api\/v1.3\/shares\/(.*)?\/urls$/).respond(
-        {
-            urls: []
-        }
-    );
-
+    });
+ 
+    sinon.stub(API, 'getLinks',function(sid, headers) {
+      return  $q.when({ data : { urls : []}});
+    });
+   
     // mock out the /json_token backend service
     $httpBackend.whenPOST(/\/json_token(\?t=[01]?.?\d*)?/).respond(
         {token: 'tokentokentoken'}
     );
 
-    // pass through all other requests
     $httpBackend.whenGET().passThrough();
 });

@@ -37,12 +37,13 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                     $scope.getUsersAndGroupsURL = getUsersAndGroupsURL;
 
                     $scope.getGroupMembers = function (group) {
-                        API.get('/shares/' + $scope.folder.sid + '/groups/' + group.id, {}, {version: '1.3'})
-                        .then(function (response) {
-                            group.members = response.members || [];
-                        }, function (response) {
-                            $log.error(response);
-                        });
+                        API.getSharedFolderGroupMembers($scope.folder.sid, group.id)
+                            .then(function (response) {
+                                group.members = response.data.members || [];
+                            })
+                            .catch(function (response) {
+                              $log.error(response);
+                            });
                     };
 
                     $scope.newMember = function () {
@@ -125,27 +126,20 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                         $q.when()
                         .then (function () {
                             if (!$scope.folder.sid) {
-                                return API.put('/folders/' + $scope.folder.id + '/is_shared', {}, {}, {version: '1.4'})
+                                return API.shareExistingFolder($scope.folder.id);
                             }
-                        }, function (response) {
-                            return $q.reject(response);
                         })
                         .then(function (response) {
                             if ($scope.folder.sid || response) {
                                 $scope.folder.sid = $scope.folder.sid || response.data.sid;
-
-                                var endpoint = entity.is_group ? '/groups' : '/pending';
-                                var data = { permissions: getJsonPermissions(permissions)};
-
+                                var permissions =  getJsonPermissions(permissions);
+       
                                 if (entity.is_group) {
-                                    data.id = entity.id;
+                                  return API.sfgroupmember.add($scope.folder.sid, data.id, permissions);
                                 } else {
-                                    data.email = entity.email;
+                                  return API.sfpendingmember.invite($scope.folder.sid, data.email, permissions);
                                 }
-                                return API.post('/shares/' + $scope.folder.sid + endpoint, data, {}, {version: '1.3'});
                             }
-                        }, function (response){
-                            return $q.reject(response);
                         })
                         .then(function () {
                             var newMember = $scope.newMember();
@@ -163,8 +157,8 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                             $scope.folder.is_shared = true;
                             setEntityPermissions(newMember, permissions);
                             $scope.folder.people.push(newMember);
-
-                        }, function (response) {
+                        })
+                        .catch(function (response) {
                             if (response && response.status == 501) {
                                 showModalErrorMessage("" +
                                     "Sorry, that action is not supported in this " +
@@ -235,6 +229,8 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                             + (entity.email || entity.name)
                             + " on folder " + $scope.folder.name);
 
+                        var permissions = getJsonPermissions(role);
+
                         var memberEndpoint = '/members/' + entity.email;
                         var groupEndpoint = '/groups/' + entity.id;
                         var endpoint = entity.is_group ? groupEndpoint : memberEndpoint;
@@ -247,18 +243,17 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                                         store_id: $scope.folder.sid,
                                         is_group: entity.is_group,
                                         subject_id: entity.email || entity.id,
-                                        permissions: getJsonPermissions(role),
+                                        permissions: permissions,
                                         suppress_sharing_rules_warnings: true
                                     }
                                 );
                             } else {
-                                return API.put('/shares/' + $scope.folder.sid + endpoint,
-                                    {
-                                        permissions: getJsonPermissions(role)
-                                    },
-                                    {},
-                                    {version: '1.3'}
-                                );
+                                if (entity.is_group) {
+                                    return API.sfgroupmember.setPermissions($scope.folder.sid, entity.id, permissions);
+
+                                } else {
+                                    return API.sfmember.setPermissions($scope.folder.sid, entity.email, permissions); 
+                                } 
                             }
                         })
                         .then(function () {
@@ -273,19 +268,25 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                     $scope.remove = function (entity, $index) {
                         startModalSpinner();
 
-                        var identifier = entity.email || entity.id;
+                        var identifier = entity.email || entity.id,
+                          prom;
                         $log.info("Removing " + (entity.email || entity.name) + " from folder " + $scope.folder.name);
-
-                        var memberType = entity.is_pending ? '/pending/' : '/members/';
-                        var memberEndpoint = memberType + identifier;
-                        var groupEndpoint = '/groups/' + identifier;
-                        var endpoint = entity.is_group ? groupEndpoint : memberEndpoint;
-
-                        API.delete('/shares/' + $scope.folder.sid + endpoint, {}, {version:'1.3'})
-                        .then(function () {
+                        
+                        if (entity.is_group) {
+                            prom = API.sfgroupmember.remove($scope.folder.sid, identifier);
+                        } else {
+                          if (entity.is_pending) {
+                            prom = API.sfpendingmember.remove($scope.folder.sid, identifier);
+                          } else {
+                            prom = API.sfmember.remove($scope.folder.sid, identifier);
+                          } 
+                        }
+              
+                        prom.then(function () {
                             $scope.folder.people.splice($index, 1);
                             stopModalSpinner();
-                        }, function (response){
+                        })
+                        .catch(function (response){
                             handleErrorResponse(response, "Failed to remove member "
                                 + (entity.email || entity.name) + ".");
                         });

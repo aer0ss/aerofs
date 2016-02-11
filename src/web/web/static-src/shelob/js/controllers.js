@@ -1,7 +1,10 @@
 var shelobControllers = angular.module('shelobControllers', ['shelobConfig']);
 
-shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', '$location', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', '$filter', 'API', 'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE', 'OutstandingRequestsCounter', 'LinkPassword',
-        function ($scope, $rootScope, $http, $location, $log, $routeParams, $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVATE, OutstandingRequestsCounter, LinkPassword) {
+shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http',
+'$location', '$log', '$routeParams', '$window', '$modal', '$sce', '$q', '$filter', 'API',
+'Token', 'MyStores', 'API_LOCATION', 'IS_PRIVATE',  'LinkPassword', 'OutstandingRequestsCounter',
+        function ($scope, $rootScope, $http, $location, $log, $routeParams,
+$window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVATE, LinkPassword, OutstandingRequestsCounter) {
 
     var FOLDER_LAST_MODIFIED = '--';
 
@@ -13,14 +16,17 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
        }
     }
 
-    // bind $scope.outstandingRequests to the result of OutstandingRequestsCounter.get()
-    // with a $watch so that the scope variable is updated when the result of the service
-    // method changes
-    $scope.$watch(function() { return OutstandingRequestsCounter.get(); }, function(val) {
-        $scope.outstandingRequests = val;
-        if (val > 0) angular.element(document.querySelector('html')).addClass('waiting');
-        else angular.element(document.querySelector('html')).removeClass('waiting');
-    });
+    // bind $API.pendingRequests to $scope.outstandingRequests via a watcher to
+    // display and display the spinner if there are pending requests.
+    $scope.$watch(
+        function() { return OutstandingRequestsCounter.get();},
+        function(val) {
+            $scope.outstandingRequests = val.pending;
+            if (val.pending > 0) angular.element(document.querySelector('html')).addClass('waiting');
+            else angular.element(document.querySelector('html')).removeClass('waiting');
+        },
+        true
+    );
 
     /*
         * * *
@@ -76,96 +82,94 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     }
 
     var _getFolders = function () {
-        OutstandingRequestsCounter.push();
-        API.get('/folders/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
-            $scope.requestHeaders).then(function(response) {
-            OutstandingRequestsCounter.pop();
-            // this is used as the last element of the breadcrumb trail
-            $scope.fsLocation.currentFolder.name = response.data.name;
+        API.folder.getMetadata($scope.fsLocation.currentFolder.id, ["children", "path"])
+            .then(function(response) {
+                // this is used as the last element of the breadcrumb trail
+                $scope.fsLocation.currentFolder.name = response.data.name;
 
-            // omit the root AeroFS folder from the breadcrumb trail, since we will always
-            // include a link to the root with the label "My Files"
-            if (response.data.path.folders.length && response.data.path.folders[0].name == 'AeroFS') {
-                $scope.breadcrumbs = response.data.path.folders.slice(1);
-            } else {
-                $scope.breadcrumbs = response.data.path.folders.slice(0);
-            }
-            // Don't show breadcrumbs for folders outside the domain of the share
-            if ($scope.currentShare.token) {
-                if ($scope.fsLocation.currentFolder.id === $scope.rootFolder) {
-                    // populate the folder data of the current share
-                    $scope.currentShare.folder = $scope.fsLocation.currentFolder;
-                    // save parents
-                    $scope.fsLocation.parents = response.data.path.folders.slice(0);
-                    $scope.breadcrumbs = [];
-                    _detectOwnership($scope.currentShare.folder.id, function(isOwned){
-                        $scope.currentShare.isAdmin = isOwned;
-                    });
+                // omit the root AeroFS folder from the breadcrumb trail, since we will always
+                // include a link to the root with the label "My Files"
+                if (response.data.path.folders.length && response.data.path.folders[0].name == 'AeroFS') {
+                    $scope.breadcrumbs = response.data.path.folders.slice(1);
                 } else {
-                    $scope.fsLocation.parents = $scope.breadcrumbs;
-                    for (var i = 0; i < $scope.breadcrumbs.length; i++) {
-                        if ($scope.breadcrumbs[i].id === $scope.rootFolder) {
-                            $scope.breadcrumbs = $scope.breadcrumbs.slice(i);
-                            break;
-                        }
-                    }
-                    _detectOwnership($scope.rootFolder, function(isOwned){
-                        $scope.currentShare.isAdmin = isOwned;
-                    });
+                    $scope.breadcrumbs = response.data.path.folders.slice(0);
                 }
-            }
-
-            // set object.type and object.last_modified for files and folders and concat the lists
-            for (var i = 0; i < response.data.children.folders.length; i++) {
-                response.data.children.folders[i].type = 'folder';
-                response.data.children.folders[i].last_modified = FOLDER_LAST_MODIFIED;
-            }
-            for (var i = 0; i < response.data.children.files.length; i++) {
-                response.data.children.files[i].type = 'file';
-            }
-
-            $scope.objects = response.data.children.folders.concat(response.data.children.files);
-
-            // check if link data's done loading, if so, populate link data
-            // (if not, will populate via the _getLinks call once it's done,
-            // or, if $scope.enableLinksharing is false, won't run at all)
-            if ($scope.links) {
-                _populateLinks();
-            }
-
-            return $q.all({
-                rootSid: MyStores.getRoot(),
-                shares: MyStores.getShares()
-            });
-
-        }, function(response) {
-            OutstandingRequestsCounter.pop();
-            if ($scope.currentShare.token && response.status == 404) {
-                /* Maybe the request is for a file, not a folder! */
-                $log.info('Request may be for a file rather than a folder, retrying...');
-                API.get('/files/' + $scope.fsLocation.currentFolder.id + '?fields=children,path&t=' + Math.random(),
-                    $scope.requestHeaders).then(function(response) {
-                        $scope.currentShare.isSingleObject = true;
-                        var object = response.data;
-                        object.type = 'file';
-                        $scope.currentShare.file = object;
-                        _detectOwnership($scope.currentShare.file.parent, function(isOwned){
+                // Don't show breadcrumbs for folders outside the domain of the share
+                if ($scope.currentShare.token) {
+                    if ($scope.fsLocation.currentFolder.id === $scope.rootFolder) {
+                        // populate the folder data of the current share
+                        $scope.currentShare.folder = $scope.fsLocation.currentFolder;
+                        // save parents
+                        $scope.fsLocation.parents = response.data.path.folders.slice(0);
+                        $scope.breadcrumbs = [];
+                        _detectOwnership($scope.currentShare.folder.id, function(isOwned){
                             $scope.currentShare.isAdmin = isOwned;
                         });
-                        $scope.objects = [$scope.currentShare.file];
-                    }, $q.reject);
-            } else {
+                    } else {
+                        $scope.fsLocation.parents = $scope.breadcrumbs;
+                        for (var i = 0; i < $scope.breadcrumbs.length; i++) {
+                            if ($scope.breadcrumbs[i].id === $scope.rootFolder) {
+                                $scope.breadcrumbs = $scope.breadcrumbs.slice(i);
+                                break;
+                            }
+                        }
+                        _detectOwnership($scope.rootFolder, function(isOwned){
+                            $scope.currentShare.isAdmin = isOwned;
+                        });
+                    }
+                }
+
+                // set object.type and object.last_modified for files and folders and concat the lists
+                for (var i = 0; i < response.data.children.folders.length; i++) {
+                    response.data.children.folders[i].type = 'folder';
+                    response.data.children.folders[i].last_modified = FOLDER_LAST_MODIFIED;
+                }
+                for (var i = 0; i < response.data.children.files.length; i++) {
+                    response.data.children.files[i].type = 'file';
+                }
+
+                $scope.objects = response.data.children.folders.concat(response.data.children.files);
+                // check if link data's done loading, if so, populate link data
+                // (if not, will populate via the _getLinks call once it's done,
+                // or, if $scope.enableLinksharing is false, won't run at all)
+                if ($scope.links) {
+                    _populateLinks();
+                }
+                return $q.all({
+                  rootSid: MyStores.getRoot(),
+                  shares: MyStores.getShares()
+                });
+            })
+            .catch(function(response) {
+              if ($scope.currentShare.token && response.status == 404) {
+                  /* Maybe the request is for a file, not a folder! */
+                  $log.info('Request may be for a file rather than a folder, retrying...');
+                  API.file.getMetadata($scope.fsLocation.currentFolder.id, ['path'])
+                      .then(function(response) {
+                          $scope.currentShare.isSingleObject = true;
+                          var object = response.data;
+                          object.type = 'file';
+                          $scope.currentShare.file = object;
+                          _detectOwnership($scope.currentShare.file.parent, function(isOwned){
+                              $scope.currentShare.isAdmin = isOwned;
+                          });
+                          $scope.objects = [$scope.currentShare.file];
+                      })
+                      .catch(function(response) {
+                           throw $q.reject(response);
+                      });
+              } else {
                 $q.reject(response);
-            }
-        }).then(function (r) {
-            if (r) {
-                $scope.managedShares = r.shares.managed.concat([r.rootSid]);
-                $scope.allShares = r.shares.all;
-                _populateShares();
-            } else {
-                $q.reject({status:500});
-            }
-        });
+              }
+            }).then(function(r) {
+                if (r) {
+                    $scope.managedShares = r.shares.managed.concat([r.rootSid]);
+                    $scope.allShares = r.shares.all;
+                    _populateShares();
+                } else {
+                    $q.reject({status:500});
+                }
+            });
     };
 
     // Get link sharing data, check if objects are done loading
@@ -175,11 +179,9 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         if (sid !== "root") {
             sid = sid.toString().slice(0,sid.length/2);
         }
-        OutstandingRequestsCounter.push();
         // TODO: caching
         // links are fetched per store, no need to re-fetch every time the current folder is changed
-        API.get('/shares/' + sid + '/urls', $scope.requestHeaders, {version: '1.3'}).then(function(response){
-            OutstandingRequestsCounter.pop();
+        API.getLinks(sid, $scope.requestHeaders).then(function(response){
             // check if object data's done loading, if so, populate link data
             // (if not, will populate via the _getFolders call once it's done)
             var now = Date.now()
@@ -199,8 +201,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             if ($scope.objects) {
                 _populateLinks();
             }
-        }, function(response){
-            OutstandingRequestsCounter.pop();
+        })
+        .catch(function(response) {
             $log.debug("Link data failed to load.");
         });
     };
@@ -211,8 +213,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         // have to be an owner to make or manage a link
         var linkPerm = "MANAGE";
         if ($scope.user) {
-            API.get('/shares/' + id.slice(0,32) + '/members/me?t=' + Math.random(),
-                {}).then(function(response){
+            API.sfmember.get(id.slice(0,32), 'me')
+               .then(function(response){
                     if (response.data.permissions.indexOf(linkPerm) != -1) {
                         $log.info('The current user owns this linkshare.');
                         callback(true);
@@ -220,7 +222,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                         $log.info('The current user does not own this linkshare.');
                         callback(false);
                     }
-                }, function(response){
+                })
+                .catch(function(response){
                     if (response.status != 404) {
                         $log.error(response);
                     }
@@ -381,34 +384,36 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             // Shelob to the API
             //
             // N.B. add a random query param to prevent caching
-            API.head("/files/" + oid + "/content?t=" + Math.random(), $scope.requestHeaders).then(function(response) {
-                $log.info('HEAD /files/' + oid + '/content succeeded');
-                if ($scope.requestHeaders.token) {
-                    $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid +
-                        "/content?token=" + $scope.requestHeaders.token);
-                } else {
-                    Token.get().then(function(token) {
-                        // N.B replace(url) will replace the current history with url, whereas
-                        // assign(url) will append url to the history chain. We use replace() so
-                        // that a user can navigate from folder Foo to folder Bar, click to download
-                        // a file, and then use the back button to return to Foo.
-                        $window.location.assign(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
-                    }, function(response) {
-                        // somehow failed to get token despite the fact that a request just succeeded
+            API.file.getContentHeaders(oid)
+                .then(function(response) {
+                    $log.info('HEAD /files/' + oid + '/content succeeded');
+                    if (API.config.oauthToken) {
+                        $window.location.replace(API_LOCATION + "/api/v1.2/files/" + oid +
+                            "/content?token=" + API.config.oauthToken);
+                    } else {
+                        Token.getNew().then(function(token) {
+                            // N.B replace(url) will replace the current history with url, whereas
+                            // assign(url) will append url to the history chain. We use replace() so
+                            // that a user can navigate from folder Foo to folder Bar, click to download
+                            // a file, and then use the back button to return to Foo.
+                            $window.location.assign(API_LOCATION + "/api/v1.2/files/" + oid + "/content?token=" + token);
+                        }, function(response) {
+                            // somehow failed to get token despite the fact that a request just succeeded
+                            showErrorMessageUnsafe(getInternalErrorText());
+                        });
+                    }
+                })
+                .catch(function(response) {
+                    // HEAD request failed
+                    $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
+                    if (response.status == 503) {
+                        showErrorMessageUnsafe(getClientsOfflineErrorText());
+                    } else if (response.status == 404) {
+                        showErrorMessage("The file you requested was not found.");
+                    } else {
                         showErrorMessageUnsafe(getInternalErrorText());
-                    });
-                }
-            }, function(response) {
-                // HEAD request failed
-                $log.error('HEAD /files/' + oid + '/content failed with status ' + response.status);
-                if (response.status == 503) {
-                    showErrorMessageUnsafe(getClientsOfflineErrorText());
-                } else if (response.status == 404) {
-                    showErrorMessage("The file you requested was not found.");
-                } else {
-                    showErrorMessageUnsafe(getInternalErrorText());
-                }
-            });
+                    }
+                });
         }).error(function(response, status){
             showErrorMessageUnsafe(getInternalErrorText());
         });
@@ -431,26 +436,29 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
         $log.debug("new folder: " + $scope.newFolder.name);
         if ($scope.newFolder.name !== '') {
             var folderData = {name: $scope.newFolder.name, parent: $scope.fsLocation.currentFolder.id};
-            API.post('/folders', folderData).then(function(response) {
-                // POST /folders returns the new folder object
-                $scope.objects.push({
-                    type: 'folder',
-                    id: response.data.id,
-                    name: response.data.name,
-                    last_modified: FOLDER_LAST_MODIFIED,
-                    is_shared: response.data.is_shared,
-                    links: []
+            API.folder.create(folderData.parent, folderData.name)
+                .then(function(response) {
+                    // POST /folders returns the new folder object
+                    $scope.objects.push({
+                        type: 'folder',
+                        id: response.data.id,
+                        name: response.data.name,
+                        last_modified: FOLDER_LAST_MODIFIED,
+                        is_shared: response.data.is_shared,
+                        links: []
+                    });
+                })
+                .catch( function(response) {
+                    $log.debug("New folder not created " + $scope.newFolder.name);
+                    // create new folder failed
+                    if (response.status == 503) {
+                        showErrorMessageUnsafe(getClientsOfflineErrorText());
+                    } else if (response.status == 409) {
+                        showErrorMessage("A file or folder with that name already exists.");
+                    } else {
+                        showErrorMessageUnsafe(getInternalErrorText());
+                    }
                 });
-            }, function(response) {
-                // create new folder failed
-                if (response.status == 503) {
-                    showErrorMessageUnsafe(getClientsOfflineErrorText());
-                } else if (response.status == 409) {
-                    showErrorMessage("A file or folder with that name already exists.");
-                } else {
-                    showErrorMessageUnsafe(getInternalErrorText());
-                }
-            });
         } else {
             showErrorMessage('Enter a name for the new folder');
         }
@@ -490,12 +498,23 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             $scope.cancelRename(object);
             return;
         }
-        var path = '/' + object.type + 's/' + object.id;
-        API.put(path, {parent: $scope.fsLocation.currentFolder.id, name: object.newName}).then(function(response) {
+
+        var prom;
+        switch (object.type) {
+          case 'folder':
+            prom = API.folder.move(object.id,$scope.fsLocation.currentFolder.id, object.newName);
+            break;
+          case 'file':
+            prom = API.file.move(object.id, $scope.fsLocation.currentFolder.id, object.newName);
+            break;
+        }
+
+        prom.then(function(response) {
             // rename succeeded
             object.name = response.data.name;
             if (response.data.last_modified) object.last_modified = response.data.last_modified;
-        }, function(response) {
+        })
+        .catch(function(response) {
             // rename failed
             if (response.status == 503) {
                 showErrorMessageUnsafe(getClientsOfflineErrorText());
@@ -504,7 +523,8 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             } else {
                 showErrorMessageUnsafe(getInternalErrorText());
             }
-        })["finally"](function() {
+        })
+        .then(function() {
             // after success or failure
             object.edit = false;
         });
@@ -536,10 +556,21 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             return;
         }
 
-        var data = {parent: destination.id, name: object.name};
-        API.put('/' + object.type + 's/' + object.id, data).then(function(response) {
+        var prom;
+        switch (object.type) {
+          case 'folder':
+            prom = API.folder.move(object.id, destination.id, object.name);
+            break;
+          case 'file':
+            prom = API.file.move(object.id, destination.id, object.name);
+            break;
+        }
+
+        prom.then(function(response) {
+            // Should remove
             _remove_by_id(object.id);
-        }, function(response) {
+        })
+        .catch(function(response) {
             // move failed
             if (response.status == 503) {
                 showErrorMessageUnsafe(getClientsOfflineErrorText());
@@ -587,22 +618,25 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     $rootScope.onMoveFolderExpanded = function(folder) {
         //TODO: don't GET children if we already know there are no children
         if (folder.children.length > 0) return;
-        API.get('/folders/' + folder.id + '/children?t=' + Math.random()).then(function(response) {
-            // get children succeeded
-            for (var i = 0; i < response.data.folders.length; i++) {
-                $log.debug('Adding child.');
-                folder.children.push({
-                    label: response.data.folders[i].name,
-                    id: response.data.folders[i].id,
-                    children: []
-                });
-            }
-        }, function(response) {
-            // get children failed
-            $log.error("Fetching children failed.");
-            if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
-            else showErrorMessageUnsafe(getInternalErrorText());
-        });
+
+        API.folder.listChildren(folder.id)
+            .then(function(response) {
+              // get children succeeded
+              for (var i = 0; i < response.data.folders.length; i++) {
+                  $log.debug('Adding child.');
+                  folder.children.push({
+                      label: response.data.folders[i].name,
+                      id: response.data.folders[i].id,
+                      children: []
+                  });
+               }
+            })
+            .catch(function(response) {
+                // get children failed
+                $log.error("Fetching children failed.");
+                if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
+                else showErrorMessageUnsafe(getInternalErrorText());
+            });
     };
 
     // This is called when a user confirms that they wish to delete an object
@@ -610,9 +644,20 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
     // It should attempt to perform the delete action and update the view.
     //
     $scope.submitDelete = function(object) {
-        API['delete']('/' + object.type + 's/' + object.id).then(function(response) {
+        var prom;
+
+        switch (object.type) {
+          case 'folder':
+            prom = API.folder.remove(object.id);
+            break;
+          case 'file':
+            prom = API.file.remove(object.id);
+        }
+
+        prom.then(function(response) {
             _remove_by_id(object.id);
-        }, function(response) {
+        })
+        .catch( function(response) {
             // failed to delete
             $log.error("Deleting object failed: ", object.id);
             if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());

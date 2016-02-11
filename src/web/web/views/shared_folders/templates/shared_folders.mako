@@ -122,6 +122,7 @@
     <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-strap/angular-strap.tpl.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-filter-0.5.7.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/aerofsapi.js')}"></script>
     <script type="text/javascript">
         canAdminister = "${can_administer}" == "True";
         hasPagination = "${has_pagination}" == "True";

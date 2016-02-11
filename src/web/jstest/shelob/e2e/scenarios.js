@@ -13,15 +13,6 @@ describe('Shelob App', function() {
         expect(repeater('.my-table-body .object').count()).toBe(4);
     });
 
-    it('should navigate to subfolder when subfolder link is clicked', function() {
-        browser().navigateTo('/index.html');
-        element('.my-table-body .object:eq(0) .name a').click();  // empty_folder
-        expect(browser().location().url()).toBe('/01a01a01a');
-        // The one and only one .object is the "No files found" label.
-        expect(repeater('.my-table-body .object:not(.dir-status)').count()).toBe(0);
-        expect(repeater('.my-table-body .dir-status').count()).toBe(1);
-    });
-
     it('should show folder icon for folder', function() {
         browser().navigateTo('/index.html');
         expect(element('.my-table-body .object:eq(1) .icon img').attr('src'))

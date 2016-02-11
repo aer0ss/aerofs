@@ -16,36 +16,69 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
         };
 
         scope.doChunkedUpload = function(fileJSON, file, etag) {
-            var headers = {'If-Match': etag};
             //TODO: use page size (4M or 8M) chunks, and increase nginx's max body size
-            var chunkSize = 1024 * 1024;
-            API.chunkedUpload(fileJSON.id, file, chunkSize, headers).then(function(response) {
-                // file upload succeeded
-                $log.info('file upload succeeded');
-                $timeout(function() {
-                    scope.progressModal.close();
-                    showSuccessMessage('Successfully uploaded "' + fileJSON.name + '"');
-                    fileJSON.type = 'file';
-                    scope.objects.push(fileJSON);
-                }, 500);
-                scope.doCleanUp();
-            }, function(response) {
-                // file upload failed
-                scope.progressModal.dismiss();
-                if (response.reason == 'read') {
-                    showErrorMessage("Upload failed: could not read file from disk.");
-                } else if (response.reason == 'upload') {
-                    if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
-                    else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
-                    else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
-                    else showErrorMessageUnsafe(getInternalErrorText());
-                } else showErrorMessageUnsafe(getInternalErrorText());
-                    scope.doCleanUp();
-            }, function(response) {
-                // file upload notification
+
+            // Notification callback used to send progress from the API
+            var notify = function(response) {
                 $log.debug('progress report:', response.progress);
                 $rootScope.$broadcast('modal.progress', {progress: response.progress});
-            });
+            };
+
+            var now = new Date();
+            var phoenixTimeout;
+
+            var doUpload = function() {
+                API.file.uploadContentFromFile(fileJSON.id, file, [etag], notify)
+                .then(function(response) {
+                    $log.info('file upload succeeded');
+                    $timeout(function() {
+                        scope.progressModal.close();
+                        showSuccessMessage('Successfully uploaded "' + fileJSON.name + '"');
+                        fileJSON.type = 'file';
+                        $log.debug("new file :", fileJSON, file);
+                        scope.objects.push(fileJSON);
+                    }, 500);
+                    scope.doCleanUp();
+                })
+                .catch(function(response) {
+                    //Inspect why - was it because we are in phoenix land
+                    // and we haven't got the notification that polaris made the
+                    // file If so, keep trying until limit reached
+                    var noSoid = respond.data && response.data.message &&
+                      response.data.message.indexOf('Device doesn\'t have soid') > -1;
+                    var timeoutNotReached = !phoenixTimeout || now < phoenixTimeout;
+
+                    if (response.status === 404 && noSoid && timeoutNotReached) {
+                        var fromNow = new Date().setTime(now.getTime() + (30*1000));
+                        phoenixTimeout = phoenixTimeout || fromNow;
+                        setTimeout(function () { doUpload();}, 5000);
+                    } else {
+                        scope.progressModal.dismiss();
+
+                        // Transport error if undefined
+                        if (response.reason === undefined) {
+                            if (response.status == 503) {
+                               showErrorMessageUnsafe(getClientsOfflineErrorText());
+                            } else if (response.status == 409) {
+                                showErrorMessage('A file or folder with that name already exists.');
+                            } else if (response.status == 403) {
+                                showErrorMessage(
+                                  'Only users with Owner or Editor permissions can ' +
+                                  'upload a file to this shared folder. Contact an Owner' +
+                                  'of this shared folder to get permissions.');
+                            } else  {
+                                showErrorMessageUnsafe(getInternalErrorText());
+                            }
+                        } else if (response.reason == 'read') {
+                            showErrorMessage("Upload failed: could not read file from disk.");
+                        } else {
+                            showErrorMessageUnsafe(getInternalErrorText());
+                        }
+                        scope.doCleanUp();
+                    }
+                });
+            };
+            doUpload();
         };
 
         scope.upload = function() {
@@ -76,22 +109,25 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
             if (!$routeParams.oid) {
                 scope.rootFolder = 'root';
             }
-            var fileObj = {parent: scope.rootFolder, name: file.name};
-            $log.debug("creating file:", fileObj);
-            var headers = {'Endpoint-Consistency': 'strict'};
-            API.post('/files', fileObj, headers).then(function(response) {
-                // file creation succeeded
-                $log.info('file creation succeeded');
-                scope.doChunkedUpload(response.data, file, response.data.etag);
-            }, function(response) {
-                // file creation failed
-                $log.error('file creation failed with status ' + response.status);
-                scope.progressModal.dismiss();
-                if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
-                else if (response.status == 409) showErrorMessage("A file or folder with that name already exists.");
-                else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
-                else showErrorMessageUnsafe(getInternalErrorText());
-            });
+
+            $log.debug("creating file:", scope.rootFolder, file.name);
+            API.file.create(scope.rootFolder, file.name)
+                .then(function(response) {
+                    $log.info('file creation succeeded');
+                    scope.doChunkedUpload(response.data, file, response.data.etag);
+                })
+                .catch(function(response) {
+                    $log.error('file creation failed with status ' + response.status);
+                    scope.progressModal.dismiss();
+                    if (response.status == 503) showErrorMessageUnsafe(getClientsOfflineErrorText());
+                    else if (response.status == 409) showErrorMessage(
+                        "A file or folder with that name already exists.");
+                    else if (response.status == 403) showErrorMessage(
+                        "Only users with Owner or Editor permissions can upload" +
+                        " a file to this shared folder. Contact an Owner of this" +
+                        "shared folder to get permissions.");
+                    else showErrorMessageUnsafe(getInternalErrorText());
+                });
 
             // confirm with user who about to leave the page that upload is not complete.
             window.onbeforeunload = function (e) {

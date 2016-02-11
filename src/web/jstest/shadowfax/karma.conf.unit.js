@@ -26,6 +26,7 @@ module.exports = function(config) {
       '../../web/static/js/angular-lib/angular/angular-*.js',
       '../../web/static/js/angular-lib/angular-ui/*.js',
       '../../web/static/js/angular-lib/angular*.js',
+      '../../web/static/js/aerofsapi.js',
       '../lib/**/*.js',
       '../../web/static/js/compiled/aerofs.js',
       '../../web/static/ng-modules/typeahead/typeahead.js',

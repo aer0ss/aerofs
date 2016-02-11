@@ -26,6 +26,7 @@ module.exports = function(config) {
       '../../web/static/js/angular-lib/angular/angular-*.js',
       '../../web/static/js/angular-lib/angular-ui/*.js',
       '../../web/static/js/angular-lib/angular*.js',
+      '../../web/static/js/aerofsapi.js',
       'lib/**/*.js',
       '../../web/static-src/js/aerofs.js',
       '../../web/static-src/shelob/js/**/*.js',
@@ -56,7 +57,7 @@ module.exports = function(config) {
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_INFO,
+    logLevel: config.LOG_DEBUG,
 
 
     // enable / disable watching file and executing tests whenever any file changes
