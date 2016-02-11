@@ -185,6 +185,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
          * no-op if the scheduler was already started
          */
         public void start_() {
+            if ((_state & STOPPED) == 0) return;
             l.info("{} start", _name);
             _state &= ~STOPPED;
             checkState((_state & SCHEDULED) == 0);
