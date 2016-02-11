@@ -20,7 +20,7 @@ public abstract class ICfgStore {
     // Absolute path to Root Anchor. N.B. must not use canonical paths so users can use symbolic
     // links as root anchor and repoint to different paths later.
     public static CfgKey ROOT = new CfgKey("root", null);
-    public static CfgKey TIMEOUT = new CfgKey("timeout", 45 * C.SEC);
+    public static CfgKey TIMEOUT = new CfgKey("timeout", 60 * C.SEC);
 
     // Config for Categories (see Cat.java)
     public static CfgKey MAX_CLIENT_STACKS = new CfgKey("max_client_stacks", 5);
