@@ -2,9 +2,6 @@ import flask_login as login
 from flask import flash, redirect, url_for, render_template
 from lizard import models, db, forms
 
-E_INVALID_CODE = "The promotion code you provided is not valid or has expired. " \
-                 "Please contact AeroFS Support for assistance."
-
 
 def get_promo(code):
     get = [f for (_, c, f, _) in _promotions if c == code]
@@ -27,8 +24,16 @@ def get_code_for(policy):
     return [c for (p, c, _, _) in _promotions if p == policy][0]
 
 
-def _get_promo_biz30():
-    return render_template('promo_biz30.html', form=forms.PromoForm(code=get_code_for('biz30')))
+def _get_promo_biz30(code):
+    return render_template('promo_biz30.html', form=forms.PromoForm(code=get_code_for(code)))
+
+
+def _get_promo_biz30_spiceworks():
+    return _get_promo_biz30('biz30_spiceworks')
+
+
+def _get_promo_biz30_adwords():
+    return _get_promo_biz30('biz30_adwords')
 
 
 def _get_promo_biz90():
@@ -71,6 +76,23 @@ def _post_promo_biz90():
 _promotions = [
     # policy, code, get_handler, post_handler
     # The quick and dirty way to expire a policy is to comment out the policy here.
-    ('biz30', '299F7A32-92EE-4E49-86EF-F96CB79924F9', _get_promo_biz30, _post_promo_biz30),
-    ('biz90', 'B10E4FF3-7036-426C-8E23-106A81E8745E', _get_promo_biz90, _post_promo_biz90),
+
+    # Spiceworks.
+    (
+        'biz30_spiceworks',
+        '6BAF7D67-E219-46F5-B722-FE4508682F5B',
+        _get_promo_biz30_spiceworks,
+        _post_promo_biz30),
+    # AdWords.
+    (
+        'biz30_adwords',
+        '299F7A32-92EE-4E49-86EF-F96CB79924F9',
+        _get_promo_biz30_adwords,
+        _post_promo_biz30),
+    # Email attachment manager campaign.
+    (
+        'biz90',
+        'B10E4FF3-7036-426C-8E23-106A81E8745E',
+        _get_promo_biz90,
+        _post_promo_biz90),
 ]
