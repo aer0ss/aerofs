@@ -162,7 +162,7 @@ def modify_images(containers, tagged_loader_container, my_container, tag):
         # When running with more than 3GB of memory, we can afford to give a
         # bit more to MySQL.
         modify_image(
-            containers['mysql']['image'],
+            containers[rename_container('mysql', tag)]['image'],
             ('sed -i '
              '"s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" '
              '"/etc/mysql/my.cnf"'))
