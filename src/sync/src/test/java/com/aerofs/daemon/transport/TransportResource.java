@@ -23,7 +23,6 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.ssmp.SSMPConnection;
@@ -130,15 +129,15 @@ public class TransportResource extends ExternalResource
         SSMPConnection ssmp = new SSMPConnection(localdid.get(), ssmpAddress, timer,
                 clientSocketChannelFactory, clientSslEngineFactory::newSslHandler);
 
-        tps = new Transports(localid, localdid, enabled, timeout, multicastLoopback,
+        tps = new Transports(localid, localdid, enabled, timeout,
                 new ZephyrParams(zephyrAddress),
                 timer, outgoingEventSink,
-                new MaxcastFilterReceiver(), linkStateService,
+                linkStateService,
                 clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 clientSocketChannelFactory, serverSocketChannelFactory,
                 new SSMPConnectionService(outgoingEventSink, linkStateService, ssmp),
-                mock(LocationManager.class),
+                new LocationManager(ssmp),
                 roundTripTimes);
 
         checkState(tps.getAll().size() == 1);
@@ -219,7 +218,7 @@ public class TransportResource extends ExternalResource
 
     public void joinStore(SID sid)
     {
-        tps.presenceSources().forEach(ps -> ps.updateInterest(new SID[]{sid}, new SID[]{}));
+        tps.presenceSources().forEach(ps -> ps.updateInterest(sid, true));
     }
 
     public void send(DID remoteDID, byte[] payload, Prio prio)
@@ -240,12 +239,14 @@ public class TransportResource extends ExternalResource
             @Override
             public void okay()
             {
+                l.debug("sent from {} to {}", did, remoteDID);
                 sendSemaphore.release();
             }
 
             @Override
             public void error(Exception e)
             {
+                l.debug("failed to send from {} to {}", did, remoteDID);
                 sendExceptionReference.set(e);
                 sendSemaphore.release();
             }

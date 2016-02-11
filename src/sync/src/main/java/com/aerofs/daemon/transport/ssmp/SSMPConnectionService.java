@@ -114,15 +114,13 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
     }
 
     @Override
-    public void updateInterest(SID[] sidsAdded, SID[] sidsRemoved) {
-        for (SID sid : sidsAdded) {
+    public void updateInterest(SID sid, boolean join) {
+        if (join) {
             _interest.add(sid);
             if (_c.isLoggedIn()) subscribe(sid);
-        }
-
-        for (SID sid : sidsRemoved) {
+        } else {
             _interest.remove(sid);
-            if (!_c.isLoggedIn()) continue;
+            if (!_c.isLoggedIn()) return;
             try {
                 Futures.addCallback(_c.request(SSMPRequest.unsubscribe(
                         SSMPIdentifier.fromInternal(sid.toStringFormal()))), new FutureCallback<SSMPResponse>() {

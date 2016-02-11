@@ -8,20 +8,11 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Diagnostics;
 import com.aerofs.proto.Diagnostics.Transport;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 // FIXME (AG): Remove sidx management from this class
 //
@@ -54,23 +45,9 @@ public class Device implements Comparable<Device>
 {
     private final DID _did;
 
-    private class TransportState
-    {
-        final Set<SIndex> _sidcsAvailable = Sets.newHashSet();
-
-        boolean isUnused_()
-        {
-            return _sidcsAvailable.isEmpty();
-        }
-
-        boolean isOnlineForStore_(SIndex sidx)
-        {
-            return _sidcsAvailable.contains(sidx);
-        }
-    }
-
-    final private SortedMap<ITransport, TransportState> _tpsAvailable =
-            new TreeMap<>(Transports.PREFERENCE_COMPARATOR);
+    final Set<SIndex> _sidcsAvailable = Sets.newHashSet();
+    final private SortedSet<ITransport> _tpsAvailable =
+            new TreeSet<>(Transports.PREFERENCE_COMPARATOR);
 
     Device(DID did)
     {
@@ -93,99 +70,29 @@ public class Device implements Comparable<Device>
      */
     public Collection<SIndex> getAllKnownSidcs_()
     {
-        Set<SIndex> sidcs = Sets.newHashSet();
-
-        for (TransportState transportState : _tpsAvailable.values()) {
-            sidcs.addAll(transportState._sidcsAvailable);
-        }
-
-        return sidcs;
+        return _sidcsAvailable;
     }
 
     /**
      * @return collection of stores that become online to the device
      */
-    Collection<SIndex> online_(ITransport tp, Collection<SIndex> sidcs)
-    {
-        TransportState tpState = getOrCreate_(tp);
+    boolean online_(ITransport tp) {
+        return _tpsAvailable.add(tp) && _tpsAvailable.size() == 1;
+    }
 
-        List<SIndex> ret = Lists.newLinkedList();
-        for (SIndex sidx : sidcs) {
-            boolean added = tpState._sidcsAvailable.add(sidx); // _always_ add
-            if (added) ret.add(sidx);
-        }
-        return getSidcsWhoseStateChanged_(tpState, ret);
+    boolean join_(SIndex sidx) {
+        return _sidcsAvailable.add(sidx);
     }
 
     /**
      * @return a collection of stores that becomes offline to the device
      */
-    Collection<SIndex> offline_(ITransport tp, Collection<SIndex> sidcs)
-    {
-        TransportState tpState = _tpsAvailable.get(tp);
-        if (tpState == null) return Collections.emptyList();
-
-        List<SIndex> ret = Lists.newLinkedList();
-        for (SIndex sidx : sidcs) {
-            if (tpState._sidcsAvailable.remove(sidx)) {
-                ret.add(sidx);
-            }
-        }
-
-        if (tpState.isUnused_()) {
-            _tpsAvailable.remove(tp);
-        }
-
-        return getSidcsWhoseStateChanged_(tpState, ret);
+    boolean offline_(ITransport tp) {
+        return _tpsAvailable.remove(tp) && _tpsAvailable.isEmpty();
     }
 
-    Collection<SIndex> offline_(ITransport tp)
-    {
-        TransportState en = _tpsAvailable.get(tp);
-        if (en == null) {
-            return Collections.emptyList();
-        }
-
-        // make a copy to avoid concurrent modification exception
-        return offline_(tp, new ArrayList<>(en._sidcsAvailable));
-    }
-
-    private TransportState getOrCreate_(ITransport tp)
-    {
-        TransportState tpState = _tpsAvailable.get(tp);
-        if (tpState == null) {
-            tpState = new TransportState();
-            _tpsAvailable.put(tp, tpState);
-        }
-        return tpState;
-    }
-
-    //
-    // FIXME (AG): both versions of getSidcsWhoseStateChanged_ look similar and should be merged
-    //
-
-    /**
-     * When an action (online, offline) occurs this may trigger a tpState change to an sidx:
-     * an sidx that is previously available may no longer be available. This method returns
-     * those sidcs that were affected as a result of an operation
-     */
-    private Collection<SIndex> getSidcsWhoseStateChanged_(TransportState comparedTpState,
-            List<SIndex> sidcs)
-    {
-        Iterator<SIndex> iter = sidcs.iterator();
-        while (iter.hasNext()) {
-            SIndex sidx = iter.next();
-            boolean isAvailable = false;
-            for (TransportState tpState : _tpsAvailable.values()) {
-                if (tpState != comparedTpState && tpState.isOnlineForStore_(sidx)) {
-                    isAvailable = true;
-                    break;
-                }
-            }
-            if (isAvailable) iter.remove();
-        }
-
-        return sidcs;
+    boolean leave_(SIndex sidx) {
+        return _sidcsAvailable.remove(sidx);
     }
 
     boolean isOnline_()
@@ -195,7 +102,7 @@ public class Device implements Comparable<Device>
 
     boolean isAvailable_()
     {
-        return !_tpsAvailable.isEmpty();
+        return !_tpsAvailable.isEmpty() && !_sidcsAvailable.isEmpty();
     }
 
     /**
@@ -217,7 +124,8 @@ public class Device implements Comparable<Device>
 
     private @Nullable ITransport getPreferredTransport()
     {
-        return _tpsAvailable.firstKey();
+        Iterator<ITransport> it = _tpsAvailable.iterator();
+        return it.hasNext() ? it.next() : null;
     }
 
     public int getPreferenceUtility_()
@@ -242,18 +150,16 @@ public class Device implements Comparable<Device>
             deviceBuilder.setPreferredTransportId(preferredTransport.id());
         }
 
-        for (Entry<ITransport, TransportState> entry: _tpsAvailable.entrySet()) {
-            TransportState transportState = entry.getValue();
-
+        for (ITransport tp: _tpsAvailable) {
             Diagnostics.Transport.Builder transportBuilder = Diagnostics.Transport.newBuilder();
 
             // id
-            transportBuilder.setTransportId(entry.getKey().id());
+            transportBuilder.setTransportId(tp.id());
 
             transportBuilder.setState(Transport.TransportState.POTENTIALLY_AVAILABLE);
 
             // what sidcs are 'available' on this transport
-            for (SIndex sidx : transportState._sidcsAvailable) {
+            for (SIndex sidx : _sidcsAvailable) {
                 transportBuilder.addKnownStoreIndexes(sidx.getInt());
             }
 

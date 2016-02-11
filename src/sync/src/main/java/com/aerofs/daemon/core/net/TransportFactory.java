@@ -14,7 +14,6 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.lib.event.IEvent;
@@ -64,7 +63,6 @@ public final class TransportFactory
     private final UserID userID;
     private final DID did;
     private final long streamTimeout;
-    private final boolean listenToMulticastOnLoopback;
     private final long channelConnectTimeout;
     private final long heartbeatInterval;
     private final int maxFailedHeartbeats;
@@ -76,7 +74,6 @@ public final class TransportFactory
     private final LinkStateService linkStateService;
     private final ServerSocketChannelFactory serverSocketChannelFactory;
     private final ClientSocketChannelFactory clientSocketChannelFactory;
-    private final MaxcastFilterReceiver maxcastFilterReceiver;
     private final SSLEngineFactory serverSslEngineFactory;
     private final SSLEngineFactory clientSslEngineFactory;
     private final IRoundTripTimes roundTripTimes;
@@ -87,7 +84,6 @@ public final class TransportFactory
             UserID userID,
             DID did,
             long streamTimeout,
-            boolean listenToMulticastOnLoopback,
             long channelConnectTimeout,
             long hearbeatInterval,
             int maxFailedHeartbeats,
@@ -97,7 +93,6 @@ public final class TransportFactory
             Timer timer,
             BlockingPrioQueue<IEvent> transportEventSink,
             LinkStateService linkStateService,
-            MaxcastFilterReceiver maxcastFilterReceiver,
             ClientSocketChannelFactory clientSocketChannelFactory,
             ServerSocketChannelFactory serverSocketChannelFactory,
             SSLEngineFactory clientSslEngineFactory,
@@ -109,7 +104,6 @@ public final class TransportFactory
         this.userID = userID;
         this.did = did;
         this.streamTimeout = streamTimeout;
-        this.listenToMulticastOnLoopback = listenToMulticastOnLoopback;
         this.channelConnectTimeout = channelConnectTimeout;
         this.heartbeatInterval = hearbeatInterval;
         this.maxFailedHeartbeats = maxFailedHeartbeats;
@@ -119,7 +113,6 @@ public final class TransportFactory
         this.timer = timer;
         this.transportEventSink = transportEventSink;
         this.linkStateService = linkStateService;
-        this.maxcastFilterReceiver = maxcastFilterReceiver;
         this.clientSocketChannelFactory = clientSocketChannelFactory;
         this.serverSocketChannelFactory = serverSocketChannelFactory;
         this.clientSslEngineFactory = clientSslEngineFactory;
@@ -158,11 +151,9 @@ public final class TransportFactory
                 transportRank,
                 transportEventSink,
                 linkStateService,
-                listenToMulticastOnLoopback,
                 channelConnectTimeout,
                 heartbeatInterval,
                 maxFailedHeartbeats,
-                maxcastFilterReceiver,
                 clientSslEngineFactory,
                 serverSslEngineFactory,
                 timer,

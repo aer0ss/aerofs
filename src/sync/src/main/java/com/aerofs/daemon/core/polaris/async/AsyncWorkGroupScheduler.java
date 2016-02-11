@@ -9,6 +9,7 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
@@ -288,8 +289,9 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
         }
 
         private Throwable suppress(Throwable t) {
-            return BaseLogUtil.suppress(t, ExRetryLater.class, SocketException.class, ExNoPerm.class,
-                    ClosedChannelException.class, UnresolvedAddressException.class);
+            return BaseLogUtil.suppress(t, ExRetryLater.class, SocketException.class,
+                    ExNoPerm.class, ExDeviceUnavailable.class, ClosedChannelException.class,
+                    UnresolvedAddressException.class);
         }
 
         @Override

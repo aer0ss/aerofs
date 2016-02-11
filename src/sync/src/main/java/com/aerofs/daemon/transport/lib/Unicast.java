@@ -12,8 +12,6 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -36,7 +34,7 @@ import static com.aerofs.daemon.transport.lib.TransportUtil.newExTransportOrFata
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConnector, IIncomingChannelListener
+public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConnector, ChannelRegisterer
 {
     private static final Logger l = Loggers.getLogger(Unicast.class);
 
@@ -45,7 +43,6 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
     private ServerBootstrap serverBootstrap;
     private ClientBootstrap clientBootstrap;
     private IUnicastStateListener unicastStateListener;
-    private IDeviceConnectionListener deviceConnectionListener;
     private ChannelDirectory directory;
 
     private Channel serverChannel;
@@ -80,7 +77,6 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
 
     public void setDeviceConnectionListener(IDeviceConnectionListener deviceConnectionListener)
     {
-        this.deviceConnectionListener = deviceConnectionListener;
         // FIXME(jP): ugh, spreading state. How do we make this go away?
         directory.setDeviceConnectionListener(deviceConnectionListener);
     }
@@ -106,7 +102,7 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
         pauseAccept();
         running = false;
 
-        disconnectAll(new ExTransportUnavailable("transport shutting down"));
+        directory.disable(Unicast::disconnect);
 
         serverBootstrap.releaseExternalResources();
         clientBootstrap.releaseExternalResources();
@@ -129,28 +125,23 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
                 pauseAccept();
             }
 
-            disconnectAll(new ExDeviceUnavailable("link down"));
+            directory.disable(Unicast::disconnect);
         }
 
         if (previous.isEmpty() && !current.isEmpty()) {
             synchronized (this) {
                 resumeAccept();
             }
-        }
-    }
 
-    private void disconnectAll(Exception cause)
-    {
-        for (DID did : directory.getActiveDevices()) {
-            disconnect(did, cause);
+            directory.enable();
         }
     }
 
     private void pauseAccept()
     {
-        unicastStateListener.onUnicastUnavailable();
-        enableChannelAccept(false);
         paused = true;
+        enableChannelAccept(false);
+        unicastStateListener.onUnicastUnavailable();
         l.info("pause unicast accept");
     }
 
@@ -172,29 +163,20 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
      * Called by the IncomingChannelHandler when the server has accepted a connection form a remote client
      */
     @Override
-    public void onIncomingChannel(final DID did, Channel channel)
+    public boolean registerChannel(Channel channel, final DID did)
     {
         checkNotNull(directory);
-        directory.register(channel, did);
-
-        if (!isServiceAvailable()) {
-            channel.close();
-        }
+        return directory.registerChannel(channel, did);
     }
 
     /**
      * Disconnects from a remote peer.
      */
-    private void disconnect(DID did, Exception cause)
+    private static void disconnect(Channel channel)
     {
-        l.info("{} disconnect", did, LogUtil.suppress(cause));
-
-        // detach all the channels for this device (this will cause a presence down event).
-        // Then make sure we close any of the detached channel instances.
-        for (Channel channel : directory.detach(did)) {
-            channel.getPipeline().get(MessageHandler.class).setDisconnectReason(cause);
-            channel.close();
-        }
+        channel.getPipeline().get(MessageHandler.class)
+                .setDisconnectReason(new ExTransportUnavailable("tp down"));
+        channel.close();
     }
 
     /**
@@ -223,7 +205,7 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
             if (reuseChannels) {
                 channel = directory.chooseActiveChannel(did).getChannel();
             } else { // TODO: remove this case, used in unit tests only :(
-                channel = directory.createChannel(did).getChannel();
+                channel = newChannel(did).getChannel();
             }
         }
 
@@ -264,12 +246,6 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
         });
     }
 
-    public void sendControl(DID did, PBTPHeader h)
-            throws ExTransportUnavailable, ExDeviceUnavailable
-    {
-        send(did, TransportProtocolUtil.newControl(h), null);
-    }
-
     /**
      * Creates a new client connected to the specified did
      *
@@ -282,17 +258,18 @@ public final class Unicast implements ILinkStateListener, IUnicast, IUnicastConn
         if (!isServiceAvailable()) {
             throw new ExTransportUnavailable("transport unavailable running:" + running + " paused:" + paused);
         }
-
         SocketAddress remoteAddress = addressResolver.resolve(did);
-
         return newChannel(did, remoteAddress);
     }
 
     @Override
-    public ChannelFuture newChannel(IPresenceLocation location)
+    public ChannelFuture newChannel(DID did, IPresenceLocation location) throws ExTransportUnavailable
     {
+        if (!isServiceAvailable()) {
+            throw new ExTransportUnavailable("transport unavailable running:" + running + " paused:" + paused);
+        }
         Preconditions.checkArgument(location instanceof TCPPresenceLocation);
-        return newChannel(location.did(), ((TCPPresenceLocation)location).socketAddress());
+        return newChannel(did, ((TCPPresenceLocation)location).socketAddress());
     }
 
     private ChannelFuture newChannel(DID did, SocketAddress remoteAddress)

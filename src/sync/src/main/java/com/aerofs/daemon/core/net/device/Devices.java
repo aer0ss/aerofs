@@ -14,7 +14,6 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Diagnostics;
 import com.aerofs.proto.Diagnostics.DeviceDiagnostics;
 import com.aerofs.proto.Diagnostics.Store.Builder;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -55,6 +54,7 @@ public class Devices implements IDiagnosable
     private final IMapSIndex2SID _sidx2sid;
 
     public interface DeviceAvailabilityListener {
+        void online_(DID did);
         void offline_(DID did);
     }
 
@@ -75,67 +75,94 @@ public class Devices implements IDiagnosable
         _listeners.add(l);
     }
 
-    public void online_(ITransport tp, DID did, Collection<SIndex> sidcs)
-    {
-        l.info("{} up on {} {}", did, tp, sidcs);
-
+    private Device getOrCreate_(DID did) {
         Device dev = _did2dev.get(did);
         if (dev == null) {
             dev = new Device(did);
             _did2dev.put(did, dev);
         }
-
-        boolean wasFormerlyAvailable = dev.isAvailable_();
-
-        Collection<SIndex> sidcsOnline = dev.online_(tp, sidcs);
-        onlineImpl_(dev, sidcsOnline);
-
-        if (!wasFormerlyAvailable && dev.isAvailable_()) {
-            l.info("{} +DPE", did);
-        }
+        return dev;
     }
 
-    public void offline_(ITransport tp, DID did, Collection<SIndex> sidcs)
-    {
+    private OPMDevices getOrCreate_(SIndex sidx) {
+        OPMDevices opm = _sidx2opm.get(sidx);
+        if (opm == null) {
+            opm = new OPMDevices();
+            _sidx2opm.put(sidx, opm);
+        }
+        return opm;
+    }
+
+    private void notifyOnline_(Device dev, SIndex sidx) {
+        getOrCreate_(sidx).add_(dev.did(), dev);
+        Store s = _sidx2s.getNullable_(sidx);
+        if (s != null) s.notifyDeviceOnline_(dev.did());
+    }
+
+    public void online_(DID did, ITransport tp) {
+        l.debug("{} +online {}", did, tp);
+        Device dev = getOrCreate_(did);
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+        if (dev.online_(tp)) {
+            for (SIndex sidx : dev._sidcsAvailable) {
+                notifyOnline_(dev, sidx);
+            }
+        }
+        notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
+    }
+
+    public void join_(DID did, SIndex sidx) {
+        l.debug("{} +interest {}", did, sidx);
+        Device dev = getOrCreate_(did);
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+        if (dev.join_(sidx) && dev.isOnline_()) {
+            notifyOnline_(dev, sidx);
+        }
+        notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
+    }
+
+    private void notifyOffline_(Device dev, SIndex sidx) {
+        OPMDevices d = _sidx2opm.get(sidx);
+        if (d != null) d.remove_(dev.did());
+        Store s = _sidx2s.getNullable_(sidx);
+        if (s != null) s.notifyDeviceOffline_(dev.did());
+    }
+
+    public void offline_(DID did, ITransport tp) {
         Device dev = _did2dev.get(did);
         if (dev == null) return;
-        l.info("{} dn on {} {}", did, tp, sidcs);
-
+        l.debug("{} -online {}", did, tp);
         boolean wasFormerlyAvailable = dev.isAvailable_();
+        if (dev.offline_(tp)) {
+            for (SIndex sidx : dev._sidcsAvailable) {
+                notifyOffline_(dev, sidx);
+            }
+        }
+        notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
+    }
 
-        Collection<SIndex> sidcsOffline = dev.offline_(tp, sidcs);
-        removeDIDFromStores_(did, sidcsOffline);
-        if (!dev.isAvailable_()) _did2dev.remove(did);
-
+    public void leave_(DID did, SIndex sidx) {
+        Device dev = _did2dev.get(did);
+        if (dev == null) return;
+        l.debug("{} -interest {}", did, sidx);
+        boolean wasFormerlyAvailable = dev.isAvailable_();
+        if (dev.leave_(sidx) && dev.isOnline_()) {
+            notifyOffline_(dev, sidx);
+        }
         notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
     }
 
     private void notifyListenersOnDeviceOfflineEdge_(DID did, boolean wasFormerlyAvailable,
             boolean isNowAvailable)
     {
-        if (!isNowAvailable && wasFormerlyAvailable) {
-            l.info("{} -DPE", did);
-            _listeners.forEach(l -> l.offline_(did));
-        }
-    }
-
-    /**
-     * all the devices on the transport go offline
-     */
-    public void offline_(ITransport tp)
-    {
-        // make a copy to avoid concurrent modification exception
-        ArrayList<Device> devices = Lists.newArrayList(_did2dev.values());
-
-        for (Device dev : devices) {
-            boolean wasFormerlyAvailable = dev.isAvailable_();
-            Collection<SIndex> sidcsOffline = dev.offline_(tp);
-            DID did = dev.did();
-            removeDIDFromStores_(did, sidcsOffline);
-            if (!dev.isAvailable_()) {
-                _did2dev.remove(did);
+        if (wasFormerlyAvailable) {
+            if (!isNowAvailable) {
+                l.info("{} -DPE", did);
+                _listeners.forEach(l -> l.offline_(did));
             }
-            notifyListenersOnDeviceOfflineEdge_(did, wasFormerlyAvailable, dev.isAvailable_());
+        } else if (isNowAvailable) {
+            l.info("{} +DPE", did);
+            _listeners.forEach(l -> l.online_(did));
         }
     }
 
@@ -179,24 +206,18 @@ public class Devices implements IDiagnosable
         }
     }
 
-    private SID[] sindex2sid_(Collection<SIndex> sidcs)
-    {
-        SID[] ret = new SID[sidcs.size()];
-        int count = 0;
-        for (SIndex sidx : sidcs) ret[count++] = _sidx2sid.get_(sidx);
-        return ret;
-    }
-
     // FIXME: rename after I figure out what this means
     public void afterAddingStore_(SIndex sidx)
     {
-        updateStoresForTransports_(sindex2sid_(Collections.singleton(sidx)), new SID[0]);
+        // TODO? _sidx2opm.put(sidx, new OPMDevices());
+        updateStoresForTransports_(_sidx2sid.get_(sidx), true);
     }
 
     // FIXME: rename after I figure out what this means
     public void beforeDeletingStore_(SIndex sidx)
     {
-        updateStoresForTransports_(new SID[0], sindex2sid_(Collections.singleton(sidx)));
+        // TODO? _sidx2opm.remove(sidx);
+        updateStoresForTransports_(_sidx2sid.get_(sidx), false);
     }
 
     // FIXME (AG): this is not an OPM
@@ -210,23 +231,18 @@ public class Devices implements IDiagnosable
         return dev != null && dev.isOnline_() ? dev : null;
     }
 
-    public @Nullable OPMDevices getOPMDevices_(SIndex sidx)
-    {
-        return _sidx2opm.get(sidx);
-    }
-
     public Map<DID, Device> getOnlinePotentialMemberDevices_(SIndex sidx)
     {
-        OPMDevices opm = getOPMDevices_(sidx);
+        OPMDevices opm = _sidx2opm.get(sidx);
         return (opm == null) ? Collections.emptyMap() : opm.getAll_();
     }
 
     /**
      * This method can be called within or outside of core threads.
      */
-    private void updateStoresForTransports_(final SID[] sidAdded, final SID[] sidRemoved)
+    private void updateStoresForTransports_(final SID sid, boolean join)
     {
-        _tps.presenceSources().forEach(ps -> ps.updateInterest(sidAdded, sidRemoved));
+        _tps.presenceSources().forEach(ps -> ps.updateInterest(sid, join));
     }
 
     /**

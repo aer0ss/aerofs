@@ -18,6 +18,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
 {
     private static final Logger l = Loggers.getLogger(HdStoreAvailability.class);
@@ -37,34 +39,17 @@ public class HdStoreAvailability implements IEventHandler<EIStoreAvailability>
     @Override
     public void handle_(EIStoreAvailability ev)
     {
-        if (ev._did2sids.isEmpty()) {
-            Preconditions.checkArgument(!ev._online);
-            _devices.offline_(ev._tp);
+        Preconditions.checkArgument(!ev._did.equals(_cfgLocalDID.get()));
+
+        SIndex sidx = _sid2sidx.getNullable_(ev._sid);
+        if (sidx == null) return;
+
+        l.debug("{} {} {}", ev._did, ev._join ? "+" : "-", ev._sid);
+
+        if (ev._join) {
+            _devices.join_(ev._did, sidx);
         } else {
-            for (Entry<DID, Collection<SID>> entry : ev._did2sids.entrySet()) {
-                DID did = entry.getKey();
-                Collection<SID> sids = entry.getValue();
-
-                Preconditions.checkArgument(!did.equals(_cfgLocalDID.get()));
-
-                List<SIndex> sidcs = Lists.newArrayListWithCapacity(sids.size());
-                for (SID sid : sids) {
-                    SIndex sidx = _sid2sidx.getNullable_(sid);
-
-                    // ignore stores that don't exist
-                    if (sidx != null) {
-                        sidcs.add(sidx);
-                    }
-                }
-
-                l.debug("{} {} {}", entry.getKey(), ev._online ? "+" : "-", entry.getValue());
-
-                if (ev._online) {
-                    _devices.online_(ev._tp, did, sidcs);
-                } else {
-                    _devices.offline_(ev._tp, did, sidcs);
-                }
-            }
+            _devices.leave_(ev._did, sidx);
         }
     }
 }

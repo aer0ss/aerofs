@@ -193,6 +193,9 @@ public class RPC implements Handler, DeviceAvailabilityListener {
     }
 
     @Override
+    public void online_(DID did) {}
+
+    @Override
     public void offline_(DID did) {
         Set<Integer> rpcs = _bydid.remove(did);
         if (rpcs == null) return;

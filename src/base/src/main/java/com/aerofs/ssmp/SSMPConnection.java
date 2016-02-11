@@ -9,6 +9,7 @@ import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,7 +118,15 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
             return;
         }
         l.info("reconnect in {}", _delay);
-        _timer.newTimeout(timeout -> connect(),_delay, TimeUnit.MILLISECONDS);
+        _timer.newTimeout(timeout -> {
+            if (!_stopped.get() && !_loggedIn.get()) {
+                try {
+                    connect();
+                } catch (AlreadyConnectedException e) {
+                    l.debug("already connected");
+                }
+            }
+        }, _delay, TimeUnit.MILLISECONDS);
         _delay = Math.min(Math.max(_delay * 2, 100), 60000);
     }
 

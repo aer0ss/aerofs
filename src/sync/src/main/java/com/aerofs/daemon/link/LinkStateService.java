@@ -202,7 +202,7 @@ public class LinkStateService
             while (true) {
                 // FIXME: this synchronization is kinda gross but necessary to avoid a race between
                 // marking links down from the core and the periodic checks on the lss thread
-                // which can defeate pause sync and break syncdet tests
+                // which can defeat pause sync and break syncdet tests
                 synchronized (this) {
                     if (!_markedDown) {
                         checkLinkState();
@@ -234,12 +234,12 @@ public class LinkStateService
     {
         // FIXME: this synchronization is kinda gross but necessary to avoid a race between
         // marking links down from the core and the periodic checks on the lss thread
-        // which can defeate pause sync and break syncdet tests
+        // which can defeat pause sync and break syncdet tests
         synchronized (this) {
             l.warn("mark down");
             _markedDown = true;
-            notifyLinkStateChange(ImmutableSet.<NetworkInterface>of());
         }
+        notifyLinkStateChange(ImmutableSet.<NetworkInterface>of());
     }
 
     // IMPORTANT: the method is _not final_ because I want it to be mockable

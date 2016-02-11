@@ -2,7 +2,6 @@ package com.aerofs.daemon.transport.presence;
 
 import com.aerofs.daemon.core.net.TransportFactory.TransportType;
 import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
-import com.aerofs.ids.DID;
 import com.google.common.base.Preconditions;
 
 import java.net.*;
@@ -14,22 +13,19 @@ import java.net.*;
  * Example: 1.2.3.4:34099
  */
 public class TCPPresenceLocation implements IPresenceLocation {
-    private final DID _did;
-    private final InetSocketAddress _socketAddress;
+    private final InetSocketAddress _addr;
 
-    public TCPPresenceLocation(final DID did, final InetAddress IPAddress, final int listeningPort) {
-        _did = did;
-
+    public TCPPresenceLocation(final InetAddress IPAddress, final int listeningPort) {
         // Build the list of socket addresses, from the IPs and the port
-        _socketAddress = new InetSocketAddress(IPAddress, listeningPort);
+        _addr = new InetSocketAddress(IPAddress, listeningPort);
     }
 
-    public static TCPPresenceLocation fromExportedLocation(DID did, String location)
+    public static TCPPresenceLocation fromExportedLocation(String location)
             throws ExInvalidPresenceLocation
     {
         try {
             URI uri = new URI("presence://" + location + "/");
-            return new TCPPresenceLocation(did, InetAddress.getByName(uri.getHost()), uri.getPort());
+            return new TCPPresenceLocation(InetAddress.getByName(uri.getHost()), uri.getPort());
         } catch (URISyntaxException |IllegalArgumentException e) {
             throw new ExInvalidPresenceLocation("Malformed socket address " + location, e);
         } catch (UnknownHostException e) {
@@ -46,33 +42,28 @@ public class TCPPresenceLocation implements IPresenceLocation {
      * Ex: "192.168.0.2:4567"
      */
     public String exportLocation() {
-        Preconditions.checkState(_socketAddress.getAddress() != null);
-        return _socketAddress.getAddress().getHostAddress() + ":" + _socketAddress.getPort();
+        Preconditions.checkState(_addr.getAddress() != null);
+        InetAddress a = _addr.getAddress();
+        return (a instanceof Inet6Address ? "[" + a.getHostAddress() + "]" : a.getHostAddress())
+                + ":" + _addr.getPort();
     }
 
     public InetSocketAddress socketAddress() {
-        return _socketAddress;
+        return _addr;
     }
-
-    @Override
-    public DID did() { return _did; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        TCPPresenceLocation that = (TCPPresenceLocation) o;
-
-        if (_did != null ? !_did.equals(that.did()) : that.did() != null) return false;
-        return !(_socketAddress != null ? !_socketAddress.equals(that.socketAddress()) : that.socketAddress() != null);
-
+        return _addr.equals(((TCPPresenceLocation) o).socketAddress());
     }
 
     @Override
     public int hashCode() {
-        int result = _did != null ? _did.hashCode() : 0;
-        result = 31 * result + (_socketAddress != null ? _socketAddress.hashCode() : 0);
-        return result;
+        return _addr.hashCode();
     }
+
+    @Override
+    public String toString() { return exportLocation(); }
 }

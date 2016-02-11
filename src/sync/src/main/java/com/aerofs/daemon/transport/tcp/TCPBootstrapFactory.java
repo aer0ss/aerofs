@@ -12,7 +12,7 @@ import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
-import com.aerofs.daemon.transport.lib.handlers.IncomingChannelHandler;
+import com.aerofs.daemon.transport.lib.handlers.RegisteringChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
 import com.aerofs.daemon.transport.lib.handlers.ShouldKeepAcceptedChannelHandler;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
@@ -49,9 +49,8 @@ final class TCPBootstrapFactory
     private final SSLEngineFactory clientSslEngineFactory;
     private final SSLEngineFactory serverSslEngineFactory;
     private final IDeviceConnectionListener deviceConnectionListener;
-    private final IncomingChannelHandler incomingChannelHandler;
+    private final RegisteringChannelHandler registeringChannelHandler;
     private final TransportProtocolHandler protocolHandler;
-    private final TCPProtocolHandler tcpProtocolHandler;
     private final TCPChannelDiagnosticsHandler clientChannelDiagnosticsHandler;
     private final TCPChannelDiagnosticsHandler serverChannelDiagnosticsHandler;
     private final TransportStats transportStats;
@@ -67,9 +66,8 @@ final class TCPBootstrapFactory
             SSLEngineFactory clientSslEngineFactory,
             SSLEngineFactory serverSslEngineFactory,
             IDeviceConnectionListener deviceConnectionListener,
-            IIncomingChannelListener serverHandlerListener,
+            ChannelRegisterer reg,
             TransportProtocolHandler protocolHandler,
-            TCPProtocolHandler tcpProtocolHandler,
             TransportStats stats,
             Timer timer,
             IRoundTripTimes roundTripTimes)
@@ -83,8 +81,7 @@ final class TCPBootstrapFactory
         this.serverSslEngineFactory = serverSslEngineFactory;
         this.deviceConnectionListener = deviceConnectionListener;
         this.protocolHandler = protocolHandler;
-        this.tcpProtocolHandler = tcpProtocolHandler;
-        this.incomingChannelHandler = new IncomingChannelHandler(serverHandlerListener);
+        this.registeringChannelHandler = new RegisteringChannelHandler(reg);
         this.clientChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.CLIENT,
                 roundTripTimes);
         this.serverChannelDiagnosticsHandler = new TCPChannelDiagnosticsHandler(HandlerMode.SERVER,
@@ -110,11 +107,11 @@ final class TCPBootstrapFactory
                     newCoreProtocolVersionReader(),
                     newCoreProtocolVersionWriter(),
                     newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                    registeringChannelHandler, // IMPORTANT: *before* CNameVerifiedHandler
                     verifiedHandler,
                     newConnectTimeoutHandler(channelConnectTimeout, timer),
                     messageHandler,
                     newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
-                    tcpProtocolHandler,
                     protocolHandler,
                     clientChannelDiagnosticsHandler,
                     clientChannelTeardownHandler);
@@ -140,12 +137,11 @@ final class TCPBootstrapFactory
                     newCoreProtocolVersionReader(),
                     newCoreProtocolVersionWriter(),
                     newCNameVerificationHandler(verifiedHandler, localuser, localdid),
+                    registeringChannelHandler, // IMPORTANT: *before* CNameVerifiedHandler
                     verifiedHandler,
                     messageHandler,
-                    incomingChannelHandler,
                     newHeartbeatHandler(heartbeatInterval, maxFailedHeartbeats, timer, roundTripTimes),
                     newConnectTimeoutHandler(channelConnectTimeout, timer),
-                    tcpProtocolHandler,
                     protocolHandler,
                     serverChannelDiagnosticsHandler,
                     serverChannelTeardownHandler);

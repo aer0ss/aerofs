@@ -7,9 +7,11 @@ package com.aerofs.daemon.transport.zephyr;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.transport.ISignallingService;
+import com.aerofs.daemon.transport.lib.PresenceLocations.DeviceLocations;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.lib.*;
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
@@ -54,7 +56,6 @@ public final class Zephyr implements ITransport
 
     private final String id;
     private final int rank; // FIXME (AG): why does the transport need to know its own preference
-    private final DID localdid;
 
     private final TransportEventQueue transportEventQueue;
     private final EventDispatcher dispatcher;
@@ -67,7 +68,6 @@ public final class Zephyr implements ITransport
 
     private final TransportStats transportStats = new TransportStats();
     public final ChannelMonitor monitor;
-    public final ZephyrPresence presence;
 
     public Zephyr(
             UserID localid,
@@ -99,13 +99,13 @@ public final class Zephyr implements ITransport
 
         this.id = id;
         this.rank = rank;
-        this.localdid = localdid;
 
-        PresenceService presenceService = new PresenceService();
+        PresenceService presenceService = new PresenceService(this, outgoingEventSink);
 
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(this, outgoingEventSink, streamManager);
         ChannelTeardownHandler channelTeardownHandler = new ChannelTeardownHandler(this, streamManager, TWOWAY);
         this.zephyrAddress = zephyrParams.serverAddress;
+        PresenceLocations locations = new PresenceLocations();
         this.zephyrConnectionService = new ZephyrConnectionService(
                 localid,
                 localdid,
@@ -129,13 +129,18 @@ public final class Zephyr implements ITransport
                 locationManager,
                 roundTripTimes);
 
-        this.monitor = new ChannelMonitor(zephyrConnectionService.getDirectory(), timer);
-        this.presence = new ZephyrPresence(this, outgoingEventSink);
+        this.monitor = new ChannelMonitor(zephyrConnectionService, locations,
+                zephyrConnectionService.getDirectory(), timer) {
+            @Override
+            protected void tryConnect(DID did, DeviceLocations locs, Set<IPresenceLocation> loc) {
+                // FIXME: zephyr currently doesn't support multiple locations
+                // the connection code goes bonkers if multiple handshake are started for
+                // the same device
+                scheduleConnect(0, did);
+            }
+        };
 
         presenceService.addListener(monitor);
-        presenceService.addListener(presence);
-
-        l.debug("{}: enabling multicast", id());
     }
 
     @Override

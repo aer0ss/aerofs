@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.lib.handlers;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.ChannelData;
-import com.aerofs.daemon.transport.lib.IIncomingChannelListener;
+import com.aerofs.daemon.transport.lib.ChannelRegisterer;
 import com.aerofs.daemon.transport.lib.TransportUtil;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandler.Sharable;
@@ -19,15 +19,15 @@ import org.slf4j.Logger;
 import static com.aerofs.daemon.transport.lib.TransportUtil.getChannelData;
 
 @Sharable
-public final class IncomingChannelHandler extends SimpleChannelHandler
+public final class RegisteringChannelHandler extends SimpleChannelHandler
 {
-    private static final Logger l = Loggers.getLogger(IncomingChannelHandler.class);
+    private static final Logger l = Loggers.getLogger(RegisteringChannelHandler.class);
 
-    private final IIncomingChannelListener incomingChannelListener;
+    private final ChannelRegisterer reg;
 
-    public IncomingChannelHandler(IIncomingChannelListener incomingChannelListener)
+    public RegisteringChannelHandler(ChannelRegisterer reg)
     {
-        this.incomingChannelListener = incomingChannelListener;
+        this.reg = reg;
     }
 
     @Override
@@ -38,9 +38,12 @@ public final class IncomingChannelHandler extends SimpleChannelHandler
         DID did = channelData.getRemoteDID();
         Channel channel = e.getChannel();
 
-        l.info("{} incoming connection on {}", did, TransportUtil.hexify(channel));
-        incomingChannelListener.onIncomingChannel(did, channel);
-
-        ctx.sendUpstream(e);
+        if (!reg.registerChannel(channel, did)) {
+            l.info("{} reject incoming connection on {}", did, TransportUtil.hexify(channel));
+            channel.close();
+        } else {
+            l.info("{} accept incoming connection on {}", did, TransportUtil.hexify(channel));
+            ctx.sendUpstream(e);
+        }
     }
 }

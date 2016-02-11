@@ -10,6 +10,8 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.S;
+import com.aerofs.proto.Diagnostics.TCPDevice;
+import com.aerofs.proto.Diagnostics.ZephyrDevice;
 import com.aerofs.proto.Ritual.GetDiagnosticsReply;
 import com.aerofs.proto.Sp;
 import com.aerofs.ritual.IRitualClientProvider;
@@ -34,6 +36,7 @@ import org.eclipse.swt.widgets.Widget;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class DlgTransportDiagnostics extends AeroFSDialog
 {
@@ -126,19 +129,14 @@ public class DlgTransportDiagnostics extends AeroFSDialog
         public void onSuccess(final GetDiagnosticsReply reply)
         {
 
-            _gui.safeAsyncExec(_widget, new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    TransportDiagnosticsWithDeviceName td = new TransportDiagnosticsWithDeviceName(reply.getTransportDiagnostics());
+            _gui.safeAsyncExec(_widget, () -> {
+                TransportDiagnosticsWithDeviceName td = new TransportDiagnosticsWithDeviceName(reply.getTransportDiagnostics());
 
-                    try {
-                        new DeviceNameLookupTask(td, InjectableSPBlockingClientFactory.newMutualAuthClientFactory().create().signInRemote(), _widget).dispatch();
-                    } catch (Exception e) {
-                        ErrorMessages.show(getShell(), e, S.ERR_GET_TRANSPORTS_INFO_FAILED);
-                        _widget.setData(null);
-                    }
+                try {
+                    new DeviceNameLookupTask(td, InjectableSPBlockingClientFactory.newMutualAuthClientFactory().create().signInRemote(), _widget).dispatch();
+                } catch (Exception e) {
+                    ErrorMessages.show(getShell(), e, S.ERR_GET_TRANSPORTS_INFO_FAILED);
+                    _widget.setData(null);
                 }
             });
 
@@ -147,14 +145,9 @@ public class DlgTransportDiagnostics extends AeroFSDialog
         @Override
         public void onFailure(final Throwable throwable)
         {
-            _gui.safeAsyncExec(_widget, new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    ErrorMessages.show(getShell(), throwable, S.ERR_GET_TRANSPORTS_INFO_FAILED);
-                    _widget.setData(null);
-                }
+            _gui.safeAsyncExec(_widget, () -> {
+                ErrorMessages.show(getShell(), throwable, S.ERR_GET_TRANSPORTS_INFO_FAILED);
+                _widget.setData(null);
             });
         }
     }
@@ -180,8 +173,11 @@ public class DlgTransportDiagnostics extends AeroFSDialog
             List<ByteString> zephyrDids = Lists.newArrayList();
             List<ByteString> dids = Lists.newArrayList();
 
-            _td.getTransportDiagnostics().getTcpDiagnostics().getReachableDevicesList().forEach(device -> tcpDids.add(device.getDid()));
-            _td.getTransportDiagnostics().getZephyrDiagnostics().getReachableDevicesList().forEach(device -> zephyrDids.add(device.getDid()));
+            List<TCPDevice> tcp = _td.getTransportDiagnostics().getTcpDiagnostics().getReachableDevicesList();
+            List<ZephyrDevice> zephyr = _td.getTransportDiagnostics().getZephyrDiagnostics().getReachableDevicesList();
+
+            tcp.forEach(device -> tcpDids.add(device.getDid()));
+            zephyr.forEach(device -> zephyrDids.add(device.getDid()));
             dids.addAll(tcpDids);
             dids.addAll(zephyrDids);
             //Get device info with list of DIDs
@@ -198,11 +194,15 @@ public class DlgTransportDiagnostics extends AeroFSDialog
             for (int i = 0; i < tcpDids.size(); i++) {
                 Sp.GetDeviceInfoReply.PBDeviceInfo di = reply.getDeviceInfo(i);
 
-                if(di.hasOwner() && di.hasDeviceName()) {
+                if (di.hasOwner() && di.hasDeviceName()) {
                     _td.addToTCPDeviceList(new TCPDeviceWithName(tcpDids.get(i),
-                                    _td.getTransportDiagnostics().getTcpDiagnostics().getReachableDevices(i).getDeviceAddress().getHost(),
-                                    di.getDeviceName(),
-                                    di.getOwner().getUserEmail()));
+                            // TODO: do we really wnat to show all IPs?
+                            tcp.get(i).getChannelList().stream()
+                                    .map(c -> c.getRemoteAddress().getHost())
+                                    .collect(Collectors.toSet()).stream() // avoid duplicates
+                                    .collect(Collectors.joining(",")),
+                            di.getDeviceName(),
+                            di.getOwner().getUserEmail()));
                 }
             }
 

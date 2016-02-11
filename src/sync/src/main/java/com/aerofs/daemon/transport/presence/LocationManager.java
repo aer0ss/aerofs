@@ -18,9 +18,7 @@ import org.slf4j.Logger;
 
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -46,7 +44,7 @@ public class LocationManager implements EventHandler, IMulticastListener {
     private final String LOCATIONS = "loc";
     private final String REQUEST = "req";
 
-    private final List<IPresenceLocationReceiver> _listeners = new ArrayList<>();
+    private final Map<String, IPresenceLocationReceiver> _listeners = new HashMap<>();
 
     @Inject
     public LocationManager(SSMPConnection c) {
@@ -55,8 +53,8 @@ public class LocationManager implements EventHandler, IMulticastListener {
         c.addBcastHandler(LOCATIONS, this);
     }
 
-    public void addPresenceLocationListener(IPresenceLocationReceiver l) {
-        _listeners.add(l);
+    public void addPresenceLocationListener(String id, IPresenceLocationReceiver l) {
+        _listeners.put(id, l);
     }
 
     public void onLocationChanged(ITransport tp, List<IPresenceLocation> locations) {
@@ -94,20 +92,24 @@ public class LocationManager implements EventHandler, IMulticastListener {
             DID did = new DID(from);
             JsonObject transports = new JsonParser().parse(s).getAsJsonObject();
             for (Entry<String, JsonElement> e : transports.entrySet()) {
-                if (!e.getKey().equals("t")) {
+                String tp = e.getKey();
+                IPresenceLocationReceiver recv = _listeners.get(tp);
+                if (recv == null) {
                     l.debug("unsupported transport location: {} {}", e.getKey(), e.getValue());
                     continue;
                 }
+                Set<IPresenceLocation> ll = new HashSet<>();
                 JsonArray locations = e.getValue().getAsJsonArray();
                 for (JsonElement addr : locations) {
                     try {
-                        IPresenceLocation loc = fromExportedLocation(did, addr.getAsString());
+                        IPresenceLocation loc = fromExportedLocation(addr.getAsString());
                         l.info("location {} {}", did, addr);
-                        _listeners.forEach(listener -> listener.onPresenceReceived(loc));
+                        ll.add(loc);
                     } catch (ExInvalidPresenceLocation ex) {
                         l.warn("invalid location: {}", ex.getMessage());
                     }
                 }
+                recv.onPresenceReceived(did, ll);
             }
         } catch (Exception e) {
             l.warn("invalid locations", BaseLogUtil.suppress(e, ClosedChannelException.class));
@@ -155,5 +157,9 @@ public class LocationManager implements EventHandler, IMulticastListener {
     }
 
     @Override
-    public void onDeviceUnreachable(DID did) {}
+    public void onDeviceUnreachable(DID did) {
+        for (IPresenceLocationReceiver recv : _listeners.values()) {
+            recv.onPresenceReceived(did, Collections.emptySet());
+        }
+    }
 }

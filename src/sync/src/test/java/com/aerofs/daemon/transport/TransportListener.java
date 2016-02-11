@@ -10,15 +10,17 @@ import com.aerofs.ids.UserID;
 import com.aerofs.daemon.lib.id.StreamID;
 
 import java.io.InputStream;
-import java.util.Collection;
 
 public class TransportListener
 {
     public void onNewStream(DID did, StreamID streamID, InputStream inputStream) {}
 
-    public void onStoreAvailableForDevice(DID did, Collection<SID> sids) {}
+    public void onStoreAvailableForDevice(DID did, SID sid) {}
 
-    public void onStoreUnavailableForDevice(DID did, Collection<SID> sids) {}
+    public void onStoreUnavailableForDevice(DID did, SID sid) {}
 
     public void onIncomingPacket(DID did, UserID userID, byte[] packet) {}
+
+    public void onDeviceOnline(DID did, ITransport tp) {}
+    public void onDeviceOffline(DID did, ITransport tp) {}
 }

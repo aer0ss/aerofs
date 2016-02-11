@@ -4,9 +4,11 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.daemon.transport.lib.presence.IPresenceLocation;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.DefaultChannelFuture;
@@ -27,18 +29,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.*;
 
 public class TestChannelMonitor extends AbstractTest
 {
     DID did;
     ChannelDirectory directory;
     ChannelFuture lastFuture;
+    IPresenceLocation loc = mock(IPresenceLocation.class);
+    IUnicastConnector connector = mock(IUnicastConnector.class);
+    PresenceLocations locations = new PresenceLocations();
 
     // one does not simply spy on a HashedWheelTimer directly
     // it used to work in the past but since netty 3.9.5 it causes calls to newTimeout to hang
@@ -68,6 +68,9 @@ public class TestChannelMonitor extends AbstractTest
             lastFuture = new DefaultChannelFuture(mock(Channel.class), true);
             return lastFuture;
         }).when(directory).chooseActiveChannel(any(DID.class));
+
+        when(connector.newChannel(any(DID.class), any(IPresenceLocation.class)))
+                .thenReturn(mock(ChannelFuture.class));
     }
 
     @After
@@ -79,61 +82,47 @@ public class TestChannelMonitor extends AbstractTest
     @Test
     public void shouldConnectIfPresent() throws Exception
     {
-        ChannelMonitor alloc = new ChannelMonitor(directory, timer);
+        ChannelMonitor alloc = new ChannelMonitor(connector, locations, directory, timer);
         ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
 
-        alloc.onDeviceReachable(did);
+        alloc.onPresenceReceived(did, ImmutableSet.of(loc));
 
-        verify(directory, times(1)).chooseActiveChannel(did);
+        verify(connector, times(1)).newChannel(did, loc);
 
-        lastFuture.setFailure(mock(Exception.class));
-        // finishing the future causes a reschedule; grab the timer task and call it now.
+        alloc.onDevicePresenceChanged(did, false);
+        // grab the timer task and call it now.
         verify(timer).newTimeout(timerTask.capture(), anyLong(), Matchers.<TimeUnit>any());
         timerTask.getValue().run(mock(Timeout.class));
 
-        verify(directory, times(2)).chooseActiveChannel(did);
+        verify(directory).chooseActiveChannel(did);
         verify(timer).newTimeout(timerTask.capture(), anyLong(), Matchers.<TimeUnit>any());
     }
 
     @Test
     public void shouldNotConnectIfNotPresent() throws Exception
     {
-        ChannelMonitor alloc = new ChannelMonitor(directory, timer);
+        ChannelMonitor alloc = new ChannelMonitor(connector, locations, directory, timer);
         ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
 
-        alloc.onDeviceReachable(did);
-        verify(directory, times(1)).chooseActiveChannel(did);
+        alloc.onPresenceReceived(did, ImmutableSet.of(loc));
+        verify(connector, times(1)).newChannel(did, loc);
 
         // Okay, initial attempt was ok; make the device not potentially available and frob the timer
-        alloc.onDeviceUnreachable(did);
+        alloc.onPresenceReceived(did, ImmutableSet.of());
 
-        // finishing the future causes a reschedule; grab the timer task and call it now.
-        lastFuture.setFailure(mock(Exception.class));
+        alloc.onDevicePresenceChanged(did, false);
+        // grab the timer task and call it now.
         verify(timer).newTimeout(timerTask.capture(), anyLong(), Matchers.<TimeUnit>any());
         timerTask.getValue().run(mock(Timeout.class));
 
         // doesn't retry chooseActiveFuture; device is not currently potentially available
-        verify(directory, times(1)).chooseActiveChannel(did);
-    }
-
-    @Test
-    public void shouldNotRetryAfterSuccess() throws Exception
-    {
-        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
-
-        monitor.onDeviceReachable(did);
-        verify(directory, times(1)).chooseActiveChannel(did);
-
-        // finishing the future causes a reschedule; grab the timer task and call it now.
-        lastFuture.setSuccess();
-        verifyNoMoreInteractions(timer);
-        verifyNoMoreInteractions(directory);
+        verify(directory, never()).chooseActiveChannel(did);
     }
 
     @Test
     public void shouldScheduleReconnectWhenGoingOffline() throws Exception
     {
-        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
+        ChannelMonitor monitor = new ChannelMonitor(connector, locations, directory, timer);
         ArgumentCaptor<TimerTask> timerTask = ArgumentCaptor.forClass(TimerTask.class);
 
         monitor.onDevicePresenceChanged(did, false);
@@ -145,16 +134,16 @@ public class TestChannelMonitor extends AbstractTest
     public void shouldReturnCorrectSet() throws Exception
     {
         DID did0 = new DID("91200100000000000000000000000100");
-        DID did1 = new DID("91200100000000000000000000000111");
-        DID did2 = new DID("91200100000000000000000000000222");
-        DID did3 = new DID("91200100000000000000000000000333");
+        DID did1 = new DID("a1200100000000000000000000000111");
+        DID did2 = new DID("b1200100000000000000000000000222");
+        DID did3 = new DID("c1200100000000000000000000000333");
 
-        ChannelMonitor monitor = new ChannelMonitor(directory, timer);
-        monitor.onDeviceReachable(did0);
-        monitor.onDeviceReachable(did1);
-        monitor.onDeviceReachable(did2);
-        monitor.onDeviceReachable(did3);
-        monitor.onDeviceUnreachable(did1);
+        ChannelMonitor monitor = new ChannelMonitor(connector, locations, directory, timer);
+        monitor.onPresenceReceived(did0, ImmutableSet.of(loc));
+        monitor.onPresenceReceived(did1, ImmutableSet.of(loc));
+        monitor.onPresenceReceived(did2, ImmutableSet.of(loc));
+        monitor.onPresenceReceived(did3, ImmutableSet.of(loc));
+        monitor.onPresenceReceived(did1, ImmutableSet.of());
 
         assertThat(monitor.allReachableDevices(), containsInAnyOrder(did0, did2, did3));
     }

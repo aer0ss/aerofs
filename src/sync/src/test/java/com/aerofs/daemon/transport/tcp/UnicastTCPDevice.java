@@ -50,7 +50,7 @@ public final class UnicastTCPDevice
 {
     public DID did = DID.generate();
     public LinkStateService linkStateService = new LinkStateService();
-    public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<IEvent>(100);
+    public BlockingPrioQueue<IEvent> outgoingEventSink = new BlockingPrioQueue<>(100);
     public UserID userID;
     public IAddressResolver addressResolver; // <----- UNIQUE TO TCP AND REQUIRED BY TESTS
     public SemaphoreTriggeringListener unicastListener;
@@ -78,7 +78,6 @@ public final class UnicastTCPDevice
         ITransport transport = mock(ITransport.class);
         when(transport.id()).thenReturn(transportId);
 
-        TCPStores stores = mock(TCPStores.class);
         addressResolver = mock(IAddressResolver.class);
         unicastListener = spy(new SemaphoreTriggeringListener());
 
@@ -92,7 +91,6 @@ public final class UnicastTCPDevice
         unicast.setDeviceConnectionListener(unicastListener);
         linkStateService.addListener(unicast, sameThreadExecutor());
 
-        TCPProtocolHandler tcpProtocolHandler = new TCPProtocolHandler(stores, unicast);
         TransportProtocolHandler transportProtocolHandler = new TransportProtocolHandler(transport, outgoingEventSink, streamManager);
         clientChannelTeardownHandler = new ChannelTeardownHandler(transport, streamManager, ChannelMode.CLIENT);
         serverChannelTeardownHandler = new ChannelTeardownHandler(transport, streamManager, ChannelMode.SERVER);
@@ -111,7 +109,6 @@ public final class UnicastTCPDevice
                 unicastListener,
                 unicast,
                 transportProtocolHandler,
-                tcpProtocolHandler,
                 transportStats,
                 mock(Timer.class),
                 mock(IRoundTripTimes.class));

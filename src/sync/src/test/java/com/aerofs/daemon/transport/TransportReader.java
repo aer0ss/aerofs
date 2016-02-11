@@ -4,8 +4,7 @@
 
 package com.aerofs.daemon.transport;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
+import com.aerofs.daemon.event.net.EIDevicePresence;
 import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
@@ -19,8 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -69,13 +66,15 @@ public final class TransportReader
         outgoingEventQueueReader = new Thread(() -> {
             while (running) {
                 try {
-                    OutArg<Prio> outArg = new OutArg<Prio>(null);
+                    OutArg<Prio> outArg = new OutArg<>(null);
                     IEvent event = outgoingEventSink.dequeueInterruptibly(outArg);
 
                     l.trace("handling event type:{}", event.getClass().getSimpleName());
 
                     if (event instanceof EIStoreAvailability) {
-                        handleStoreAvailability((EIStoreAvailability)event);
+                        handleStoreAvailability((EIStoreAvailability) event);
+                    } else if (event instanceof EIDevicePresence) {
+                            handleDevicePresence((EIDevicePresence)event);
                     } else if (event instanceof EIUnicastMessage) {
                         handleUnicastMessage((EIUnicastMessage)event);
                     } else if (event instanceof EIStreamBegun) {
@@ -96,14 +95,21 @@ public final class TransportReader
         outgoingEventQueueReader.start();
     }
 
-    private void handleStoreAvailability(EIStoreAvailability storeAvailability)
+    private void handleStoreAvailability(EIStoreAvailability ev)
     {
-        for (Map.Entry<DID, Collection<SID>> entry : storeAvailability._did2sids.entrySet()) {
-            if (storeAvailability._online) {
-                transportListener.onStoreAvailableForDevice(entry.getKey(), entry.getValue());
-            } else {
-                transportListener.onStoreUnavailableForDevice(entry.getKey(), entry.getValue());
-            }
+        if (ev._join) {
+            transportListener.onStoreAvailableForDevice(ev._did, ev._sid);
+        } else {
+            transportListener.onStoreUnavailableForDevice(ev._did, ev._sid);
+        }
+    }
+
+    private void handleDevicePresence(EIDevicePresence ev)
+    {
+        if (ev._online) {
+            transportListener.onDeviceOnline(ev._did, ev._tp);
+        } else {
+            transportListener.onDeviceOffline(ev._did, ev._tp);
         }
     }
 

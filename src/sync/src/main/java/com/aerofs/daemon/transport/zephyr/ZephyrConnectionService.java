@@ -28,7 +28,6 @@ import com.aerofs.zephyr.client.exceptions.ExHandshakeFailed;
 import com.aerofs.zephyr.client.exceptions.ExHandshakeRenegotiation;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrControlMessage;
 import com.aerofs.zephyr.proto.Zephyr.ZephyrHandshake;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -116,28 +115,6 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
     {
         this.tp = transport;
         this.zephyrAddress = zephyrAddress;
-        this.bootstrap = new ClientBootstrap(channelFactory);
-        this.bootstrap.setPipelineFactory(
-                new ZephyrClientPipelineFactory(
-                        localid,
-                        localdid,
-                        clientSslEngineFactory,
-                        serverSslEngineFactory,
-                        transportProtocolHandler,
-                        channelTeardownHandler,
-                        transportStats,
-                        this,
-                        deviceConnectionListener,
-                        timer,
-                        proxy,
-                        hearbeatInterval,
-                        maxFailedHeartbeats,
-                        zephyrHandshakeTimeout,
-                        roundTripTimes));
-
-        this.linkStateService = linkStateService;
-        this.signallingService = signallingService;
-        this.unicastListener = unicastListener;
         this.directory = new ChannelDirectory(transport, this) {
             @Override
             public ChannelFuture chooseActiveChannel(DID did)
@@ -153,6 +130,29 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
                 }
             }
         };
+        this.bootstrap = new ClientBootstrap(channelFactory);
+        this.bootstrap.setPipelineFactory(
+                new ZephyrClientPipelineFactory(
+                        localid,
+                        localdid,
+                        clientSslEngineFactory,
+                        serverSslEngineFactory,
+                        transportProtocolHandler,
+                        channelTeardownHandler,
+                        transportStats,
+                        this,
+                        deviceConnectionListener,
+                        directory,
+                        timer,
+                        proxy,
+                        hearbeatInterval,
+                        maxFailedHeartbeats,
+                        zephyrHandshakeTimeout,
+                        roundTripTimes));
+
+        this.linkStateService = linkStateService;
+        this.signallingService = signallingService;
+        this.unicastListener = unicastListener;
         directory.setDeviceConnectionListener(deviceConnectionListener);
         this.locationManager = locationManager;
         this.roundTripTimes = roundTripTimes;
@@ -228,7 +228,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
 
             // update advertised presence locations
             locationManager.onLocationChanged(tp,
-                    ImmutableList.of(new ZephyrPresenceLocation(null, zephyrAddress)));
+                    ImmutableList.of(new ZephyrPresenceLocation(zephyrAddress)));
         } else {
             // all interfaces went down
             // remove all the channels
@@ -244,7 +244,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
 
     @Override
     public ChannelFuture newChannel(DID did)
-            throws ExTransportUnavailable, ExDeviceUnavailable
+            throws ExTransportUnavailable
     {
         if (!running.get()) {
             l.warn("{} ignore connect - connection service stopped", did);
@@ -260,6 +260,9 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
         // set up the ZephyrClientHandler
         getZephyrClient(channel).init(did, channel);
 
+        // FIXME: shouldn't use the registry as a routing table for handshake messages
+        directory.registerChannel(channel, did);
+
         // now, connect
         ChannelFuture connectFuture = channel.connect(zephyrAddress);
 
@@ -268,9 +271,10 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
     }
 
     @Override
-    public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
-        Preconditions.checkState(false, "Creating Zephyr channels from presence locations is not supported yet");
-        return null;
+    public ChannelFuture newChannel(DID did, IPresenceLocation presenceLocation)
+            throws ExTransportUnavailable {
+        l.debug("zephyr locations assumed to match default zephyr server");
+        return newChannel(did);
     }
 
     private void disconnect(DID did, Exception cause)
@@ -422,6 +426,7 @@ final class ZephyrConnectionService implements ILinkStateListener, IUnicast, IZe
             throws ExDeviceUnavailable, ExHandshakeFailed, ExHandshakeRenegotiation
     {
         try {
+            // FIXME: don't use the channel directory for routing handshake messages
             Channel channel = directory.chooseActiveChannel(did).getChannel();
             getZephyrClient(channel).consumeHandshake(handshake);
         } catch (ExTransportUnavailable exTransportUnavailable) {

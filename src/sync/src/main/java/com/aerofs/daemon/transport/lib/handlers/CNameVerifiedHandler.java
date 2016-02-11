@@ -15,20 +15,18 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static org.jboss.netty.channel.Channels.fireChannelConnected;
 
 public final class CNameVerifiedHandler extends SimpleChannelHandler implements CNameListener
 {
     private static final Logger l = LoggerFactory.getLogger(CNameVerifiedHandler.class);
 
     private final HandlerMode mode;
-    private final AtomicReference<Channel> channelReference = new AtomicReference<Channel>(null);
+    private final AtomicReference<Channel> channelReference = new AtomicReference<>(null);
 
     private volatile DID expected;
     private IDeviceConnectionListener deviceConnectionListener;
@@ -95,6 +93,6 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
 
         deviceConnectionListener.onDeviceConnected(provider.getRemoteDID());
 
-        fireChannelConnected(ctx, (SocketAddress) e.getValue());
+        ctx.sendUpstream(e);
     }
 }

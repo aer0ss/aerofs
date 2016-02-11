@@ -104,10 +104,10 @@ public class ChangeNotificationSubscriber implements ConnectionListener, EventHa
     public void eventReceived(SSMPEvent ev) {
         if (ev.type != Type.MCAST || !ev.from.isAnonymous()
                 || !ev.to.toString().startsWith("pol/")) {
-            l.warn("ignore pol msg {} {}", ev.from, ev.to);
             return;
         }
         try {
+            l.debug("pol notif {} {}", ev.to.toString().substring(4), ev.payload);
             scheduleFetch(new SID(ev.to.toString().substring(4)));
         } catch (Exception e) {
             l.warn("invalid notification", e);

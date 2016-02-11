@@ -24,7 +24,7 @@ public final class DeadlockDetector implements HealthCheckService.ScheduledRunna
     @Override
     public long interval()
     {
-        return 10 * C.MIN;
+        return 2 * C.MIN;
     }
 
     @Override

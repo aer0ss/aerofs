@@ -1,20 +1,12 @@
 package com.aerofs.daemon.transport.zephyr;
 
 import com.aerofs.daemon.transport.lib.*;
+import com.aerofs.daemon.transport.lib.handlers.*;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.net.AddressResolverHandler;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.daemon.transport.lib.handlers.CNameVerifiedHandler;
-import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
-import com.aerofs.daemon.transport.lib.handlers.ConnectTunnelHandler;
-import com.aerofs.daemon.transport.lib.handlers.HandlerMode;
-import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
-import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
-import com.aerofs.daemon.transport.lib.handlers.MessageHandler;
-import com.aerofs.daemon.transport.lib.handlers.ProxiedConnectionHandler;
-import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
 import com.aerofs.zephyr.client.IZephyrSignallingService;
 import com.aerofs.zephyr.client.handlers.ZephyrProtocolHandler;
 import org.jboss.netty.channel.Channel;
@@ -48,6 +40,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
     private final TransportStats transportStats;
     private final IZephyrSignallingService zephyrSignallingService;
     private final IDeviceConnectionListener deviceConnectionListener;
+    private final RegisteringChannelHandler registeringChannelHandler;
     private final AddressResolverHandler resolver;
     private final Proxy proxy;
     private final long heartbeatInterval;
@@ -67,6 +60,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
             TransportStats transportStats,
             IZephyrSignallingService zephyrSignallingService,
             IDeviceConnectionListener deviceConnectionListener,
+            ChannelRegisterer reg,
             Timer timer,
             Proxy proxy,
             long heartbeatInterval,
@@ -93,6 +87,7 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         this.zephyrHandshakeTimeout = zephyrHandshakeTimeout;
         this.zephyrHandshakeTimeoutTimeunit = MILLISECONDS;
         this.roundTripTimes = roundTripTimes;
+        this.registeringChannelHandler = new RegisteringChannelHandler(reg);
     }
 
     @Override
@@ -130,6 +125,8 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         // core-protocol-version
         pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
         pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
+
+        pipeline.addLast("register", registeringChannelHandler);
 
         // set up the cname listener
         CNameVerifiedHandler verifiedHandler = newCNameVerifiedHandler();

@@ -14,18 +14,25 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.SucceededChannelFuture;
 import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * Presence: The New Hotness.
  *
  * A simple interface to encapsulate putting channels into an indexed data structure, and
  * later query that structure for channels.
+ *
+ * NB: ideally this would only contain fully functional channels (i.e. past CName verification)
+ * However for peculiar hysterical raisins, the Zephyr transports piggy backs on ChannelDirectory
+ * to route handshake messages from the signalling service to the appropriate channel. This requires
+ * extra synchronization to prevent multiple channels to a given DID and forces the channel to be
+ * registered as soon as it is created, instead of waiting for the cname verification to complete.
  */
 /* Notes: In the future, this should automatically detect edges (zero to any, any to zero members
  * of a particular set). Also the ability to select members of this set in different ways would
@@ -43,7 +50,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * sure we don't consider two channel instances for the same device _exactly_ equal. Doing so
  * lets us do an intelligent job pruning later.
  */
-public class ChannelDirectory
+public class ChannelDirectory implements ChannelRegisterer
 {
     private static final Logger l = Loggers.getLogger(ChannelDirectory.class);
     private final ITransport tp;
@@ -56,10 +63,28 @@ public class ChannelDirectory
     private final SortedSetMultimap<DID, Channel> channels = Multimaps.synchronizedSortedSetMultimap(
             TreeMultimap.<DID, Channel>create());
 
+    private AtomicBoolean disabled = new AtomicBoolean();
+
     public ChannelDirectory(ITransport tp, IUnicastConnector channelCreator)
     {
         this.tp = tp;
         this.channelCreator = channelCreator;
+    }
+
+    public void enable() {
+        disabled.set(false);
+    }
+
+    public void disable(Consumer<Channel> c) {
+        Set<Channel> cc = new HashSet<>();
+        synchronized (channels) {
+            if (disabled.getAndSet(true)) return;
+            for (DID did : ImmutableSet.copyOf(channels.keySet())) {
+                cc.addAll(detach(did));
+            }
+        }
+        // NB: close channels outside of synchronized block to avoid deadlocks
+        cc.forEach(c);
     }
 
     /**
@@ -69,14 +94,19 @@ public class ChannelDirectory
      * synchronously, which will try to lock something elsewhere. The channels lock should always
      * be the last one taken.
      */
-    public void register(Channel channel, DID remotePeer)
+    @Override
+    public boolean registerChannel(Channel channel, DID remotePeer)
     {
         // FIXME(jP): enhancement: better atomicity required here
         ChannelCost cost = new ChannelCost(channel, tp);
-        channels.put(remotePeer, channel);
+        synchronized (channels) {
+            if (disabled.get()) return false;
+            channels.put(remotePeer, channel);
+        }
         addChannelCloseFuture(remotePeer, cost, channel);
 
         l.info("{} register t:c {}:{}", remotePeer, tp.id(), TransportUtil.hexify(channel));
+        return true;
     }
 
     /**
@@ -142,8 +172,9 @@ public class ChannelDirectory
             throws ExTransportUnavailable, ExDeviceUnavailable
     {
         ImmutableList<Channel> active = getSnapshot(did);
-        return active.isEmpty() ?
-            createChannel(did) : new SucceededChannelFuture(chooseFrom(active, did));
+        return active.isEmpty()
+                ? channelCreator.newChannel(did)
+                : new SucceededChannelFuture(chooseFrom(active, did));
     }
 
     /**
@@ -229,29 +260,7 @@ public class ChannelDirectory
     {
         Preconditions.checkNotNull(deviceConnectionListener);
 
-        channel.getCloseFuture().addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture channelFuture)
-                    throws Exception
-            {
-                ChannelDirectory.this.remove(cost, channel, did);
-            }
-        });
-    }
-
-    /**
-     * FIXME: I don't like this method. It only exists due to reuseChannels, which in turn is
-     * only used to whitebox some unit test stuff. Usage within this class can be inlined.
-     *
-     * NOTE: This should not be called with the channels monitor held. Creating a channel may
-     * involve a long chain of events that includes reaching back to the Presence notifiers...
-     */
-    ChannelFuture createChannel(DID did) throws ExTransportUnavailable, ExDeviceUnavailable
-    {
-        ChannelFuture future = channelCreator.newChannel(did);
-        register(future.getChannel(), did);
-        return future;
+        channel.getCloseFuture().addListener(cf -> this.remove(cost, channel, did));
     }
 
     private class ChannelCost implements Comparable<ChannelCost>

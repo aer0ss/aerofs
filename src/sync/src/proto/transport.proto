@@ -7,43 +7,23 @@ message PBTPHeader {
 
     enum Type {
         DATAGRAM = 0;
-        STREAM = 13;
-
-        // TCP control messages
-        TCP_PING = 1;
-        TCP_PONG = 2;
-        TCP_GO_OFFLINE = 4;
-        TCP_NOP = 10;
-
-        // XMPP relay information
-        ZEPHYR_CANDIDATE_INFO = 8;
+        STREAM = 1;
 
         // Messages to maintain link liveness
-        HEARTBEAT_CALL = 14;
-        HEARTBEAT_REPLY = 15;
+        HEARTBEAT_CALL = 2;
+        HEARTBEAT_REPLY = 3;
     }
 
     required Type type = 1;
 
+    // only for stream messages
+    optional PBStream stream = 2;
+
     // only in maxcast payload
     optional uint32 mcast_id = 3;
 
-    // only for stream messages
-    optional PBStream stream = 4;
-
-    optional PBTCPPong tcp_pong = 5;
-
-    // only in IP multicast
-    optional bytes tcp_multicast_device_id  = 7;
-
-    // only in XMPP relay information
-    optional PBZephyrCandidateInfo zephyr_info = 9;
-
-    // only in TRANSPORT_CHECK_PULSE_* messages
-    optional PBCheckPulse check_pulse = 10;
-
     // only for HEARTBEAT messages
-    optional PBHeartbeat heartbeat = 11;
+    optional PBHeartbeat heartbeat = 4;
 }
 
 message PBStream {
@@ -71,30 +51,6 @@ message PBStream {
     optional uint32 seq_num = 3;
 
     optional InvalidationReason reason = 4;
-}
-
-message PBZephyrCandidateInfo {
-    required int32 source_zephyr_id = 1;
-    optional int32 destination_zephyr_id = 2;
-}
-
-////////
-// TCP specific messages
-
-// the bloom filter containing all store ids of the sending device.
-message PBTCPStoresFilter {
-    // the sequence is to reduce duplicate notifications in multicast
-    required uint32 sequence = 1;
-    required bytes filter = 2;
-}
-
-message PBTCPPong {
-    required uint32 unicast_listening_port = 1;
-    required PBTCPStoresFilter filter = 2;
-}
-
-message PBCheckPulse {
-    required int32 pulse_id = 1;
 }
 
 message PBHeartbeat {

@@ -21,7 +21,7 @@ public final class HealthCheckService implements IStartable
     private static final Logger l = Loggers.getLogger(HealthCheckService.class);
 
     private static final long DEFAULT_INITIAL_DELAY = 30 * C.SEC;
-    private static final long DEFAULT_INTERVAL = 30 * C.MIN;
+    private static final long DEFAULT_INTERVAL = 5 * C.MIN;
 
     public interface ScheduledRunnable extends Runnable {
         default long delay()

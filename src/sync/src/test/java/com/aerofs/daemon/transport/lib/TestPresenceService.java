@@ -4,6 +4,9 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.ids.DID;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -14,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.mock;
 
 public final class TestPresenceService
 {
@@ -54,7 +58,8 @@ public final class TestPresenceService
     @Before
     public void setup()
     {
-        presenceService = new PresenceService(MoreExecutors.sameThreadExecutor());
+        presenceService = new PresenceService(null, mock(CoreQueue.class),
+                MoreExecutors.sameThreadExecutor());
     }
 
     @Test

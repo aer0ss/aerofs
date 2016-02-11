@@ -15,14 +15,13 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.net.EIStoreAvailability;
+import com.aerofs.daemon.event.net.EIDevicePresence;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
 import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.daemon.transport.lib.StreamKey;
@@ -31,7 +30,6 @@ import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -40,7 +38,6 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.ssmp.SSMPConnection;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -48,7 +45,6 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -130,12 +126,12 @@ public final class Pump implements IProgram, IUnicastInputLayer
         }
         transport = tps.getAll().iterator().next();
         tps.presenceSources()
-                .forEach(ps -> ps.updateInterest(new SID[]{Cfg.rootSID()}, new SID[]{}));
+                .forEach(ps -> ps.updateInterest(Cfg.rootSID(), true));
 
         // start event handling
         disp.setDefaultHandler_(incoming -> {
-            if (incoming instanceof EIStoreAvailability) {
-                handlePresence_((EIStoreAvailability) incoming);
+            if (incoming instanceof EIDevicePresence) {
+                handlePresence_((EIDevicePresence) incoming);
             } else {
                 l.warn("ignore event:{}", incoming.getClass().getSimpleName());
             }
@@ -165,7 +161,6 @@ public final class Pump implements IProgram, IUnicastInputLayer
         };
 
         Timer timer = TimerUtil.getGlobalTimer();
-        MaxcastFilterReceiver maxcastFilter = new MaxcastFilterReceiver();
         ClientSSLEngineFactory clientSslEngineFactory = new ClientSSLEngineFactory(keyProvider, trustedCA);
 
         SSMPConnection ssmp = new SSMPConnection(localdid.get(),
@@ -173,9 +168,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 getClientChannelFactory(), clientSslEngineFactory::newSslHandler);
 
         return new Transports(localid, localdid, enabled, new CfgTimeout(),
-                new CfgMulticastLoopback(), new ZephyrParams(), timer, queue,
-                maxcastFilter, linkStateService,
-                clientSslEngineFactory,
+                new ZephyrParams(), timer, queue, linkStateService, clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 getClientChannelFactory(), getServerChannelFactory(),
                 new SSMPConnectionService(queue, linkStateService, ssmp),
@@ -215,10 +208,10 @@ public final class Pump implements IProgram, IUnicastInputLayer
         }
     }
 
-    private void handlePresence_(EIStoreAvailability presence)
+    private void handlePresence_(EIDevicePresence presence)
     {
         for (Producer p : producers) {
-            p.handlePresence_(presence._online, presence._did2sids);
+            p.handlePresence_(presence._did, presence._online);
         }
     }
 
@@ -260,8 +253,8 @@ public final class Pump implements IProgram, IUnicastInputLayer
             sched.schedule_(this);
         }
 
-        public void handlePresence_(boolean online, ImmutableMap<DID, Collection<SID>> did2sids) {
-            if (!did2sids.containsKey(remote)) return;
+        public void handlePresence_(DID did, boolean online) {
+            if (!did.equals(remote)) return;
             if (online) {
                 l.info("device reachable d:{}", remote);
                 doSend = true;

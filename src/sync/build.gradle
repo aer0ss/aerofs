@@ -4,6 +4,12 @@
 
 archivesBaseName = 'aerofs-sync'
 
+//test {
+//    testLogging {
+//        events "passed", "skipped", "failed", "standardOut", "standardError"
+//    }
+//}
+
 sourceSets {
     main {
         java {

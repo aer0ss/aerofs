@@ -95,7 +95,7 @@ public class TestChannelDirectory extends AbstractTest
 
         assertEquals(0, channelDirectory.getSnapshot(did).size());
 
-        channelDirectory.register(channels[0], did);
+        channelDirectory.registerChannel(channels[0], did);
         assertEquals(1, channelDirectory.getSnapshot(did).size());
         assertEquals(1, channelDirectory.getActiveDevices().size());
 
@@ -103,7 +103,7 @@ public class TestChannelDirectory extends AbstractTest
             assertEquals(did, d);
         }
 
-        channelDirectory.register(channels[1], did);
+        channelDirectory.registerChannel(channels[1], did);
         assertEquals(1, channelDirectory.getActiveDevices().size());
         assertEquals(2, channelDirectory.getSnapshot(did).size());
         for (DID d : channelDirectory.getActiveDevices()){
@@ -123,7 +123,7 @@ public class TestChannelDirectory extends AbstractTest
             }
 
             @Override
-            public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
+            public ChannelFuture newChannel(DID did, IPresenceLocation presenceLocation) {
                 return null;
             }
         });
@@ -131,7 +131,7 @@ public class TestChannelDirectory extends AbstractTest
 
         assertTrue(channelDirectory.getSnapshot(did).isEmpty());
 
-        channelDirectory.register(getMockChannels(1, ChannelState.CONNECTING)[0], did);
+        channelDirectory.registerChannel(getMockChannels(1, ChannelState.CONNECTING)[0], did);
 
         assertNotNull(channelDirectory.chooseActiveChannel(did).getChannel());
     }
@@ -148,7 +148,7 @@ public class TestChannelDirectory extends AbstractTest
             }
 
             @Override
-            public ChannelFuture newChannel(IPresenceLocation presenceLocation) {
+            public ChannelFuture newChannel(DID did, IPresenceLocation presenceLocation) {
                 return null;
             }
         });
@@ -159,10 +159,10 @@ public class TestChannelDirectory extends AbstractTest
         Channel verifiedChannel = getMockChannels(2, ChannelState.VERIFIED)[1];
         assertNotEquals(connectingChannel, verifiedChannel);
 
-        channelDirectory.register(connectingChannel, did);
+        channelDirectory.registerChannel(connectingChannel, did);
         assertEquals(connectingChannel, channelDirectory.chooseActiveChannel(did).getChannel());
 
-        channelDirectory.register(verifiedChannel, did);
+        channelDirectory.registerChannel(verifiedChannel, did);
 
         for (int i = 0; i < 10; i++) {
             Channel result = channelDirectory.chooseActiveChannel(did).getChannel();
@@ -177,7 +177,7 @@ public class TestChannelDirectory extends AbstractTest
     {
         ChannelDirectory channelDirectory = new ChannelDirectory(tp, mock(IUnicastConnector.class));
         channelDirectory.setDeviceConnectionListener(deviceConnectionListener);
-        channelDirectory.register(getMockChannels(1, ChannelState.CONNECTING)[0], did);
+        channelDirectory.registerChannel(getMockChannels(1, ChannelState.CONNECTING)[0], did);
 
         verify(future).addListener(listener.capture());
         listener.getValue().operationComplete(future);

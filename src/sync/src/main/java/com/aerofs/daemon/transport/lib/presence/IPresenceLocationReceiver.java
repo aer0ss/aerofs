@@ -1,5 +1,9 @@
 package com.aerofs.daemon.transport.lib.presence;
 
+import com.aerofs.ids.DID;
+
+import java.util.Set;
+
 /**
  * Implemented by classes that can receive Presence Location
  *
@@ -12,7 +16,7 @@ public interface IPresenceLocationReceiver
     /**
      * Process the given Presence Location
      *
-     * @param presenceLocation the location
+     * @param locations the location
      */
-    void onPresenceReceived(IPresenceLocation presenceLocation);
+    void onPresenceReceived(DID did, Set<IPresenceLocation> locations);
 }

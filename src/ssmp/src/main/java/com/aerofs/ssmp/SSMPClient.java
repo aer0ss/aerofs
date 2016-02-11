@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.UnresolvedAddressException;
 import java.nio.charset.StandardCharsets;
@@ -62,7 +63,7 @@ public class SSMPClient {
     }
 
     public void connect(SSMPIdentifier id, SSMPIdentifier scheme, String cred, ConnectionListener l) {
-        if (_channel.get() != null) throw new IllegalStateException();
+        if (_channel.get() != null) throw new AlreadyConnectedException();
         L.info("connecting {}", _addr);
         ChannelFuture cf = _bootstrap.connect(new InetSocketAddress(_addr.getHostName(), _addr.getPort()));
         cf.addListener(f -> {

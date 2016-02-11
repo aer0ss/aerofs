@@ -25,5 +25,6 @@ public interface IUnicastConnector
      * Attempt to create a channel for the given Device using the given Presence Location.
      * @param presenceLocation the presence locations to connect to (contains the DID + the location)
      */
-    ChannelFuture newChannel(IPresenceLocation presenceLocation);
+    ChannelFuture newChannel(DID did, IPresenceLocation presenceLocation)
+            throws ExTransportUnavailable;
 }

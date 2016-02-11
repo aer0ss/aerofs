@@ -283,7 +283,7 @@ public final class TestTransports
         transport0.setTransportListener(new TransportListener()
         {
             @Override
-            public void onStoreAvailableForDevice(DID did, Collection<SID> sid)
+            public void onDeviceOnline(DID did, ITransport tp)
             {
                 if (did.equals(transport1.getDID())) {
 
@@ -383,6 +383,7 @@ public final class TestTransports
         // wait for the packets to arrive at the remote peers
         packetReceivedSemaphore.acquire(otherDIDs.size());
 
+        checkState(unavailableSempahore.availablePermits() == 0);
         // now, pause syncing
         transport0.pauseSyncing();
 
@@ -442,6 +443,7 @@ public final class TestTransports
         packetReceivedSemaphore.acquire(otherDIDs.size());
 
         // now, pause syncing
+        checkState(unavailableSemaphore.availablePermits() == 0);
         transport0.pauseSyncing();
 
         // wait until all devices go offline
@@ -452,6 +454,7 @@ public final class TestTransports
             assertSendBlockingFailed(transport0, did);
         }
 
+        checkState(availableSemaphore.availablePermits() == 0);
         // OK, now, lets resume sync
         transport0.resumeSyncing();
 
@@ -472,20 +475,18 @@ public final class TestTransports
     {
         checkArgument(!otherDIDs.isEmpty());
 
-        transport.setTransportListener(new TransportListener()
-        {
+        transport.setTransportListener(new TransportListener() {
             @Override
-            public void onStoreAvailableForDevice(DID did, Collection<SID> sid)
-            {
+            public void onDeviceOnline(DID did, ITransport tp) {
                 if (otherDIDs.contains(did)) {
+                    l.debug("{} +presence {}", transport.getDID(), did);
                     availableSemaphore.release();
                 }
             }
-
             @Override
-            public void onStoreUnavailableForDevice(DID did, Collection<SID> sids)
-            {
+            public void onDeviceOffline(DID did, ITransport tp) {
                 if (otherDIDs.contains(did)) {
+                    l.debug("{} -presence {}", transport.getDID(), did);
                     unavailableSempahore.release();
                 }
             }

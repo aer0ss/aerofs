@@ -94,7 +94,6 @@ message TCPDiagnostics {
 
 message TCPDevice {
     required bytes did = 1;
-    required PBInetSocketAddress device_address = 2; // FIXME (AG): remove this
     repeated TCPChannel channel = 3;
 }
 

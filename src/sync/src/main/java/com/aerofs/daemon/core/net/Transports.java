@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.TransportFactory.ExUnsupportedTransport;
+import com.aerofs.daemon.event.net.EIStoreAvailability;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDiagnosable;
 import com.aerofs.daemon.lib.IStartable;
@@ -16,15 +17,19 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.IPresenceSource;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
-import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
+import com.aerofs.daemon.transport.presence.IStoreInterestListener;
 import com.aerofs.daemon.transport.presence.LocationManager;
 import com.aerofs.daemon.transport.ssmp.SSMPConnectionService;
 import com.aerofs.daemon.transport.tcp.TCP;
 import com.aerofs.daemon.transport.zephyr.Zephyr;
 import com.aerofs.daemon.transport.zephyr.ZephyrParams;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.proto.Diagnostics.TransportDiagnostics;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
 import com.google.inject.Inject;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
@@ -37,6 +42,7 @@ import java.util.Comparator;
 
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.LANTCP;
 import static com.aerofs.daemon.core.net.TransportFactory.TransportType.ZEPHYR;
+import static com.aerofs.lib.event.Prio.LO;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
@@ -70,11 +76,9 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
             CfgLocalDID localdid,
             CfgEnabledTransports enabledTransports,
             CfgTimeout timeout,
-            CfgMulticastLoopback multicastLoopback,
             ZephyrParams zephyrParams,
             Timer timer,
             CoreQueue coreQueue,
-            MaxcastFilterReceiver maxcastFilterReceiver,
             LinkStateService linkStateService,
             ClientSSLEngineFactory clientSslEngineFactory,
             ServerSSLEngineFactory serverSslEngineFactory,
@@ -91,7 +95,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 localid.get(),
                 localdid.get(),
                 timeout.get(),
-                multicastLoopback.get(),
                 DaemonParam.DEFAULT_CONNECT_TIMEOUT,
                 DaemonParam.HEARTBEAT_INTERVAL,
                 DaemonParam.MAX_FAILED_HEARTBEATS,
@@ -101,7 +104,6 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
                 timer,
                 coreQueue,
                 linkStateService,
-                maxcastFilterReceiver,
                 clientSocketChannelFactory,
                 serverSocketChannelFactory,
                 clientSslEngineFactory,
@@ -117,19 +119,37 @@ public class Transports implements IStartable, IDiagnosable, ITransferStat
         if (enabledTransports.isTcpEnabled()) {
             TCP tp = (TCP)transportFactory.newTransport(LANTCP);
             transportBuilder.add(tp);
-            // FIXME: reaching down to get these fields is gross
-            maxcastBuilder.add(tp.multicast);
-            presenceBuilder.add(tp.stores);
-            locationManager.addPresenceLocationListener(tp.monitor);
+
+            ssmp.addMulticastListener(tp.monitor);
+            locationManager.addPresenceLocationListener(tp.id(), tp.monitor);
         }
         if (enabledTransports.isZephyrEnabled()) {
             Zephyr tp = (Zephyr)transportFactory.newTransport(ZEPHYR);
             transportBuilder.add(tp);
 
             ssmp.addMulticastListener(tp.monitor);
-            locationManager.addPresenceLocationListener(tp.monitor);
-            ssmp.addStoreInterestListener(tp.presence);
+            locationManager.addPresenceLocationListener(tp.id(), tp.monitor);
         }
+
+        ssmp.addStoreInterestListener(new IStoreInterestListener() {
+            private final Multimap<DID, SID> multicastReachableDevices = TreeMultimap.create();
+
+            @Override
+            public void onDeviceJoin(DID did, SID sid) {
+                synchronized (multicastReachableDevices) {
+                    if (!multicastReachableDevices.put(did, sid)) return;
+                }
+                coreQueue.enqueueBlocking(new EIStoreAvailability(did, sid, true), LO);
+            }
+
+            @Override
+            public void onDeviceLeave(DID did, SID sid) {
+                synchronized (multicastReachableDevices) {
+                    if (!multicastReachableDevices.remove(did, sid)) return;
+                }
+                coreQueue.enqueueBlocking(new EIStoreAvailability(did, sid, false), LO);
+            }
+        });
 
         ssmp.addMulticastListener(locationManager);
 

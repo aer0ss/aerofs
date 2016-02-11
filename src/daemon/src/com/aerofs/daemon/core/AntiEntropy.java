@@ -138,8 +138,7 @@ public class AntiEntropy
     {
         try {
             req._scheduled.remove(did);
-            LegacyStore s = (LegacyStore)_sidx2s.getNullable_(req._sidx);
-            if (s == null || !s.hasOnlinePotentialMemberDevices_()) return;
+            if (_sidx2s.getNullable_(req._sidx) == null) return;
             req.sendGetVersRequests_(did);
         } catch (Exception e) {
             l.warn("{} {}", req._sidx, did, BaseLogUtil.suppress(e, ExAborted.class,

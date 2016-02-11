@@ -149,11 +149,6 @@ public class PolarisStore extends Store
         return _f._devices.getOnlinePotentialMemberDevices_(_sidx);
     }
 
-    public boolean hasOnlinePotentialMemberDevices_()
-    {
-        return _f._devices.getOPMDevices_(_sidx) != null;
-    }
-
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
