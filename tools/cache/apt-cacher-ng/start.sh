@@ -25,7 +25,7 @@ fi
 echo "starting apt-cacher-ng"
 # We specify --dns for this container so that it doesn't clash with rawdns
 docker run -d --restart=always --name apt-cacher-ng \
-        --dns 172.16.0.83 \
+        --dns 8.8.8.8 \
         --volumes-from cache-apt \
         apt-cacher-ng
 

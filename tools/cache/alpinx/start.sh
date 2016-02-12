@@ -25,7 +25,7 @@ fi
 
 echo "starting alpinx server"
 docker run -d --restart=always --name alpinx \
-    --dns 172.16.0.83 \
+    --dns 8.8.8.8 \
     --volumes-from cache-alpine \
     alpinx
 

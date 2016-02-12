@@ -23,7 +23,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
     # remove dns config inserted by start.sh
     if [[ "$os" == "b2d" ]] ; then
         docker-machine ssh $VM <<EOF
-        grep -v -F 'EXTRA_ARGS="--dns $BRIDGE' $profile | sudo tee ${profile}.old
+        grep -v -F 'EXTRA_ARGS="--userland-proxy=false --dns $BRIDGE' $profile | sudo tee ${profile}.old
         sudo mv ${profile}.old ${profile}
         echo "restarting docker daemon"
         sudo /etc/init.d/docker stop
