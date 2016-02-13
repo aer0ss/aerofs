@@ -26,4 +26,5 @@ else
 fi
 
 echo "Starting nginx..."
+mkdir -p /run/nginx
 /container-scripts/restart-on-error nginx -g "daemon off;"

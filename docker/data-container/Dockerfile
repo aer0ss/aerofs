@@ -5,6 +5,7 @@ MAINTAINER AeroFS "support@aerofs.com"
 RUN apk --update add bash &&\
     rm -rf /var/cache/apk/*
 
+# redis
 VOLUME /data
 
 # Used by Repackaging & Nginx

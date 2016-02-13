@@ -1,7 +1,9 @@
 IMAGE_NAME = aerofs/nginx
 
-image:
-	$(MAKE) -f ../container-scripts/Makefile
+image: base
 	docker build -t $(IMAGE_NAME) .
+
+base: apk/x86_64/*
+	./build.sh
 
 .PHONY: image
