@@ -50,7 +50,7 @@ function newer() {
 
 IMAGE=nginx:aerofs
 
-if newer $IMAGE $THIS_DIR/apk/x86_64 ; then
+if newer $IMAGE $THIS_DIR ; then
     exit 0
 fi
 
@@ -74,6 +74,13 @@ docker run --name=nginx-build \
 
 # step 4: commit resulting layer
 docker commit nginx-build $IMAGE
+
+docker build -t $IMAGE - <<EOF
+FROM $IMAGE
+RUN mkdir -p /run/nginx &&\
+    ln -sf /dev/stdout /var/lib/nginx/logs/access.log &&\
+    ln -sf /dev/stderr /var/lib/nginx/logs/error.log
+EOF
 
 docker rm -f nginx-build
 docker rm -f nginx-cxt

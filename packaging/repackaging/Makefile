@@ -5,7 +5,7 @@ RSYNC = rsync -a --delete --delete-excluded
 PYLIB_SRC = ../../src/python-lib/aerofs_common
 
 image: .copy-packages
-	$(RSYNC) ../../docker/base/base/root/container-scripts/* buildroot/containers-scripts/
+	$(RSYNC) ../../docker/base/base/root/container-scripts/* buildroot/container-scripts/
 	$(RSYNC) --exclude '*.pyc' --exclude '_gen' $(PYLIB_SRC) buildroot/opt/repackaging/api/
 	docker build -t $(IMAGE_NAME) .
 
