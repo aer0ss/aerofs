@@ -10,4 +10,4 @@ RUN apk --update add \
 
 ENTRYPOINT [ "/container-scripts/service-barrier" ]
 
-COPY root buildroot /
+COPY root /
