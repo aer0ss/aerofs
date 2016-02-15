@@ -27,8 +27,8 @@ import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
@@ -130,7 +130,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
             c.childObjectType = ObjectType.STORE;
             // pick a locally non-conflicting name to ensure eventual success
             while (_ds.getChild_(rootSidx, OID.ROOT, c.childName) != null) {
-                c.childName = Util.nextFileName(c.childName);
+                c.childName = FileUtil.nextFileName(c.childName);
             }
             SettableFuture<Void> f = SettableFuture.create();
 

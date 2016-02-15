@@ -20,12 +20,6 @@ public class ObfuscatedDatabaseParams implements IDatabaseParams
     }
 
     @Override
-    public boolean isMySQL()
-    {
-        return false;
-    }
-
-    @Override
     public String url() {
         return "jdbc:sqlite:" + Cfg.absRTRoot() + File.separator + _dbName;
     }

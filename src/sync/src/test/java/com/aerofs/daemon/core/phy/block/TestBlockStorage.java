@@ -19,8 +19,8 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -822,7 +822,7 @@ public class TestBlockStorage extends AbstractBlockTest
             _valueleft = _valueleft >> 8;
             _idx++;
             _blockidx++;
-            if (_blockidx == LibParam.FILE_BLOCK_SIZE) {
+            if (_blockidx == ClientParam.FILE_BLOCK_SIZE) {
                 // Block completed, reset for next block
                 _blockidx = 0;
                 _blockctr++;
@@ -850,11 +850,11 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldSplitLargeInputIntoBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        store("foo/bar", sokid, new DevCtr(4 * LibParam.FILE_BLOCK_SIZE + 1), false, 0L);
+        store("foo/bar", sokid, new DevCtr(4 * ClientParam.FILE_BLOCK_SIZE + 1), false, 0L);
 
         verify(bsb, times(4))
                 .putBlock(any(ContentBlockHash.class), any(InputStream.class),
-                        eq(LibParam.FILE_BLOCK_SIZE));
+                        eq(ClientParam.FILE_BLOCK_SIZE));
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 
@@ -862,12 +862,12 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldAvoidStoringAlreadyStoredBlocks() throws Exception
     {
         SOKID sokid = newSOKID();
-        store("foo/bar", sokid, new DevZero(4 * LibParam.FILE_BLOCK_SIZE + 1), false, 0L);
+        store("foo/bar", sokid, new DevZero(4 * ClientParam.FILE_BLOCK_SIZE + 1), false, 0L);
 
         // BlockStorageBackend.putBlock() should only be called once per *unique* chunk.
         // So we have four of the same full-size zero-block, and one that's one byte long.
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class),
-                eq(LibParam.FILE_BLOCK_SIZE));
+                eq(ClientParam.FILE_BLOCK_SIZE));
         verify(bsb).putBlock(any(ContentBlockHash.class), any(InputStream.class), eq(1L));
     }
 

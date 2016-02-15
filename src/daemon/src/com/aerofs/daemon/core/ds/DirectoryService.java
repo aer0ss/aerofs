@@ -13,11 +13,7 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.IDumpStatMisc;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.ProgressIndicators;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.FID;
@@ -408,7 +404,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
             throws SQLException, ExNotFound
     {
         while (resolveNullable_(pParent.append(name)) != null) {
-            name = Util.nextFileName(name);
+            name = FileUtil.nextFileName(name);
         }
         return name;
     }

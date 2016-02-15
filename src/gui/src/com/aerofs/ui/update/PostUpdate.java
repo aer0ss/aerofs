@@ -1,11 +1,11 @@
 package com.aerofs.ui.update;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 
@@ -29,11 +29,11 @@ public class PostUpdate
     private static Map<String, byte[]> getChecksums()
             throws IOException, ExFormatError
     {
-        try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), LibParam.VERSION)))) {
+        try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), ClientParam.VERSION)))) {
             // skip the version number
             s.nextLine();
 
-            Map<String, byte[]> chksums = new HashMap<String, byte[]>();
+            Map<String, byte[]> chksums = new HashMap<>();
 
             // checksum lines are in the format of "file=sum"
             while (s.hasNextLine()) {
@@ -61,11 +61,11 @@ public class PostUpdate
             // skip non-exist files
             if (!f.exists()) continue;
 
-            byte[] hash = SecUtil.hash(f);
+            byte[] hash = BaseSecUtil.hash(f);
             if (!Arrays.equals(hash, en.getValue())) {
-                Loggers.getLogger(PostUpdate.class).warn(en.getKey() + " chksum mismatch." +
-                        " expected " + BaseUtil.hexEncode(en.getValue()) +
-                        " actual " + BaseUtil.hexEncode(hash));
+                Loggers.getLogger(PostUpdate.class)
+                        .warn("{} chksum mismatch. expected {} actual {}", en.getKey(),
+                                BaseUtil.hexEncode(en.getValue()), BaseUtil.hexEncode(hash));
                 return en.getKey();
             }
         }

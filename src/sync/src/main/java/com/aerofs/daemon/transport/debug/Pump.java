@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.transport.debug;
 
+import com.aerofs.MainUtil;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
@@ -32,10 +34,8 @@ import com.aerofs.defects.Defects;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.ImmutableSet;
@@ -88,7 +88,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
     public void launch_(String rtRoot, String prog, String[] args)
             throws Exception
     {
-        Util.initDriver("pp", rtRoot);
+        MainUtil.initDriver("pp", rtRoot);
         Defects.init(prog, rtRoot, new CfgLocalUser(), new CfgLocalDID(), new CfgVer());
 
         l.info(Arrays.toString(args));
@@ -203,7 +203,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 return null;
             });
         } catch (Exception e) {
-            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e));
+            l.warn("{} fail process stream head cause:{}", pc.ep().did(), BaseLogUtil.suppress(e));
             iss.end_(key);
         }
     }

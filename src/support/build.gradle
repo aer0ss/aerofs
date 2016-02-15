@@ -14,7 +14,7 @@ sourceSets {
 
 dependencies {
     compile project(':src/base')
-    compile project(':src/lib')
+    compile project(':src/libclient')
     compile project(':src/libservlet')
 }
 

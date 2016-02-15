@@ -15,7 +15,6 @@ import java.util.List;
 public class Main
 {
     private static final String DMON_PROGRAM_NAME = "daemon";
-    private static final String FSCK_PROGRAM_NAME = "fsck";
     private static final String UMDC_PROGRAM_NAME = "umdc";
     private static final String PUMP_PROGRAM_NAME = "pump";
     private static final String SA_PROGRAM_NAME = "storage_agent";
@@ -48,7 +47,7 @@ public class Main
         }
 
         // access LibParam, C
-        if (rtRoot.equals(LibParam.DEFAULT_RTROOT)) {
+        if (rtRoot.equals(ClientParam.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
 
@@ -64,7 +63,7 @@ public class Main
 
         if (InitErrors.hasErrorMessages()) {
             // N.B. this block does not return once entered.
-            if (prog.equals(LibParam.GUI_NAME)) {
+            if (prog.equals(ClientParam.GUI_NAME)) {
                 try {
                     // N.B. GUIProgram will call exit in this case so this call returns only on
                     // exceptions.
@@ -85,11 +84,11 @@ public class Main
         //
         // INITIALIZE MAJOR COMPONENTS HERE!!!!!
         //
-        SystemUtil.setDefaultUncaughtExceptionHandler();
+        MainUtil.setDefaultUncaughtExceptionHandler();
 
         try {
             loadCfg(rtRoot, prog);
-            Util.registerLibExceptions();
+            MainUtil.registerLibExceptions();
             launchProgram(rtRoot, prog, appArgs.toArray(new String[0]));
         } catch (ExDBCorrupted e) {
             // this is similar to the message on UiUtil.migrateRtRoot() when Cfg fails to load
@@ -107,7 +106,7 @@ public class Main
 
     private static boolean isUI(String prog)
     {
-        return prog.equals(LibParam.GUI_NAME) || prog.equals(LibParam.CLI_NAME);
+        return prog.equals(ClientParam.GUI_NAME) || prog.equals(ClientParam.CLI_NAME);
     }
 
     private static void loadCfg(String rtRoot, String prog) throws Exception
@@ -118,7 +117,7 @@ public class Main
         if (!Cfg.inited()) {
             try {
                 Cfg.init_(rtRoot, ui
-                        || prog.equals(LibParam.SH_NAME)
+                        || prog.equals(ClientParam.SH_NAME)
                         || prog.equals(DMON_PROGRAM_NAME)
                         || prog.equals(PUMP_PROGRAM_NAME));
                 l.debug("id {}", Cfg.did().toStringFormal());
@@ -137,7 +136,6 @@ public class Main
         Class<?> cls;
         if (isUI(prog)) cls = Class.forName("com.aerofs.Program"); // fast path to UI
         else if (prog.equals(DMON_PROGRAM_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
-        else if (prog.equals(FSCK_PROGRAM_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
         else if (prog.equals(UMDC_PROGRAM_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
         else if (prog.equals(PUMP_PROGRAM_NAME)) cls = com.aerofs.daemon.transport.debug.Pump.class;
         else if (prog.equals(SA_PROGRAM_NAME)) throw new IllegalArgumentException("Cannot launch storage agent.");

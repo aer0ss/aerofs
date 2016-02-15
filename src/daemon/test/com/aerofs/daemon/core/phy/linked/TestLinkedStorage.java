@@ -27,8 +27,8 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -108,11 +108,11 @@ public class TestLinkedStorage extends AbstractTest
         rootDir = factFile.create(tmpDir, "AeroFS");
         rootDir.mkdirs();
         String auxDir = BaseCfg.absAuxRootForPath(rootDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, AuxFolder.HISTORY._name);
+        revDir = factFile.create(auxDir, ClientParam.AuxFolder.HISTORY._name);
         revDir.ensureDirExists();
-        factFile.create(auxDir, AuxFolder.PREFIX._name).ensureDirExists();
-        factFile.create(auxDir, AuxFolder.CONFLICT._name).ensureDirExists();
-        factFile.create(auxDir, AuxFolder.NON_REPRESENTABLE._name).ensureDirExists();
+        factFile.create(auxDir, ClientParam.AuxFolder.PREFIX._name).ensureDirExists();
+        factFile.create(auxDir, ClientParam.AuxFolder.CONFLICT._name).ensureDirExists();
+        factFile.create(auxDir, ClientParam.AuxFolder.NON_REPRESENTABLE._name).ensureDirExists();
 
         l.info("{} {}", rootDir.getAbsolutePath(), revDir.getAbsolutePath());
 

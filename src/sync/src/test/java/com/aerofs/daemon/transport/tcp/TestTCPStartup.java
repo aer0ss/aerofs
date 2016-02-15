@@ -7,7 +7,7 @@ import com.aerofs.daemon.transport.TransportResource;
 import com.aerofs.defects.AutoDefect;
 import com.aerofs.defects.DefectFactory;
 import com.aerofs.defects.MockDefects;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.testlib.LoggerSetup;
 import org.jboss.netty.channel.ChannelException;
 import org.junit.AfterClass;
@@ -49,23 +49,23 @@ public class TestTCPStartup {
     @BeforeClass
     public static void cachePortRange()
     {
-        cachedPortRangeLow = LibParam.Daemon.PORT_RANGE_LOW;
-        cachedPortRangeHigh = LibParam.Daemon.PORT_RANGE_HIGH;
+        cachedPortRangeLow = ClientParam.Daemon.PORT_RANGE_LOW;
+        cachedPortRangeHigh = ClientParam.Daemon.PORT_RANGE_HIGH;
     }
 
     @AfterClass
     public static void restorePortRange()
     {
-        LibParam.Daemon.PORT_RANGE_LOW = cachedPortRangeLow;
-        LibParam.Daemon.PORT_RANGE_HIGH = cachedPortRangeHigh;
+        ClientParam.Daemon.PORT_RANGE_LOW = cachedPortRangeLow;
+        ClientParam.Daemon.PORT_RANGE_HIGH = cachedPortRangeHigh;
     }
 
     @Test
     public void willGetPortInRange()
             throws Throwable
     {
-        LibParam.Daemon.PORT_RANGE_LOW = 2000;
-        LibParam.Daemon.PORT_RANGE_HIGH = 2010;
+        ClientParam.Daemon.PORT_RANGE_LOW = 2000;
+        ClientParam.Daemon.PORT_RANGE_HIGH = 2010;
         this.transport.publicBefore();
         TCP tcp = ((TCP) this.transport.getTransport());
         assertThat("upper bound", tcp.getListeningPort(), lessThanOrEqualTo(2010));
@@ -82,8 +82,8 @@ public class TestTCPStartup {
             s.bind(new InetSocketAddress(0));
             int boundPort = s.getLocalPort();
 
-            LibParam.Daemon.PORT_RANGE_LOW = boundPort;
-            LibParam.Daemon.PORT_RANGE_HIGH = boundPort + 5;
+            ClientParam.Daemon.PORT_RANGE_LOW = boundPort;
+            ClientParam.Daemon.PORT_RANGE_HIGH = boundPort + 5;
             this.transport.publicBefore();
             TCP tcp = ((TCP) this.transport.getTransport());
             assertThat("conflict on lower bound", tcp.getListeningPort(), greaterThan(boundPort));
@@ -99,8 +99,8 @@ public class TestTCPStartup {
             s.bind(new InetSocketAddress(0));
             int boundPort = s.getLocalPort();
 
-            LibParam.Daemon.PORT_RANGE_LOW = boundPort;
-            LibParam.Daemon.PORT_RANGE_HIGH = boundPort;
+            ClientParam.Daemon.PORT_RANGE_LOW = boundPort;
+            ClientParam.Daemon.PORT_RANGE_HIGH = boundPort;
             try {
                 this.transport.publicBefore();
                 fail();

@@ -9,16 +9,13 @@ import java.io.OutputStream;
 import java.util.Random;
 
 import com.aerofs.base.BaseSecUtil;
-import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.*;
 import com.google.common.io.ByteStreams;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
 import com.aerofs.testlib.AbstractTest;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -62,7 +59,7 @@ public class TestHashStream extends AbstractTest
     public void shouldChunkProperly() throws Exception
     {
         runTest(out -> {
-            int chunkSize = (int)LibParam.FILE_BLOCK_SIZE;
+            int chunkSize = (int) ClientParam.FILE_BLOCK_SIZE;
             writeRandomBytes(out, chunkSize);
             writeRandomBytes(out, chunkSize / 2);
             writeRandomBytes(out, chunkSize);

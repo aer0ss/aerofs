@@ -12,11 +12,7 @@ import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdCLIActor;
 import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.S;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
@@ -217,7 +213,7 @@ public class CLISetup
     private void getS3Config(CLI cli, BackendConfig cfg) throws ExNoConsole
     {
         while (cfg._s3Config._endpoint == null || cfg._s3Config._endpoint.isEmpty()) {
-            cfg._s3Config._endpoint = cli.askText(S.SETUP_S3_ENDPOINT, LibParam.DEFAULT_S3_ENDPOINT);
+            cfg._s3Config._endpoint = cli.askText(S.SETUP_S3_ENDPOINT, ClientParam.DEFAULT_S3_ENDPOINT);
         }
         while (cfg._s3Config._bucketID == null || cfg._s3Config._bucketID.isEmpty()) {
             cfg._s3Config._bucketID = cli.askText(S.SETUP_S3_BUCKET_NAME, null);

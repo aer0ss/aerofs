@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExNoResource;
@@ -19,7 +20,6 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -72,7 +72,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
             processIncomingMessage_(new DigestedMessage(pb, r._is, pc.ep(), pc.user(), null), false);
         } catch (Exception e) {
-            l.warn("{} fail process uc", did, LogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
+            l.warn("{} fail process uc", did, BaseLogUtil.suppress(e, ExDeviceOffline.class, ExBadCredential.class));
             SystemUtil.fatalOnUncheckedException(e);
         }
     }
@@ -95,7 +95,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
             PBCore pb = PBCore.parseDelimitedFrom(is);
             processIncomingMessage_(new DigestedMessage(pb, is, ep, userID, null), true);
         } catch (Exception e) {
-            l.warn("{} fail process mc", did, LogUtil.suppress(e,
+            l.warn("{} fail process mc", did, BaseLogUtil.suppress(e,
                     ExTimeout.class, ExDeviceOffline.class, ExBadCredential.class,
                     ExSIDNotFound.class, ExNoResource.class));
             SystemUtil.fatalOnUncheckedException(e);
@@ -145,7 +145,7 @@ public class CoreProtocolReactor implements IUnicastInputLayer
 
             handle_(msg);
         } catch (Exception e) {
-            l.warn("{} fail process stream head cause:{}", pc.ep().did(), LogUtil.suppress(e,
+            l.warn("{} fail process stream head cause:{}", pc.ep().did(), BaseLogUtil.suppress(e,
                     ExDeviceOffline.class, ExBadCredential.class));
             _iss.end_(key);
         }

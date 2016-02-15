@@ -23,7 +23,7 @@ import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -163,7 +163,7 @@ public class LinkedStagingArea implements IStartable, CleanupHandler
     private InjectableFile stagedPath(long id, SID sid)
     {
         return _factFile.create(
-                Util.join(_lrm.auxRoot_(sid), AuxFolder.STAGING_AREA._name, Long.toHexString(id)));
+                Util.join(_lrm.auxRoot_(sid), ClientParam.AuxFolder.STAGING_AREA._name, Long.toHexString(id)));
     }
 
     boolean hasEntries_() throws SQLException {

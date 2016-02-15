@@ -3,8 +3,6 @@ package com.aerofs.daemon.core.db;
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -26,8 +24,4 @@ public class TamperingDetectionSchema implements ISchema
                 + ")");
     }
 
-    @Override
-    public void dump_(Statement s, PrintStream pw) throws IOException, SQLException
-    {
-    }
 }

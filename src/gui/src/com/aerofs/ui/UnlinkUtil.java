@@ -39,12 +39,12 @@ public class UnlinkUtil
         }
 
         // Delete device key and certificate.
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_KEY));
-        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), LibParam.DEVICE_CERT));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), ClientParam.DEVICE_KEY));
+        FileUtil.deleteIgnoreErrorRecursively(new File(Cfg.absRTRoot(), ClientParam.DEVICE_CERT));
 
         // Delete the device id
         Cfg.db().set(DEVICE_ID, DEVICE_ID.defaultValue());
         // Create the setup file.
-        new Factory().create(Util.join(Cfg.absRTRoot(), LibParam.SETTING_UP)).createNewFile();
+        new Factory().create(Util.join(Cfg.absRTRoot(), ClientParam.SETTING_UP)).createNewFile();
     }
 }

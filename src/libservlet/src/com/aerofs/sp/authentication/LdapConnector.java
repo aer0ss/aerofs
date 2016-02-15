@@ -4,18 +4,17 @@
 
 package com.aerofs.sp.authentication;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.StringBasedCertificateProvider;
-import com.aerofs.lib.log.LogUtil;
 import com.unboundid.ldap.sdk.LDAPConnection;
 import com.unboundid.ldap.sdk.LDAPConnectionOptions;
 import com.unboundid.ldap.sdk.LDAPConnectionPool;
 import com.unboundid.ldap.sdk.LDAPException;
-import com.unboundid.ldap.sdk.SearchScope;
 import com.unboundid.ldap.sdk.StartTLSPostConnectProcessor;
 import com.unboundid.ldap.sdk.extensions.StartTLSExtendedRequest;
 import org.slf4j.Logger;
@@ -120,7 +119,7 @@ public class LdapConnector
         try {
             return pool.getConnection();
         } catch (LDAPException e) {
-            _l.error("Cannot get connection to LDAP server", LogUtil.suppress(e));
+            _l.error("Cannot get connection to LDAP server", BaseLogUtil.suppress(e));
             throw new ExExternalServiceUnavailable("Cannot connect to LDAP server");
         }
     }

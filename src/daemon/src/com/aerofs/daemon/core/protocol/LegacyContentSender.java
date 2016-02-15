@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ex.ExUpdateInProgress;
@@ -127,7 +128,7 @@ public class LegacyContentSender extends ContentSender
         // see definition of PREFIX_REHASH_MAX_LENGTH for rationale of rehash limit on prefix length
         if (prefixLen >= DaemonParam.PREFIX_REHASH_MAX_LENGTH) return null;
 
-        MessageDigest md = SecUtil.newMessageDigest();
+        MessageDigest md = BaseSecUtil.newMessageDigest();
         if (prefixLen == 0) return md;
 
         try (InputStream is = pf.newInputStream()) {

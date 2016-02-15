@@ -1,0 +1,65 @@
+//-----------------------------------------------------------------------------
+// Copyright (c) Air Computing Inc., 2013.
+//-----------------------------------------------------------------------------
+
+archivesBaseName = 'aerofs-libclient'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src/main/java', 'gen'
+        }
+    }
+    testutil {
+        java {
+            srcDir 'src/test/java'
+            include 'com/aerofs/testlib/**'
+            include 'com/aerofs/defects/MockDefects.java'
+            include 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+            exclude 'com/aerofs/testlib/**'
+            exclude 'com/aerofs/defects/MockDefects.java'
+            exclude 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
+            compileClasspath += testutil.output
+            runtimeClasspath += testutil.output
+        }
+    }
+}
+
+configurations {
+    testutilCompile.extendsFrom compile
+    testutilRuntime.extendsFrom testutilCompile
+
+    testutil.extendsFrom testutilCompile
+
+    testCompile.extendsFrom testutilCompile
+    testRuntime.extendsFrom(testCompile, testutilRuntime)
+}
+
+dependencies {
+    compile 'commons-lang:commons-lang:2.6'
+    compile 'com.aerofs:sqlite-jdbc:3.8.11.1'
+    compile 'com.aerofs:jnotify:0.96'
+    compile 'com.aerofs:aerofsd:0.1.0'
+    compile name: 'guice-aerofs'
+    compile name: 'netty-native-socket'
+    compile name: 'junixsocket-1.3'
+    compile project(':src/lib')
+    testutilCompile project(path:':src/lib', configuration:'testutil')
+}
+
+task testutilJar(type: Jar) {
+    baseName 'aerofs-lib-testutil'
+    from sourceSets.testutil.output
+}
+
+artifacts {
+    testutil testutilJar
+    archives testutilJar
+}

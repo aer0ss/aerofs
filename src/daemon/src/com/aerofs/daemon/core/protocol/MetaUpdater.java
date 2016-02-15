@@ -33,6 +33,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.ids.SID;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
@@ -514,7 +515,7 @@ public class MetaUpdater
             String newName = oaLocal.name() + " (being converted to shared folder - do not remove)";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
-                newName = Util.nextFileName(newName);
+                newName = FileUtil.nextFileName(newName);
             }
 
             if (conversion == Conversion.REMOTE_ANCHOR) {

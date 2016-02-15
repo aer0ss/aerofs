@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import org.junit.Assert;
 import org.junit.After;
@@ -16,7 +16,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TestSQLThreadLocalTransaction extends AbstractTest
+public class TestSQLThreadLocalTransaction extends AbstractBaseTest
 {
     private static final String[] DEFAULT_TX_SCHEMA_PATHS = new String[] {
             "../src/libservlet/test/resources",

@@ -47,8 +47,8 @@ import com.aerofs.daemon.transport.lib.RoundTripTimes;
 import com.aerofs.lib.NioChannelFactories;
 import com.aerofs.lib.analytics.DesktopAnalyticsProperties;
 import com.aerofs.lib.cfg.*;
-import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ssmp.SSMPConnection;
@@ -180,7 +180,8 @@ public class CoreModule extends AbstractModule
     @Provides @Singleton
     public IDBCW provideIDBCW(CfgCoreDatabaseParams dbParams)
     {
-        return DBUtil.newDBCW(dbParams);
+        return new SQLiteDBCW(dbParams.url(), dbParams.autoCommit(),
+                    dbParams.sqliteExclusiveLocking(), dbParams.sqliteWALMode());
     }
 
     @Provides @Singleton
@@ -214,9 +215,10 @@ public class CoreModule extends AbstractModule
     }
 
     @Provides
-    public IAuditorClient provideAuditorClient()
+    public IAuditorClient provideAuditorClient(CfgLocalUser user, CfgLocalDID did,
+           ClientSSLEngineFactory factory)
     {
-        return AuditorFactory.createAuthenticatedWithDeviceCert();
+        return AuditorFactory.createAuthenticatedWithDeviceCert(user.get(), did.get(), factory);
     }
 
     @Provides @Singleton

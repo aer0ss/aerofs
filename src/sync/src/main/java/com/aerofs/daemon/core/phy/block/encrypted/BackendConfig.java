@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.phy.block.encrypted;
 
-import com.aerofs.lib.SecUtil;
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.lib.cfg.ICfgStore;
 import com.google.inject.Inject;
 
@@ -56,7 +56,7 @@ public class BackendConfig {
                 // scrypt(password) -> base64(scrypt(password)) -> PBKDF2(base64(scrypt(password))) to
                 // get the actual AES key. I'd say we can safely drop the PBKDF2 bit and just
                 // base64-decode the output of scrypt.
-                _secretKey = SecUtil.getAESSecretKey(_passwordConfig.getPassword(), true);
+                _secretKey = BaseSecUtil.getAESSecretKey(_passwordConfig.getPassword(), true);
             }
             return _secretKey;
         }

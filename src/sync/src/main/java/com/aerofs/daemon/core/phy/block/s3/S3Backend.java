@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.Base64;
@@ -15,7 +16,6 @@ import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.daemon.core.ex.ExAborted;
-import com.aerofs.lib.log.LogUtil;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -233,7 +233,7 @@ public class S3Backend extends EncryptedBackend
                 l.debug("md:{}", metadata);
                 return;
             } catch (AmazonServiceException e) {
-                l.debug("404 when trying to get S3 object metadata", LogUtil.suppress(e));
+                l.debug("404 when trying to get S3 object metadata", BaseLogUtil.suppress(e));
             }
 
             EncoderData d = w.encoderData;

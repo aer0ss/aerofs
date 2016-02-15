@@ -4,7 +4,6 @@ import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
@@ -176,7 +175,7 @@ public class SPDatabase extends AbstractSQLDatabase
                     assert !rs.next();
                     return result;
                 } else {
-                    throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
+                    throw new ExNotFound("Invitation code not found");
                 }
             }
         }

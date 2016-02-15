@@ -11,7 +11,7 @@ import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import com.dyuproject.openid.Constants;
 import com.dyuproject.openid.Constants.Mode;
 import com.dyuproject.openid.OpenIdContext;
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.spy;
  *   currently the only reason IdentityServlet needs SPLifecycleListener is to intialize
  *   configuration.
  */
-public class TestIdentityServlet extends AbstractTest
+public class TestIdentityServlet extends AbstractBaseTest
 {
     protected final int NONCE_LIFETIME_SECS = 300;
     protected final String SERVLET_URI = "http://localhost";

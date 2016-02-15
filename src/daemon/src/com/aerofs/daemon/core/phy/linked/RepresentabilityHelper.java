@@ -18,7 +18,7 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -141,7 +141,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
             if (nro || _os.isInvalidFileName(component)) {
                 // reached first NRO
                 String base = _lrm.auxFilePath_(path.sid(), path.soids.get(i),
-                        AuxFolder.NON_REPRESENTABLE);
+                        ClientParam.AuxFolder.NON_REPRESENTABLE);
                 return s.isEmpty()
                         ? LinkedPath.nonRepresentable(path, base)
                         : LinkedPath.representableChildOfNonRepresentable(path, Util.join(base, s));
@@ -163,7 +163,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
     public boolean markRepresentable_(SID sid, OA oa, Trans t) throws SQLException
     {
         SOID soid = oa.soid();
-        String absPath = _lrm.auxFilePath_(sid, soid, AuxFolder.NON_REPRESENTABLE);
+        String absPath = _lrm.auxFilePath_(sid, soid, ClientParam.AuxFolder.NON_REPRESENTABLE);
         if (_factFile.create(absPath).exists()) return false;
         if (_nrodb.getConflict_(soid) != null) return false;
         _nrodb.setRepresentable_(soid, t);
@@ -226,7 +226,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
 
     void forNonRepresentableObjects_(SID sid, Function<SOID, Void> c)
     {
-        String absPath = Util.join(_lrm.auxRoot_(sid), AuxFolder.NON_REPRESENTABLE._name);
+        String absPath = Util.join(_lrm.auxRoot_(sid), ClientParam.AuxFolder.NON_REPRESENTABLE._name);
         String[] children = _factFile.create(absPath).list();
         if (children == null) return;
         for (String child : children) {
@@ -430,7 +430,7 @@ public class RepresentabilityHelper implements ISnapshotableNotificationEmitter
                 SOID winner = it.get_();
                 OA oa = _ds.getOA_(winner);
                 InjectableFile source = _factFile.create(
-                        _lrm.auxFilePath_(sid, winner, AuxFolder.NON_REPRESENTABLE));
+                        _lrm.auxFilePath_(sid, winner, ClientParam.AuxFolder.NON_REPRESENTABLE));
                 InjectableFile dest = _factFile.create(
                         Util.join(new File(path.physical).getParent(), oa.name()));
 

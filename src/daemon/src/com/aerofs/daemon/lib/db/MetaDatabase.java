@@ -19,8 +19,8 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
@@ -57,7 +57,7 @@ public class MetaDatabase extends AbstractDatabase
     public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException {
         try {
             insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
-            insertOA_(sidx, OID.TRASH, OID.ROOT, LibParam.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
+            insertOA_(sidx, OID.TRASH, OID.ROOT, ClientParam.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
         } catch (ExAlreadyExist e) {
             throw new IllegalStateException(e);
         }

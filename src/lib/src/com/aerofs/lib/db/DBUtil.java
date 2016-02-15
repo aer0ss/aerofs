@@ -7,9 +7,6 @@ import java.sql.Statement;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.db.dbcw.MySQLDBCW;
-import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.google.common.base.Joiner;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -256,16 +253,6 @@ public class DBUtil
             if (s != null) s.close();
         } catch (SQLException e) {
             Loggers.getLogger(DBUtil.class).warn("cannot close stmt: " + e);
-        }
-    }
-
-    public static IDBCW newDBCW(IDatabaseParams params)
-    {
-        if (params.isMySQL()) {
-            return new MySQLDBCW(params.url(), params.autoCommit());
-        } else {
-            return new SQLiteDBCW(params.url(), params.autoCommit(),
-                    params.sqliteExclusiveLocking(), params.sqliteWALMode());
         }
     }
 

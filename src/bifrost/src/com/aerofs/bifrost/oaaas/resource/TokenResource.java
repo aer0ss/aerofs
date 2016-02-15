@@ -18,6 +18,7 @@
  */
 package com.aerofs.bifrost.oaaas.resource;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.bifrost.oaaas.auth.MobileDeviceManagement;
@@ -32,7 +33,6 @@ import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.server.Transactional;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.rest.auth.DelegatedUserToken;
@@ -404,7 +404,7 @@ public class TokenResource
             authReq.setPrincipal(principal);
         } catch (Exception e) {
             l.info("Error handling device authorization nonce {}.",
-                    accessTokenRequest.getDeviceAuthorizationNonce(), LogUtil.suppress(e));
+                    accessTokenRequest.getDeviceAuthorizationNonce(), BaseLogUtil.suppress(e));
             throw new ValidationResponseException(
                     ValidationResponse.INVALID_GRANT_AUTHORIZATION_CODE);
         }

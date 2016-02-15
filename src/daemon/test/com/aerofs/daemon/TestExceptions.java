@@ -6,9 +6,9 @@
 // DaemonProgram.registerExceptionTypes()
 package com.aerofs.daemon;
 
+import com.aerofs.MainUtil;
 import com.aerofs.base.ex.ExInternalError;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 import org.junit.Assert;
@@ -36,7 +36,7 @@ public class TestExceptions
     @Before
     public void setup()
     {
-        Util.registerLibExceptions();
+        MainUtil.registerLibExceptions();
         DaemonProgram.registerExceptionTypes();
     }
 

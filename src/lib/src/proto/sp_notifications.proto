@@ -1,8 +1,0 @@
-package com.aerofs.proto;
-option optimize_for = LITE_RUNTIME; // remove reflection
-
-// This file should only contain messages which are pushed by SP through verkher
-
-message PBACLNotification {
-    required uint64 acl_epoch = 1;
-}

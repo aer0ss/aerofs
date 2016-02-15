@@ -14,12 +14,9 @@ import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.AuxFolder;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.*;
+import com.aerofs.lib.ClientParam.AuxFolder;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
@@ -158,7 +155,7 @@ public class LinkerRootMap
     private void setFailedRootSID_(SID sid)
     {
         try (OutputStream o = new FileOutputStream(
-                Util.join(_rtRoot.get(), LibParam.FAILED_SID))) {
+                Util.join(_rtRoot.get(), ClientParam.FAILED_SID))) {
             o.write(BaseUtil.string2utf(sid.toStringFormal()));
         } catch (IOException e) {
             l.warn("failed to communicate failing SID to UI", e);
@@ -204,9 +201,9 @@ public class LinkerRootMap
         // ensure aux folders clean
         // we don't want leftover conflicts, nros or prefixes
         InjectableFile auxRoot = _factFile.create(BaseCfg.absAuxRootForPath(absRoot, sid));
-        for (AuxFolder af : LibParam.AuxFolder.values()) {
+        for (AuxFolder af : ClientParam.AuxFolder.values()) {
             // do not enforce history cleanup as this folder could be very large
-            if (af.equals(AuxFolder.HISTORY)) continue;
+            if (af.equals(ClientParam.AuxFolder.HISTORY)) continue;
             _factFile.create(auxRoot, af._name).deleteOrThrowIfExistRecursively();
         }
 
@@ -447,7 +444,7 @@ public class LinkerRootMap
         l.info("aux root {}", absAuxRoot);
 
         // create aux folders. other codes assume these folders already exist.
-        for (AuxFolder af : LibParam.AuxFolder.values()) {
+        for (AuxFolder af : ClientParam.AuxFolder.values()) {
             _factFile.create(Util.join(absAuxRoot, af._name)).ensureDirExists();
         }
 

@@ -18,8 +18,8 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
@@ -127,7 +127,7 @@ public abstract class AbstractStoreJoiner implements IStoreJoiner
                 break;
             } catch (ExAlreadyExist e) {
                 l.warn("duplicate", BaseLogUtil.suppress(e, ExAlreadyExist.class));
-                folderName = Util.nextFileName(folderName);
+                folderName = FileUtil.nextFileName(folderName);
             }
         }
 

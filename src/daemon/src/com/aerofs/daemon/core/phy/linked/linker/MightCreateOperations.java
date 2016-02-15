@@ -20,8 +20,8 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -238,7 +238,7 @@ class MightCreateOperations
         String name = oa.name();
         String pParent = _factFile.create(pc._absPath).getParent();
         while (true) {
-            name = Util.nextFileName(name);
+            name = FileUtil.nextFileName(name);
             // avoid names that are taken by either logical or physical objects
             InjectableFile f = _factFile.create(pParent, name);
             if (f.exists()) continue;

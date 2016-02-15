@@ -14,7 +14,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.servlets.MockSession;
 import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.servlets.lib.AsyncEmailSender;
@@ -452,7 +451,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     protected static ByteString newCSR(User user, Device device)
             throws IOException, GeneralSecurityException
     {
-        KeyPair kp = SecUtil.newRSAKeyPair();
+        KeyPair kp = BaseSecUtil.newRSAKeyPair();
         return ByteString.copyFrom(SecUtilHelper.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(),
                 user.id(), device.id()).getEncoded());
     }

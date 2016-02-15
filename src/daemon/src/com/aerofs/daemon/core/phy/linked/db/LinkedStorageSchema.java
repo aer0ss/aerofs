@@ -2,12 +2,8 @@ package com.aerofs.daemon.core.phy.linked.db;
 
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -87,10 +83,4 @@ public class LinkedStorageSchema implements ISchema
                 + ")" + dbcw.charSet());
     }
 
-    @Override
-    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
-    {
-        TableDumper td = new TableDumper(new PrintWriter(ps));
-        td.dumpTable(s, T_NRO);
-    }
 }

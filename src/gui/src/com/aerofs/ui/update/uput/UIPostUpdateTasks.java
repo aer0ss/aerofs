@@ -1,7 +1,7 @@
 package com.aerofs.ui.update.uput;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.LibParam.PostUpdate;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.cfg.CfgDatabase;
 
 import static com.aerofs.lib.cfg.CfgDatabase.UI_POST_UPDATES;
@@ -24,7 +24,7 @@ public class UIPostUpdateTasks
         };
 
         // please update this macro whenever new tasks are added
-        assert _tasks.length == PostUpdate.UI_POST_UPDATE_TASKS;
+        assert _tasks.length == ClientParam.PostUpdate.UI_POST_UPDATE_TASKS;
 
         // the zero value is required for oldest client to run all the tasks
         assert UI_POST_UPDATES.defaultValue().equals(Integer.toString(0));

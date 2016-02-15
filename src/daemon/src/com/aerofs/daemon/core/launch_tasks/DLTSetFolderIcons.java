@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.cfg.CfgAbsDefaultRoot;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -105,7 +105,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
     {
         if (!_factory.create(absPath).isDirectory()) return;
         if (icon == Icon.SharedFolder
-                && !_factory.create(absPath, LibParam.SHARED_FOLDER_TAG).isFile()) return;
+                && !_factory.create(absPath, ClientParam.SHARED_FOLDER_TAG).isFile()) return;
 
         // this is debug because it reveals the user's file structure.
         l.debug("Setting shared folder icon at {}", absPath);

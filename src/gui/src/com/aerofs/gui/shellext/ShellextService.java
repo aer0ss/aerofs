@@ -4,7 +4,7 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.LibParam.ShellextLinkSharing;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.NativeSocketType;
@@ -87,11 +87,11 @@ public class ShellextService
     private void notifyLinkSharingEnabled()
     {
         l.info("Link sharing from shellext is " +
-                ((ShellextLinkSharing.IS_ENABLED)? "enabled.": "disabled."));
+                ((ClientParam.ShellextLinkSharing.IS_ENABLED)? "enabled.": "disabled."));
         ShellextNotification notification = ShellextNotification.newBuilder()
                 .setType(Type.LINK_SHARING_ENABLED)
                 .setLinkSharingEnabled(LinkSharingEnabled.newBuilder()
-                    .setIsLinkSharingEnabled(ShellextLinkSharing.IS_ENABLED))
+                    .setIsLinkSharingEnabled(ClientParam.ShellextLinkSharing.IS_ENABLED))
                 .build();
         _server.send(notification.toByteArray());
     }

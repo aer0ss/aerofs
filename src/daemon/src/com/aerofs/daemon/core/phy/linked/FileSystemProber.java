@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.phy.linked;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defects;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.IOSUtil;
@@ -54,7 +54,7 @@ public class FileSystemProber
 
         try {
             // ensure probe directory exists
-            InjectableFile d = _factFile.create(auxRoot, AuxFolder.PROBE._name);
+            InjectableFile d = _factFile.create(auxRoot, ClientParam.AuxFolder.PROBE._name);
             d.ensureDirExists();
 
             // use a random UUID for each probe in case the probe dir isn't clean

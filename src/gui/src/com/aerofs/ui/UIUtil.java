@@ -54,7 +54,7 @@ public class UIUtil
     public static boolean isSystemFile(PBPath path)
     {
         for (String elem : path.getElemList()) {
-            if (elem.equals(LibParam.TRASH)) return true;
+            if (elem.equals(ClientParam.TRASH)) return true;
         }
         return false;
     }

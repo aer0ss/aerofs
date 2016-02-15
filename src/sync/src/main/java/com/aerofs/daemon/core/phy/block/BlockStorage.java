@@ -102,7 +102,7 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
         _initables = initables;
 
         final String auxPath = absDefaultAuxRoot.get();
-        _prefixDir = _fileFactory.create(auxPath, LibParam.AuxFolder.PREFIX._name);
+        _prefixDir = _fileFactory.create(auxPath, ClientParam.AuxFolder.PREFIX._name);
         _uploadDir = _fileFactory.create(auxPath, "up");
 
         _uploadScheduler = new CleanupScheduler(this, _sched);

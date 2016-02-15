@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -257,7 +257,7 @@ public class Hasher
     public static ContentHash computeHashImpl(InputStream is, long fileLen,
             @Nullable IAborter aborter) throws IOException, ExAborted, DigestException
     {
-        MessageDigest md = SecUtil.newMessageDigest();
+        MessageDigest md = BaseSecUtil.newMessageDigest();
 
         long bytesRead = 0;
         byte[] buffer = new byte[BaseUtil.FILE_BUF_SIZE];

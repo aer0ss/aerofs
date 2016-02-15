@@ -6,7 +6,7 @@ package com.aerofs.daemon.transport.ssmp;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -30,7 +30,7 @@ public abstract class SSMPUtil
             byte chksum = 0;
             for (byte b : bs) chksum ^= b;
 
-            os.writeInt(LibParam.CORE_PROTOCOL_VERSION);
+            os.writeInt(ClientParam.CORE_PROTOCOL_VERSION);
             os.writeInt(bs.length);
             os.write(bs);
             os.write(chksum);
@@ -46,8 +46,8 @@ public abstract class SSMPUtil
         ByteArrayInputStream bis = new ByteArrayInputStream(body);
         try (DataInputStream is = new DataInputStream(bis)) {
             int magic = is.readInt();
-            if (magic != LibParam.CORE_PROTOCOL_VERSION) {
-                l.warn("{} magic mismatch exp:{} act:{} bdy:{}", did, LibParam.CORE_PROTOCOL_VERSION, magic, body);
+            if (magic != ClientParam.CORE_PROTOCOL_VERSION) {
+                l.warn("{} magic mismatch exp:{} act:{} bdy:{}", did, ClientParam.CORE_PROTOCOL_VERSION, magic, body);
                 return null;
             }
 

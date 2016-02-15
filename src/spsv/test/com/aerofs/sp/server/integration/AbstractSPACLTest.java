@@ -4,7 +4,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.lib.LibParam;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.proto.Common.PBSubjectPermissions;
@@ -24,12 +23,6 @@ import static org.junit.Assert.fail;
 
 public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 {
-    private long getInitialServerACL()
-    {
-        //noinspection PointlessArithmeticExpression
-        return LibParam.INITIAL_ACL_EPOCH + 1;
-    }
-
     @Before
     public void setup()
             throws Exception
@@ -63,7 +56,8 @@ public abstract class AbstractSPACLTest extends AbstractSPFolderTest
 
     protected void assertGetACLReplyIncrementsEpochBy(GetACLReply reply, int delta)
     {
-        assertEquals(getInitialServerACL() + delta, reply.getEpoch());
+        //noinspection PointlessArithmeticExpression
+        assertEquals((long) 1 + delta, reply.getEpoch());
     }
 
     protected User addAdmin(User user)

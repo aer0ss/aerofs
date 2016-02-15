@@ -9,8 +9,8 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.ClientSecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -80,7 +80,7 @@ public class CredentialUtil
             ISPCertifyDeviceCaller<RegisterDeviceReply> caller)
             throws Exception
     {
-        KeyPair kp = SecUtil.newRSAKeyPair();
+        KeyPair kp = BaseSecUtil.newRSAKeyPair();
         DID did = new DID(UniqueID.generate());
 
         String cert = certify(certUserId, did, kp.getPublic(), kp.getPrivate(), caller).getCert();
@@ -102,14 +102,14 @@ public class CredentialUtil
             ISPCertifyDeviceCaller<T> caller)
             throws Exception
     {
-        byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
+        byte[] csr = ClientSecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
         return caller.call(BaseUtil.toPB(did), ByteString.copyFrom(csr));
     }
 
     private static void writeCertificate(String cert)
             throws IOException
     {
-        File file = new File(Cfg.absRTRoot(), LibParam.DEVICE_CERT);
+        File file = new File(Cfg.absRTRoot(), ClientParam.DEVICE_CERT);
         try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file))) {
             writer.write(cert);
         }
@@ -117,6 +117,6 @@ public class CredentialUtil
 
     public static void writePrivateKey(PrivateKey privKey)
             throws IOException, GeneralSecurityException {
-        BaseSecUtil.writePrivateKey(privKey, Cfg.absRTRoot() + File.separator + LibParam.DEVICE_KEY);
+        BaseSecUtil.writePrivateKey(privKey, Cfg.absRTRoot() + File.separator + ClientParam.DEVICE_KEY);
     }
 }

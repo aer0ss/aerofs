@@ -21,11 +21,8 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.S;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -84,7 +81,7 @@ public class FlatLinkedStorage extends LinkedStorage
             // causing an apparent no-sync that the user will blame us for.
             try {
                 new FileSystemProber(_factFile, _os)
-                        .probe(Util.join(_usersDir.getParent(), LibParam.AUXROOT_NAME + ".ts"));
+                        .probe(Util.join(_usersDir.getParent(), ClientParam.AUXROOT_NAME + ".ts"));
             } catch (ProbeException e) {
                 ExitCode.FILESYSTEM_PROBE_FAILED.exit();
             }
@@ -186,7 +183,7 @@ public class FlatLinkedStorage extends LinkedStorage
                 // dir already exists, only allow if it contains a valid tag file matching the SID
                 if (d.isDirectory() && _sfti.isSharedFolderRoot(sid, d)) return d;
                 l.info("conflicting folder");
-                d = _factFile.create(_sharedDir, Util.nextFileName(d.getName()));
+                d = _factFile.create(_sharedDir, FileUtil.nextFileName(d.getName()));
             }
             return d;
         }

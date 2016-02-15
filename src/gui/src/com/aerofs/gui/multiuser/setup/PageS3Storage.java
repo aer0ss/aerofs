@@ -7,7 +7,7 @@ package com.aerofs.gui.multiuser.setup;
 import com.aerofs.controller.SetupModel;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.multiuser.setup.DlgMultiuserSetup.PageID;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.S;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -124,7 +124,7 @@ public class PageS3Storage extends PageStorageBackend
     protected void readFromModel(SetupModel model)
     {
         _txtEndpoint.setText(firstNonNull(model._backendConfig._s3Config._endpoint,
-                LibParam.DEFAULT_S3_ENDPOINT));
+                ClientParam.DEFAULT_S3_ENDPOINT));
         _txtBucketName.setText(firstNonNull(model._backendConfig._s3Config._bucketID, ""));
         _txtAccessKey.setText(firstNonNull(model._backendConfig._s3Config._accessKey, ""));
         _txtSecretKey.setText(firstNonNull(model._backendConfig._s3Config._secretKey, ""));

@@ -6,12 +6,8 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -143,17 +139,4 @@ public class BlockStorageSchema implements ISchema
                 dbcw.charSet());
     }
 
-    @Override
-    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
-    {
-        TableDumper td = new TableDumper(new PrintWriter(ps));
-        td.dumpTable(s, T_FileInfo);
-
-        td.dumpTable(s, T_FileCurr);
-
-        td.dumpTable(s, T_DirHist);
-        td.dumpTable(s, T_FileHist);
-
-        td.dumpTable(s, T_BlockCount);
-    }
 }

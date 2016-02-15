@@ -30,7 +30,6 @@ import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.*;
@@ -1760,7 +1759,7 @@ public class SPService implements ISPService
                 _factSharedFolder.create(object.getSID()).throwIfNoPrivilegeToChangeACL(requester);
                 l.info("getUrlInfo {} is admin/manager; not checking pwd", key);
             } catch (ExNoPerm | ExNotAuthenticated e) {
-                l.info("getUrlInfo {} not admin/manager; checking pwd", key, LogUtil.suppress(e));
+                l.info("getUrlInfo {} not admin/manager; checking pwd", key, BaseLogUtil.suppress(e));
                 if (password == null) throw new ExBadCredential();
                 link.validatePassword(password.toByteArray());
             }

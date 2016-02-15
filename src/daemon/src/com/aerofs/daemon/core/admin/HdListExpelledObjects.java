@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOID;
@@ -38,7 +38,7 @@ public class HdListExpelledObjects extends AbstractHdIMC<EIListExpelledObjects>
                     continue;
                 }
                 // skip stuff in the trash
-                if (path.elements().length < 1 || !path.elements()[0].equals(LibParam.TRASH)) {
+                if (path.elements().length < 1 || !path.elements()[0].equals(ClientParam.TRASH)) {
                     bdExpelled.add(path);
                 }
             }

@@ -3,8 +3,9 @@ package com.aerofs;
 import com.aerofs.cli.CLIProgram;
 import com.aerofs.gui.GUIProgram;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.LibParam;
 import com.aerofs.shell.ShProgram;
+
+import static com.aerofs.lib.ClientParam.*;
 
 public class Program implements IProgram {
 
@@ -23,9 +24,9 @@ public class Program implements IProgram {
     private IProgram getProgram(String prog) throws ExProgramNotFound
     {
         switch (prog) {
-        case LibParam.SH_NAME:      return new ShProgram();
-        case LibParam.GUI_NAME:     return new GUIProgram();
-        case LibParam.CLI_NAME:     return new CLIProgram();
+        case SH_NAME:      return new ShProgram();
+        case GUI_NAME:     return new GUIProgram();
+        case CLI_NAME:     return new CLIProgram();
         default: throw new ExProgramNotFound(prog);
         }
     }

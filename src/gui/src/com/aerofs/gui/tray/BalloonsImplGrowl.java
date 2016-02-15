@@ -8,8 +8,7 @@ import com.aerofs.growl.NotificationType;
 import com.aerofs.gui.Images;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.ui.IUI.MessageType;
 import org.slf4j.Logger;
 
@@ -25,8 +24,8 @@ public class BalloonsImplGrowl implements IBalloonsImpl
 
     BalloonsImplGrowl() throws IOException
     {
-        File aeroIcon = new File(AppRoot.abs() + LibParam.ICONS_DIR + Images.ICON_LOGO32);
-        File aeroIconError = new File(AppRoot.abs() + LibParam.ICONS_DIR + Images.ICON_LOGO32_ERROR);
+        File aeroIcon = new File(AppRoot.abs() + ClientParam.ICONS_DIR + Images.ICON_LOGO32);
+        File aeroIconError = new File(AppRoot.abs() + ClientParam.ICONS_DIR + Images.ICON_LOGO32_ERROR);
 
         _growl.setDefaultIcon(aeroIcon);
         _gInfo.setDefaultIcon(aeroIcon);

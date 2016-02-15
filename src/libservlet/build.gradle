@@ -13,6 +13,7 @@ sourceSets {
     testutil {
         java {
             srcDir 'test'
+            include 'com/aerofs/testlib/**'
             include 'com/aerofs/servlets/MockSession.java'
             include 'com/aerofs/servlets/SecUtilHelper.java'
             include 'com/aerofs/servlets/lib/db/*.java'
@@ -24,6 +25,7 @@ sourceSets {
     test {
         java {
             srcDir 'test'
+            exclude 'com/aerofs/testlib/**'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output
         }

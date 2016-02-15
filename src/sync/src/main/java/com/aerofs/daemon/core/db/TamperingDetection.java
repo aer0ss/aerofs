@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.db;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.cfg.CfgAbsRTRoot;
 import com.aerofs.lib.cfg.CfgCoreDatabaseParams;
@@ -77,7 +77,7 @@ public class TamperingDetection
     {
         FID actual = getActualFID();
         byte[] expected = getExpectedFID();
-        File tag = new File(new CfgAbsRTRoot().get(), LibParam.IGNORE_DB_TAMPERING);
+        File tag = new File(new CfgAbsRTRoot().get(), ClientParam.IGNORE_DB_TAMPERING);
 
         l.info("{} {} {}",
                 actual, expected != null ? BaseUtil.hexEncode(expected) : null, tag.exists());
@@ -120,7 +120,6 @@ public class TamperingDetection
 
     private String getFilePath()
     {
-        Preconditions.checkState(!_params.isMySQL());
         Preconditions.checkState(_params.url().startsWith("jdbc:sqlite:"));
         return _params.url().substring("jdbc:sqlite:".length());
     }

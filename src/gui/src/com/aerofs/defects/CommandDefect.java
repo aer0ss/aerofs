@@ -7,7 +7,7 @@ package com.aerofs.defects;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.defects.DryadClient.FileUploadListener;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.UploadLogsArgs;
 import com.aerofs.proto.Cmd.UploadLogsDestination;
@@ -138,9 +138,9 @@ public class CommandDefect
                 private boolean isDatabaseFile(File file)
                 {
                     String filename = file.getName();
-                    return filename.startsWith(LibParam.OBF_CORE_DATABASE)
-                            || filename.equalsIgnoreCase(LibParam.CFG_DATABASE)
-                            || filename.equalsIgnoreCase(LibParam.CORE_DATABASE);
+                    return filename.startsWith(ClientParam.OBF_CORE_DATABASE)
+                            || filename.equalsIgnoreCase(ClientParam.CFG_DATABASE)
+                            || filename.equalsIgnoreCase(ClientParam.CORE_DATABASE);
                 }
             };
         }

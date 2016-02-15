@@ -3,7 +3,9 @@ DST_DIR = buildroot/opt/sparta
 
 image:
 	gradle --daemon dist
-	../../tools/lazy-copy.sh ../../out.gradle/sparta/dist buildroot/opt/sparta
+	rm -rf buildroot
+	mkdir -p $(DST_DIR)
+	ln ../../out.gradle/sparta/dist/* $(DST_DIR)
 	docker build -t $(IMAGE_NAME) .
 
 .PHONY: image 

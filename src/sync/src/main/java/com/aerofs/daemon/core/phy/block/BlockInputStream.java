@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.LibParam;
 import com.google.common.base.Preconditions;
 
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class BlockInputStream extends InputStream
                 resetInputStream();
                 if (_chunkIndex >= _numChunks) break;
                 // all non-last blocks are expected to be full-sized
-                if (_pos != LibParam.FILE_BLOCK_SIZE * _chunkIndex) {
+                if (_pos != ClientParam.FILE_BLOCK_SIZE * _chunkIndex) {
                     throw new IOException("invalid block file: "
                             + _chunkIndex + " " + _pos + "/" + _length);
                 }
@@ -81,10 +81,10 @@ public class BlockInputStream extends InputStream
         Preconditions.checkArgument(n >= 0);
         final long oldPos = _pos;
         long newPos = _pos + n;
-        int newChunkIndex = (int)(newPos / LibParam.FILE_BLOCK_SIZE);
+        int newChunkIndex = (int)(newPos / ClientParam.FILE_BLOCK_SIZE);
         if (newChunkIndex != _chunkIndex) {
             _chunkIndex = newChunkIndex;
-            _pos = Math.min((long)_chunkIndex * LibParam.FILE_BLOCK_SIZE, _length);
+            _pos = Math.min((long)_chunkIndex * ClientParam.FILE_BLOCK_SIZE, _length);
             closeInputStream();
         }
         if (_in == null) resetInputStream();

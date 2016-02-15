@@ -13,7 +13,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.LibParam.PostUpdate;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgKey;
@@ -198,7 +197,7 @@ public class Setup
         initializeAndLaunchDaemon();
 
         // indicates that the user is fully setup
-        _factFile.create(_rtRoot, LibParam.SETTING_UP).deleteOrOnExit();
+        _factFile.create(_rtRoot, ClientParam.SETTING_UP).deleteOrOnExit();
 
         // Proceed with AeroFS launch
         Launcher.launch(true);
@@ -237,7 +236,7 @@ public class Setup
     private void createSettingUpFlagFile()
             throws IOException
     {
-        InjectableFile fSettingUp = _factFile.create(_rtRoot, LibParam.SETTING_UP);
+        InjectableFile fSettingUp = _factFile.create(_rtRoot, ClientParam.SETTING_UP);
         try {
             fSettingUp.createNewFile();
         } catch (IOException e) {
@@ -273,7 +272,7 @@ public class Setup
         }
 
         // Remove database file (the daemon will setup the schema if it detects a missing DB)
-        InjectableFile fDB = _factFile.create(_rtRoot, LibParam.CORE_DATABASE);
+        InjectableFile fDB = _factFile.create(_rtRoot, ClientParam.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
         UIGlobals.dm().start();
@@ -295,11 +294,11 @@ public class Setup
         map.put(STORAGE_TYPE, storageType.name());
         map.put(CONTACT_EMAIL, contactEmail);
         map.put(LAST_VER, Cfg.ver());
-        map.put(DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
+        map.put(DAEMON_POST_UPDATES, Integer.toString(ClientParam.PostUpdate.DAEMON_POST_UPDATE_TASKS));
         if (new CfgUsePolaris().get()) {
-            map.put(PHOENIX_CONVERSION, Integer.toString(PostUpdate.PHOENIX_CONVERSION_TASKS));
+            map.put(PHOENIX_CONVERSION, Integer.toString(ClientParam.PostUpdate.PHOENIX_CONVERSION_TASKS));
         }
-        map.put(UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
+        map.put(UI_POST_UPDATES, Integer.toString(ClientParam.PostUpdate.UI_POST_UPDATE_TASKS));
         map.put(SIGNUP_DATE, Long.toString(getUserSignUpDate(userSp)));
         map.put(REST_SERVICE, Boolean.toString(apiAccess));
 
@@ -308,7 +307,7 @@ public class Setup
             checkState(backendConfig._storageType == storageType);
             checkState(backendConfig._passphrase != null);
             map.put(STORAGE_ENCRYPTION_PASSWORD, Base64.encodeBytes(
-                    SecUtil.scrypt(backendConfig._passphrase.toCharArray(), userId)));
+                    ClientSecUtil.scrypt(backendConfig._passphrase.toCharArray(), userId)));
         }
 
         // Configure specific backends
@@ -393,7 +392,7 @@ public class Setup
         boolean available = true;
         for (int offset = 0; available && offset < requiredPortCount(); offset++) {
             try {
-                ServerSocket ss = new ServerSocket(portbase + offset, 0, LibParam.LOCALHOST_ADDR);
+                ServerSocket ss = new ServerSocket(portbase + offset, 0, ClientParam.LOCALHOST_ADDR);
                 ss.close();
             } catch (BindException e) {
                 available = false;

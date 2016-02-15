@@ -8,7 +8,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.audit.client.IAuditorClient;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 /**
  */
 @SuppressWarnings("rawtypes")
-public class TestAuditClient extends AbstractTest
+public class TestAuditClient extends AbstractBaseTest
 {
     @Mock IAuditorClient _httpMock;
     AuditClient             _client;

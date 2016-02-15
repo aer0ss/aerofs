@@ -1,6 +1,5 @@
 package com.aerofs.lib.log;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
@@ -9,7 +8,6 @@ import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.rolling.DefaultTimeBasedFileNamingAndTriggeringPolicy;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import org.slf4j.LoggerFactory;
@@ -18,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * Helpers for dealing with logback
  * IMPORTANT: DO NOT USE "L" in here!!!
  */
-public abstract class LogUtil extends BaseLogUtil
+public abstract class LogUtil
 {
     public static enum Level
     {

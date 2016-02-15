@@ -30,7 +30,8 @@ import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.ClientParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
@@ -143,7 +144,7 @@ public class LinkedStorage implements IPhysicalStorage
         SOKID sokid = new SOKID(path.soid(), kidx);
         return new LinkedFile(this, sokid, kidx.equals(KIndex.MASTER)
                 ? _rh.getPhysicalPath_(path, type)
-                : LinkedPath.auxiliary(path, _lrm.auxFilePath_(path.sid(), sokid, AuxFolder.CONFLICT)));
+                : LinkedPath.auxiliary(path, _lrm.auxFilePath_(path.sid(), sokid, ClientParam.AuxFolder.CONFLICT)));
     }
 
     @Override
@@ -189,8 +190,8 @@ public class LinkedStorage implements IPhysicalStorage
             return;
         }
         String absAuxRoot = plr.absAuxRoot();
-        deleteFiles_(absAuxRoot, AuxFolder.CONFLICT, prefix);
-        _factFile.create(Util.join(absAuxRoot, AuxFolder.PREFIX._name, sidx.toString()))
+        deleteFiles_(absAuxRoot, ClientParam.AuxFolder.CONFLICT, prefix);
+        _factFile.create(Util.join(absAuxRoot, ClientParam.AuxFolder.PREFIX._name, sidx.toString()))
                 .deleteOrThrowIfExistRecursively();
 
         // Unlink external store/root.
@@ -204,7 +205,7 @@ public class LinkedStorage implements IPhysicalStorage
 
     private String prefixFolderPath(String auxRoot, SOID soid) throws SQLException
     {
-        return Util.join(auxRoot, AuxFolder.PREFIX._name,
+        return Util.join(auxRoot, ClientParam.AuxFolder.PREFIX._name,
                 soid.sidx().toString(), soid.oid().toStringFormal());
     }
 
@@ -311,7 +312,7 @@ public class LinkedStorage implements IPhysicalStorage
 
         InjectableFile root = _factFile.create(lr.absRootAnchor());
 
-        String absStaging = Util.join(lr.absAuxRoot(), AuxFolder.STAGING_AREA._name,
+        String absStaging = Util.join(lr.absAuxRoot(), ClientParam.AuxFolder.STAGING_AREA._name,
                 UniqueID.generate().toStringFormal());
         InjectableFile staging = _factFile.create(absStaging);
         staging.mkdir();
@@ -362,7 +363,7 @@ public class LinkedStorage implements IPhysicalStorage
         String prefix = LinkedPath.makeAuxFileName(soid);
 
         // scrub NRO if needed
-        String nro = Util.join(auxRoot, AuxFolder.NON_REPRESENTABLE._name, prefix);
+        String nro = Util.join(auxRoot, ClientParam.AuxFolder.NON_REPRESENTABLE._name, prefix);
         InjectableFile f = _factFile.create(nro);
         if (f.exists()) {
             l.info("scrub {} {}", soid, historyPath);
@@ -381,7 +382,7 @@ public class LinkedStorage implements IPhysicalStorage
         }
 
         // TODO: use hierarchical storage scheme for more efficient scrubbing
-        deleteFiles_(auxRoot, AuxFolder.CONFLICT, prefix);
+        deleteFiles_(auxRoot, ClientParam.AuxFolder.CONFLICT, prefix);
 
         _factFile.create(prefixFolderPath(auxRoot, soid)).deleteOrThrowIfExistRecursively();
     }

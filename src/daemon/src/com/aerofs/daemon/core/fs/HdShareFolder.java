@@ -35,8 +35,8 @@ import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRoots;
 import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
@@ -366,7 +366,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         ResolvedPath from = _ds.resolve_(soid);
 
         do {
-            pathTemp = path.removeLast().append(Util.nextFileName(pathTemp.last()));
+            pathTemp = path.removeLast().append(FileUtil.nextFileName(pathTemp.last()));
         } while (_ds.resolveNullable_(pathTemp) != null);
         _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, t);
 

@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.FID;
@@ -650,8 +650,8 @@ public class MockDS
 
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));
-            _trash = new MockDSDir(LibParam.TRASH, _root, true, new SOID(sidx, OID.TRASH));
-            _root._children.put(LibParam.TRASH, _trash);
+            _trash = new MockDSDir(ClientParam.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+            _root._children.put(ClientParam.TRASH, _trash);
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());
@@ -724,8 +724,8 @@ public class MockDS
             super(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
 
             _sid = sid;
-            _trash = new MockDSDir(LibParam.TRASH, this, true, new SOID(sidx, OID.TRASH));
-            _children.put(LibParam.TRASH, _trash);
+            _trash = new MockDSDir(ClientParam.TRASH, this, true, new SOID(sidx, OID.TRASH));
+            _children.put(ClientParam.TRASH, _trash);
 
             when(_ds.resolve_(_oa)).thenReturn(ResolvedPath.root(_sid));
 

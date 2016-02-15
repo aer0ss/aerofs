@@ -1,11 +1,11 @@
 package com.aerofs.cli;
 
 import com.aerofs.LaunchArgs;
+import com.aerofs.MainUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defects;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgVer;
@@ -21,7 +21,7 @@ public class CLIProgram implements IProgram
     @Override
     public void launch_(final String rtRoot, String prog, String[] args) throws Exception
     {
-        Util.initDriver("cc", rtRoot); // "cc" is the log file that aerofsd will write to
+        MainUtil.initDriver("cc", rtRoot); // "cc" is the log file that aerofsd will write to
 
         // TODO (AT): really need to tidy up our launch sequence
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only

@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.ClientParam.AuxFolder;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Preconditions;
@@ -31,7 +32,7 @@ public abstract class AbstractLinkedObject
     {
         Preconditions.checkNotNull(_path.virtual);
         setPath(LinkedPath.nonRepresentable(_path.virtual,
-                _s._lrm.auxFilePath_(_path.virtual.sid(), soid(), AuxFolder.NON_REPRESENTABLE)));
+                _s._lrm.auxFilePath_(_path.virtual.sid(), soid(), ClientParam.AuxFolder.NON_REPRESENTABLE)));
     }
 
     abstract SOID soid();

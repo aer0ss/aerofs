@@ -29,6 +29,6 @@ dependencies {
     compile name: 'swt-4'
     compile name: 'netty-native-socket'
     compile name: 'junixsocket-1.3'
-    compile project(':src/lib')
-    testCompile project(path: ':src/lib', configuration: 'testutil')
+    compile project(':src/libclient')
+    testCompile project(path: ':src/libclient', configuration: 'testutil')
 }

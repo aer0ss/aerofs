@@ -3,12 +3,12 @@ package com.aerofs.sp.server;
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestIdentitySessionManager extends AbstractTest
+public class TestIdentitySessionManager extends AbstractBaseTest
 {
     PooledJedisConnectionProvider jedis;
 

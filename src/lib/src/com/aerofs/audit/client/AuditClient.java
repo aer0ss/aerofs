@@ -4,7 +4,7 @@
 
 package com.aerofs.audit.client;
 
-import com.aerofs.lib.log.LogUtil;
+import com.aerofs.base.BaseLogUtil;
 import com.google.common.collect.Maps;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -31,10 +31,7 @@ import java.util.Map;
 // (i hate that users say .add("user", user.id()) )
 public class AuditClient
 {
-    public final static String HEADER_UID = "AeroFS-UserID";
-    public final static String HEADER_DID = "AeroFS-DeviceID";
-
-    Logger l = LoggerFactory.getLogger(AuditClient.class);
+    private static final Logger l = LoggerFactory.getLogger(AuditClient.class);
 
     /** The general topic this audit belongs to. */
     public enum AuditTopic
@@ -110,7 +107,7 @@ public class AuditClient
             try {
                 publishBlocking();
             } catch (IOException ioe) {
-                l.warn("audit publish error suppressed", LogUtil.suppress(ioe));
+                l.warn("audit publish error suppressed", BaseLogUtil.suppress(ioe));
             }
         }
 

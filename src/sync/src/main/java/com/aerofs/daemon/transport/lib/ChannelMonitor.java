@@ -10,7 +10,7 @@ import com.aerofs.daemon.transport.lib.presence.IPresenceLocationReceiver;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
-import com.aerofs.lib.LibParam.Daemon;
+import com.aerofs.lib.ClientParam;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -82,7 +82,7 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
     protected void scheduleConnect(final int iters, final DID did)
     {
         connectTimer.newTimeout(timeout ->  connectNewChannel(iters, did),
-                (iters == 0 ? Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : Daemon.CHANNEL_RECONNECT_MAX_DELAY),
+                (iters == 0 ? ClientParam.Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : ClientParam.Daemon.CHANNEL_RECONNECT_MAX_DELAY),
                 TimeUnit.MILLISECONDS);
     }
 

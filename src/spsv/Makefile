@@ -1,10 +1,13 @@
 IMAGE_NAME = aerofs/servlets
+DST_DIR = buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF/lib
 
 image: base subdirs
 
 base:
 	gradle --daemon dist
-	../../tools/lazy-copy.sh ../../out.gradle/spsv/dist buildroot/usr/share/tomcat6/webapps/ROOT/WEB-INF/lib
+	rm -rf buildroot
+	mkdir -p $(DST_DIR)
+	ln ../../out.gradle/spsv/dist/* $(DST_DIR)
 	docker build -t $(IMAGE_NAME) .
 
 DIRS =  sp \

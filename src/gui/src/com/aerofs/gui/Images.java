@@ -4,7 +4,7 @@ import com.aerofs.base.Lazy;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.tray.TrayIcon.RootStoreSyncStatus;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.os.OSUtil;
 
 import org.eclipse.swt.SWT;
@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -90,7 +89,7 @@ public class Images {
     {
         Image img = s_imgs.get(key);
         if (img == null) {
-            String path = AppRoot.abs() + LibParam.ICONS_DIR + key;
+            String path = AppRoot.abs() + ClientParam.ICONS_DIR + key;
             try {
                 img = new Image(Display.getCurrent(), path);
                 s_imgs.put(key, img);
@@ -111,7 +110,7 @@ public class Images {
         if (s_spinner_frames == null) {
             // image downloaded from http://ajaxload.info/
             ImageLoader loader = new ImageLoader();
-            loader.load(AppRoot.abs() + LibParam.ICONS_DIR + Images.ICON_SPIN);
+            loader.load(AppRoot.abs() + ClientParam.ICONS_DIR + Images.ICON_SPIN);
             s_spinner_frames = new Image[loader.data.length];
             Display display = Display.getCurrent();
             for (int i = 0; i < loader.data.length; i++) {

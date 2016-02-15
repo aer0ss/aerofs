@@ -1,11 +1,11 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.Before;
 import redis.clients.jedis.JedisPooledConnection;
 
-public class AbstractJedisTest extends AbstractTest
+public class AbstractJedisTest extends AbstractBaseTest
 {
     private LocalJedisConnectionProvider _provider = new LocalJedisConnectionProvider();
     private JedisThreadLocalTransaction _transaction = new JedisThreadLocalTransaction(_provider);

@@ -12,8 +12,8 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.TransUtil;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -96,10 +96,10 @@ class BlockPrefix implements IPhysicalPrefix
             throw new IOException("invalid prefix blocks " + _sokid + " " + blocksLength);
         }
         long tailLength = _f.newChild(TAIL).lengthOrZeroIfNotFile();
-        if (tailLength > LibParam.FILE_BLOCK_SIZE) {
+        if (tailLength > ClientParam.FILE_BLOCK_SIZE) {
             throw new IOException("invalid prefix tail " + _sokid + " " + tailLength);
         }
-        return (blocksLength / ContentBlockHash.UNIT_LENGTH) * LibParam.FILE_BLOCK_SIZE
+        return (blocksLength / ContentBlockHash.UNIT_LENGTH) * ClientParam.FILE_BLOCK_SIZE
                 + tailLength;
     }
 
@@ -206,7 +206,7 @@ class BlockPrefix implements IPhysicalPrefix
         {
             final InjectableFile tail = _f.newChild(TAIL);
             tailLength = tail.lengthOrZeroIfNotFile();
-            if (tailLength > LibParam.FILE_BLOCK_SIZE) {
+            if (tailLength > ClientParam.FILE_BLOCK_SIZE) {
                 _f.deleteOrThrowIfExistRecursively();
                 throw new IOException("corrupted prefix");
             }
@@ -229,7 +229,7 @@ class BlockPrefix implements IPhysicalPrefix
         }
 
         public void write(int b) throws IOException {
-            if (tailLength == LibParam.FILE_BLOCK_SIZE) commitTail();
+            if (tailLength == ClientParam.FILE_BLOCK_SIZE) commitTail();
             out.write(b);
             ++tailLength;
         }
@@ -239,8 +239,8 @@ class BlockPrefix implements IPhysicalPrefix
         }
 
         public void write(@Nonnull byte b[], int off, int len) throws IOException {
-            while (tailLength + len >= LibParam.FILE_BLOCK_SIZE) {
-                int n = (int)(LibParam.FILE_BLOCK_SIZE - tailLength);
+            while (tailLength + len >= ClientParam.FILE_BLOCK_SIZE) {
+                int n = (int)(ClientParam.FILE_BLOCK_SIZE - tailLength);
                 out.write(b, off, n);
                 off += n;
                 len -= n;

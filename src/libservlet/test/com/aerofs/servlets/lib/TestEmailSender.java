@@ -7,7 +7,7 @@ package com.aerofs.servlets.lib;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
  * In an ideal world, we would use more mocking of the AsyncEmailSender internals. However, that
  * would let us escape without testing our use of javax.mail, which is occasionally problematic.
  */
-public class TestEmailSender extends AbstractTest
+public class TestEmailSender extends AbstractBaseTest
 {
     static final int WAIT_INTERVALS = 5;
     static final long WAIT_SLEEP = 1 * C.SEC;

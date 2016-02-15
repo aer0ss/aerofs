@@ -17,8 +17,8 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -75,7 +75,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH),
+                folder(ClientParam.TRASH, OID.TRASH),
                 folder("foo", foo,
                         folder("bar", bar,
                                 file("baz", baz,
@@ -93,10 +93,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -133,7 +133,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify again
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
                         folder("bar", bar,
@@ -187,10 +187,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH,
+                        folder(ClientParam.TRASH, OID.TRASH,
                                 folder(bar.toStringFormal(), bar,
                                         file("baz", baz)))),
                 folder("qux", qux,
@@ -234,10 +234,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify again
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH,
+                        folder(ClientParam.TRASH, OID.TRASH,
                                 folder(bar.toStringFormal(), bar,
                                         file("baz", baz)))),
                 folder("qux", qux,
@@ -306,12 +306,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(bar.toStringFormal(), bar,
                                 file("baz", baz))),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("moved",
                                 file("baz", null,
                                         content(CONTENT, 1234),
@@ -376,10 +376,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(EMPTY, 42)))));
@@ -445,10 +445,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("oof", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("rab", bar,
                                 folder("baz", baz),
                                 file("qux", qux,
@@ -521,12 +521,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(qux.toStringFormal(), qux,
                                 file("quux", quux))),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH,
+                        folder(ClientParam.TRASH, OID.TRASH,
                                 folder(bar.toStringFormal(), bar,
                                         file("baz", baz)))));
 
@@ -582,10 +582,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz))));
 
@@ -639,7 +639,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo));
 
@@ -690,7 +690,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         anchor(anchor.toStringFormal(), foo)));
 
@@ -748,12 +748,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(qux.toStringFormal(), qux),
                         anchor(nestedAnchor.toStringFormal(), qux)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("moved",
                                 folder("bar",
                                         file("baz", null,
@@ -817,12 +817,12 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         OID nestedAnchor = SID.folderOID2convertedAnchorOID(qux);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(qux.toStringFormal(), qux),
                         anchor(nestedAnchor.toStringFormal(), qux)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("moved",
                                 folder("bar",
                                         file("baz", null,
@@ -884,9 +884,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH),
+                folder(ClientParam.TRASH, OID.TRASH),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -908,10 +908,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -954,9 +954,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH),
+                folder(ClientParam.TRASH, OID.TRASH),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -978,10 +978,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -1018,13 +1018,13 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(bar.toStringFormal(), bar)),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH)),
+                        folder(ClientParam.TRASH, OID.TRASH)),
                 anchor("bargain", bar,
-                        folder(LibParam.TRASH, OID.TRASH)));
+                        folder(ClientParam.TRASH, OID.TRASH)));
 
     }
 
@@ -1052,13 +1052,13 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(bar.toStringFormal(), bar)),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH)),
+                        folder(ClientParam.TRASH, OID.TRASH)),
                 anchor("bargain", bar,
-                        folder(LibParam.TRASH, OID.TRASH)));
+                        folder(ClientParam.TRASH, OID.TRASH)));
 
     }
 
@@ -1087,13 +1087,13 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(bar.toStringFormal(), bar)),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH)),
+                        folder(ClientParam.TRASH, OID.TRASH)),
                 anchor("bargain", bar,
-                        folder(LibParam.TRASH, OID.TRASH)));
+                        folder(ClientParam.TRASH, OID.TRASH)));
 
     }
 
@@ -1122,13 +1122,13 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo),
                         folder(bar.toStringFormal(), bar)),
                 anchor("foolish", foo,
-                        folder(LibParam.TRASH, OID.TRASH)),
+                        folder(ClientParam.TRASH, OID.TRASH)),
                 anchor("bargain", bar,
-                        folder(LibParam.TRASH, OID.TRASH)),
+                        folder(ClientParam.TRASH, OID.TRASH)),
                 folder("bastion", baz));
 
     }
@@ -1163,10 +1163,10 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
             LogicalObjectsPrinter.printRecursively(rootSID, ds);
 
             mds.expect(rootSID,
-                    folder(LibParam.TRASH, OID.TRASH,
+                    folder(ClientParam.TRASH, OID.TRASH,
                             folder(foo.toStringFormal(), foo)),
                     anchor("foo", foo,
-                            folder(LibParam.TRASH, OID.TRASH),
+                            folder(ClientParam.TRASH, OID.TRASH),
                             folder("bar", bar)));
         } finally {
             L.set(new Properties());

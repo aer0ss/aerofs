@@ -23,7 +23,7 @@ import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler;
 import com.aerofs.daemon.transport.lib.handlers.ChannelTeardownHandler.ChannelMode;
 import com.aerofs.daemon.transport.lib.handlers.TransportProtocolHandler;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.sched.Scheduler;
@@ -351,7 +351,7 @@ public class TCP implements ITransport, ILinkStateListener
 
         static PortRange loadFromConfiguration()
         {
-            int low = LibParam.Daemon.PORT_RANGE_LOW, high = LibParam.Daemon.PORT_RANGE_HIGH;
+            int low = ClientParam.Daemon.PORT_RANGE_LOW, high = ClientParam.Daemon.PORT_RANGE_HIGH;
             if (low > high) {
                 l.warn("invalid range of ports for daemon to use: {}-{}, defaulting to any port", low, high);
                 return new PortRange(0, 0);

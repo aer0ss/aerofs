@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 
 import java.sql.SQLException;
 
-import static com.aerofs.lib.LibParam.seedFileName;
+import static com.aerofs.lib.ClientParam.seedFileName;
 
 /**
  * Abstract away OID generation for use by MightCreate

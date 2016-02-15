@@ -5,6 +5,7 @@
 package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.base.BaseParam.WWW;
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -17,7 +18,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.sched.IScheduler;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -56,13 +56,13 @@ public class ULTRecertifyDevice extends UILaunchTask
         // let's REFRESH_MARGIN_DAYS, we will use the existing certificate to sign in this device
         // and request a new cert.
         // Or, maybe everything is okay. In which case, do nothing.
-        if (!SecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
+        if (!BaseSecUtil.signingPathExists(Cfg.cert(), Cfg.cacert())) {
 
             recertify(this::signInToRecertify);
 
         } else if (Cfg.recertify(Cfg.absRTRoot())
-                || !SecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY)
-                || !SecUtil.hasSufficientExtKeyUsage(Cfg.cert())) {
+                || !BaseSecUtil.validForAtLeast(Cfg.cert(), REFRESH_MARGIN_DAYS * C.DAY)
+                || !BaseSecUtil.hasSufficientExtKeyUsage(Cfg.cert())) {
             recertify(() -> {
                 l.info("Attempting to refresh the device certificate...");
 

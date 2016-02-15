@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.linked.linker;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -14,7 +15,6 @@ import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
@@ -64,7 +64,7 @@ public class TestHashQueue extends AbstractTest
         }
     }
 
-    final static ContentHash EMPTY_HASH = new ContentHash(SecUtil.hash(new byte [0]));
+    final static ContentHash EMPTY_HASH = new ContentHash(BaseSecUtil.hash(new byte [0]));
     final static byte[] EMPTY_CONTENT = new byte[0];
 
     SID rootSID = SID.rootSID(UserID.fromInternal("foo@bar.baz"));
@@ -153,7 +153,7 @@ public class TestHashQueue extends AbstractTest
     @Test
     public void shouldUpdateOnHashMismatch() throws Exception
     {
-        ContentHash oldHash = new ContentHash(SecUtil.hash(new byte[] {0}));
+        ContentHash oldHash = new ContentHash(BaseSecUtil.hash(new byte[] {0}));
         when(ds.getCAHash_(sokid)).thenReturn(oldHash);
 
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
@@ -170,7 +170,7 @@ public class TestHashQueue extends AbstractTest
     @Test
     public void shouldMergeDuplicateRequests() throws Exception
     {
-        ContentHash oldHash = new ContentHash(SecUtil.hash(new byte[] {0}));
+        ContentHash oldHash = new ContentHash(BaseSecUtil.hash(new byte[] {0}));
         when(ds.getCAHash_(sokid)).thenReturn(oldHash);
 
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
@@ -190,7 +190,7 @@ public class TestHashQueue extends AbstractTest
     @Test
     public void shouldAbortAndRestartOnConflictingPathRequest() throws Exception
     {
-        ContentHash oldHash = new ContentHash(SecUtil.hash(new byte[] {0}));
+        ContentHash oldHash = new ContentHash(BaseSecUtil.hash(new byte[] {0}));
         when(ds.getCAHash_(sokid)).thenReturn(oldHash);
 
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);
@@ -219,7 +219,7 @@ public class TestHashQueue extends AbstractTest
     @Test
     public void shouldAbortAndRestartOnConflictingMtimeRequest() throws Exception
     {
-        ContentHash oldHash = new ContentHash(SecUtil.hash(new byte[] {0}));
+        ContentHash oldHash = new ContentHash(BaseSecUtil.hash(new byte[] {0}));
         when(ds.getCAHash_(sokid)).thenReturn(oldHash);
 
         InjectableFile f = mockContent(EMPTY_CONTENT, 42L);

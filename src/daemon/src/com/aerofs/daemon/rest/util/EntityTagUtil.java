@@ -1,11 +1,11 @@
 package com.aerofs.daemon.rest.util;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.rest.handler.RestContentHelper;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
@@ -35,7 +35,7 @@ public class EntityTagUtil extends ContentEntityTagUtil
     public EntityTag etagForMeta(SOID soid) throws SQLException
     {
         OA oa = _ds.getOANullable_(soid);
-        MessageDigest md = SecUtil.newMessageDigestMD5();
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         if (oa != null) {
             md.update(oa.parent().getBytes());
             md.update(BaseUtil.string2utf(oa.name()));

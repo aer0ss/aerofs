@@ -20,6 +20,7 @@ sourceSets {
     testutil {
         java {
             srcDir 'src/test/java'
+            include 'com/aerofs/testlib/**'
             include 'com/aerofs/daemon/core/lib/BaseDownloadsTest.java'
             include 'com/aerofs/daemon/core/lib/BaseStoreJoinerTest.java'
             include 'com/aerofs/daemon/core/lib/AsyncDownloadTestHelper.java'
@@ -54,7 +55,8 @@ configurations {
 dependencies {
     compile 'org.javaswift:joss:0.9.8'
     compile 'com.amazonaws:aws-java-sdk-s3:1.9.32'
-    compile project(':src/lib')
+    compile name: 'guice-multibindings-aerofs'
+    compile project(':src/libclient')
     compile project(':src/tunnel')
     compile project(':src/rest-api')
     compile project(':src/ssmp')
@@ -69,7 +71,7 @@ dependencies {
     testutilCompile project(':src/havre')
     testutilCompile project(':src/zephyr')
     testutilCompile project(path: ':src/bifrost', configuration: 'testutil')
-    testutilCompile project(path: ':src/lib', configuration: 'testutil')
+    testutilCompile project(path: ':src/libclient', configuration: 'testutil')
 }
 
 task testutilJar(type: Jar) {

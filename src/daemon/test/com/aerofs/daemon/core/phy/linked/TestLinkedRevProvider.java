@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.BaseCfg;
 import com.aerofs.lib.injectable.TimeSource;
@@ -65,7 +65,7 @@ public class TestLinkedRevProvider extends AbstractTest
         dataDir = factFile.create(rootDir, "AeroFS");
         dataDir.mkdirs();
         String auxDir = BaseCfg.absAuxRootForPath(dataDir.getAbsolutePath(), rootSID);
-        revDir = factFile.create(auxDir, LibParam.AuxFolder.HISTORY._name);
+        revDir = factFile.create(auxDir, ClientParam.AuxFolder.HISTORY._name);
         revDir.mkdirs();
 
         when(cfgAbsRoots.getNullable(rootSID)).thenReturn(rootDir.getAbsolutePath());

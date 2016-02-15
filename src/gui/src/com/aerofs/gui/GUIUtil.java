@@ -1,5 +1,6 @@
 package com.aerofs.gui;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.analytics.IAnalyticsEvent;
@@ -12,7 +13,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -330,7 +330,7 @@ public class GUIUtil
         } catch (Exception e) {
             ErrorMessages.show(e, "Unable to create link for " + path.last() + ".",
                     new ErrorMessage(ExNoPerm.class, S.NON_OWNER_CANNOT_CREATE_LINK));
-            l.info("Unable to create link for {}. Got exception {}", path, LogUtil.suppress(e));
+            l.info("Unable to create link for {}. Got exception {}", path, BaseLogUtil.suppress(e));
         }
     }
 

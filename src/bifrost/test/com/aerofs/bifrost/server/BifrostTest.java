@@ -18,7 +18,7 @@ import com.aerofs.bifrost.oaaas.repository.AccessTokenRepository;
 import com.aerofs.bifrost.oaaas.repository.ClientRepository;
 import com.aerofs.bifrost.oaaas.repository.ResourceServerRepository;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 /**
  * Base class to hold common OAuth functionality
  */
-public abstract class BifrostTest extends AbstractTest
+public abstract class BifrostTest extends AbstractBaseTest
 {
     public final static String RESOURCEKEY = "authorization-server-admin";
     public final static String RESOURCESECRET = "rs_secret";

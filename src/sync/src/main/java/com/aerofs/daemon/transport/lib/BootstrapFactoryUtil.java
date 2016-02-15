@@ -11,7 +11,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.transport.lib.handlers.ConnectTimeoutHandler;
 import com.aerofs.daemon.transport.lib.handlers.HeartbeatHandler;
 import com.aerofs.daemon.transport.lib.handlers.IOStatsHandler;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
@@ -32,7 +32,7 @@ public abstract class BootstrapFactoryUtil
     {
         public static final int LENGTH_FIELD_SIZE = 2; // bytes
         public static final int MAX_MESSAGE_SIZE = DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
-        public static final byte[] CORE_PROTOCOL_VERSION_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(LibParam.CORE_PROTOCOL_VERSION).array();
+        public static final byte[] CORE_PROTOCOL_VERSION_BYTES = ByteBuffer.allocate(C.INTEGER_SIZE).putInt(ClientParam.CORE_PROTOCOL_VERSION).array();
         public static final int HEADER_SIZE = LENGTH_FIELD_SIZE + CORE_PROTOCOL_VERSION_BYTES.length;
 
         static {

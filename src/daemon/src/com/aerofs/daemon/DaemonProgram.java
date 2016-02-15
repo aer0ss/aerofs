@@ -1,5 +1,6 @@
 package com.aerofs.daemon;
 
+import com.aerofs.MainUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
@@ -27,7 +28,6 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.StorageType;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.nativesocket.NativeSocketAuthenticatorFactory;
 import com.aerofs.lib.nativesocket.NativeSocketModule;
@@ -72,7 +72,7 @@ public class DaemonProgram implements IProgram
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
-        Util.initDriver("dc", rtRoot); // "dc" stands for daemon native library in C
+        MainUtil.initDriver("dc", rtRoot); // "dc" stands for daemon native library in C
 
         // TODO (AT): really need to tidy up our launch sequence
         // Defects system initialization is replicated in GUI, CLI, SH, and Daemon. The only

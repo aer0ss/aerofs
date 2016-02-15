@@ -1,6 +1,6 @@
 package com.aerofs.trifrost;
 
-import com.aerofs.lib.log.LogUtil;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.trifrost.api.OauthClient;
 import com.aerofs.trifrost.api.OauthToken;
 import com.aerofs.trifrost.api.VerifiedDevice;
@@ -44,7 +44,7 @@ public class SpartaClient implements ISpartaClient {
             oauthSecret = response.secret;
             return;
         } catch (IOException e) {
-            logger.info("Ignoring bifrost client lookup error - have to create the client", LogUtil.suppress(e));
+            logger.info("Ignoring bifrost client lookup error - have to create the client", BaseLogUtil.suppress(e));
         }
 
         // Didn't exist, let's create it:

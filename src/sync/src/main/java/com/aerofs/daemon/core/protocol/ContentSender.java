@@ -136,7 +136,7 @@ public class ContentSender
         // the file might not exist if len is 0
         InputStream is = c.length == 0 ? null : c.pf.newInputStream();
 
-        MessageDigest md = SecUtil.newMessageDigest();
+        MessageDigest md = BaseSecUtil.newMessageDigest();
         if (is != null) is = new DigestInputStream(is, md);
 
         try {

@@ -4,8 +4,6 @@
 
 package com.aerofs.daemon.lib.db;
 
-import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -362,11 +360,5 @@ public class CoreSchema extends SyncSchema
                 C_SC_DID + " blob," +
                 "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
                 ")" + dbcw.charSet());
-    }
-
-    @Override
-    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
-    {
-        new CoreDatabaseDumper(_dr).dumpAll_(s, ps, true);
     }
 }

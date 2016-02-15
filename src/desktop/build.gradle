@@ -9,3 +9,7 @@ dependencies {
     compile project(':src/gui')
 }
 
+dependencies {
+    testCompile project(path: ':src/lib', configuration: 'testutil')
+    testCompile project(path: ':src/sync', configuration: 'testutil')
+}

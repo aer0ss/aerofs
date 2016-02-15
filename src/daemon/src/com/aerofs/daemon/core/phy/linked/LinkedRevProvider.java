@@ -8,12 +8,8 @@ import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRoot;
 import com.aerofs.daemon.core.phy.linked.linker.LinkerRootMap;
-import com.aerofs.lib.ExternalSorter;
-import com.aerofs.lib.LibParam.AuxFolder;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.injectable.TimeSource;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.ImmutableMap;
@@ -294,7 +290,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             bd.append(encode(elems[i], i == elems.length - 1 ? type : PathType.DIR));
         }
 
-        return Util.join(_lrm.auxRoot_(path.sid()), AuxFolder.HISTORY._name) + bd.toString();
+        return Util.join(_lrm.auxRoot_(path.sid()), ClientParam.AuxFolder.HISTORY._name) + bd.toString();
     }
 
     String newRevPath(Path path, String absPath, KIndex kidx) throws IOException
@@ -515,7 +511,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private void sweep(SID sid)
         {
             try {
-                _cleaner.run(sid, Util.join(_lrm.auxRoot_(sid), AuxFolder.HISTORY._name));
+                _cleaner.run(sid, Util.join(_lrm.auxRoot_(sid), ClientParam.AuxFolder.HISTORY._name));
             } catch (InterruptedException e) {
                 l.warn("cleaner interrupted");
             } catch (Exception e) {

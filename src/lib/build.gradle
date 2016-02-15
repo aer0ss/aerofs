@@ -14,8 +14,6 @@ sourceSets {
         java {
             srcDir 'test'
             include 'com/aerofs/testlib/**'
-            include 'com/aerofs/defects/MockDefects.java'
-            include 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
             compileClasspath += main.output
             runtimeClasspath += main.output
         }
@@ -24,8 +22,6 @@ sourceSets {
         java {
             srcDir 'test'
             exclude 'com/aerofs/testlib/**'
-            exclude 'com/aerofs/defects/MockDefects.java'
-            exclude 'com/aerofs/ritual_notification/MockRNSConfiguration.java'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output
         }
@@ -46,13 +42,6 @@ dependencies {
     compile 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
     compile 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
     compile 'commons-lang:commons-lang:2.6'
-    compile 'com.aerofs:sqlite-jdbc:3.8.11.1'
-    compile 'com.aerofs:jnotify:0.96'
-    compile 'com.aerofs:aerofsd:0.1.0'
-    compile name: 'guice-aerofs'
-    compile name: 'guice-multibindings-aerofs'
-    compile name: 'netty-native-socket'
-    compile name: 'junixsocket-1.3'
     compile project(':src/base')
     compile project(path:':src/aero-auth', configuration:'client')
     testutilCompile project(path:':src/base', configuration:'testutil')

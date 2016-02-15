@@ -5,6 +5,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.LaunchArgs;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
@@ -16,15 +17,8 @@ import com.aerofs.ids.SID;
 import com.aerofs.defects.Defect;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam;
-import com.aerofs.lib.LibParam.Daemon;
-import com.aerofs.lib.LibParam.RitualNotification;
-import com.aerofs.lib.S;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.*;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.NativeSocketType;
 import com.aerofs.lib.cfg.ExNotSetup;
@@ -35,7 +29,6 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.ex.ExUpdating;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.DriverConstants;
 import com.aerofs.ui.IUI.IWaiter;
@@ -271,7 +264,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private static @Nullable SID getFailedRootSID_()
     {
         try {
-            String path = Util.join(Cfg.absRTRoot(), LibParam.FAILED_SID);
+            String path = Util.join(Cfg.absRTRoot(), ClientParam.FAILED_SID);
             try (InputStream i = new FileInputStream(path)) {
                 return SID.fromStringFormal(BaseUtil.utf2string(ByteStreams.toByteArray(i)));
             } finally {
@@ -315,7 +308,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             throw new ExNotSetup();
         } else {
             try {
-                InjectableFile f = _factFile.create(Cfg.absRTRoot(), LibParam.IGNORE_DB_TAMPERING);
+                InjectableFile f = _factFile.create(Cfg.absRTRoot(), ClientParam.IGNORE_DB_TAMPERING);
                 if (!f.exists()) f.createNewFile();
             } catch (IOException e) {
                 throw new ExUIMessage(L.product() + " could not ignore database tampering."
@@ -511,7 +504,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      */
     private void tryHeartBeat() {
         try {
-            UIGlobals.ritual().heartbeat(Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
+            UIGlobals.ritual().heartbeat(ClientParam.Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             _defectHeartbeatGone.setMessage("daemon hb gone")
                     .setException(e)
@@ -521,7 +514,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     private Socket connectToRitualNotification(long timeoutMs) throws IOException
     {
-        final long retryInterval = RitualNotification.NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL;
+        final long retryInterval = ClientParam.RitualNotification.NOTIFICATION_SERVER_CONNECTION_RETRY_INTERVAL;
         IOException lastEx = null;
 
         for (long attempts = Math.max(1, timeoutMs / retryInterval); attempts > 0; attempts--) {
@@ -534,7 +527,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 sock.connect(new NativeSocketAddress(socketFile));
                 return sock;
             } catch (IOException io) {
-                l.debug("Error connecting to notification service", LogUtil.suppress(io));
+                l.debug("Error connecting to notification service", BaseLogUtil.suppress(io));
                 ThreadUtil.sleepUninterruptable(retryInterval);
                 lastEx = io;
             }
@@ -556,7 +549,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         try {
             // FIXME: put this magic number in LibParam... Daemon startup timeout
             s = connectToRitualNotification(5 * C.SEC);
-            s.setSoTimeout((int) Daemon.HEARTBEAT_INTERVAL);
+            s.setSoTimeout((int) ClientParam.Daemon.HEARTBEAT_INTERVAL);
             while (true) {
                 try {
                     // read() should get nothing and block

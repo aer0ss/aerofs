@@ -14,7 +14,6 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.Modification;
 import com.unboundid.ldap.sdk.SearchScope;
 
-import java.util.Arrays;
 import java.util.List;
 
 public abstract class InMemoryServer

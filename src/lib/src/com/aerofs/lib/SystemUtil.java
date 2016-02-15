@@ -5,7 +5,6 @@
 package com.aerofs.lib;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.ex.ExDBCorrupted;
 import com.aerofs.lib.ex.ExFatal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +14,17 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.UnresolvedAddressException;
-
-import static com.aerofs.defects.Defects.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class SystemUtil
 {
     private static final Logger l = LoggerFactory.getLogger(SystemUtil.class);
+
+    public interface FatalHandler {
+        void onFatal(Throwable cause);
+    }
+
+    public final static AtomicReference<FatalHandler> _h = new AtomicReference<>();
 
     /**
      * This class defines custom process exit codes and corresponding user friendly error messages.
@@ -148,20 +152,11 @@ public abstract class SystemUtil
 
         l.error("FATAL: fatal-caller:{} fatal-stack:", e.getMessage(), fatalCause);
 
-        if (fatalCause instanceof ExDBCorrupted) {
-            ExDBCorrupted corrupted = (ExDBCorrupted) fatalCause;
-            newMetric("sqlite.corrupt")
-                    .setMessage(corrupted._integrityCheckResult)
-                    .sendAsync();
-            l.error(corrupted._integrityCheckResult);
-            ExitCode.CORRUPTED_DB.exit();
-        } else {
-            newDefect("system.fatal")
-                    .setMessage("FATAL:")
-                    .setException(e)
-                    .sendSyncIgnoreErrors();
-            ExitCode.FATAL_ERROR.exit();
+        FatalHandler h = _h.get();
+        if (h != null) {
+            h.onFatal(fatalCause);
         }
+        ExitCode.FATAL_ERROR.exit();
 
         throw e;
     }
@@ -267,18 +262,5 @@ public abstract class SystemUtil
         proc.getOutputStream().close();
         proc.getErrorStream().close();
         return proc;
-    }
-
-    public static void setDefaultUncaughtExceptionHandler()
-    {
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            newDefectWithLogs("system.uncaught_exception")
-                    .setMessage("uncaught exception from " +
-                            t.getName() + " . program exists now.")
-                    .setException(e)
-                    .sendSyncIgnoreErrors();
-            // must abort the process as the abnormal thread can no longer run properly
-            fatal(e);
-        });
     }
 }

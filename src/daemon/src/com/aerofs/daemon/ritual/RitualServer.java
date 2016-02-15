@@ -4,6 +4,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.net.NettyUtil;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExIndexing;
@@ -28,8 +29,6 @@ import org.slf4j.Logger;
 
 import java.io.File;
 
-import static com.aerofs.lib.LibParam.Ritual.LENGTH_FIELD_SIZE;
-import static com.aerofs.lib.LibParam.Ritual.MAX_FRAME_LENGTH;
 import static com.aerofs.lib.cfg.CfgDatabase.FIRST_START;
 
 public class RitualServer
@@ -45,8 +44,8 @@ public class RitualServer
         _ritualSocketFile = rsf.get();
         ChannelPipelineFactory _pipelineFactory = () -> (Channels.pipeline(
                 authenticator,
-                new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0,
-                        LENGTH_FIELD_SIZE), new LengthFieldPrepender(LENGTH_FIELD_SIZE),
+                new LengthFieldBasedFrameDecoder(ClientParam.Ritual.MAX_FRAME_LENGTH, 0, ClientParam.Ritual.LENGTH_FIELD_SIZE, 0,
+                        ClientParam.Ritual.LENGTH_FIELD_SIZE), new LengthFieldPrepender(ClientParam.Ritual.LENGTH_FIELD_SIZE),
                 new RitualServerHandler()));
         _bootstrap = NativeSocketHelper.createServerBootstrap(_ritualSocketFile, _pipelineFactory);
     }

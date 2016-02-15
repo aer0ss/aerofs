@@ -1,12 +1,12 @@
 package com.aerofs.gui;
 
 import com.aerofs.LaunchArgs;
+import com.aerofs.MainUtil;
 import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.InitErrors;
 import com.aerofs.lib.SystemUtil.ExitCode;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.CfgVer;
@@ -45,7 +45,7 @@ public class GUIProgram implements IProgram
         }
 
         try {
-            Util.initDriver("gc", rtRoot); // "gc" is the log file that aerofsd will write to
+            MainUtil.initDriver("gc", rtRoot); // "gc" is the log file that aerofsd will write to
         } catch (UnsatisfiedLinkError linkError) {
             // On Windows, a common cause of failure is that the MSVC 2010 redistributables aren't
             // installed. Display a message box to the user so that he can fix the problem

@@ -31,8 +31,8 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 import com.google.common.collect.Lists;
@@ -1006,7 +1006,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         // TODO: binary search
         String targetName = name;
         do {
-            targetName = Util.nextFileName(targetName);
+            targetName = FileUtil.nextFileName(targetName);
         } while (_ds.getChild_(sidx, parent, targetName) != null);
         return targetName;
     }

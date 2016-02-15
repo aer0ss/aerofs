@@ -5,19 +5,10 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.*;
-import com.aerofs.lib.FileUtil.FileName;
-import com.aerofs.lib.ex.*;
-import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Common.PBException.Type;
-import com.aerofs.swig.driver.Driver;
-import com.aerofs.swig.driver.LogLevel;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.GeneratedMessageLite;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -36,9 +27,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
-import static com.aerofs.lib.FileUtil.deleteOrOnExit;
-import static com.aerofs.lib.cfg.Cfg.absRTRoot;
-
 public abstract class Util
 {
     private static final Logger l = Loggers.getLogger(Util.class);
@@ -46,48 +34,6 @@ public abstract class Util
     private Util()
     {
         // private to enforce uninstantiability for this class
-    }
-
-    private static boolean s_exceptionsRegistered = false;
-
-    /**
-     * Register exception types from lib
-     * Modules using the lib module should call this method in a static block in order to get
-     * exceptions from the wire converted back to the appropriate types
-     */
-    public static void registerLibExceptions()
-    {
-        if (s_exceptionsRegistered) return;
-
-        // Register exception types from lib
-        Exceptions.registerExceptionTypes(
-                new ImmutableMap.Builder<Type, Class<? extends AbstractExWirable>>().put(
-                        Type.DEVICE_ID_ALREADY_EXISTS, ExDeviceIDAlreadyExists.class)
-                        .put(Type.ALREADY_INVITED, ExAlreadyInvited.class)
-                        .put(Type.UPDATING, ExUpdating.class)
-                        .put(Type.INDEXING, ExIndexing.class)
-                        .put(Type.NOT_SHARED, ExNotShared.class)
-                        .put(Type.PARENT_ALREADY_SHARED, ExParentAlreadyShared.class)
-                        .put(Type.CHILD_ALREADY_SHARED, ExChildAlreadyShared.class)
-                        .put(Type.DEVICE_OFFLINE, ExDeviceOffline.class)
-                        .put(Type.NOT_DIR, ExNotDir.class)
-                        .put(Type.NOT_FILE, ExNotFile.class)
-                        .put(Type.UI_MESSAGE, ExUIMessage.class)
-                        .put(Type.NOT_AUTHENTICATED, ExNotAuthenticated.class)
-
-                        // exception used by shared folder rules
-                        .put(Type.SHARING_RULES_WARNINGS, ExSharingRulesWarning.class)
-
-                        // The following exceptions are consumed by Python clients only. No need to
-                        // list them here for the time being.
-                        /*
-                        .put(Type.NO_ADMIN_OR_OWNER, ExNoAdminOrOwner.class)
-                        .put(Type.INVALID_EMAIL_ADDRESS, ExInvalidEmailAddress.class)
-                        */
-
-                        .build());
-
-        s_exceptionsRegistered = true;
     }
 
     private static String convertStackTraceToString(StackTraceElement[] stackTrace)
@@ -224,20 +170,6 @@ public abstract class Util
         }
         sb.append(unit);
         return sb.toString();
-    }
-
-    /**
-     * @param interval in msec
-     * @return "---" if interval == 0
-     */
-    public static String formatBandwidth(long bytes, long interval)
-    {
-        if (interval == 0) return "---";
-        long l = bytes * C.SEC / interval;
-
-        if (l < 1 * C.KB) return S.LBL_IDLE;
-
-        return formatSize(l) + "/s";
     }
 
     /**
@@ -439,21 +371,6 @@ public abstract class Util
         return 0;
     }
 
-    public static void deleteOldHeapDumps()
-    {
-        File[] heapDumps = new File(absRTRoot()).listFiles(
-                (arg0, arg1) -> arg1.endsWith(LibParam.HPROF_FILE_EXT));
-        if (heapDumps == null) {
-            l.error("rtRoot not found.");
-            return;
-        }
-        for (File heapDumpFile : heapDumps) {
-            l.debug("Deleting old heap dump: " + heapDumpFile);
-            deleteOrOnExit(heapDumpFile);
-            heapDumpFile.delete();
-        }
-    }
-
     private static final Pattern NEXT_NAME_PATTERN =
         Pattern.compile("(.*)\\(([0-9]+)\\)$");
 
@@ -488,16 +405,6 @@ public abstract class Util
         }
 
         return prefix + '(' + num + ')' + extension;
-    }
-
-    /**
-     * Split the file name into base and extension based on the position of the dot character,
-     * and then return nextName(base, extension).
-     */
-    public static String nextFileName(String fileName)
-    {
-        FileName fn = FileName.fromBaseName(fileName);
-        return nextName(fn.base, fn.extension);
     }
 
     /**
@@ -586,22 +493,6 @@ public abstract class Util
         // It's helpful for a CRC32 to actually describe 32 bits. It's very
         // easy to see a 7-char CRC and forget that there are leading zeros.
         return String.format("%08x", crc.getValue());
-    }
-
-    public static void initDriver(String logFileName, String rtRoot)
-    {
-        OSUtil.get().loadLibrary("aerofsd");
-        Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-
-        if (rootLogger.isTraceEnabled() || rootLogger.isDebugEnabled()) {
-            Driver.initLogger_(rtRoot, logFileName, LogLevel.LDEBUG);
-        } else if (rootLogger.isInfoEnabled()) {
-            Driver.initLogger_(rtRoot, logFileName, LogLevel.LINFO);
-        } else if (rootLogger.isWarnEnabled()) {
-            Driver.initLogger_(rtRoot, logFileName, LogLevel.LWARN);
-        } else {
-            Driver.initLogger_(rtRoot, logFileName, LogLevel.LERROR);
-        }
     }
 
     /**

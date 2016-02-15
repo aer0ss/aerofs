@@ -15,8 +15,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.KIndex;
@@ -112,10 +112,10 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -140,7 +140,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 folder("moved", bar2,
                         file("baz", baz2,
@@ -148,7 +148,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                                 content(EMPTY, 42)),
                         folder("qux", qux2)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH,
+                        folder(ClientParam.TRASH, OID.TRASH,
                            folder(bar.toStringFormal(), bar,
                                     file("baz", baz),
                                     folder("qux", qux)))));
@@ -180,10 +180,10 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
 
         // verify
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH),
+                        folder(ClientParam.TRASH, OID.TRASH),
                         folder("bar", bar,
                                 file("baz", baz,
                                         content(CONTENT, 1234),
@@ -210,14 +210,14 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
         // verify
         // NB: conflict branch is lost when deletion happens first
         mds.expect(rootSID,
-                folder(LibParam.TRASH, OID.TRASH,
+                folder(ClientParam.TRASH, OID.TRASH,
                         folder(foo.toStringFormal(), foo)),
                 folder("moved", bar2,
                         file("baz", baz2,
                                 content(CONTENT, 1234)),
                         folder("qux", qux2)),
                 anchor("foo", foo,
-                        folder(LibParam.TRASH, OID.TRASH,
+                        folder(ClientParam.TRASH, OID.TRASH,
                                 folder(bar.toStringFormal(), bar,
                                         file("baz", baz),
                                         folder("qux", qux)))));

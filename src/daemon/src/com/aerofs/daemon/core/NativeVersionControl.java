@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.ids.DID;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -417,7 +417,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         // make a digest from that aggregate
         // (no security concern here, only compactness matters so MD5 is fine)
-        MessageDigest md = SecUtil.newMessageDigestMD5();
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         for (Entry<DID, Long> e : ticks.entrySet()) {
             md.update(e.getKey().getBytes());
             md.update(BaseUtil.toByteArray(e.getValue()));

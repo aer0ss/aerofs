@@ -4,8 +4,8 @@
 
 package com.aerofs.audit.client;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.log.LogUtil;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -45,7 +45,7 @@ abstract class AuditHttpClient implements IAuditorClient
         try {
             submitEvent(conn, content);
         } catch (IOException e) {
-            l.warn("audit submit err {}", LogUtil.suppress(e));
+            l.warn("audit submit err {}", BaseLogUtil.suppress(e));
             throw e;
         }
     }

@@ -1,11 +1,13 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.BaseLogUtil;
+import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.Images;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.proto.Ritual.GetTransferStatsReply;
 import com.aerofs.ui.UIGlobals;
 import com.google.common.util.concurrent.FutureCallback;
@@ -55,8 +57,8 @@ public class CompTransferStat extends Composite
             public void paintControl(PaintEvent arg0)
             {
                 if (!_inited) {
-                    _lblIn.setText(Util.formatBandwidth(0, 0));
-                    _lblOut.setText(Util.formatBandwidth(0, 0));
+                    _lblIn.setText(formatBandwidth(0, 0));
+                    _lblOut.setText(formatBandwidth(0, 0));
                 }
 
                 removePaintListener(this);
@@ -103,7 +105,7 @@ public class CompTransferStat extends Composite
                         public void onFailure(Throwable e)
                         {
                             l.warn("can't refresh stat: ",
-                                    LogUtil.suppress(e, ClosedChannelException.class));
+                                    BaseLogUtil.suppress(e, ClosedChannelException.class));
                             GUI.get().safeAsyncExec(CompTransferStat.this, new Runnable() {
                                 @Override
                                 public void run()
@@ -115,6 +117,20 @@ public class CompTransferStat extends Composite
                     });
         }
     };
+
+    /**
+     * @param interval in msec
+     * @return "---" if interval == 0
+     */
+    public static String formatBandwidth(long bytes, long interval)
+    {
+        if (interval == 0) return "---";
+        long l = bytes * C.SEC / interval;
+
+        if (l < 1 * C.KB) return S.LBL_IDLE;
+
+        return Util.formatSize(l) + "/s";
+    }
 
     private void refresh(GetTransferStatsReply data)
     {
@@ -133,8 +149,8 @@ public class CompTransferStat extends Composite
 
     private void refresh(long deltaIn, long deltaOut, long deltaT)
     {
-        _lblIn.setText(Util.formatBandwidth(deltaIn, deltaT));
-        _lblOut.setText(Util.formatBandwidth(deltaOut, deltaT));
+        _lblIn.setText(formatBandwidth(deltaIn, deltaT));
+        _lblOut.setText(formatBandwidth(deltaOut, deltaT));
         _inited = true;
         GUI.get().timerExec(GUIParam.STAT_UPDATE_INTERVAL, _scheduleRefresh);
     }

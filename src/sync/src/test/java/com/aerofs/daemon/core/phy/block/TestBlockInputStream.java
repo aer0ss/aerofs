@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentBlockHash;
-import com.aerofs.lib.LibParam;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +21,7 @@ public class TestBlockInputStream extends AbstractTest
     private final static byte[] EMPTY = new byte[0];
     private final static ContentBlockHash EMPTY_H = new ContentBlockHash(BaseSecUtil.hash(EMPTY));
 
-    private final static byte[] FULL = new byte[(int)LibParam.FILE_BLOCK_SIZE];
+    private final static byte[] FULL = new byte[(int) ClientParam.FILE_BLOCK_SIZE];
     private final static ContentBlockHash FULL_H = new ContentBlockHash(BaseSecUtil.hash(FULL));
 
     private final static byte[] PARTIAL = new byte[42];

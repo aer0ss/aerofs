@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.preferences;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExBadCredential;
@@ -15,7 +16,6 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgKey;
 import com.aerofs.lib.cfg.CfgRestService;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetUserPreferencesReply;
 import com.aerofs.ui.IUI.MessageType;
@@ -210,7 +210,7 @@ public class PreferencesHelper
                             .signInRemote()
                             .getUserPreferences(BaseUtil.toPB(Cfg.did()));
                 } catch (ExBadCredential ebc) {
-                    l.warn("ExBadCredential", LogUtil.suppress(ebc));
+                    l.warn("ExBadCredential", BaseLogUtil.suppress(ebc));
                 } catch (Exception e2) {
                     l.warn("", e2);
                     e = e2;

@@ -6,11 +6,11 @@ package com.aerofs.umdc;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.Defects;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 
@@ -28,8 +28,9 @@ public class UMDC
 
     public UMDC()
     {
-        ObfuscatedDatabaseParams params = new ObfuscatedDatabaseParams(LibParam.OBF_CORE_DATABASE);
-        _db = DBUtil.newDBCW(params);
+        ObfuscatedDatabaseParams params = new ObfuscatedDatabaseParams(ClientParam.OBF_CORE_DATABASE);
+        _db = new SQLiteDBCW(params.url(), params.autoCommit(),
+                params.sqliteExclusiveLocking(), params.sqliteWALMode());
     }
 
     private enum Commands {
@@ -72,14 +73,14 @@ public class UMDC
 
     private void copyDBFiles() throws IOException
     {
-        String from = Util.join(Cfg.absRTRoot(), LibParam.CORE_DATABASE);
-        String to = Util.join(Cfg.absRTRoot(), LibParam.OBF_CORE_DATABASE);
+        String from = Util.join(Cfg.absRTRoot(), ClientParam.CORE_DATABASE);
+        String to = Util.join(Cfg.absRTRoot(), ClientParam.OBF_CORE_DATABASE);
         Files.copy(new File(from), new File(to));
     }
 
     private void removeObfuscatedDB() throws IOException
     {
-        String path = Util.join(Cfg.absRTRoot(), LibParam.OBF_CORE_DATABASE);
+        String path = Util.join(Cfg.absRTRoot(), ClientParam.OBF_CORE_DATABASE);
         File obfuscatedDB = new File(path);
         obfuscatedDB.delete();
     }

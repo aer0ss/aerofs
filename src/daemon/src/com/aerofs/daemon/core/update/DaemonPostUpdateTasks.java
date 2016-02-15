@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.lib.LibParam.PostUpdate;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgKey;
@@ -58,8 +58,8 @@ public class DaemonPostUpdateTasks
         _injector = inj;
 
         // please update counters whenever new tasks are added
-        checkState(UNSUPPORTED + TASKS.length == PostUpdate.DAEMON_POST_UPDATE_TASKS);
-        checkState(PHOENIX_TASKS.length == PostUpdate.PHOENIX_CONVERSION_TASKS);
+        checkState(UNSUPPORTED + TASKS.length == ClientParam.PostUpdate.DAEMON_POST_UPDATE_TASKS);
+        checkState(PHOENIX_TASKS.length == ClientParam.PostUpdate.PHOENIX_CONVERSION_TASKS);
     }
 
     public void run() throws Exception {

@@ -260,6 +260,17 @@ public abstract class BaseSecUtil
         }
     }
 
+    public static boolean hasSufficientExtKeyUsage(X509Certificate cert) {
+        try {
+            List<String> eku = cert.getExtendedKeyUsage();
+            return eku != null
+                    && eku.contains("1.3.6.1.5.5.7.3.1")    // server auth
+                    && eku.contains("1.3.6.1.5.5.7.3.2");   // client auth
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     public static class CipherFactory
     {
         private final SecretKey _secret;

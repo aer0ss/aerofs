@@ -7,12 +7,11 @@ package com.aerofs.sp.authentication;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditorFactory;
-import com.aerofs.audit.client.IAuditorClient;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.authentication.Authenticator.CredentialFormat;
 import com.aerofs.sp.server.ACLNotificationPublisher;
@@ -141,7 +140,7 @@ public class LdapAuthority implements IAuthority
         try {
             return canAuthenticateThrows(userID, false);
         } catch (LDAPException e) {
-            _l.warn("LDAP search exception", LogUtil.suppress(e));
+            _l.warn("LDAP search exception", BaseLogUtil.suppress(e));
             return false;
         }
     }
@@ -188,7 +187,7 @@ public class LdapAuthority implements IAuthority
                             entry.getAttributeValue(_cfg.USER_LASTNAME));
                 } catch (LDAPException lde) {
                     // this just means that this record was not the login record.
-                    _l.info("LDAP bind error", LogUtil.suppress(lde));
+                    _l.info("LDAP bind error", BaseLogUtil.suppress(lde));
                 }
             }
 

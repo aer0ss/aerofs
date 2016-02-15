@@ -6,7 +6,7 @@ package com.aerofs.ui.logs;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.defects.DryadClient;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.cfg.Cfg;
 import org.slf4j.Logger;
 
@@ -27,7 +27,7 @@ public final class LogArchiver
     private static final Logger l = Loggers.getLogger(LogArchiver.class);
 
     public static final FilenameFilter ROLLED_UNGZIPPED_LOG_FILTER = (file, filename) ->
-            filename.contains(LibParam.LOG_FILE_EXT + ".") && !filename.endsWith(".gz");
+            filename.contains(ClientParam.LOG_FILE_EXT + ".") && !filename.endsWith(".gz");
 
     private final String _logpath;
 

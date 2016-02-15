@@ -54,7 +54,7 @@ public abstract class AbstractMagicChunk implements IBlockStorageInitable
         } catch (IOException e) {
             if (getCauseOfClass(e, InvalidKeyException.class) != null) {
                 /** InvalidKeyException can be thrown from
-                 * {@link com.aerofs.lib.SecUtil.CipherFactory#newEncryptingCipher()}, if Java has
+                 * {@link com.aerofs.lib.BaseSecUtil.CipherFactory#newEncryptingCipher()}, if Java has
                  * a restricted key length. See other call sites of the exit code for more info.
                  * See support-182 for the full error stack.
                  */

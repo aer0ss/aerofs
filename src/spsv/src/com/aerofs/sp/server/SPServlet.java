@@ -13,7 +13,6 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.proto.Sp.SPServiceReactor;
-import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -71,6 +70,7 @@ import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -86,7 +86,7 @@ import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 
-public class SPServlet extends AeroServlet
+public class SPServlet extends HttpServlet
 {
     private static final Logger l = Loggers.getLogger(SPServlet.class);
 
@@ -297,7 +297,6 @@ public class SPServlet extends AeroServlet
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
-        init_();
 
         _service.setUserTracker(getUserTracker());
         _service.setSessionInvalidator(getSessionInvalidator());

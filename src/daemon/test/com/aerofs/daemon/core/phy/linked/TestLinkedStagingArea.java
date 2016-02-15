@@ -20,7 +20,8 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.LibParam.AuxFolder;
+import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.ClientParam.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
@@ -142,7 +143,7 @@ public class TestLinkedStagingArea extends AbstractTest
         lsa.stageDeletion_("/AeroFS/bar", historyPath, null, t);
 
         verify(factFile.create("/AeroFS/bar"))
-                .moveInSameFileSystem(fileAt(auxPath(AuxFolder.STAGING_AREA, "1")));
+                .moveInSameFileSystem(fileAt(auxPath(ClientParam.AuxFolder.STAGING_AREA, "1")));
 
         IDBIterator<StagedFolder> it = lsadb.listEntries_(0);
         try {
@@ -181,11 +182,11 @@ public class TestLinkedStagingArea extends AbstractTest
     InjectableFile staged(Path historyPath) throws Exception
     {
         long id = lsadb.addEntry_(historyPath, null, t);
-        dir(lrm.auxRoot_(rootSID), dir(AuxFolder.STAGING_AREA._name,
+        dir(lrm.auxRoot_(rootSID), dir(ClientParam.AuxFolder.STAGING_AREA._name,
                 dir(Long.toHexString(id), dir("bar", file("baz")), file("baz"))
         )).mock(factFile, null);
 
-        return factFile.create(auxPath(AuxFolder.STAGING_AREA, Long.toHexString(id)));
+        return factFile.create(auxPath(ClientParam.AuxFolder.STAGING_AREA, Long.toHexString(id)));
     }
 
     private static Answer<Boolean> DELETE = invocation -> {

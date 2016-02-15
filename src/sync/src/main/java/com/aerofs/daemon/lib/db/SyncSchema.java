@@ -4,12 +4,11 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 
-import java.io.IOException;
-import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -168,7 +167,7 @@ public class SyncSchema implements ISchema
                         ")" +
                         " values("+
                             LibParam.INITIAL_ACL_EPOCH + "," +
-                            LibParam.INITIAL_AUDIT_PUSH_EPOCH +
+                            ClientParam.INITIAL_AUDIT_PUSH_EPOCH +
                         ")");
 
         s.executeUpdate(
@@ -267,11 +266,5 @@ public class SyncSchema implements ISchema
                 + C_LSA_REV + " text,"
                 + "primary key(" + C_LSA_SIDX + "," + C_LSA_OID + ")"
                 + ")");
-    }
-
-    @Override
-    public void dump_(Statement s, PrintStream ps) throws IOException, SQLException
-    {
-        // TODO:
     }
 }

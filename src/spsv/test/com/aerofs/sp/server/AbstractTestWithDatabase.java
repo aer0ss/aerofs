@@ -10,7 +10,7 @@ import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -23,7 +23,7 @@ import java.sql.Statement;
  * This test class sets up SP database schema before running each test, and clean up
  * transactions afterward if the test fails leaving the transaction open.
  */
-public class AbstractTestWithDatabase extends AbstractTest
+public class AbstractTestWithDatabase extends AbstractBaseTest
 {
     private static final SPDatabaseParams dbParams = new SPDatabaseParams();
 

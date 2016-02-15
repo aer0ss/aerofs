@@ -5,6 +5,7 @@
 package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ClientParam;
 
 import java.sql.SQLException;
 
@@ -17,7 +18,7 @@ public interface IAuditDatabase
     /**
      * Get the index of the last activity row reported to the auditor.
      *
-     * @return {@link com.aerofs.lib.LibParam#INITIAL_AUDIT_PUSH_EPOCH}
+     * @return {@link ClientParam#INITIAL_AUDIT_PUSH_EPOCH}
      * if no activity row has been reported to the auditor, or a positive
      * index otherwise
      *

@@ -5,8 +5,8 @@
 package com.aerofs.ui.launch_tasks;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.LibParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
@@ -129,7 +129,7 @@ public class ULTRtrootMigration
         // at this point we know the new rtroot exists as a directory. in this case, we could have
         // succeeded or failed copying files over in the past.
         // check for finished file, which marks that we have succeeded copying files over.
-        File finished = new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FINISHED);
+        File finished = new File(_newRtRoot, ClientParam.RTROOT_MIGRATION_FINISHED);
 
         // if the finished file exists, then we have succeeded in the past and failed to cleanup
         // otherwise just proceed to migrate and overwrite everything
@@ -185,7 +185,7 @@ public class ULTRtrootMigration
             // to new rtroot.
             // Failure to create this file is considered as a failure to copy files over.
             // This _must_ be the last thing we do in migration
-            FileUtil.createNewFile(new File(_newRtRoot, LibParam.RTROOT_MIGRATION_FINISHED));
+            FileUtil.createNewFile(new File(_newRtRoot, ClientParam.RTROOT_MIGRATION_FINISHED));
         } catch (IOException e) {
             l.warn("failed to copy from old rtroot to new rtroot recursively.");
 

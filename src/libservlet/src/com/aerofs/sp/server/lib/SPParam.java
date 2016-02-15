@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
-import com.aerofs.lib.SecUtil;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
@@ -54,7 +54,7 @@ public class SPParam
 
     public static byte[] getShaedSP(byte[] scrypted)
     {
-        return SecUtil.hash(scrypted, PASSWD_SALT);
+        return BaseSecUtil.hash(scrypted, PASSWD_SALT);
     }
 
     // SP Constants go here

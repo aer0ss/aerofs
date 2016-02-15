@@ -17,7 +17,7 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.testlib.AbstractTest;
+import com.aerofs.testlib.AbstractBaseTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 
-public class TestSP_Password extends AbstractTest
+public class TestSP_Password extends AbstractBaseTest
 {
     @Mock SPDatabase db;
     @Mock User.Factory factUser;

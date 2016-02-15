@@ -4,12 +4,12 @@
 
 package com.aerofs.sp.server.lib.device;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.ExInvalidID;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
@@ -252,7 +252,7 @@ public class Device
         // Verify the device ID and user ID matches what is specified in CSR.
         String cname = getCN(csr);
 
-        if (!cname.equals(SecUtil.getCertificateCName(owner.id(), _id))) {
+        if (!cname.equals(BaseSecUtil.getCertificateCName(owner.id(), _id))) {
             throw new ExBadArgs("cname doesn't match: hash(" + owner + " + " +
                     _id.toStringFormal() + ") != " + cname);
         }

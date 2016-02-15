@@ -4,7 +4,7 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.StorageType;
 
 import java.io.BufferedInputStream;
@@ -69,7 +69,7 @@ public class UnattendedSetup
         // Amazon S3
         if (model._storageType == StorageType.S3) {
             model._backendConfig._s3Config = new SetupModel.S3Config();
-            model._backendConfig._s3Config._endpoint = props.getProperty(S3_ENDPOINT.keyString(), LibParam.DEFAULT_S3_ENDPOINT);
+            model._backendConfig._s3Config._endpoint = props.getProperty(S3_ENDPOINT.keyString(), ClientParam.DEFAULT_S3_ENDPOINT);
             model._backendConfig._s3Config._bucketID = props.getProperty(S3_BUCKET_ID.keyString());
             model._backendConfig._s3Config._accessKey = props.getProperty(S3_ACCESS_KEY.keyString());
             model._backendConfig._s3Config._secretKey = props.getProperty(S3_SECRET_KEY.keyString());

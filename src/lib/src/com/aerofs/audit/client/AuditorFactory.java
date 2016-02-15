@@ -7,13 +7,9 @@ package com.aerofs.audit.client;
 import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.AuditParam;
-import com.aerofs.base.LazyChecked;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.base.ssl.SSLEngineFactory.Mode;
-import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertificateProvider;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.google.common.base.Throwables;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -78,7 +74,8 @@ public class AuditorFactory
      * and (b) include the required/expected HTTP header fields for authentication.
      * See HttpRequestAuthenticator.
      */
-    public static IAuditorClient createAuthenticatedWithDeviceCert()
+    public static IAuditorClient createAuthenticatedWithDeviceCert(UserID user, DID did,
+                                                                   SSLEngineFactory ssl)
     {
         AuditParam param = AuditParam.fromConfiguration();
         if (param._enabled) {
@@ -96,18 +93,15 @@ public class AuditorFactory
                         conn.setReadTimeout(param._readTimeout);
                         conn.setRequestProperty(HttpHeaders.CONTENT_TYPE,
                                 MediaType.JSON_UTF_8.toString());
-                        conn.setSSLSocketFactory(socketFactory.get());
+                        conn.setSSLSocketFactory(socketFactory(ssl));
                         conn.addRequestProperty(HttpHeaders.AUTHORIZATION,
-                                AeroDeviceCert.getHeaderValue(Cfg.user().getString(),
-                                        Cfg.did().toStringFormal()));
+                                AeroDeviceCert.getHeaderValue(user.getString(),
+                                        did.toStringFormal()));
                         conn.setDoOutput(true);
                         conn.connect();
 
                         return conn;
                     }
-
-                    private final LazyChecked<SSLSocketFactory, IOException> socketFactory =
-                            new LazyChecked<>(AuditorFactory::createSocketFactory);
                 };
             } catch (MalformedURLException e) {
                 Throwables.propagate(e);
@@ -123,11 +117,8 @@ public class AuditorFactory
         return content -> { };
     }
 
-    private static SSLSocketFactory createSocketFactory() throws IOException
+    private static SSLSocketFactory socketFactory(SSLEngineFactory factory) throws IOException
     {
-        SSLEngineFactory factory = new SSLEngineFactory(Mode.Client,
-                Platform.Desktop, new CfgKeyManagersProvider(),
-                new CfgCACertificateProvider(), null);
         try {
             return factory.getSSLContext().getSocketFactory();
         } catch (GeneralSecurityException e) {
