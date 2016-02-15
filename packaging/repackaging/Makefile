@@ -7,7 +7,7 @@ PYLIB_SRC = ../../src/python-lib/aerofs_common
 image: .copy-packages
 	$(RSYNC) ../../docker/base/base/root/container-scripts/* buildroot/container-scripts/
 	$(RSYNC) --exclude '*.pyc' --exclude '_gen' $(PYLIB_SRC) buildroot/opt/repackaging/api/
-	docker build -t $(IMAGE_NAME) .
+	../../tools/cache/img_fresh.sh $(IMAGE_NAME) . || docker build -t $(IMAGE_NAME) .
 
 # Copy client packages
 SRC_PKGS_DIR = ../../out.gradle/packages
@@ -25,8 +25,11 @@ ifeq (,$(filter 17 18, $(words $(PKGS))))
 	$(error $(words $(PKGS)) files were found in $(SRC_PKGS_DIR). I expect 17 or 18(syncdet only))
 endif
 	# Remove old files from buildroot. TODO (WW) use the buildroot-syncroot approach
+	mkdir -p $(DST_PKGS_DIR)
 	rm -rf $(DST_PKGS_DIR)/*
-	../../tools/lazy-copy.sh $(SRC_PKGS_DIR) $(DST_PKGS_DIR)
-	../../tools/lazy-copy.sh $(EYJA_SRC_DIR) $(EYJA_DST_DIR) ||: # don't fail if eyja not present
+	ln $(SRC_PKGS_DIR)/* $(DST_PKGS_DIR)/
+	mkdir -p $(EYJA_DST_DIR)
+	rm -rf $(EYJA_DST_DIR)/*
+	ln $(EYJA_SRC_DIR)/* $(EYJA_DST_DIR)/ ||: # don't fail if eyja not present
 
 .PHONY: image .copy-packages

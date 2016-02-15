@@ -36,41 +36,26 @@ DOCKERFILE=${5:-/dev/null}
 BUILDER=aerofs/gockerize
 THIS_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [[ $(uname -s) == "Darwin" ]] ; then
-    # sigh...
-    #  1. docker CLI is not flexible enough so we need to use API directly
-    #  2. OSX is a broken piece of shit, SecureTransport can't load PEM cert/key so we need to
-    #     convert them to PKCS12
-    if [[ ! -f $DOCKER_CERT_PATH/client.p12 ]] ; then
-        openssl pkcs12 -export -in $DOCKER_CERT_PATH/cert.pem -inkey $DOCKER_CERT_PATH/key.pem \
-            -out $DOCKER_CERT_PATH/client.p12 -passout pass:.
-    fi
+# $1 image
+# $2 source path
+# return true if the image is newer than the newest file in the source tree
+function img_fresh() {
+    # find creation date of container image, if present
+    # NB: remove sub-second precision and make it find-friendly
+    local created=$(
+        docker inspect --format='{{.Created}}' --type=image "$1" |\
+        cut -d. -f1 |\
+        sed 's/T/ /'
+    )
+    echo "$1 created: $created" 1>&2
+    # find first file in build context newer than image, if any
+    # NB: docker gives UTC timestamps, make sure find does not compare it to local time
+    [[ -n "$created" ]] && [[ -e "$2" ]] && [[ -z "$(TZ=UTC find "$2" -type f -newermt "$created" | head -n 1)" ]]
+}
 
-    curl_opts="-k -E $DOCKER_CERT_PATH/client.p12:. https${DOCKER_HOST#tcp}"
-    stat_format="-f %m"
-elif [[ $(uname -s) == "Linux" ]] ; then
-    curl_opts="--unix-socket /var/run/docker.sock http:"
-    stat_format="-c %Y"
-else
-    echo "unsupported platform: always rebuild"
-fi
-
-if [[ -n "$stat_format" ]] ; then
-    # find newest timestamp in entire source tree
-    newest=$(find ${SRC_DIR} -type f | xargs stat $stat_format | sort -nr | head -n 1)
-
-    url_image=$(python -c "import urllib; print urllib.quote('''$IMAGE''')")
-    # find creation date of container, if present
-    # NB: remove sub-second precision and convert from ISO 8601 to Unix epoch
-    created=$(curl --fail $curl_opts/images/$url_image/json 2>/dev/null | jq -r '.Created[0:19]+"Z" | fromdate')
-
-    echo "newest : $newest"
-    echo "created: $created"
-
-    if [[ -n "$created" ]] && (( "$created" > "$newest" )) ; then
-        echo "${IMAGE} already up-to-date"
-        exit 0
-    fi
+if img_fresh "$IMAGE" "$SRC_DIR" ; then
+    echo "${IMAGE} already up-to-date"
+    exit 0
 fi
 
 echo "Building $BUILDER ..."

@@ -7,50 +7,9 @@
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# $1 image
-# $2 source path
-# return true if the image is newer than the newest file in the source tree
-function newer() {
-    if [[ $(uname -s) == "Darwin" ]] ; then
-        # sigh...
-        #  1. docker CLI is not flexible enough so we need to use API directly
-        #  2. OSX is a broken piece of shit, SecureTransport can't load PEM cert/key so we need to
-        #     convert them to PKCS12
-        if [[ ! -f $DOCKER_CERT_PATH/client.p12 ]] ; then
-            openssl pkcs12 -export -in $DOCKER_CERT_PATH/cert.pem -inkey $DOCKER_CERT_PATH/key.pem \
-                -out $DOCKER_CERT_PATH/client.p12 -passout pass:.
-        fi
-
-        curl_opts="-k -E $DOCKER_CERT_PATH/client.p12:. https${DOCKER_HOST#tcp}"
-        stat_format="-f %m"
-    elif [[ $(uname -s) == "Linux" ]] ; then
-        curl_opts="--unix-socket /var/run/docker.sock http:"
-        stat_format="-c %Y"
-    else
-        echo "unsupported platform: always rebuild"
-    fi
-
-    if [[ -n "$stat_format" ]] ; then
-        # find newest timestamp in entire source tree
-        newest=$(find $2 -type f | xargs stat $stat_format | sort -nr | head -n 1)
-
-        url_image=$(python -c "import urllib; print urllib.quote('''$1''')")
-        # find creation date of container, if present
-        # NB: remove sub-second precision and convert from ISO 8601 to Unix epoch
-        created=$(curl --fail $curl_opts/images/$url_image/json 2>/dev/null | jq -r '.Created[0:19]+"Z" | fromdate')
-
-        echo "newest : $newest"
-        echo "created: $created"
-    
-        [[ -n "$created" ]] && (( "$created" > "$newest" ))
-    else
-        true
-    fi
-}
-
 IMAGE=nginx:aerofs
 
-if newer $IMAGE $THIS_DIR ; then
+if "$THIS_DIR/../../tools/cache/img_fresh.sh" $IMAGE $THIS_DIR ; then
     exit 0
 fi
 
