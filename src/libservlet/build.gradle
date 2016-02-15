@@ -14,6 +14,7 @@ sourceSets {
         java {
             srcDir 'test'
             include 'com/aerofs/testlib/**'
+            include 'com/aerofs/audit/client/MockAuditClient.java'
             include 'com/aerofs/servlets/MockSession.java'
             include 'com/aerofs/servlets/SecUtilHelper.java'
             include 'com/aerofs/servlets/lib/db/*.java'
