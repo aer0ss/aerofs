@@ -115,7 +115,7 @@ public class PolarisClient
                         sslEngineFactory.newSslHandler(),
                         new HttpClientCodec(),
                         new HttpChunkAggregator(256 * C.KB),
-                        new IdleStateHandler(timer, 0, 0, 30),
+                        new IdleStateHandler(timer, 0, 0, 60),
                         new Handler());
             } catch (IOException | GeneralSecurityException e) {
                 throw new RuntimeException(e);
