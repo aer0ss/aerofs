@@ -208,7 +208,9 @@ public class GroupDatabase extends AbstractSQLDatabase
 
             int index = 0;
             ps.setInt(++index, orgId.getInt());
-            if (searchPrefix != null) ps.setString(++index, searchPrefix + "%");
+            if (searchPrefix != null) {
+                ps.setString(++index, DBUtil.escapeLikeOperators(searchPrefix) + "%");
+            }
             ps.setInt(++index, maxResults);
             ps.setInt(++index, offset);
 

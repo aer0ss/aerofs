@@ -296,6 +296,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     private static int populateAutocompleteStatement(int firstIndex, PreparedStatement statement, String prefix)
             throws SQLException
     {
+        prefix = DBUtil.escapeLikeOperators(prefix);
         statement.setString(firstIndex++, prefix + "%");
         statement.setString(firstIndex++, prefix + "%");
         statement.setString(firstIndex++, prefix + "%");
@@ -452,7 +453,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             ps.setString(index++, orgId.toTeamServerUserID().getString());
 
             if (searchPrefix != null) {
-                ps.setString(index++, searchPrefix + "%");
+                ps.setString(index++, DBUtil.escapeLikeOperators(searchPrefix) + "%");
             }
 
             ps.setInt(index++, maxResults);
@@ -500,7 +501,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             ps.setString(1, orgId.toTeamServerUserID().getString());
 
             if (searchPrefix != null) {
-                ps.setString(2, searchPrefix + "%");
+                ps.setString(2, DBUtil.escapeLikeOperators(searchPrefix) + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {

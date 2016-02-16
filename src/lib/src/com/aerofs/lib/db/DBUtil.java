@@ -295,4 +295,20 @@ public class DBUtil
         }
     }
 
+    /**
+     * Preps a string for use as the argument to the LIKE operator by escaping wildcards:
+     *  - % is the 0 or more of any character wildcard
+     *  - _ is the exactly 1 of any character wildcard
+     *  - \ is the escape character
+     *
+     *  No standard library exists in Java to do this.
+     *
+     *  @param s string to escape
+     *  @return string with % replaced with \% and _ replaced with \_
+     */
+    public static String escapeLikeOperators(String s)
+    {
+        return s.replace("%", "\\%").replace("_", "\\_");
+    }
+
 }

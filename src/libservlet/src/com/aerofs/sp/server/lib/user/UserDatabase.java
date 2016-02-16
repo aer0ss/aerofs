@@ -543,7 +543,7 @@ public class UserDatabase extends AbstractSQLDatabase
             ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
             if (searchPrefix != null) {
-                ps.setString(3, searchPrefix + "%");
+                ps.setString(3, DBUtil.escapeLikeOperators(searchPrefix) + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -570,7 +570,7 @@ public class UserDatabase extends AbstractSQLDatabase
             ps.setInt(index++, SharedFolderState.JOINED.ordinal());
 
             if (searchPrefix != null) {
-                ps.setString(index++, searchPrefix + '%');
+                ps.setString(index++, DBUtil.escapeLikeOperators(searchPrefix) + '%');
             }
 
             if (maxResults != null && offset != null){
