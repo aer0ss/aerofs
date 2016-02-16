@@ -6,7 +6,6 @@ RUN apt-get update &&\
         ca-certificates \
         curl \
         git \
-        jq \
         mercurial \
         patch
 
