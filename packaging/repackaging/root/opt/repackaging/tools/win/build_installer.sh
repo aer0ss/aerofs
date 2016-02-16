@@ -1,7 +1,6 @@
 #!/bin/bash
 
 typeset -a FileList
-typeset -a UrlList
 typeset -i Verbose=0
 
 typeset InstallDir=AeroFSExec
@@ -23,13 +22,11 @@ Die()
 DieUsage()
 {
     echo -e "USAGE:"
-    echo -e "  build_installer.sh [-f file_res ]* [-u URI_res]*"
+    echo -e "  build_installer.sh [-f file_res ]*"
     echo -e "\t[-c cfgfile] [-o out_file] [-i installdir] [-x installer executable] [-v]"
     echo ""
     echo -e "\tfile_res:\tpath to a resource to be added to the final"
     echo -e "\t\t\tinstaller (no defaults)"
-    echo -e "\tURI_res:\tURI to a web resource to download; the file "
-    echo -e "\t\t\twill be added to the final installer (no defaults)"
     echo ""
     echo -e "\tcfgfile:\tpath to a configuration file for the SFX"
     echo -e "\t\t\textractor (default $ExtractorConfig)."
@@ -44,8 +41,7 @@ DieUsage()
     echo -e "    build_installer.sh \\"
     echo -e "\t-i AeroFSExec \\"
     echo -e "\t-f site-config.properties \\"
-    echo -e "\t-u https://nocache.staging.client.aerofs.com/AeroFSInstall-v0.4.222.exe \\"
-    echo -e "\t-x AeroFSInstall-v0.4.222.exe \\"
+    echo -e "\t-x original/AeroFSInstall-v0.4.222.exe \\"
     echo -e "\t-o AeroEnterprise.exe"
     echo ""
     Die "$@"
@@ -71,9 +67,6 @@ DoArgs()
         o)
             OutFile=$OPTARG
             ;;
-        u)
-            UrlList+=($OPTARG)
-            ;;
         v)
             Verbose=1
             ;;
@@ -84,29 +77,12 @@ DoArgs()
     done
 }
 
-# TODO: I'm unhappy with all the obvious ways to clean up the downloaded artifact.
-GetUrls()
-{
-    [ $Verbose -eq 1 ] && set -x
-    set -e
-
-    for url in ${UrlList[@]}
-    do
-        ufile=${url##*/}
-        echo "Adding $ufile to file list..."
-        FileList+=(${ufile})
-        wget --no-check-certificate -N $url
-    done
-}
-
 BuildArchive()
 {
     [ $Verbose -eq 1 ] && set -x
     set -e
 
     typeset Archive=${TmpDir}/AeroFS.7z
-
-    GetUrls
 
     sed "s/REPLACEME/${InstallDir}/g" $SiteConfigInf >> ${TmpDir}/$SiteConfigInf
 

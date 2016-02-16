@@ -1,0 +1,32 @@
+# Maintainer: Hugues Bruant <hugues@aerofs.com>
+
+pkgname=dmg-hfsplus
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="DMG/HFS utilities"
+url="https://github.com/aerofs/libdmg-hfsplus"
+arch="all"
+license="GPL 3"
+depends="zlib bzip2 libcrypto1.0"
+
+makedepends="cmake openssl-dev zlib-dev bzip2-dev"
+
+source=
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+    git clone --depth=1 https://github.com/aerofs/libdmg-hfsplus.git "$_builddir" || return 1
+    cd "$_builddir" || return 1
+    cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr || return 1
+    make || return 1
+}
+
+package() {
+    cd "$_builddir" || return 1
+    make install || return 1
+    rm -rf "$pkgdir"/usr/include || return 1
+}
+
+md5sums=""

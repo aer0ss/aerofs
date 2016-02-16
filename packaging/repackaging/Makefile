@@ -5,9 +5,14 @@ RSYNC = rsync -a --delete --delete-excluded
 PYLIB_SRC = ../../src/python-lib/aerofs_common
 
 image: .copy-packages
-	$(RSYNC) ../../docker/base/base/root/container-scripts/* buildroot/container-scripts/
+	$(RSYNC) ../../docker/base/base/root/container-scripts buildroot/
 	$(RSYNC) --exclude '*.pyc' --exclude '_gen' $(PYLIB_SRC) buildroot/opt/repackaging/api/
-	../../tools/cache/img_fresh.sh $(IMAGE_NAME) . || docker build -t $(IMAGE_NAME) .
+	../../tools/cache/img_fresh.sh $(IMAGE_NAME) . || { \
+		cat Dockerfile.base | docker build -t $(IMAGE_NAME)-base - &&\
+		./addpkg.sh $(IMAGE_NAME)-base ./apk $(IMAGE_NAME)-base \
+			dmg-hfsplus msitools &&\
+		docker build -t $(IMAGE_NAME) . \
+	;}
 
 # Copy client packages
 SRC_PKGS_DIR = ../../out.gradle/packages

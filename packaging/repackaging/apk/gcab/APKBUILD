@@ -1,0 +1,36 @@
+# Maintainer: Hugues Bruant <hugues@aerofs.com>
+
+pkgname=gcab
+pkgver=0.6
+pkgrel=1
+pkgdesc="gcab"
+url="https://aerofs.com"
+arch="all"
+license="custom"
+depends="libintl glib libuuid gobject-introspection"
+
+makedepends="intltool glib-dev util-linux-dev gobject-introspection-dev"
+
+subpackages="$pkgname-dev"
+
+_gnome_repo="http://ftp.gnome.org/pub/GNOME/sources"
+
+source="$_gnome_repo/$pkgname/$pkgver/$pkgname-$pkgver.tar.xz"
+
+_builddir="$srcdir"/$pkgname-$pkgver
+
+build() {
+    cd "$_builddir" || return 1
+    ./configure --prefix=$pkgdir/usr || return 1
+    make || return 1
+    tests/testsuite || return 1
+}
+
+package() {
+    cd "$_builddir" || return 1
+    make install || return 1
+    mv $pkgdir/usr/include/libgcab-1.0/* $pkgdir/usr/include/
+    rm -rf $pkgdir/usr/share
+}
+
+md5sums=""

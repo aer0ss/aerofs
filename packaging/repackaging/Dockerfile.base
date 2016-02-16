@@ -1,0 +1,17 @@
+FROM alpine:3.3
+
+RUN apk -U add \
+        bash \
+        curl \
+        dpkg \
+        fakeroot \
+        p7zip \
+        tar \
+        util-linux \
+        xz \
+        zip \
+        python \
+        py-pip \
+        py-psutil py-flask py-requests &&\
+    rm -rf /var/cache/apk/*
+
