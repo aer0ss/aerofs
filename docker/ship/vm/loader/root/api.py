@@ -174,6 +174,9 @@ def switch(repo, tag, target):
     new_loader_image = '{}/{}:{}'.format(repo, my_image_name(), tag)
     cmd = ['docker', 'run', '--rm', '-v', '/var/run/docker.sock:/var/run/docker.sock', new_loader_image, 'modified-yml',
            repo, tag]
+
+    # TODO: Refactor this. Currently, we rely on this call outputting valid yaml and
+    # nothing else. Better would be to output to a file and read from that.
     for new_container, new_container_props in yaml.load(subprocess.check_output(print_args(cmd)))['containers'].iteritems():
         counterpart = old.get(new_container_props['original-name'])
         if not counterpart:

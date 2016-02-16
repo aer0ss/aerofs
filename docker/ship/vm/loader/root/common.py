@@ -19,12 +19,15 @@ def call_crane(cmd, target):
     subprocess.check_call(print_args(args))
 
 
+# WARNING: the `switch` method in api.py currently assumes that the output of running the
+# loader container will be valid yaml. Clearly, then, we need to avoid printing the args
+# pf the below methods and must ensure we capture their stdout/stderr.
 def modify_image(image, cmd):
     args = ['echo', 'FROM {}\nRUN {}'.format(image, cmd)]
-    dockerfile = subprocess.Popen(print_args(args), stdout=subprocess.PIPE)
+    dockerfile = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     args = ['docker', 'build', '-t', image, '-']
-    subprocess.check_call(print_args(args), stdin=dockerfile.stdout)
+    subprocess.check_call(args, stdin=dockerfile.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def my_container_id():
