@@ -140,8 +140,11 @@ class UnixProcessKiller(BaseProcessKiller):
                 if pid in killed:
                     continue
                 print 'killing process {} {}'.format(pid, cmd)
-                os.kill(pid, SIGKILL)
-                killed.add(pid)
+                try:
+                    os.kill(pid, SIGKILL)
+                    killed.add(pid)
+                except OSError:
+                    print 'WARNING: could not send SIGKILL.'
             time.sleep(POLLING_INTERVAL)
 
 
