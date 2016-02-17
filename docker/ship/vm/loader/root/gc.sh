@@ -18,7 +18,6 @@ clean() {
     local TAG=$2
     # FQIN: fully qualified image name
     local LOADER_FQIN=${REPO}/${LOADER_IMG_NAME}:${TAG}
-    local LOADER_CNTR_NAME=${LOADER_IMG_NAME}-${TAG}
     echo "Cleaning ${LOADER_FQIN} ..."
     local CMD_PREFIX="docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_FQIN}"
     local CONTAINERS="${CMD_PREFIX} modified-containers "${REPO}" ${TAG}"
@@ -32,7 +31,7 @@ clean() {
     for IMAGE in $(eval $IMAGES); do
         (set -x; docker rmi -f ${IMAGE} || true)
     done
-    (set -x; docker rm -vf ${LOADER_CNTR_NAME})
+    (set -x; docker rm -vf "loader-${TAG}")
     (set -x; docker rmi -f ${LOADER_FQIN})
 }
 
