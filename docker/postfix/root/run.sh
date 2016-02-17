@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-# TODO (WW) run postfix or tail its logs in the foreground
-echo "Starting postfix in the background..."
-/etc/init.d/postfix start
-sleep infinity
+/usr/sbin/postfix start
+# NB: ideally we'd tail postfix logs
+# unfortunately it uses syslog, which requires a functional init system
+tail -f /dev/null

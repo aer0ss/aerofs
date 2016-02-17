@@ -1,0 +1,5 @@
+mydestination = localhost
+relayhost =
+mynetworks = 0.0.0.0/0
+inet_interfaces = all
+inet_protocols = all
