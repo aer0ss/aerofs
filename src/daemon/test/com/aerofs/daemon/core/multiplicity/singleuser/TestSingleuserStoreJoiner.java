@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import com.aerofs.ids.OID;
@@ -62,7 +62,7 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock UnlinkedRootDatabase urdb;
     @Mock RitualNotifier _ritualNotifier;
     @Mock CfgUsePolaris usePolaris;
-    @Mock PolarisClient polaris;
+    @Mock PolarisAsyncClient polaris;
     @Mock RemoteLinkDatabase rldb;
 
     @InjectMocks SingleuserStoreJoiner ssj;

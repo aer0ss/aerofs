@@ -4,7 +4,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.SubjectPermissionsList;
 import com.aerofs.base.ex.*;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.api.LocalChange.Type;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
@@ -89,7 +89,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final UnlinkedRootDatabase _urdb;
     private final CfgAbsRoots _absRoots;
     private final CfgUsePolaris _polaris;
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
     private final RemoteLinkDatabase _rldb;
 
     private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
@@ -100,7 +100,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             ObjectDeleter od, IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
             CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb, CfgUsePolaris polaris,
-            RemoteLinkDatabase rldb, PolarisClient.Factory clientFactory)
+            RemoteLinkDatabase rldb, PolarisAsyncClient.Factory clientFactory)
     {
         _ss = ss;
         _tokenManager = tokenManager;

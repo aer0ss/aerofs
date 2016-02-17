@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
@@ -58,7 +58,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
     private final ContentChangesDatabase _ccdb;
     private final ChangeEpochDatabase _cedb;
     private final IAliasDatabase _adb;
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
     private final Executor _executor;
     private final Map<SIndex, SID> sidx2sid = Maps.newHashMap();
     private final Map<SIndex, Long> highestTimestamps = Maps.newHashMap();
@@ -79,7 +79,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             ContentChangesDatabase ccdb,
             ChangeEpochDatabase cedb,
             IAliasDatabase adb,
-            PolarisClient client)
+            PolarisAsyncClient client)
     {
         _ds = ds;
         _sdb = sh;

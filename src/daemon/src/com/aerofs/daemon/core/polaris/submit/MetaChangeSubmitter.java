@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
 import com.aerofs.daemon.core.polaris.api.BatchResult.BatchOpResult;
@@ -61,7 +61,7 @@ public class MetaChangeSubmitter implements Submitter
 {
     private final static Logger l = Loggers.getLogger(MetaChangeSubmitter.class);
 
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
     private final MapAlias2Target _a2t;
     private final MetaChangesDatabase _mcdb;
     private final MetaBufferDatabase _mbdb;
@@ -76,7 +76,7 @@ public class MetaChangeSubmitter implements Submitter
 
     @Inject
     public MetaChangeSubmitter(
-            PolarisClient client,
+            PolarisAsyncClient client,
             MetaChangesDatabase mcdb,
             MetaBufferDatabase mbdb,
             RemoteLinkDatabase rpdb,

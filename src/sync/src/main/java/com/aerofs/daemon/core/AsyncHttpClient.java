@@ -2,27 +2,22 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.daemon.core.polaris;
+package com.aerofs.daemon.core;
 
 import com.aerofs.auth.client.cert.AeroDeviceCert;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
+import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
 import com.aerofs.base.ssl.SSLEngineFactory;
-import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
-import com.aerofs.daemon.lib.CoreExecutor;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.inject.Inject;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
@@ -45,15 +40,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
  *
  */
-public class PolarisClient
+public class AsyncHttpClient
 {
-    private final static Logger l = Loggers.getLogger(PolarisClient.class);
+    protected static Logger l = Loggers.getLogger(AsyncHttpClient.class);
 
     private final Auth _auth;
     private final URI _endpoint;
@@ -62,11 +56,11 @@ public class PolarisClient
 
     private AtomicReference<Channel> _channel = new AtomicReference<>();
 
-    private static class Auth implements UnaryOperator<HttpHeaders>
+    protected static class Auth implements UnaryOperator<HttpHeaders>
     {
         private final String auth;
 
-        Auth(UserID user, DID did)
+        public Auth(UserID user, DID did)
         {
             auth = AeroDeviceCert.getHeaderValue(user.getString(), did.toStringFormal());
         }
@@ -79,31 +73,8 @@ public class PolarisClient
         }
     }
 
-    public static class Factory {
-        @Inject CoreExecutor executor;
-        @Inject CfgLocalDID did;
-        @Inject CfgLocalUser user;
-        @Inject Timer timer;
-        @Inject ClientSocketChannelFactory channelFactory;
-        @Inject ClientSSLEngineFactory sslEngineFactory;
-
-        public PolarisClient create()
-        {
-            return new PolarisClient(executor, did, user, timer, channelFactory, sslEngineFactory);
-        }
-    }
-
-    @Inject
-    public PolarisClient(CoreExecutor executor, CfgLocalDID localDID, CfgLocalUser localUser,
-            Timer timer, ClientSocketChannelFactory channelFactory, ClientSSLEngineFactory sslEngineFactory)
-    {
-        this(URI.create(getStringProperty("daemon.polaris.url")),
-                executor,
-                new Auth(localUser.get(), localDID.get()), timer, channelFactory, sslEngineFactory);
-    }
-
-    private PolarisClient(URI endpoint, Executor executor, Auth auth, Timer timer,
-                          ChannelFactory channelFactory, SSLEngineFactory sslEngineFactory)
+    protected AsyncHttpClient(URI endpoint, Executor executor, Auth auth, Timer timer,
+                              ChannelFactory channelFactory, SSLEngineFactory sslEngineFactory)
     {
         _auth = auth;
         _executor = executor;

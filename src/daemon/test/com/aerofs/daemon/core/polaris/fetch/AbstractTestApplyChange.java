@@ -21,7 +21,7 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.*;
 import com.aerofs.daemon.core.polaris.InMemoryDS;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
@@ -131,8 +131,8 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
     protected SIndex sidx;
 
-    protected final PolarisClient client = mock(PolarisClient.class);
-    protected final PolarisClient.Factory factClient = mock(PolarisClient.Factory.class);
+    protected final PolarisAsyncClient client = mock(PolarisAsyncClient.class);
+    protected final PolarisAsyncClient.Factory factClient = mock(PolarisAsyncClient.Factory.class);
 
     protected IPhysicalStorage setupPhysicalStorage() {
         // FIXME: in-memory fs
@@ -209,7 +209,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(Transports.class).toInstance(mock(Transports.class));
                 bind(Devices.class).toInstance(mock(Devices.class));
                 bind(SSMPConnection.class).toInstance(mock(SSMPConnection.class));
-                bind(PolarisClient.class).toInstance(mock(PolarisClient.class));
+                bind(PolarisAsyncClient.class).toInstance(mock(PolarisAsyncClient.class));
 
                 bind(DirectoryService.class).to(DirectoryServiceImpl.class);
                 bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
@@ -255,7 +255,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
             }
 
             @Provides
-            public PolarisClient.Factory provideClientFactory() { return factClient; }
+            public PolarisAsyncClient.Factory provideClientFactory() { return factClient; }
 
             @Provides
             public IOSUtil provideIOSUtil()

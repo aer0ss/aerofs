@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.ids.OID;
@@ -48,8 +48,8 @@ public class TestImmigrantCreator extends AbstractTest
     @Mock CentralVersionDatabase cvdb;
     @Mock ContentFetchQueueDatabase cfqdb;
     @Mock MapSIndex2Store sidx2s;
-    @Mock PolarisClient.Factory factClient;
-    @Mock PolarisClient client;
+    @Mock PolarisAsyncClient.Factory factClient;
+    @Mock PolarisAsyncClient client;
 
     @Mock Trans t;
 

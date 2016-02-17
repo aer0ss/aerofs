@@ -5,7 +5,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
@@ -75,7 +75,7 @@ public class ImmigrantCreator
     private final ExpulsionDatabase _exdb;
     private final ContentFetchQueueDatabase _cfqdb;
     private final MapSIndex2Store _sidx2s;
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
 
     private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
 
@@ -85,7 +85,7 @@ public class ImmigrantCreator
             CfgUsePolaris polaris, RemoteLinkDatabase rldb, MetaChangesDatabase mcdb,
             ContentChangesDatabase ccdb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
             ExpulsionDatabase exdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s,
-            PolarisClient.Factory clientFactory)
+            PolarisAsyncClient.Factory clientFactory)
     {
         _ds = ds;
         _ps = ps;

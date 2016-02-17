@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -92,8 +92,8 @@ public class TestHdShareFolder extends AbstractTest
     @Mock CfgStorageType cfgStorageType;
     @Mock UnlinkedRootDatabase urdb;
     @Mock CfgUsePolaris usePolaris;
-    @Mock PolarisClient.Factory polarisFactory;
-    @Mock PolarisClient polaris;
+    @Mock PolarisAsyncClient.Factory polarisFactory;
+    @Mock PolarisAsyncClient polaris;
     @Mock RemoteLinkDatabase rldb;
 
     @InjectMocks HdShareFolder hd;

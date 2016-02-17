@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.api.LocalChange.Type;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
@@ -62,7 +62,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     private final IMapSID2SIndex _sid2sidx;
     private final UnlinkedRootDatabase _urdb;
     private final CfgUsePolaris _usePolaris;
-    private final PolarisClient _polaris;
+    private final PolarisAsyncClient _polaris;
     private final RemoteLinkDatabase _rldb;
 
     private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
@@ -72,7 +72,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
             SharedFolderAutoUpdater lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
             IMapSID2SIndex sid2sidx, UnlinkedRootDatabase urdb, CfgUsePolaris usePolaris,
-            PolarisClient polaris, RemoteLinkDatabase rldb)
+            PolarisAsyncClient polaris, RemoteLinkDatabase rldb)
     {
         super(ds, os, oc, od);
         _sd = sd;

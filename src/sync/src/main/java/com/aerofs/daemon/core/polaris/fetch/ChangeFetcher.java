@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.api.RemoteChange.Type;
 import com.aerofs.daemon.core.polaris.api.Transforms;
@@ -42,14 +42,14 @@ import java.util.List;
  * This class handles protocol encoding/decoding and manages change epochs.
  *
  * Scheduling is managed by {@link ChangeFetchScheduler}
- * HTTP communication is delegated to {@link com.aerofs.daemon.core.polaris.PolarisClient}
+ * HTTP communication is delegated to {@link com.aerofs.daemon.core.polaris.PolarisAsyncClient}
  * Application of remote changes is delegated to {@link ApplyChange}
  */
 public class ChangeFetcher
 {
     private final static Logger l = Loggers.getLogger(ChangeFetcher.class);
 
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
     private final ApplyChange _at;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
@@ -66,7 +66,7 @@ public class ChangeFetcher
     }
 
     @Inject
-    public ChangeFetcher(PolarisClient client, PauseSync pauseSync, ChangeEpochDatabase cedb,
+    public ChangeFetcher(PolarisAsyncClient client, PauseSync pauseSync, ChangeEpochDatabase cedb,
             ApplyChange at, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, TransManager tm,
             MapSIndex2Store sidx2store)
     {

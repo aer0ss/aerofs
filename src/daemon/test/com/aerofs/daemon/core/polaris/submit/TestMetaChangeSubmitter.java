@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.when;
 
 public class TestMetaChangeSubmitter extends AbstractBaseTest
 {
-    private final PolarisClient client = mock(PolarisClient.class);
+    private final PolarisAsyncClient client = mock(PolarisAsyncClient.class);
     private final MetaChangesDatabase mcdb = mock(MetaChangesDatabase.class);
     private final MetaBufferDatabase mbdb = mock(MetaBufferDatabase.class);
     private final RemoteLinkDatabase rldb = mock(RemoteLinkDatabase.class);

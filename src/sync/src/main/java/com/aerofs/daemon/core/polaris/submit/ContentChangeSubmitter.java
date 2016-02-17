@@ -10,7 +10,7 @@ import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.polaris.GsonUtil;
-import com.aerofs.daemon.core.polaris.PolarisClient;
+import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.Batch;
 import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
 import com.aerofs.daemon.core.polaris.api.BatchResult;
@@ -58,7 +58,7 @@ public class ContentChangeSubmitter implements Submitter
 {
     private final static Logger l = Loggers.getLogger(ContentChangeSubmitter.class);
 
-    private final PolarisClient _client;
+    private final PolarisAsyncClient _client;
     private final ChangeEpochDatabase _cedb;
     private final ContentChangesDatabase _ccdb;
     private final CentralVersionDatabase _cvdb;
@@ -72,7 +72,7 @@ public class ContentChangeSubmitter implements Submitter
     private final ContentSubmitConflictHandler _ch;
 
     @Inject
-    public ContentChangeSubmitter(PolarisClient client, ContentChangesDatabase ccdb,
+    public ContentChangeSubmitter(PolarisAsyncClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
             PauseSync pauseSync, TransManager tm, ContentProvider provider, CfgLocalDID did,
             PolarisContentVersionControl cvc, ChangeEpochDatabase cedb, ContentSubmitConflictHandler ch)
