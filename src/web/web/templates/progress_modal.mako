@@ -8,8 +8,7 @@
 ## Optionally define caller.no_close() to hide the close button in the header (the X).
 
 <%def name="progress_modal()">
-    <div id="${caller.id()}" class="modal" tabindex="-1" role="dialog"
-            style="top: 200px">
+    <div id="${caller.id()}" class="modal" tabindex="-1" role="dialog">
         <div class="modal-dialog">
             <div class="modal-content">
                 %if hasattr(caller, "title"):

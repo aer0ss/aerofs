@@ -37,7 +37,7 @@
         <li>
              <p><strong>Switch</strong>. Your appliance is switched to the latest version.
              This will complete your upgrade. All your AeroFS clients should resume syncing again.
-             This can take up to ten minutes to complete.
+             This can take up to twenty minutes to complete.
         </li>
     </ol>
     <p><strong> When the upgrade is done, AeroFS clients
@@ -178,16 +178,33 @@
 </%modal:modal>
 
 <%modal:modal>
-    <%def name="id()">backup-confirm-modal</%def>
+    <%def name="id()">backup-start-confirm-modal</%def>
+    <%def name="title()"><h4 class="text-error">Start Backup</h4></%def>
+    <%def name="no_close()"/>
+    <p>
+        Are you sure you want to put your appliance in maintenance mode and start
+        backup? The backup process can take up to fifteen minutes at the completion of which, your browser
+        will automatically start downloading the backup file.
+
+        While in maintenance mode, your organization's AeroFS clients will temporarily stop syncing
+        data.
+    </p>
+    <%def name="footer()">
+        <a href="#" id="backup-start-confirm-btn" class="btn btn-primary"
+            data-dismiss="modal">Put my appliance in maintenance mode and start backup</a>
+    </%def>
+
+</%modal:modal><%modal:modal>
+    <%def name="id()">backup-done-confirm-modal</%def>
     <%def name="title()"><h4 class="text-error">Confirm Backup File Download</h4></%def>
     <%def name="no_close()"/>
     <p>
-        Before we can switch your appliance to the latest version, please confirm that you have
-        <strong>completed</strong> downloading the appliance backup file. Your browser should
-        have started downloading the backup file automatically.
+        Your browser should have started downloading the backup file automatically. Before we can
+        switch your appliance to the latest version, please confirm that you have
+        <strong>completed</strong> downloading the appliance backup file.
     </p>
     <%def name="footer()">
-        <a href="#" id="backup-confirm-btn" class="btn btn-primary"
+        <a href="#" id="backup-done-confirm-btn" class="btn btn-primary"
             data-dismiss="modal">Yes, I have downloaded the backup file</a>
     </%def>
 </%modal:modal>
@@ -198,7 +215,7 @@
     <%def name="no_close()"/>
     <p>
         Switching your appliance to the latest version now. This can
-        take up to ten minutes.
+        take up to twenty minutes.
         Please do not navigate away from this page...
     </p>
 </%progress_modal:progress_modal>
@@ -299,7 +316,13 @@
         }
 
         function onPullCompletion() {
-            backup(switchToLatest, $('#backup-upgrade-progress-modal'));
+            var $modal = $('#backup-start-confirm-modal');
+            $('#backup-start-confirm-btn').off().on('click', function() {
+                $modal.modal('hide');
+                console.log("start appliance backup");
+                backup(switchToLatest, $('#backup-upgrade-progress-modal'));
+            });
+            $modal.modal('show');
         }
 
         ## Function that is called if a backup is in progress from a PRIOR
@@ -437,8 +460,8 @@
 
         function switchToLatest(onSuccess) {
             onSuccess();
-            var $modal = $('#backup-confirm-modal');
-            $('#backup-confirm-btn').off().on('click', function() {
+            var $modal = $('#backup-done-confirm-modal');
+            $('#backup-done-confirm-btn').off().on('click', function() {
                 $modal.modal('hide');
                 console.log("start switching appliance");
                 switchAppliance($('#switch-wait-modal'), $('#success-modal'), $('#fail-modal'));
