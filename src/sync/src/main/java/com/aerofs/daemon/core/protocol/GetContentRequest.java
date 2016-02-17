@@ -195,7 +195,11 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
         PBCore.Builder bdCore = CoreProtocolUtil.newResponse(msg.pb());
         PBGetContentResponse.Builder bd = PBGetContentResponse.newBuilder();
         bd.setVersion(vLocal);
-        bd.setLts(_cedb.getContentChangeEpoch_(k.sidx()));
+        Long lts = _cedb.getContentChangeEpoch_(k.sidx());
+        if (lts == null) {
+            throw new ExAborted("no valid change epoch");
+        }
+        bd.setLts(lts);
 
         PBGetContentRequest.Prefix prefix = msg.pb().getGetContentRequest().getPrefix();
         if (prefix != null) {
