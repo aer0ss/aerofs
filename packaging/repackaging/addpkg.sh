@@ -24,6 +24,10 @@ echo base: $base
 echo pkgs: $pkgs
 prefix=pkg-insert
 
+# pre-cleanup
+docker rm -fv $prefix-build &>/dev/null ||:
+docker rm -fv $prefix-cxt &>/dev/null ||:
+
 # step 1: get local data into container image
 TMP=$repo/.dockerfile.tmp
 tee "$TMP" <<EOF
@@ -47,7 +51,7 @@ docker run --name=$prefix-build \
 docker commit $prefix-build $img
 
 # cleanup
-docker rm -fv $prefix-build
-docker rm -fv $prefix-cxt
-docker rmi $prefix-cxt
+docker rm -fv $prefix-build >/dev/null
+docker rm -fv $prefix-cxt >/dev/null
+docker rmi $prefix-cxt >/dev/null
 
