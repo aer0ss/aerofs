@@ -138,8 +138,8 @@ public class PolarisCausality implements Causality {
         if (!res._kidcsDel.isEmpty()) {
             checkState(res._kidcsDel.size() == 1);
             KIndex kidx = Iterables.getFirst(res._kidcsDel, null);
-            checkState(kidx == KIndex.MASTER.increment());
-            checkState(kidx != k.kidx());
+            checkState(kidx != null && kidx.equals(KIndex.MASTER.increment()));
+            checkState(!kidx.equals(k.kidx()));
             OA oa = _ds.getOA_(k.soid());
             if (oa.caNullable(kidx) != null) {
                 l.info("delete branch {}k{}", k.soid(), kidx);
