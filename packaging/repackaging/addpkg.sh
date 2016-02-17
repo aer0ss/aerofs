@@ -5,6 +5,8 @@
 # available to RUN statements
 #
 
+trap 'exit 1' ERR
+
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ $# -lt 4 ] ; then
@@ -36,11 +38,10 @@ docker run --name=$prefix-cxt -v /cxt $prefix-cxt cp -R /x86_64 /cxt/
 
 echo "installing $pkgs"
 # step 3: use data from volume in command
-docker run -it --name=$prefix-build \
+docker run --name=$prefix-build \
     --volumes-from $prefix-cxt \
     $base \
     sh -c "echo installing $pkgs && apk add -U -X /cxt --allow-untrusted $pkgs && rm -rf /var/cache/apk/*"
-#&& rm -rf /var/cache/apk/*"
 
 # step 4: commit resulting layer
 docker commit $prefix-build $img
