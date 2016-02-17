@@ -7,7 +7,7 @@ archivesBaseName = 'aerofs-lib'
 sourceSets {
     main {
         java {
-            srcDirs 'src', 'gen'
+            srcDirs 'src'
         }
     }
     testutil {
