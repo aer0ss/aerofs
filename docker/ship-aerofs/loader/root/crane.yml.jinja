@@ -90,6 +90,7 @@ containers:
         - data
       link:
         - aeroimweb:aeroimweb.service
+        - analytics:analytics.service
         - auditor:auditor.service
         - blurber:blurber.service
         - bunker:bunker.service
@@ -245,6 +246,17 @@ containers:
         - auditor:auditor.service
         - lipwig:lipwig.service
         - postfix:postfix.service
+
+  analytics:
+    image: aerofs/analytics
+    run:
+      detach: true
+      volumes-from:
+        # For deployment secret
+        - data
+      link:
+        - config:config.service
+        - ca-server:ca.service
 
   auditor:
     image: aerofs/auditor
