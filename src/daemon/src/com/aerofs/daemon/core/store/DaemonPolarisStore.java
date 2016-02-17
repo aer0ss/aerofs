@@ -59,6 +59,6 @@ public class DaemonPolarisStore extends PolarisStore
     @Override
     public void startSubmissions() {
         super.startSubmissions();
-        _mcss.start_();
+        _mcss.schedule_();
     }
 }

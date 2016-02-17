@@ -75,6 +75,10 @@ public class SubmissionScheduler<T extends Submitter>
         _sched.start_();
     }
 
+    public void schedule_() {
+        _sched.schedule_();
+    }
+
     public void startOnCommit_(Trans t)
     {
         _tlSubmit.get(t);

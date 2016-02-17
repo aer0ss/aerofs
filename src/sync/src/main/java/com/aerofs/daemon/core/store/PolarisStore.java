@@ -183,6 +183,6 @@ public class PolarisStore extends Store
     @Override
     public void startSubmissions() {
         super.startSubmissions();
-        _ccss.start_();
+        _ccss.schedule_();
     }
 }
