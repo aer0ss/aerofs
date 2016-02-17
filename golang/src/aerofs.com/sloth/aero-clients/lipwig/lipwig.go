@@ -16,7 +16,10 @@ import (
 	"strings"
 )
 
-const LIPWIG_ADDR = "lipwig.service:8787"
+const (
+	LIPWIG_ADDR          = "lipwig.service:8787"
+	SID_CHAN_BUFFER_SIZE = 128
+)
 
 //
 // Lipwig Client
@@ -69,11 +72,20 @@ func Start(
 		log.Panic("ssmp: login failed ", resp)
 	}
 
+	// subscribe via SSMP
 	for _, sid := range sids {
 		if err := client.SubscribeAndHandle(sid); err != nil {
 			log.Panic(err)
 		}
 	}
+
+	// fetch new transforms that have occurred while sloth was down
+	for _, sid := range sids {
+		handler.syncTransforms(sid)
+	}
+
+	// start syncing based on incoming SSMP events
+	go handler.syncTransformsLoop()
 
 	return client
 }
@@ -88,6 +100,7 @@ type eventHandler struct {
 	didOwners     asynccache.Map // map of DID -> UID
 	polarisClient *polaris.Client
 	spartaClient  *sparta.Client
+	sidsToSync    chan string
 }
 
 func (h *eventHandler) HandleEvent(event lipwig.Event) {
@@ -97,8 +110,7 @@ func (h *eventHandler) HandleEvent(event lipwig.Event) {
 	// HandleEvent is called synchronously in the lipwig client read loop.
 	// Spawn a goroutine for the actual handling.
 	if strings.HasPrefix(to, "pol/") {
-		sid := to[4:]
-		go h.handleTransformEvent(sid)
+		h.sidsToSync <- to[4:]
 	} else {
 		log.Print("ssmp: unknown channel ", to)
 	}
@@ -116,6 +128,7 @@ func newEventHandler(
 		didOwners:     asynccache.New(spartaClient.GetDeviceOwner),
 		polarisClient: polarisClient,
 		spartaClient:  spartaClient,
+		sidsToSync:    make(chan string, SID_CHAN_BUFFER_SIZE),
 	}
 }
 

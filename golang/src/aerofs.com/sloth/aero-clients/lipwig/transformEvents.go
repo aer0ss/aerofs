@@ -8,7 +8,14 @@ import (
 	"log"
 )
 
-func (h *eventHandler) handleTransformEvent(sid string) {
+func (h *eventHandler) syncTransformsLoop() {
+	for {
+		sid := <-h.sidsToSync
+		h.syncTransforms(sid)
+	}
+}
+
+func (h *eventHandler) syncTransforms(sid string) {
 	transforms := h.fetchNewTransforms(sid)
 	if len(transforms) == 0 {
 		return
@@ -32,6 +39,8 @@ func (h *eventHandler) handleTransformEvent(sid string) {
 }
 
 func (h *eventHandler) fetchNewTransforms(sid string) []*polaris.Transform {
+	log.Print("fetch transforms for ", sid)
+
 	// Fetch timestamp in its own transaction so that it doesn't span a network
 	// round-trip. Two concurrent callers will not write the same message to
 	// the db; at worst, we do some extra work, but correctness is preserved.
