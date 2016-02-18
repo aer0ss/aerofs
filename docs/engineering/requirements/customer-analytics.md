@@ -112,6 +112,9 @@ Product Usage Queries:
 - Number of internal users (LDAP) versus external users (locally managed)
 - Max file size uploaded/downloaded via Web in the last X days by customer ID
 - Total amount of data (bytes) synced in the last X days
+- Total number of active users in the last X time interval
+    - An active user in this context is someone who has viewed a page in the Web interface or
+updated a file in the last X time interval, where X is "day", "week", or "month".
 
 Success Queries:
 
