@@ -237,7 +237,7 @@ function interact() {
         TAG="$(cat $(dirname $0)/tag)" /bin/bash
         ;;
     *)
-        echo 'Please choose a number between 1 and 4.'
+        echo 'Please choose a number between 1 and 5.'
     esac
 }
 
