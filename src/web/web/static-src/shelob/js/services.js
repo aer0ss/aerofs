@@ -198,10 +198,11 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
             headers = headers || {};
             headers['Content-Type'] = 'application/octet-stream';
 
+            var phoenixTimeout;
             var deferred = $q.defer();
+            var reader = new FileReader();
 
             function readAndUploadChunk(start) {
-                var reader = new FileReader();
                 var end = (start + chunkSize > file.size) ? file.size - 1 : start + chunkSize - 1;
                 var blob;
                 if (file.slice) blob = file.slice(start, end + 1);
@@ -212,6 +213,7 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                     var bytes = e.target.result;
                     headers['Content-Range'] = 'bytes ' + start + '-' + end + '/' + file.size;
                     headers['Endpoint-Consistency'] = 'strict';
+
                     _put('/files/' + oid + '/content', bytes, headers, config).then(function (response) {
                         $log.info("put succeeded", response);
                         deferred.notify({progress: (end + 1) / file.size});
@@ -225,7 +227,21 @@ shelobServices.factory('API', ['$http', '$q', '$log', 'Token', 'API_LOCATION', '
                     }, function(response) {
                         // PUT failed
                         $log.error('PUT failed', response);
-                        deferred.reject({reason: 'upload', status: response.status});
+
+                        //Inspect why - was it because we are in phoenix land and
+                        //we haven't got the notification that polaris made the file,
+                        //if so, let's keep trying. Otherwise, just reject.
+                        var now = new Date();
+                        var timeoutNotReached = !phoenixTimeout || now < phoenixTimeout;
+                        var noSOID = response.data && response.data.message && response.data.message.indexOf("Device doesn't have soid") > -1
+
+                        if (response.status == 404 && noSOID && timeoutNotReached) {
+                            var fromNow = new Date().setTime(now.getTime() + (30 * 1000) ); //30 seconds
+                            phoenixTimeout = phoenixTimeout || fromNow;
+                            setTimeout(function () {readAndUploadChunk(start);}, 5000);
+                        } else {
+                            deferred.reject({reason: 'upload', status: response.status});
+                        }
                     });
                 };
                 reader.onerror = function(e) {

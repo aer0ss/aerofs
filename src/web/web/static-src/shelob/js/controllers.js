@@ -153,15 +153,20 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
                             $scope.currentShare.isAdmin = isOwned;
                         });
                         $scope.objects = [$scope.currentShare.file];
-                    }, _handleFailure);
+                    }, $q.reject);
             } else {
-                _handleFailure(response);
+                $q.reject(response);
             }
         }).then(function (r) {
-            $scope.managedShares = r.shares.managed.concat([r.rootSid]);
-            $scope.allShares = r.shares.all;
-            _populateShares();
-        });
+            if (r) {
+                $scope.managedShares = r.shares.managed.concat([r.rootSid]);
+                $scope.allShares = r.shares.all;
+                _populateShares();
+            } else {
+                $q.reject({status:500});
+            }
+
+        }, _handleFailure);
     };
 
     // Get link sharing data, check if objects are done loading
