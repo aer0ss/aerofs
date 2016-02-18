@@ -82,3 +82,49 @@ below.
    [#success](https://aerofs.slack.com/messages/success) channel on slack.
 
        cd ~/repos/support-website && python deploy.py
+       
+
+# Eyja iOS App Build
+
+
+### Step 1 - Get the Certs and Provisioning Profiles
+
+1. I assume you have Xcode and Xcode Command line tools installed and have a Gerrit
+ account.
+   
+2. Install fastlane `gem install fastlane`
+   
+3. In the project, look for `fastlane/Fastfile` and add your Gerrit username to the 
+`git_url` field. For example, change `ssh://gerrit.arrowfs.org:29418/ios-certificates`
+to `ssh://rahul@gerrit.arrowfs.org:29418/ios-certificates`.
+   
+4. Fastlane is the automation tool that lets you run your deployment in a pipeline.
+   
+   ``` 
+   $ cd ios
+   $ fastlane ios initialize
+   ```
+   
+   This will get you all the certificates and provisioning profiles and put them where
+   they belong.
+   
+5. When fastlane asks for the *passphrase* to decrypt the keys and certificates it 
+downloads, enter the `101University210`.
+
+### Step 2 - Build the code
+
+Open `Eyja.xcodeproj` in Xcode. From there, you should be able to build.
+
+
+## Distribution Instructions
+
+### Internal Distribution
+
+``` 
+$ cd ios
+$ fastlane ios beta
+```
+
+### AppStore Distribution
+
+This feature is coming soon. Till then, talk to Rahul.
