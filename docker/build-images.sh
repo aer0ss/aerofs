@@ -12,6 +12,7 @@ DIRS="
     base/python2.7
 
     aeroim
+    ../golang/src/aerofs.com/analytics
     ../golang/src/aerofs.com/auditor
     ../src/blurber
     ../src/bunker
