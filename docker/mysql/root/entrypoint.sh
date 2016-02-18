@@ -51,6 +51,7 @@ if [ "$1" = 'mysqld_safe' ]; then
 			}
 	fi
 
+	mysql_upgrade
 	chown -R mysql: "$DATADIR"
 fi
 
