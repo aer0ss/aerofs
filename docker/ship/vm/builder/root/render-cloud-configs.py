@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 import StringIO
 import base64
 import gzip
