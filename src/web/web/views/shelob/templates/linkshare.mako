@@ -68,10 +68,11 @@
     <script src="${request.static_path('web:static/js/angular-lib/datepicker/bootstrap-datepicker.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular/angular-route.min.js')}"></script>
+    <script src="${request.static_path('web:static/js/angular-lib/angular-filter-0.5.7.min.js')}"></script>
     <script src="${request.static_path('web:static/shelob.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-ui/ui-bootstrap-tpls-0.11.0.min.js')}"></script>
     <script src="${request.static_path('web:static/js/angular-lib/angular-tree-control.js')}"></script>
-    <script src="${request.static_path('web:static/shelob/js/config/config_private.js')}"></script>
+    <script src="${request.static_path('web:static/ng-modules/typeahead/typeahead.js')}"></script>
 </%block>
 
 <%block name="css">
