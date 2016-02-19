@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.protocol;
 
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -31,7 +30,6 @@ import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.transport.lib.OutgoingStream;
-import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Util;
@@ -116,12 +114,14 @@ public class FilterFetcher
     private boolean request_(DID did, Set<SIndex> sidxs, AsyncTaskCallback cb) {
         Device d = _devices.getOPMDevice_(did);
         if (d == null || sidxs.isEmpty()) {
+            l.debug("{} stop: offline", did);
             return false;
         }
         Endpoint ep = new Endpoint(d.getPreferredTransport_(), did);
         try {
             issueRequest_(ep, sidxs, cb);
         } catch (ExLinkDown e) {
+            l.debug("{} stop: link down", did);
             return false;
         } catch (Throwable t) {
             cb.onFailure_(t);
