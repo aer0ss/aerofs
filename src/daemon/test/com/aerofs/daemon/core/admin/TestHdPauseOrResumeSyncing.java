@@ -50,7 +50,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(true, _imce);
         _handler.handle_(event);
 
-        verify(pause).pause();
+        verify(pause).pause_();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
         inOrder.verify(_tokenManager).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());
@@ -66,7 +66,7 @@ public class TestHdPauseOrResumeSyncing extends AbstractTest
         EIPauseOrResumeSyncing event = new EIPauseOrResumeSyncing(false, _imce);
         _handler.handle_(event);
 
-        verify(pause).resume();
+        verify(pause).resume_();
         InOrder inOrder = inOrder(_tokenManager, _token, _tcb, _lss);
         inOrder.verify(_tokenManager).acquire_(eq(Cat.UNLIMITED), anyString());
         inOrder.verify(_token).pseudoPause_(anyString());

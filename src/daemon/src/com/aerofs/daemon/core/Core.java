@@ -230,6 +230,6 @@ public class Core implements IModule
         _cc.start();
 
         // delay polaris interaction to the very end of the startup sequence
-        _pauseSync.resume();
+        _pauseSync.resume_();
     }
 }

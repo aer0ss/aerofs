@@ -34,9 +34,9 @@ public class HdPauseOrResumeSyncing extends AbstractHdIMC<EIPauseOrResumeSyncing
 
         // pause polaris interactions
         if (ev._pause) {
-            _pauseSync.pause();
+            _pauseSync.pause_();
         } else {
-            _pauseSync.resume();
+            _pauseSync.resume_();
         }
 
         _tokenManager.inPseudoPause_(Cat.UNLIMITED, "pause-sync", () -> {

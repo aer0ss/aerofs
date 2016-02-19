@@ -35,7 +35,7 @@ public class PauseSync
         _listeners.remove(l);
     }
 
-    public void pause()
+    public void pause_()
     {
         if (_paused.compareAndSet(false, true)) {
             _listeners.forEach(PauseSync.Listener::onPauseSync_);
@@ -44,7 +44,7 @@ public class PauseSync
         }
     }
 
-    public void resume()
+    public void resume_()
     {
         if (_paused.compareAndSet(true, false)) {
             _listeners.forEach(PauseSync.Listener::onResumeSync_);
