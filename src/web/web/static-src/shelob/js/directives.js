@@ -10,6 +10,11 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
 
     link: function(scope, elem, attrs) {
 
+        // remove listener when upload complete.
+        scope.doCleanUp = function() {
+            window.onbeforeunload = null;
+        };
+
         scope.doChunkedUpload = function(fileJSON, file, etag) {
             var headers = {'If-Match': etag};
             //TODO: use page size (4M or 8M) chunks, and increase nginx's max body size
@@ -23,6 +28,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                     fileJSON.type = 'file';
                     scope.objects.push(fileJSON);
                 }, 500);
+                scope.doCleanUp();
             }, function(response) {
                 // file upload failed
                 scope.progressModal.dismiss();
@@ -34,6 +40,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                     else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
                     else showErrorMessageUnsafe(getInternalErrorText());
                 } else showErrorMessageUnsafe(getInternalErrorText());
+                    scope.doCleanUp();
             }, function(response) {
                 // file upload notification
                 $log.debug('progress report:', response.progress);
@@ -85,6 +92,11 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                 else if (response.status == 403) showErrorMessage("Only users with Owner or Editor permissions can upload a file to this shared folder. Contact an Owner of this shared folder to get permissions.");
                 else showErrorMessageUnsafe(getInternalErrorText());
             });
+
+            // confirm with user who about to leave the page that upload is not complete.
+            window.onbeforeunload = function (e) {
+                return "File upload is not complete. Are you sure you want to leave?";
+            };
         };
     }
 };
