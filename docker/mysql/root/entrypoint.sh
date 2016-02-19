@@ -49,9 +49,35 @@ if [ "$1" = 'mysqld_safe' ]; then
 				echo >&2 'MySQL init process failed.';
 				exit 1
 			}
+	elif [ $(stat -c %U "$DATADIR/mysql") == "root" ]; then
+		# User is root only if we have done an in-place upgrade.So
+		# we get only if prev upgrade the appliance using IPU
+		"$@" --skip-networking &
+
+		mysql=( mysql --protocol=socket -uroot )
+
+		for i in {30..0}; do
+			if echo 'SELECT 1' | "${mysql[@]}" &> /dev/null; then
+				break
+			fi
+			echo 'MySQL server start in progress...'
+			sleep 1
+		done
+		if [ "$i" = 0 ]; then
+			echo >&2 'MySQL start failed.'
+			exit 1
+		fi
+
+		mysql_upgrade
+
+		mysqladmin -uroot shutdown && \
+			echo 'MySQL upgrade done.' || \
+			{
+				echo >&2 'MySQL upgrade failed.';
+				exit 1
+			}
 	fi
 
-	mysql_upgrade
 	chown -R mysql: "$DATADIR"
 fi
 
