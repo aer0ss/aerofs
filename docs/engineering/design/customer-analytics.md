@@ -30,12 +30,17 @@ Analytics data will be in the form of JSON objects representing **events**.
 Every event will have the following fields:
 
 - **event:** The type of the event that the JSON object represents
-- **distinct_id**: This is a special Mixpanel field used for certain grouping functionality in
-Mixpanel's front-end. We will pass in the Customer ID on every event we generate.
+- **customer_name**: We will retrieve the Customer Name and pass it in this field in order to
+allow segmenting by Customer.
 - **time:** A timestamp indicating when the event happened. By including the timestamp on the
 event itself, we allow ourselves to batch events or import old events.
 - **token**: The Mixpanel project's token. This identifies which project in Mixpanel should
 receive the event. (TODO: figure out when this gets added to an event)
+
+Conditional fields:
+- **distinct_id**: This is a special Mixpanel field used for certain grouping functionality in
+Mixpanel's front-end. In order to track Active Users, we will pass in a hash of the user_id in
+this field, for the appropriate events.
 
 Additionally, arbitrary property fields can be added to an event to describe the context in which
 it occurred, or to give further clarifications about what type of event has occurred. For example,
@@ -227,6 +232,11 @@ These are:
 
 **Sales queries** as outlined in the spec should require no additional event types.
 
+**Active Users** is a very important metric outlined in the spec. It requires a different method
+of tracking in order to get accurate counts. That is, we must keep track of individual users for
+this metric in order to prevent duplicate counting. This metric is considered seperately from the
+others.
+
 ####Cost Analysis
 In total, there are 12 metrics that we would like to send more frequently than once per day. There
 are also 25 metrics that will be collected once per day. We will use an estimate of 2000 customers
@@ -248,7 +258,21 @@ If we send each of these events 12 times per day, that results in a total of
     50 000 + (24 000 * 12 * 22) = 6 386 000
 
 per month. This keeps us safely within an upper limit of 8 million events per
-month, with some room for overages and unforeseen situations.
+month.
+
+However, we must consider the Active Users metric as a special case. In order to reduce dependence
+on the appliance, we will send 1 event per active user per day. Then, aggregation of this metric
+can be done on a daily/weekly/monthly basis in Mixpanel itself.
+
+An estimate for the maximum number of events that we would send to track Active Users is:
+
+    50 000 * 22 = 1 100 000
+
+where 22 is the number of business days in a month.
+
+This brings the total estimate of events to
+
+    1 100 000 + 6 386 000 = 7 486 000
 
 This level of use of Mixpanel would cost $1150 per month, with the additional $150 charge coming
 from the purchase of a People plan to support profiles for our customers.
@@ -295,7 +319,27 @@ appliance at a regular interval (a few times per day, possibly) in order to meas
 of state-based, and then create corresponding events to send to Mixpanel.
 
 ###POST /analytics/events
-This is the route that can be accessed in order to register events with the appliance.
+This is the route that can be accessed in order to track usage events with the appliance. Events
+sent to this endpoint will be simple JSON objects with two fields: **event** and **user_id**. All
+further processing of the event data will happen inside this container, so the simplified event
+suffices. The purpose of the **user_id** field is to support the calculation of
+daily/weekly/monthly active user counts inside the analytics container.
+
+###Container Aggregation Design
+The analytics container is the brain of the AeroFS analytics set-up. It is responsible for
+aggregation and collection of analytics data. As usage events arrive to the container, it will
+aggregate them based on event type. Then, periodically, this aggregated data will be sent to
+Segment in order to be relayed on to Mixpanel.
+
+For the usage-based events, a simple map of event name to count would suffice. Since we will send
+usage-based events every two hours, this would guarantee that we will lose no more than 2 hours of
+data if the appliance goes down. However, no data loss at all is ideal, and we must consider the
+Active Users metrics.
+
+We will use [BoltDB](https://github.com/boltdb/bolt) as a persistence mechanism to track active
+users and to aggregate usage-based events throughout the day. BoltDB is a thin layer
+that will create only a single file on the filesystem. Bolt is used in production by many
+companies, and is the most-starred embedded database for Go on Github.
 
 ###Data Collection Settings
 In Bunker, there will be two settings that configure how data is collected and sent on to Mixpanel.
