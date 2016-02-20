@@ -102,6 +102,20 @@ File Conversations cannot include files or folders.
 File Conversations exist only within either a Channel or a Direct Conversation.                
 
 
+### Public and Private 
+
+A `Public Conversation` can be found and joined by anyone. Name, messages, members, and file updates can be seen and searched by anyone.  
+
+A `Private Conversation` can be seen only by members. It cannot be joined. New members can be invited by existing members. Name, messages, memebers, and file updates can be seen by by members only.  
+
+Only channels can be public.
+
+A Public Conversation can be made private. Private conversations cannot be made public. 
+
+People joining private conversations cannot see the messages that were sent before their arrival.  
+
+
+
 ### Desktop: Folder Locations
 
 Eyja Location: ~/Eyja  
@@ -242,34 +256,6 @@ New Conversation - CMD + N
 Conversation Toggling - CMD + down/up  
 
 
-
-### Public Group Conversations
-
-Most group conversations should be public.  
-This will allow: 
-
-* people to join
-* content to be searchable
-* content to be linkable
-
-
-
-
-without requiring people to  
- 
-Users should be able to set a conversation private. 
-
-### Privacy 
-
-A `Public Group` can be found and joined by anyone. Name, messages, memebers, and file updates can be seen by anyone.  
-
-A `Private Group` can be seen only by members. It cannot be joined. New members can be invited by existing members. Name, messages, memebers, and file updates can be seen by by members only.  
-
-Members can decide to make a group private or public.  
-
-People joining private conversations, as well as people that see a public group, cannot see the messages that were sent before their arrival.  
-
-
 ### Deletion
 
 When a user deletes a file in Eyja: 
@@ -406,7 +392,6 @@ Where I keep design problems, thoughts, and notes.
 
 ### Open Questions
 
-* if I am a member in a folder, how will that work?
 * if I delete a file, how does that work?
 * if I move a folder out, how does that work?
 * if I rename a folder, how does that work?
