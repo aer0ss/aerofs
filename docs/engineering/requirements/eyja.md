@@ -28,23 +28,28 @@ Eyja brings your work together in one place. You will never have to ask 'where i
 
 `Conversation` A set of messages between multiple people. There are several types of conversations:
 
-* `Group Conversation` A conversation between two or more people. 
-* `Direct Conversation` A conversation between two people. 
+* `Channel` A conversation between multiple people. Channels:
+	* Channels must have a name, given by the user.
+	* Channels can be either public or private.
+	* Members can be added, or removed.
+	e.g. 'Marketing'
+	
+* `Direct Conversation` A conversation between multiple people with the following properties:
+	* Direct Conversations have a immutable name. 	* Direct Conversations are private.
+	* Members cannot be added or removed. 
+	e.g. 'Tyrion, Ned, Sansa'
+	
+* `1:1 Conversation` A Direct Conversation with only two people. Name for conversation is the first name of the other person talking.  
+e.g. 'Jaime Lannister'
 * `File Conversation` A conversation around a file.
 
-`Conversation Subfolder` A 'folder' that is below a group conversation or a direct conversation, and that may contain files and subfolders. It does not have any conversation associated with it. 
-
-`Named Group Conversation` A conversation with a given name.  
-e.g. 'Marketing'
-
-`Unnamed Group Conversation` A conversation without a given name.
-e.g. 'Tyrion, Ned, Sansa'
+`Conversation Subfolder` A folder that is below a channel or a direct conversation, and that may contain files and other conversation subfolders. It does not have any conversation associated with it. 
 
 `Conversation Member` A user that has joined a conversation. 
 
 `Conversation Message` Words from a member.
 
-`File Update Message` Events about files in a conversation. e.g.: file updated, file deleted, file created. 
+`File Update Message` Events about files in a conversation. e.g.: 'file updated', 'file deleted', 'file created'. 
 
 `Eyja Desktop` The desktop version of Eyja, which includes file sync and share. 
 
@@ -54,7 +59,7 @@ e.g. 'Tyrion, Ned, Sansa'
 
 `File Upload` The action of sharing a file in a conversation.
 
-`Send a File` A File Upload where recipients may download a copy of the file. If members want to share edits they made on the file, they would need to upload it again. Send a File triggers a File Update Message. e.g. 'Sansa sent raven.jpg'
+`Send a File` A File Upload where recipients may download a copy of the file. If members want to share subsequent edits they made on the file, they would need to upload it again. Send a File triggers a File Update Message. e.g. 'Sansa sent raven.jpg'
 
 `Sync a File` A File Upload where recipients with Eyja Desktop receive a copy of the file on their desktop. If members make edits, a new copy of the file is updated  to the other members.
 
@@ -62,28 +67,42 @@ e.g. 'Tyrion, Ned, Sansa'
 
 `Unread Notification` A notification that tells the user she needs to look at it, and will change state once it is done. e.g. A conversation in bold. 
 
-`File Update Notification` A small, unobstrusive signal to say the file has been updated since last time it was viewed. 
+`File Update Notification` A small, unobstrusive signal that can be ignored. e.g. a small icon next to a recently updated file.
 
 `Eyja Root Folder` The Eyja folder in the user home directory when user has installed Eyja Desktop.
 
-`Conversation Folder` A folder in the Eyja folder that is shared with members of the corresponding conversation. 
+`Shared Folder` A folder in the Eyja folder that is shared with members of the corresponding conversation. 
 
-`Personal Folder` A folder in the Eyja folder that is not shared. 
+`Personal Folder` A folder in the Eyja folder that is not shared with anyone else.
 
-`Inbox` A place that shows the latest Tag Notification and Unread Notification.
+`Inbox` A place that shows the latest Tag and Unread Notifications.
 
-`Group Conversation Tree` The tree of folders and file conversations below a group conversation.
+`Conversation Tree` The tree of folders and files below a conversation.
+
+`Roster` The list of conversations.
+
 
 # Behaviors
 
-### Hierarchy
+### Roster
 
-Group and Direct Conversations may include subfolders and files.   
+The roster lists: 
+
+* Channels
+	* All channels the member belongs to.
+	* Ordered alphabetically.
+
+* Direct Conversations
+	* Most recent 20 Direct Conversations. 
+	* Ordered alphabetically.
+
+### File Conversations
+
 File Conversations cannot include files or folders.  
-File Conversations exist only within either a Group Conversation or a Direct Conversation.
-                       
-   
-### Folder Locations
+File Conversations exist only within either a Channel or a Direct Conversation.                
+
+
+### Desktop: Folder Locations
 
 Eyja Location: ~/Eyja  
 Eyja Group Conversations: ~/Eyja/
