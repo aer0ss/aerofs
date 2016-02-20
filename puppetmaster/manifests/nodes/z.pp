@@ -34,7 +34,6 @@ node "z.arrowfs.org" inherits default {
   pagerduty::probe::base{[
     "developers url https://developers.aerofs.com",
     "appliance checkappliance share.aerofs.com bW9uaXRvcjpHM2lYUlRTRllzRkllREszNlRmQVZVYWdWYnBDZHVPcQ==",
-    "rocklog url http://rocklog.aerofs.com/",
     "web url https://www.aerofs.com",
     "web url https://hybrid.aerofs.com/login",
     "pc url https://enterprise.aerofs.com/login",
