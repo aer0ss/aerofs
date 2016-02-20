@@ -33,6 +33,18 @@
         })(window,document,'script','dataLayer','GTM-TPFL7W');</script>
         <!-- End Google Tag Manager -->
         <div id="wrapper">
+            {% if config.get('MARKETING_BANNER_CONTENT') %}
+                <div id="marketing-banner">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                {{ config.get('MARKETING_BANNER_CONTENT')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
             <div id="dark-blue-header">
                 <div class="container">
                     <div class="row">

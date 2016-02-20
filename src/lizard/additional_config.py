@@ -48,3 +48,9 @@ HPC_DOMAIN = 'syncfs.com'
 HPC_PATH_TO_DOCKER_CA_CERT = os.path.expanduser('~/.docker/machine/certs/ca.pem')
 HPC_PATH_TO_DOCKER_CLIENT_CERT = os.path.expanduser('~/.docker/machine/certs/cert.pem')
 HPC_PATH_TO_DOCKER_CLIENT_KEY = os.path.expanduser('~/.docker/machine/certs/key.pem')
+
+# Banner content for marketing
+# If undefined or empty string, no banner will show on the site
+# IMPORTANT: This string is treated as regular HTML and is not sanitized.
+# So don't forget to close your HTML tags if you have them!
+MARKETING_BANNER_CONTENT = 'FREE on-prem digital pony! <a href="https://7321-presscdn-0-57-pagely.netdna-ssl.com/wp-content/uploads/2015/07/fat-pony.jpg">Available now.</a>'

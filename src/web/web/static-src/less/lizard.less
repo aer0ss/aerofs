@@ -169,12 +169,15 @@ ul.list-unstyled.with-image {
 
 ////////
 //Top Nav
+
+@headerheight: 90px;
+
 #dark-blue-header {
   background-color: @aero-navyblue;
-  margin-bottom: @standard-margin;
   padding: 0;
   color: @aero-white;
-  height: 90px;
+  height: @headerheight;
+  margin-bottom: @standard-margin;
 }
 
 #dark-blue-header .brand img {
@@ -196,6 +199,23 @@ ul.list-unstyled.with-image {
   &:hover {
     color: @aero-blue
   }
+}
+
+@marketingbannerpadding: (@headerheight/2 - @line-height-base * @font-size-base)/2;
+#marketing-banner {
+    background-color: @aero-blue;
+    color: @aero-white;
+    height: @headerheight/2;
+    padding: @marketingbannerpadding 15px; // To align with nav below it and logo above.
+    text-align: center;
+
+    a {
+        color: @aero-white;
+        font-weight: 600;
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 }
 
 @media screen and (max-width: 767px) {
