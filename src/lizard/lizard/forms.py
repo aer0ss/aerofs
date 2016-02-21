@@ -49,6 +49,7 @@ class InviteForm(Form):
 class PreferencesForm(Form):
     first_name = StringField('First Name', validators=[InputRequired()])
     last_name = StringField('Last Name', validators=[InputRequired()])
+    customer_name = StringField('Organization', validators=[InputRequired()])
     # DF: these fields disabled until we figure out our story with email notifications
     #security_emails = BooleanField("Receive security notifications")
     #release_emails = BooleanField("Receive release notifications")

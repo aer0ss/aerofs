@@ -9,7 +9,7 @@
         <div class="full-width-form logged-in col-sm-6">
             <form role="form" class="" action="" method="post" name="prefs">
                 {{ form.hidden_tag() }}
-                {{ render_disabled_field('Organization', current_user.customer.name) }}
+                {{ render_field(form.customer_name, type="text", class="form-control") }}
                 {{ render_field(form.first_name, type="text", class="form-control") }}
                 {{ render_field(form.last_name, type="text", class="form-control") }}
                 {{ submit_button("Save changes", horizontal=false) }}

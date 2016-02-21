@@ -278,6 +278,7 @@ def edit_preferences():
         # Update name
         user.first_name = form.first_name.data
         user.last_name = form.last_name.data
+        user.customer.name = form.customer_name.data
         # Update email preferences (disabled until we add it back to the form)
         #user.notify_security    = form.security_emails.data
         #user.notify_release     = form.release_emails.data
@@ -289,6 +290,7 @@ def edit_preferences():
         return redirect(url_for(".edit_preferences"))
     form.first_name.data = user.first_name
     form.last_name.data = user.last_name
+    form.customer_name.data = user.customer.name
     # (disabled until we enable it in the form again)
     #form.security_emails.data = user.notify_security
     #form.release_emails.data = user.notify_release
