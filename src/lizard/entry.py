@@ -44,6 +44,10 @@ def log_request(resp):
 # because the site will blindly trust the incoming headers.
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
+app.config.update({
+    'SESSION_COOKIE_SECURE': True
+})
+
 d = wsgiserver.WSGIPathInfoDispatcher({'/': app})
 server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', port), d)
 server.shutdown_timeout = .1
