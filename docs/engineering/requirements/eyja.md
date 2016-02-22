@@ -119,7 +119,7 @@ People joining private conversations cannot see the messages that were sent befo
 ### Desktop: Folder Locations
 
 Eyja Location: ~/Eyja  
-Eyja Group Conversations: ~/Eyja/
+Eyja Channels -: ~/Eyja/
 Eyja Direction Conversations Location: ~/Eyja/Direct Conversations/
 
 e.g. 1  
