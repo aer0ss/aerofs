@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# Test if curl of the specified URL returns okay, i.e. HTTP 200.
+#
+# exit 1 if the URL returns an error, i.e. HTTP 500.
+# TODO Add the CPU_TRHESHOLD, MEM_THRESHOLD and DISK_THRESHOLD as optional
+
+HOST='https://enterprise.aerofs.com:8000/hpc_server_sys_stats'
+# Default values are 80.0 %
+CPU=80
+MEM=80
+DISK=80
+
+if [ $# == 4 ]
+then
+	HOST=$1
+	CPU=$2
+	MEM=$3
+	DISK=$4
+elif [ $# != 0 ]
+then
+	echo "usage: $0 [url] [cpu_threshold] [mem_threshold] [disk_threshold]" >&2
+fi
+
+URL=$HOST?cpu_threshold=$CPU\&mem_threshold=$MEM\&disk_threshold=$DISK
+
+if [ "$(curl -s -o /dev/null -w "%{http_code}" $URL)" != "200" ]
+then
+    exit 1
+fi

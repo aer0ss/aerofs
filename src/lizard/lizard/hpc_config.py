@@ -148,7 +148,7 @@ def reboot(self, subdomain):
             time.sleep(2)
 
     except Exception as e:
-        raise self.retry(exc=e, countdown=30, max_retries=10)
+        raise self.retry(exc=e, countdown=40, max_retries=20)
 
 
 def get_boot_id(session):

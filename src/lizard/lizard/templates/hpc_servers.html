@@ -6,7 +6,7 @@
 {% block content %}
     <h1>Hosted Private Cloud Servers</h1>
 
-<script>
+<script type="text/javascript">
     {# TODO (GS):
          - better error handling than just alert()
          - show progress indicator
@@ -46,6 +46,8 @@
             <th>ID</th>
             <th>Docker URL</th>
             <th>Deployments</th>
+            <th>Usage</th>
+            <th>Deployment Status</th>
             <th>Actions</th>
         </tr>
         {% for server in servers %}
@@ -58,8 +60,47 @@
                         {{ deployment.subdomain }}
                     {% endfor %}
                 </td>
-                <td><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
+                <td>
+                    <b> CPU:</b> {{ stats[server.id].cpu_usage_percent }} % <br>
+                    <b> Memory:</b> {{ stats[server.id].mem_usage_percent }} % <br>
+                    <b>Disk:</b> {{ stats[server.id].disk_usage_percent }} %
+                </td>
+                <td align="center">
+                        {% if status[server.id] | length == 0 %}
+                            <span class="glyphicon glyphicon-ok-sign" style="font-size:1.5em;color:#7CC952" aria-hidden="true"></span>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <a href="#" data-target="#statusModal" data-toggle="modal">
+                                    {{ status[server.id]|length }} failures
+                                </a>
+                            </div>
+                        {% endif %}
+                </td>
+                <td align="center"><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
             </tr>
+
+            <div id="statusModal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                <!-- Modal content-->
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Deployments status</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p> Issue(s) found with deployment(s):   </p>
+                            <div class="list-group">
+                                {% for deployment in status[server.id] %}
+                                    <a href="/hpc_deployments_status?subdomain={{ deployment }}" class="list-group-item" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"> {{ deployment }} </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endfor %}
     </table>
 {% endblock %}

@@ -37,3 +37,15 @@ containers:
       restart: always
       volume:
         - /var/lib/docker/containers:/var/lib/docker/containers
+
+  hpc-monitoring:
+    image: aerofs/hpc-monitoring
+    run:
+      detach: true
+      restart: always
+      publish:
+        - "5000:5000"
+      volume:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /var/hpc-monitoring:/state
+

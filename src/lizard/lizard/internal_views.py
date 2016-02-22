@@ -3,13 +3,16 @@ import stripe
 import tarfile
 import requests
 from StringIO import StringIO
-from hpc_config import reboot
+from hpc_config import reboot, new_authed_session
 from aerofs_licensing import unicodecsv
 from lizard import db, csrf, appliance, notifications, forms, models, hpc
 from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
     flash, jsonify
 
 blueprint = Blueprint('internal', __name__, template_folder='templates')
+
+MONITORING_PORT = 5000
+
 
 @blueprint.route("/", methods=["GET"])
 def index():
@@ -458,8 +461,21 @@ def hpc_servers():
         db.session.commit()
 
     servers = models.HPCServer.query.all()
+    deployments_status_by_server = {}
+    server_sys_stats = {}
 
-    return render_template('hpc_servers.html', servers=servers, form=form)
+    for server in servers:
+        # Getting the status of the all deployments in server
+        deployments_status_by_server[server.id] = _server_deployment_status(server.id)
+
+        # Getting the system statistics of the server
+        server_sys_stats[server.id] = _get_server_sys_stats(server.docker_url)
+
+    return render_template('hpc_servers.html',
+                           servers=servers,
+                           form=form,
+                           stats=server_sys_stats,
+                           status=deployments_status_by_server)
 
 
 @blueprint.route("/hpc_servers/<int:server_id>", methods=["DELETE"])
@@ -467,3 +483,99 @@ def hpc_server_delete(server_id):
     server = models.HPCServer.query.get_or_404(server_id)
     hpc.delete_server(server)
     return Response('ok', 200)
+
+
+# This function returns a 200 if all hpc deployments are up, else it
+# returns a 500 if any service in any deployment is down.
+# If a subdomain name is given in the query parameters, we just return the
+# status of that particular deployment
+@blueprint.route("/hpc_deployments_status", methods=['GET'])
+def hpc_deployments_status():
+    if request.args:
+        subdomain_status = _subdomain_deployment_status(request.args.get('subdomain'))
+        return jsonify(subdomain_status)
+
+    servers = models.HPCServer.query.all()
+
+    for server in servers:
+        if _server_deployment_status(server.id):
+            return Response(status=500)
+
+    # If we have exited the previous loop, it means that all the servers are up
+    return Response(status=200)
+
+
+# This function returns a 200 if all hpc servers's system stats(RAM,CPU, disk)
+# are under their assigned thresholds(via pagerduty).
+# Currently, it is only called by hpc_check_sys_stats in pagerduty
+@blueprint.route("/hpc_server_sys_stats", methods=['GET'])
+def hpc_server_sys_stats():
+    # Getting the different threshold from the request
+    threshold = {}
+    threshold['cpu_usage_percent'] = float(request.args.get('cpu_threshold'))
+    threshold['mem_usage_percent'] = float(request.args.get('mem_threshold'))
+    threshold['disk_usage_percent'] = float(request.args.get('disk_threshold'))
+
+    servers = models.HPCServer.query.all()
+    server_infos = {}
+
+    for server in servers:
+        server_sys_stats = _get_server_sys_stats(server.docker_url)
+
+        # If any usage is higher than the threshold, we store it in a list and
+        # return a 500 Response at the end
+        for stats in server_sys_stats:
+            if server_sys_stats[stats] > threshold[stats]:
+                server_infos.setdefault(server.id, []).append(stats)
+
+    if server_infos:
+        response = jsonify(server_infos)
+        response.status_code = 500
+        return response
+    else:
+        return Response('Ok', 200)
+
+
+# This function gives the status of a subdomain
+def _subdomain_deployment_status(subdomain):
+    # Getting the status of the each part of a deployment
+    session = new_authed_session(subdomain)
+    r = session.get('/admin/json-status')
+    subdomain_status = r.json()
+    return subdomain_status
+
+
+# This function returns a list that is empty if all deployments of the server
+# are up. If not, the list contains the name of the deployments that are down.
+def _server_deployment_status(server_id):
+    # we get the status only of the deployments that are in the server which id
+    # is given as a parameter
+    deployments_list = models.HPCDeployment.query.filter(
+        models.HPCDeployment.server_id == server_id).all()
+
+    problematic_deployments = []
+
+    for deployment in deployments_list:
+        # We get the status of all the container of each deployment
+        statuses = _subdomain_deployment_status(deployment.subdomain)
+
+        # If one of the container is down, we add it to the list of down deployments
+        for status in statuses['statuses']:
+            if not status['is_healthy']:
+                problematic_deployments.append(deployment.subdomain)
+
+    return problematic_deployments
+
+
+def _internal_ip(docker_url):
+    # Docker url is of the form https://<ip-addr>:port>.
+    # Use rfind to get index of 2nd ":" in docker url and extract away port
+    # to get internal ip.
+    end = docker_url.rfind(":")
+    return docker_url[len("https://"):end]
+
+
+def _get_server_sys_stats(docker_url):
+    url = 'http://{}:{}'.format(_internal_ip(docker_url), MONITORING_PORT)
+    r = requests.get(url)
+    return r.json()
