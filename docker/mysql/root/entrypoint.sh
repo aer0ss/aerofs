@@ -49,9 +49,7 @@ if [ "$1" = 'mysqld_safe' ]; then
 				echo >&2 'MySQL init process failed.';
 				exit 1
 			}
-	elif [ $(stat -c %U "$DATADIR/mysql") == "root" ]; then
-		# User is root only if we have done an in-place upgrade.So
-		# we get only if prev upgrade the appliance using IPU
+	else
 		"$@" --skip-networking &
 
 		mysql=( mysql --protocol=socket -uroot )
