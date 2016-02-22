@@ -201,19 +201,18 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param orgId ID of the organization.
      * @param offset Starting index of the results list from the database.
      * @param maxResults Maximum number of results returned from the database.
-     * @param searchPrefix The email address prefix we must use in our where clause.
+     * @param searchString The search term to use in our where clause.
      * @return List of users under the organization {@code orgId} between
      * [offset, offset + maxResults].
      *
-     * TODO (RD) remove searchprefix param once sp.proto version is bumped
      * @see com.aerofs.sp.server.lib.group.GroupDatabase#listGroups
      */
     public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults,
-            @Nullable String searchPrefix)
+            @Nullable String searchString)
             throws SQLException
     {
         String condition;
-        if (searchPrefix == null) {
+        if (searchString == null) {
             condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser());
         } else {
             condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser(), autoCompleteMatching(false));
@@ -222,9 +221,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 + " order by " + C_USER_ID + " limit ? offset ?")) {
             int index = 1;
             ps.setInt(index++, orgId.getInt());
-            if (searchPrefix != null) {
-                // need to populate all the extra conditions used for autocomplete
-                index = populateAutocompleteStatement(index, ps, searchPrefix);
+            if (searchString != null) {
+                // need to populate all the extra conditions used for searching
+                index = populateAutocompleteStatement(index, ps, searchString, false);
             }
             ps.setInt(index++, maxResults);
             ps.setInt(index++, offset);
@@ -249,9 +248,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 " order by " + C_USER_ID + " limit ? offset ?")) {
             int index = 1;
             ps.setInt(index++, orgID.getInt());
-            index = populateAutocompleteStatement(index, ps, searchPrefix);
+            index = populateAutocompleteStatement(index, ps, searchPrefix, true);
             // second time for the additional query to autocomplete user's table
-            index = populateAutocompleteStatement(index, ps, searchPrefix);
+            index = populateAutocompleteStatement(index, ps, searchPrefix, true);
             ps.setInt(index++, maxResults);
             ps.setInt(index++, offset);
 
@@ -283,8 +282,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * we don't take or use the searchprefix while generating the statement to mitigate chances of SQL Injection
-     * this means you'll need to call populateAutocompleteStatement if you use the condition this method returns
+     * we don't take or use the search term while generating the statement to mitigate chances of
+     * SQL Injection. this means you'll need to call populateAutocompleteStatement if you use the
+     * condition this method returns.
+     *
      * @param usingExtraTable whether the query is for SP_USER table or the extra SP_AUTOCOMPLETE_USERS
      */
     private static String autoCompleteMatching(boolean usingExtraTable)
@@ -293,13 +294,18 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     // returns the next index to populate after the autocomplete clause
-    private static int populateAutocompleteStatement(int firstIndex, PreparedStatement statement, String prefix)
+    private static int populateAutocompleteStatement(int firstIndex, PreparedStatement statement,
+                        String searchString, boolean prefixMatch)
             throws SQLException
     {
-        prefix = DBUtil.escapeLikeOperators(prefix);
-        statement.setString(firstIndex++, prefix + "%");
-        statement.setString(firstIndex++, prefix + "%");
-        statement.setString(firstIndex++, prefix + "%");
+        searchString = DBUtil.escapeLikeOperators(searchString);
+
+        // do not prepend the wildcard character for auto-complete, prefix matching
+        searchString = (prefixMatch ? "" : "%") + searchString + "%";
+
+        statement.setString(firstIndex++, searchString);
+        statement.setString(firstIndex++, searchString);
+        statement.setString(firstIndex++, searchString);
         return firstIndex;
     }
 
@@ -357,10 +363,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
     /**
      * @param orgId ID of the organization.
-     * @param searchPrefix search string to match user count on
+     * @param searchString search string to match user count on
      * @return Number of users in the organization {@code orgId}.
      */
-    public int countUsersWithPrefix(OrganizationID orgId, String searchPrefix)
+    public int countUsersWithSearchString(OrganizationID orgId, String searchString)
             throws SQLException
     {
         String condition = DBUtil.andConditions(C_USER_ORG_ID + "=?", activeNonTeamServerUser(),
@@ -372,9 +378,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             int index = 1;
             ps.setInt(index++, orgId.getInt());
 
-            if (searchPrefix != null) {
+            if (searchString != null) {
                 // need to populate all the extra conditions used for autocomplete
-                populateAutocompleteStatement(index, ps, searchPrefix);
+                populateAutocompleteStatement(index, ps, searchString, false);
             }
             try (ResultSet rs = ps.executeQuery()) {
                 return count(rs);
@@ -437,7 +443,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
 
     public Collection<SID> listSharedFolders(OrganizationID orgId, int maxResults,
-            int offset, String searchPrefix)
+            int offset, String searchString)
             throws SQLException
     {
         // Return results that are sorted:
@@ -445,15 +451,15 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         // 2. Uppercase before lowercase after 1 is applied.
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
                 V_SFV,
-                C_SFV_USER_ID + " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID + " =? " + andNameLikeString(searchString),
                 C_SFV_SID)
                 + "order by " + C_SFV_NAME + ", binary(" + C_SFV_NAME + ") ASC limit ? offset ?")) {
 
             int index = 1;
             ps.setString(index++, orgId.toTeamServerUserID().getString());
 
-            if (searchPrefix != null) {
-                ps.setString(index++, DBUtil.escapeLikeOperators(searchPrefix) + "%");
+            if (searchString != null) {
+                ps.setString(index++, "%" + DBUtil.escapeLikeOperators(searchString) + "%");
             }
 
             ps.setInt(index++, maxResults);
@@ -490,18 +496,18 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    public int countSharedFoldersWithPrefix(OrganizationID orgId, String searchPrefix)
+    public int countSharedFoldersWithSearchString(OrganizationID orgId, String searchString)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID +  " =? " + andNameLikeString(searchString),
                 "count(*)"))) {
 
             ps.setString(1, orgId.toTeamServerUserID().getString());
 
-            if (searchPrefix != null) {
-                ps.setString(2, DBUtil.escapeLikeOperators(searchPrefix) + "%");
+            if (searchString != null) {
+                ps.setString(2, "%" + DBUtil.escapeLikeOperators(searchString) + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -510,9 +516,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    private String andNameLikePrefix(String searchPrefix)
+    private String andNameLikeString(String searchString)
     {
-        if (searchPrefix == null) {
+        if (searchString == null) {
             return "";
         } else {
             return " and " + C_SFV_NAME + " like ?";

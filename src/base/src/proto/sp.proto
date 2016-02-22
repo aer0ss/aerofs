@@ -1137,14 +1137,13 @@ message RegisterDeviceReply {
     required string cert = 1;
 }
 
-// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE - remove possible search_prefix parameter, moved to SearchOrganizationMembers
 message ListOrganizationMembersCall {
     // Maximum number of entries returned on one page.
     // The SP server should enforce a reasonable upper bound for this parameter.
     required uint32 max_results = 1;
     // Offset to start retrieving the results.
     required uint32 offset = 2;
-    optional string search_prefix = 3;
+    optional string search_string = 3;
 }
 
 message ListOrganizationMembersReply {
@@ -1263,7 +1262,7 @@ message ListOrganizationSharedFoldersCall {
     required uint32 offset = 2;
 
     //so we can search by folder name too
-    optional string search_prefix = 3;
+    optional string search_string = 3;
 }
 
 message ListOrganizationSharedFoldersReply {
@@ -1283,7 +1282,7 @@ message ListUserJoinedSharedFoldersCall {
     required uint32 offset = 3;
 
     //so we can search by folder name too
-    optional string search_prefix = 4;
+    optional string search_string = 4;
 }
 
 message PBSharedFolder {

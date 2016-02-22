@@ -225,9 +225,9 @@ public class Organization
         return countUsers() - countInternalUsers();
     }
 
-    public int countUsersWithPrefix(String searchPrefix) throws SQLException
+    public int countUsersWithSearchString(String searchPrefix) throws SQLException
     {
-        return _f._odb.countUsersWithPrefix(_id, searchPrefix);
+        return _f._odb.countUsersWithSearchString(_id, searchPrefix);
     }
 
     public int countUsersAtLevel(AuthorizationLevel authLevel)
@@ -242,11 +242,11 @@ public class Organization
         return listUsers(maxResults, offset, null);
     }
 
-    public ImmutableList<User> listUsers(int maxResults, int offset, @Nullable String searchPrefix)
+    public ImmutableList<User> listUsers(int maxResults, int offset, @Nullable String searchString)
             throws SQLException
     {
         Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._odb.listUsers(_id, offset, maxResults, searchPrefix)) {
+        for (UserID userID : _f._odb.listUsers(_id, offset, maxResults, searchString)) {
             builder.add(_f._factUser.create(userID));
         }
         return builder.build();
@@ -326,10 +326,10 @@ public class Organization
         return _f._odb.countSharedFolders(_id);
     }
 
-    public int countSharedFoldersWithPrefix(String searchPrefix)
+    public int countSharedFoldersWithSearchString(String searchString)
             throws SQLException
     {
-        return _f._odb.countSharedFoldersWithPrefix(_id, searchPrefix);
+        return _f._odb.countSharedFoldersWithSearchString(_id, searchString);
     }
 
     public Collection<SharedFolder> listSharedFolders(int maxResults, int offset, String searchPrefix)

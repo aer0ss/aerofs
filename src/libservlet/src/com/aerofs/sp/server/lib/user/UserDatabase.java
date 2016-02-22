@@ -531,19 +531,20 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public int countJoinedSharedFoldersWithPrefix(UserID userId, String searchPrefix)
+    public int countJoinedSharedFoldersWithSearchString(UserID userId, String searchString)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " +
+                        andNameLikeString(searchString),
                 "count(*)"))) {
 
             ps.setString(1, userId.getString());
             ps.setInt(2, SharedFolderState.JOINED.ordinal());
 
-            if (searchPrefix != null) {
-                ps.setString(3, DBUtil.escapeLikeOperators(searchPrefix) + "%");
+            if (searchString != null) {
+                ps.setString(3, "%" + DBUtil.escapeLikeOperators(searchString) + "%");
             }
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -556,12 +557,13 @@ public class UserDatabase extends AbstractSQLDatabase
      * @return the shared folders for which the user has joined
      */
     public Collection<SID> getJoinedSharedFolders(UserID userId, Integer maxResults,
-            Integer offset, String searchPrefix)
+            Integer offset, String searchString)
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectDistinctWhere(
                 V_SFV,
-                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " + andNameLikePrefix(searchPrefix),
+                C_SFV_USER_ID +  " =? and " + C_SFV_STATE + " =? " +
+                        andNameLikeString(searchString),
                 C_SFV_SID)
                 + "order by " + C_SFV_NAME + ", binary(" + C_SFV_NAME + ") asc" + limitAndOffset(maxResults, offset))) {
 
@@ -569,8 +571,8 @@ public class UserDatabase extends AbstractSQLDatabase
             ps.setString(index++, userId.getString());
             ps.setInt(index++, SharedFolderState.JOINED.ordinal());
 
-            if (searchPrefix != null) {
-                ps.setString(index++, DBUtil.escapeLikeOperators(searchPrefix) + '%');
+            if (searchString != null) {
+                ps.setString(index++, "%" + DBUtil.escapeLikeOperators(searchString) + "%");
             }
 
             if (maxResults != null && offset != null){
@@ -623,9 +625,9 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    private String andNameLikePrefix(String searchPrefix)
+    private String andNameLikeString(String searchString)
     {
-        if (searchPrefix == null) {
+        if (searchString == null) {
             return "";
         } else {
             return " and " + C_SFV_NAME + " like ?";

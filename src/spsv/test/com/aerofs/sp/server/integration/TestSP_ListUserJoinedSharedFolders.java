@@ -161,7 +161,7 @@ public class TestSP_ListUserJoinedSharedFolders extends AbstractSPFolderTest
     }
 
     @Test
-    public void shouldListSharedFoldersWithPrefix()
+    public void shouldListSharedFoldersWithSearchString()
             throws Exception
     {
         createSharedFolders();

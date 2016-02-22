@@ -61,7 +61,7 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
     }
 
     @Test
-    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+    public void countJoinedSharedFoldersWithSearchString_shouldCountUserSharedFoldersWithSearchString()
             throws Exception
     {
         assertEquals(0, udb.countJoinedSharedFolders(user1));
@@ -69,12 +69,12 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, udb.countJoinedSharedFoldersWithPrefix(user1, "tes"));
-        assertEquals(0, udb.countJoinedSharedFoldersWithPrefix(user2, "a"));
+        assertEquals(2, udb.countJoinedSharedFoldersWithSearchString(user1, "tes"));
+        assertEquals(2, udb.countJoinedSharedFoldersWithSearchString(user2, "a"));
     }
 
     @Test
-    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+    public void countJoinedSharedFoldersWithSearchString_shouldCountUserSharedFoldersWithNullSearchString()
             throws Exception
     {
         assertEquals(0, udb.countJoinedSharedFolders(user1));
@@ -82,9 +82,9 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, udb.countJoinedSharedFoldersWithPrefix(user1, "foo"));
-        assertEquals(5, udb.countJoinedSharedFoldersWithPrefix(user1, null));
-        assertEquals(5, udb.countJoinedSharedFoldersWithPrefix(user2, null));
+        assertEquals(2, udb.countJoinedSharedFoldersWithSearchString(user1, "foo"));
+        assertEquals(5, udb.countJoinedSharedFoldersWithSearchString(user1, null));
+        assertEquals(5, udb.countJoinedSharedFoldersWithSearchString(user2, null));
     }
 
     @Test
@@ -141,7 +141,8 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
     }
 
     @Test
-    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetSearchString()
+            throws Exception
     {
         createSharedFolders(user1, user2);
 
@@ -166,7 +167,8 @@ public class TestUserDatabase extends AbstractAutoTransactionedTestWithSPDatabas
     }
 
     @Test
-    public void getJoinedSharedFolders_shouldListAllNamesAlphabeticallyWithPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAllNamesAlphabeticallyWithSearchString()
+            throws Exception
     {
         //Create some shared folders and change their names
         SID folder1 = addSharedFolder(user1, user2, "a_alpha");

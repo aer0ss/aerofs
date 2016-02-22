@@ -682,10 +682,10 @@ public class User
         return _f._udb.countJoinedSharedFolders(_id);
     }
 
-    public int countJoinedSharedFoldersWithPrefix(String searchPrefix)
+    public int countJoinedSharedFoldersWithSearchString(String searchString)
             throws SQLException
     {
-        return _f._udb.countJoinedSharedFoldersWithPrefix(_id, searchPrefix);
+        return _f._udb.countJoinedSharedFoldersWithSearchString(_id, searchString);
     }
 
     public Collection<SharedFolder> getJoinedSharedFolders()
@@ -694,10 +694,12 @@ public class User
         return getJoinedSharedFolders(null, null, null);
     }
 
-    public Collection<SharedFolder> getJoinedSharedFolders(Integer maxResults, Integer offset, String searchPrefix)
+    public Collection<SharedFolder> getJoinedSharedFolders(Integer maxResults, Integer offset,
+                                                           String searchString)
             throws SQLException
     {
-        Collection<SID> sids = _f._udb.getJoinedSharedFolders(_id, maxResults, offset, searchPrefix);
+        Collection<SID> sids = _f._udb.getJoinedSharedFolders(_id, maxResults, offset,
+                searchString);
         return getFoldersFromSIDs(sids);
     }
 

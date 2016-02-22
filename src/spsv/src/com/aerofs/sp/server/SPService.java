@@ -572,7 +572,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListOrganizationMembersReply> listOrganizationMembers(
-            Integer maxResults, Integer offset, String searchPrefix)
+            Integer maxResults, Integer offset, String searchString)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -584,11 +584,12 @@ public class SPService implements ISPService
 
         Organization org = user.getOrganization();
 
-        int userCount = searchPrefix != null ? org.countUsersWithPrefix(searchPrefix) : org.countUsers();
+        int userCount = searchString != null ? org.countUsersWithSearchString(searchString) :
+                org.countUsers();
 
         ListOrganizationMembersReply reply = ListOrganizationMembersReply.newBuilder()
                 .addAllUserAndLevel(
-                        users2pbUserAndLevels(org.listUsers(maxResults, offset, searchPrefix)))
+                        users2pbUserAndLevels(org.listUsers(maxResults, offset, searchString)))
                 .setTotalCount(userCount)
                 .build();
 
@@ -640,7 +641,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListOrganizationSharedFoldersReply> listOrganizationSharedFolders(
-            Integer maxResults, Integer offset, String searchPrefix)
+            Integer maxResults, Integer offset, String searchString)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -652,9 +653,11 @@ public class SPService implements ISPService
         user.throwIfNotAdmin();
         Organization org = user.getOrganization();
 
-        int sharedFolderCount = searchPrefix != null ? org.countSharedFoldersWithPrefix(searchPrefix): org.countSharedFolders();
+        int sharedFolderCount = searchString != null ?
+                org.countSharedFoldersWithSearchString(searchString): org.countSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset, searchPrefix), org, org.getTeamServerUser());
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset,
+                searchString), org, org.getTeamServerUser());
 
         _sqlTrans.commit();
 
@@ -693,7 +696,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<ListSharedFoldersReply> listUserJoinedSharedFolders(String userID,
-          Integer maxResults, Integer offset, String searchPrefix)
+          Integer maxResults, Integer offset, String searchString)
             throws Exception
     {
         _sqlTrans.begin();
@@ -702,10 +705,12 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userID);
         checkUserIsOrAdministers(requester, user);
 
-        int sharedFolderCount = searchPrefix != null ? user.countJoinedSharedFoldersWithPrefix(searchPrefix): user.countJoinedSharedFolders();
+        int sharedFolderCount = searchString != null ?
+                user.countJoinedSharedFoldersWithSearchString(searchString):
+                user.countJoinedSharedFolders();
 
-        List<PBSharedFolder> pbs = sharedFolders2pb(user.getJoinedSharedFolders(maxResults, offset, searchPrefix),
-                requester.getOrganization(), user);
+        List<PBSharedFolder> pbs = sharedFolders2pb(user.getJoinedSharedFolders(maxResults, offset,
+                searchString), requester.getOrganization(), user);
 
         _sqlTrans.commit();
 

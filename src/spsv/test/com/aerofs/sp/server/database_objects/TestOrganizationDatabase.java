@@ -63,10 +63,11 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     }
 
     @Test
-    public void countUsersWithPrefix_shouldIgnoreTeamServerAndDeactivated() throws Exception
+    public void countUsersWithSearchString_shouldIgnoreTeamServerAndDeactivated() throws Exception
     {
-        assertEquals(1, odb.countUsersWithPrefix(orgID, "baz"));
-        assertEquals(2, odb.countUsersWithPrefix(orgID, "bar"));
+        assertEquals(1, odb.countUsersWithSearchString(orgID, "baz"));
+        assertEquals(2, odb.countUsersWithSearchString(orgID, "bar"));
+        assertEquals(2, odb.countUsersWithSearchString(orgID, "ar"));
 
     }
 
@@ -132,7 +133,8 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     }
 
     @Test
-    public void listSharedFolders_shouldListSharedFoldersInOrderMatchingPrefix() throws Exception
+    public void listSharedFolders_shouldListSharedFoldersInOrderMatchingSearchString()
+            throws Exception
     {
         createAndAddSharedFoldersNames();
 
@@ -152,17 +154,18 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
 
         List<String> resultNamesSF = getResultNames(sharedFoldersSF);
         List<String> expectedResultNamesSF = Lists.newArrayList();
+        expectedResultNamesSF.add("2sf_example10");
         expectedResultNamesSF.add("Sf_EXAMPLE1");
         expectedResultNamesSF.add("sf_example1");
         expectedResultNamesSF.add("sf_example10");
-        expectedResultNamesSF.add("sf_example2");
 
         Assert.assertArrayEquals(expectedResultNamesSF.toArray(), resultNamesSF.toArray());
 
     }
 
     @Test
-    public void listSharedFolders_shouldListSharedFoldersWithPagingMatchingPrefix() throws Exception
+    public void listSharedFolders_shouldListSharedFoldersWithPagingMatchingSearchString()
+            throws Exception
     {
         createAndAddSharedFoldersNames();
 
@@ -178,7 +181,7 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
         assertEquals(2, sharedFoldersSF.size());
 
         List<String> resultNamesSF = getResultNames(sharedFoldersSF);
-        List<String> expectedResultNamesSF = Lists.newArrayList("sf_example1", "sf_example10");
+        List<String> expectedResultNamesSF = Lists.newArrayList("Sf_EXAMPLE1", "sf_example1");
 
 
         Assert.assertArrayEquals(expectedResultNamesSF.toArray(), resultNamesSF.toArray());
@@ -192,21 +195,24 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldMatchOnPrefix() throws Exception
+    public void countSharedFoldersWithSearchString_shouldMatchOnSearchString() throws Exception
     {
-        int firstMatchCount = odb.countSharedFoldersWithPrefix(orgID, "tes");
-        int secondMatchCount = odb.countSharedFoldersWithPrefix(orgID, "x");
-        int thirdMatchCount = odb.countSharedFoldersWithPrefix(orgID, "xp");
+        int firstMatchCount  = odb.countSharedFoldersWithSearchString(orgID, "tes");
+        int secondMatchCount = odb.countSharedFoldersWithSearchString(orgID, "x");
+        int thirdMatchCount  = odb.countSharedFoldersWithSearchString(orgID, "xp");
+        int fourthMatchCount = odb.countSharedFoldersWithSearchString(orgID, "est");
 
         assertEquals(1, firstMatchCount);
         assertEquals(1, secondMatchCount);
         assertEquals(0, thirdMatchCount);
+        assertEquals(1, fourthMatchCount);
     }
 
     @Test
-    public void countSharedFoldersWithPrefix_shouldReturnAllWithNullPrefix() throws Exception
+    public void countSharedFoldersWithSearchString_shouldReturnAllWithNullSearchString()
+            throws Exception
     {
-        int matchCount = odb.countSharedFoldersWithPrefix(orgID, null);
+        int matchCount = odb.countSharedFoldersWithSearchString(orgID, null);
         assertEquals(2, matchCount);
 
     }

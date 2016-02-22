@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderTest
 {
     @Test
-    public void shouldListSharedFoldersWithPrefix()
+    public void shouldListSharedFoldersWithString()
             throws Exception
     {
         shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));

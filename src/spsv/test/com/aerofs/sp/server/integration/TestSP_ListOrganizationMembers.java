@@ -58,7 +58,7 @@ public class TestSP_ListOrganizationMembers extends AbstractSPTest
     }
 
     @Test
-    public void shouldListOrgMembersMatchingPrefix()
+    public void shouldListOrgMembersMatchingString()
             throws Exception
     {
         for (User user : newArrayList(_orgAdmin, _orgUser1, _orgUser2)) {
@@ -72,7 +72,7 @@ public class TestSP_ListOrganizationMembers extends AbstractSPTest
     }
 
     @Test
-    public void shouldListOrgMembersMatchingPrefixWithLimitAndOffset()
+    public void shouldListOrgMembersMatchingStringWithLimitAndOffset()
             throws Exception
     {
         for (User user : newArrayList(_orgAdmin, _orgUser1, _orgUser2)) {

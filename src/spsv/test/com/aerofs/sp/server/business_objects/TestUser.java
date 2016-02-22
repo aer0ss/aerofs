@@ -192,7 +192,7 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithPrefix()
+    public void countJoinedSharedFoldersWithSearchString_shouldCountUserSharedFoldersWithSearchString()
             throws Exception
     {
         User user1 = saveUser();
@@ -206,13 +206,13 @@ public class TestUser extends AbstractBusinessObjectTest
         createSharedFolders(user1, user2);
         createSharedFolders(user1, user3);
 
-        assertEquals(4, user1.countJoinedSharedFoldersWithPrefix("tes"));
-        assertEquals(0, user2.countJoinedSharedFoldersWithPrefix("a"));
-        assertEquals(1, user3.countJoinedSharedFoldersWithPrefix("s"));
+        assertEquals(4, user1.countJoinedSharedFoldersWithSearchString("tes"));
+        assertEquals(0, user2.countJoinedSharedFoldersWithSearchString("a"));
+        assertEquals(5, user3.countJoinedSharedFoldersWithSearchString("s"));
     }
 
     @Test
-    public void countJoinedSharedFoldersWithPrefix_shouldCountUserSharedFoldersWithNullPrefix()
+    public void countJoinedSharedFoldersWithSearchString_shouldCountUserSharedFoldersWithNullSearchString()
             throws Exception
     {
         User user1 = saveUser();
@@ -223,9 +223,9 @@ public class TestUser extends AbstractBusinessObjectTest
 
         createSharedFolders(user1, user2);
 
-        assertEquals(2, user1.countJoinedSharedFoldersWithPrefix("tes"));
-        assertEquals(5, user1.countJoinedSharedFoldersWithPrefix(null));
-        assertEquals(5, user2.countJoinedSharedFoldersWithPrefix(null));
+        assertEquals(2, user1.countJoinedSharedFoldersWithSearchString("tes"));
+        assertEquals(5, user1.countJoinedSharedFoldersWithSearchString(null));
+        assertEquals(5, user2.countJoinedSharedFoldersWithSearchString(null));
     }
 
     @Test
@@ -274,7 +274,8 @@ public class TestUser extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetPrefix() throws Exception
+    public void getJoinedSharedFolders_shouldListAlphabeticallyWithLimitOffsetSearchString()
+            throws Exception
     {
         User user1 = saveUser();
         User user2 = saveUser();
