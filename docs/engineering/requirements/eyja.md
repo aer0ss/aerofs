@@ -35,9 +35,10 @@ Eyja brings your work together in one place. You will never have to ask 'where i
 	e.g. 'Marketing'
 	
 * `Direct Conversation` A conversation between multiple people with the following properties:
-	* Direct Conversations have a immutable name. 	* Direct Conversations are private.
+	* Direct Conversations have a immutable name, with the first names of each member, ordered alphabetically.
+	* Direct Conversations are private.
 	* Members cannot be added or removed. 
-	e.g. 'Tyrion, Ned, Sansa'
+	e.g. 'Ned, Sansa, Tyrion'
 	
 * `1:1 Conversation` A Direct Conversation with only two people. Name for conversation is the first name of the other person talking.  
 e.g. 'Jaime Lannister'
@@ -95,6 +96,17 @@ The roster lists:
 * Direct Conversations
 	* Most recent 20 Direct Conversations. 
 	* Ordered alphabetically.
+	
+### Channels
+
+A User can leave a channel. 
+	
+### Direct Conversation
+
+Direct Conversations are unique. If a user creates a conversation with members that already share a conversation, user comes back to the existing conversation.   
+
+A member can add or remove a user; however this means a new conversation is created with the new set of members (except if the conversation with the same members exist; in that case it will take the user to the new conversation). 
+
 
 ### File Conversations
 
