@@ -10,9 +10,14 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelPipeline;
 
 import javax.annotation.Nullable;
+import java.util.List;
+import java.util.stream.Stream;
 
 public interface EndpointConnector
 {
+    public List<DID> candidates(AuthenticatedPrincipal principal,
+                                @Nullable Version minVersion);
+
     /**
      * Open a client connection to a REST endpoint on behalf of a given user
      *
@@ -35,5 +40,5 @@ public interface EndpointConnector
      */
     public DID device(Channel channel);
 
-    public Iterable<DID> alternateDevices(Channel channel);
+    public Stream<DID> alternateDevices(Channel channel);
 }

@@ -17,7 +17,6 @@ import com.aerofs.tunnel.TunnelAddress;
 import com.aerofs.tunnel.TunnelHandler;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -36,6 +35,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -182,6 +183,14 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     }
 
     @Override
+    public synchronized List<DID> candidates(AuthenticatedPrincipal principal,
+                                             @Nullable Version minVersion) {
+        return getSuitableDevices(principal, minVersion).stream()
+                .map(d -> d.did)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public synchronized @Nullable Channel connect(AuthenticatedPrincipal principal, DID did,
             boolean strictMatch, @Nullable Version minVersion, ChannelPipeline pipeline)
     {
@@ -200,18 +209,16 @@ public class TunnelEndpointConnector implements ITunnelConnectionListener, Endpo
     }
 
     @Override
-    public Iterable<DID> alternateDevices(Channel channel)
+    public Stream<DID> alternateDevices(Channel channel)
     {
         Object o = channel.getAttachment();
-        if (o == null || !(o instanceof EndpointConstraint)) return Collections.emptyList();
+        if (o == null || !(o instanceof EndpointConstraint)) return Stream.empty();
         EndpointConstraint c = (EndpointConstraint)o;
 
         final DID did = device(channel);
-        return Iterables.transform(
-                Iterables.filter(
-                        getSuitableDevices(c.principal, c.minVersion),
-                        ud -> !did.equals(ud.did)),
-                ud -> ud.did);
+        return getSuitableDevices(c.principal, c.minVersion).stream()
+                .filter(ud -> !did.equals(ud.did))
+                .map(ud -> ud.did);
     }
 
     @Override

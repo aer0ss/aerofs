@@ -5,13 +5,9 @@ import com.aerofs.base.Loggers;
 import com.aerofs.havre.Authenticator;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.TokenVerifier;
-import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.QueryStringDecoder;
 import org.slf4j.Logger;
 
 import java.nio.channels.ClosedChannelException;
-import java.util.List;
 
 /**
  * OAuth2 authenticator that offloads token verification to bifrost
@@ -28,28 +24,12 @@ public class OAuthAuthenticator implements Authenticator
     }
 
     @Override
-    public AuthenticatedPrincipal authenticate(HttpRequest request)
+    public AuthenticatedPrincipal authenticate(String token)
             throws UnauthorizedUserException
     {
-        // reject requests with more than one Authorization header
-        List<String> authHeaders = request.headers().getAll(Names.AUTHORIZATION);
-        String authHeader = authHeaders != null && authHeaders.size() == 1 ?
-                authHeaders.get(0) : null;
-
-        // reject requests with more than one token query param
-        List<String> tokenParams = new QueryStringDecoder(request.getUri())
-                .getParameters()
-                .get("token");
-        String queryToken = tokenParams != null && tokenParams.size() == 1 ?
-                tokenParams.get(0) : null;
-
-        // user must include token in either the header or the query params, but not both
-        if ((authHeader == null) == (queryToken == null)) throw new UnauthorizedUserException();
 
         try {
-            AuthenticatedPrincipal principal = authHeader != null ?
-                    _verifier.getPrincipal(authHeader) :
-                    _verifier.verifyToken(queryToken).principal;
+            AuthenticatedPrincipal principal = _verifier.verifyToken(token).principal;
             if (principal != null) return principal;
         } catch (Exception e) {
             l.error("failed to verify token", BaseLogUtil.suppress(e.getCause(),

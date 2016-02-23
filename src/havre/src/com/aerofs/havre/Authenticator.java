@@ -1,7 +1,6 @@
 package com.aerofs.havre;
 
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 
 public interface Authenticator
 {
@@ -13,9 +12,9 @@ public interface Authenticator
     /**
      * Authenticate a request
      *
-     * @param request HttpRequest to authenticate
+     * @param token Auth token extracted from request
      * @return user associated with request
      * @throws UnauthorizedUserException
      */
-    AuthenticatedPrincipal authenticate(HttpRequest request) throws UnauthorizedUserException;
+    AuthenticatedPrincipal authenticate(String token) throws UnauthorizedUserException;
 }

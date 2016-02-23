@@ -2,39 +2,30 @@ package com.aerofs.oauth;
 
 import com.aerofs.base.TimerUtil;
 import com.aerofs.bifrost.server.BifrostTest;
-import com.aerofs.oauth.OAuthVerificationHandler.UnexpectedResponse;
+import com.aerofs.oauth.SimpleHttpClient.UnexpectedResponse;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 public class TestTokenVerificationClient extends BifrostTest
 {
-    private TokenVerificationClient verificationClient;
-
-    @Before
-    public void setupClient()
-    {
-        verificationClient =
-                new TokenVerificationClient(
-                        URI.create("http://localhost:" + _port + "/tokeninfo"),
-                        null,
-                        new NioClientSocketChannelFactory(),
-                        TimerUtil.getGlobalTimer());
-    }
-
     private VerifyTokenResponse verify(String token, String id, String secret) throws Exception
     {
         try {
-            return verificationClient
-                    .verify(token, id, secret)
+            return new TokenVerificationClient(
+                            URI.create("http://localhost:" + _port + "/tokeninfo"),
+                            null,
+                            new NioClientSocketChannelFactory(),
+                            TimerUtil.getGlobalTimer(),
+                            TokenVerificationClient.makeAuth(id, secret))
+                    .verify(token)
                     .get();
         } catch (ExecutionException e) {
             throw (Exception)e.getCause();
@@ -44,9 +35,12 @@ public class TestTokenVerificationClient extends BifrostTest
     @Test
     public void shouldReturnErrorResponseWhenAccessTokenInvalid() throws Exception
     {
-        VerifyTokenResponse response = verify("totallynotatoken", RESOURCEKEY, RESOURCESECRET);
-
-        Assert.assertEquals("not_found", response.error);
+        try {
+            verify("totallynotatoken", RESOURCEKEY, RESOURCESECRET);
+            fail();
+        } catch (UnexpectedResponse e) {
+            assertEquals(404, e.statusCode);
+        }
     }
 
     @Test

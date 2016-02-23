@@ -98,8 +98,6 @@ public class BaseAbstractRestTest extends AbstractTest
     protected @Mock CfgLocalDID localDID;
 
     protected @Spy TokenVerifier tokenVerifier = new TokenVerifier(
-            BifrostTest.CLIENTID,
-            BifrostTest.CLIENTSECRET,
             mock(TokenVerificationClient.class),
             CacheBuilder.newBuilder());
 
@@ -302,7 +300,7 @@ public class BaseAbstractRestTest extends AbstractTest
             when(kmgr.getCert()).thenReturn(gateway.cert);
             when(kmgr.getPrivateKey()).thenReturn(gateway.key);
             havre = new Havre(UserID.DUMMY, new DID(UniqueID.ZERO), kmgr, kmgr, cacert,
-                    getGlobalTimer(), tokenVerifier);
+                    getGlobalTimer(), tokenVerifier,  null);
             havre.start();
 
             prop.setProperty("api.tunnel.port", Integer.toString(havre.getTunnelPort()));

@@ -4,7 +4,6 @@ import com.aerofs.baseline.Environment;
 import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.http.HttpConfiguration;
 import com.aerofs.baseline.metrics.MetricRegistries;
-import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -140,8 +139,6 @@ public final class PolarisTestServer extends ExternalResource {
     }
 
     protected TokenVerifier tokenVerifier = Mockito.spy(new TokenVerifier(
-            BifrostTest.CLIENTID,
-            BifrostTest.CLIENTSECRET,
             mock(TokenVerificationClient.class),
             CacheBuilder.newBuilder()));
 

@@ -2,23 +2,27 @@ package com.aerofs.havre;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.config.ConfigurationProperties;
-import com.aerofs.base.ssl.FileBasedCertificateProvider;
-import com.aerofs.base.ssl.FileBasedKeyManagersProvider;
-import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.base.ssl.IPrivateKeyProvider;
+import com.aerofs.base.ssl.*;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.havre.auth.OAuthAuthenticator;
 import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPEvent.Type;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelServer;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timer;
@@ -31,6 +35,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Properties;
 
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -60,13 +65,13 @@ public class Havre
 
     public Havre(final UserID user, DID did, @Nullable IPrivateKeyProvider proxyKey,
             IPrivateKeyProvider tunnelKey, ICertificateProvider cacert, Timer timer,
-            TokenVerifier verifier)
+            TokenVerifier verifier, @Nullable RequestRouter router)
     {
         _endpointConnector = new TunnelEndpointConnector(new EndpointVersionDetector());
         _tunnel = new TunnelServer(new InetSocketAddress(TUNNEL_HOST, TUNNEL_PORT),
                 tunnelKey, cacert, user, did, timer, _endpointConnector);
         _proxy = new HttpProxyServer(new InetSocketAddress(PROXY_HOST, PROXY_PORT),
-                proxyKey, timer, new OAuthAuthenticator(verifier), _endpointConnector);
+                proxyKey, timer, new OAuthAuthenticator(verifier), _endpointConnector, router);
     }
 
     public void start()
@@ -126,12 +131,25 @@ public class Havre
         checkNotNull(cacert.getCert());
 
         Timer timer = new HashedWheelTimer();
+        ClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory();
         TokenVerifier verifier = new TokenVerifier(getStringProperty("havre.oauth.id"),
                 getStringProperty("havre.oauth.secret"),
                 URI.create("http://sparta.service:8700/tokeninfo"),
-                timer, cacert, new NioClientSocketChannelFactory());
+                timer, cacert, channelFactory);
 
-        final Havre havre = new Havre(tunnelUser, tunnelDevice, null, tunnelKey, cacert, timer, verifier);
+        String secret = AeroService.loadDeploymentSecret();
+        URI locations = URI.create(getStringProperty("havre.locations.url") + "/locations/filter");
+
+        RequestRouter router = new RequestRouter(locations, channelFactory, timer, secret);
+
+        SSMPConnection ssmp = new SSMPConnection(secret,
+                new InetSocketAddress("lipwig.service", 8787), timer, channelFactory,
+                new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)::newSslHandler);
+        ssmp.start();
+        ssmp.addEventHandler(router);
+
+        final Havre havre = new Havre(tunnelUser, tunnelDevice, null, tunnelKey, cacert, timer,
+                verifier, router);
         havre.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {

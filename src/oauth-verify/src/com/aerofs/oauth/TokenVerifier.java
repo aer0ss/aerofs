@@ -5,6 +5,7 @@ import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.util.Timer;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,7 +25,6 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
 {
     private final static Logger l = Loggers.getLogger(TokenVerifier.class);
 
-    private final String _auth;
     private final TokenVerificationClient _client;
     private final LoadingCache<String, VerifyTokenResponse> _cache;
 
@@ -44,15 +45,13 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
             URI endpoint, Timer timer, ICertificateProvider cacert,
             ClientSocketChannelFactory clientChannelFactory)
     {
-        _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
-        _client = new TokenVerificationClient(endpoint, cacert, clientChannelFactory, timer);
+        _client = new TokenVerificationClient(endpoint, cacert, clientChannelFactory, timer,
+                TokenVerificationClient.makeAuth(clientId, clientSecret));
         _cache = builder.build(this);
     }
 
-    public TokenVerifier(String clientId, String clientSecret, TokenVerificationClient client,
-            CacheBuilder<Object, Object> builder)
+    public TokenVerifier(TokenVerificationClient client, CacheBuilder<Object, Object> builder)
     {
-        _auth = TokenVerificationClient.makeAuth(clientId, clientSecret);
         _client = client;
         _cache = builder.build(this);
     }
@@ -70,7 +69,7 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     }
 
     private final static Pattern BEARER_PATTERN = Pattern.compile("^Bearer ([0-9a-zA-Z-._~+/]+=*)$");
-    private static @Nullable String accessToken(@Nullable String authorizationHeader)
+    public static @Nullable String accessToken(@Nullable String authorizationHeader)
     {
         if (authorizationHeader != null) {
             Matcher m = BEARER_PATTERN.matcher(authorizationHeader);
@@ -92,11 +91,15 @@ public class TokenVerifier extends CacheLoader<String, VerifyTokenResponse>
     @Override
     public VerifyTokenResponse load(String accessToken) throws Exception
     {
+        l.debug("cache miss: {}", accessToken);
+        ListenableFuture<VerifyTokenResponse> f = _client.verify(accessToken);
         try {
-            l.debug("cache miss: {}", accessToken);
-            return _client.verify(accessToken, _auth).get(5, TimeUnit.SECONDS);
+            return f.get(5, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
             throw rethrowCause(e);
+        } catch (TimeoutException e) {
+            f.cancel(false);
+            throw e;
         }
     }
 

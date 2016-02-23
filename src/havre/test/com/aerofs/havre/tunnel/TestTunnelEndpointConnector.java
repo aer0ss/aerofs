@@ -25,6 +25,7 @@ import org.mockito.Mock;
 
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.isIn;
@@ -200,7 +201,7 @@ public class TestTunnelEndpointConnector extends AbstractBaseTest
     private void assertOneOf(Channel c, DID... dids)
     {
         DID did = connector.device(c);
-        List<DID> alt = Lists.newArrayList(connector.alternateDevices(c));
+        List<DID> alt = connector.alternateDevices(c).collect(Collectors.toList());
 
         assertThat(did, isIn(dids));
         assertThat(did, not(isIn(alt)));

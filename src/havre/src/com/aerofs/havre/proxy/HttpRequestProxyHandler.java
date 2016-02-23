@@ -1,6 +1,8 @@
 package com.aerofs.havre.proxy;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.havre.RequestRouter;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.ExInvalidID;
@@ -9,21 +11,19 @@ import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
 import com.aerofs.havre.Version;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.oauth.TokenVerifier;
+import com.aerofs.tunnel.ShutdownEvent;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.SettableFuture;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.handler.codec.http.*;
 import org.jboss.netty.handler.codec.http.cookie.*;
-import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
-import org.jboss.netty.handler.codec.http.HttpChunk;
-import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Values;
-import org.jboss.netty.handler.codec.http.HttpRequest;
-import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.jboss.netty.handler.codec.http.HttpVersion;
+import org.jboss.netty.handler.codec.http.cookie.Cookie;
+import org.jboss.netty.handler.codec.http.cookie.DefaultCookie;
 import org.jboss.netty.handler.timeout.IdleState;
 import org.jboss.netty.handler.timeout.IdleStateAwareChannelHandler;
 import org.jboss.netty.handler.timeout.IdleStateEvent;
@@ -33,10 +33,12 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Relay HTTP requests upstream (i.e. from downstream caller to upstream host)
@@ -54,19 +56,22 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
     private final Timer _timer;
     private final Authenticator _auth;
+    private final RequestRouter _router;
     private final EndpointConnector _endpoints;
     private final ChannelGroup _channelGroup;
 
+    private String _token;
     private AuthenticatedPrincipal _principal;
 
     private Channel _downstream;
     private Channel _upstream;
 
     public HttpRequestProxyHandler(Timer timer, Authenticator auth, EndpointConnector endpoints,
-            ChannelGroup channelGroup)
+                                   RequestRouter router, ChannelGroup channelGroup)
     {
         _timer = timer;
         _auth = auth;
+        _router = router;
         _endpoints = endpoints;
         _channelGroup = channelGroup;
     }
@@ -75,20 +80,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     static long WRITE_TIMEOUT = 30;
     static TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
-    private static final String COOKIE_ROUTE = "route";
     private static final String HEADER_ROUTE =  "Route";
-    private static final String HEADER_CONSISTENCY = "Endpoint-Consistency";
     private static final String HEADER_ALT_ROUTES = "Alternate-Routes";
-
-    private static Map<String, String> getCookies(HttpRequest r)
-    {
-        Map<String, String> m = Maps.newHashMap();
-        String cookie = r.headers().get(Names.COOKIE);
-        if (cookie != null) {
-            for (Cookie c : ServerCookieDecoder.LAX.decode(cookie)) m.put(c.name(), c.value());
-        }
-        return m;
-    }
 
     private static @Nullable DID parseDID(String route)
     {
@@ -97,6 +90,24 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         } catch (ExInvalidID e) {
             return null;
         }
+    }
+
+    private static String extractToken(HttpRequest request) {
+        // reject requests with more than one Authorization header
+        List<String> authHeaders = request.headers().getAll(Names.AUTHORIZATION);
+        String authHeader = authHeaders != null && authHeaders.size() == 1 ?
+                authHeaders.get(0) : null;
+
+        // reject requests with more than one token query param
+        List<String> tokenParams = new QueryStringDecoder(request.getUri())
+                .getParameters()
+                .get("token");
+        String queryToken = tokenParams != null && tokenParams.size() == 1 ?
+                tokenParams.get(0) : null;
+
+        // user must include token in either the header or the query params, but not both
+        if ((authHeader == null) == (queryToken == null)) return null;
+        return authHeader != null ? TokenVerifier.accessToken(authHeader) : queryToken;
     }
 
     @Override
@@ -108,19 +119,78 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         if (message instanceof HttpRequest) {
             HttpRequest req = (HttpRequest)message;
-            if (_upstream == null || !_upstream.isConnected()) {
-                if ((_upstream = getUpstreamChannel(req)) == null) {
-                    sendError(downstream, _principal == null
-                            ? HttpResponseStatus.UNAUTHORIZED
-                            : HttpResponseStatus.SERVICE_UNAVAILABLE);
+
+            String token = extractToken(req);
+            if (token == null) {
+                sendError(downstream, HttpResponseStatus.UNAUTHORIZED);
+                return;
+            }
+
+            // First request in a given gateway connection
+            //  - derive user id from OAuth token to pick an appropriate server
+            //    and avoid load from unauthorized clients
+            if (_principal == null || !token.equals(_token)) {
+                try {
+                    _principal = _auth.authenticate(token);
+                    _token = token;
+                } catch (UnauthorizedUserException e) {
+                    sendError(downstream, HttpResponseStatus.UNAUTHORIZED);
                     return;
                 }
+            }
+
+            Version version = Version.fromRequestPath(req.getUri());
+
+            // The Route header overrides any cookie and enforces strict consistency
+            boolean strictConsistency = false;
+            DID did = parseDID(req.headers().get(HEADER_ROUTE));
+            if (did != null) {
+                strictConsistency = true;
+            }
+
+            if (_router != null && did == null) {
+                did = _router.route( new QueryStringDecoder(req.getUri()).getPath(),
+                        _endpoints.candidates(_principal, version));
+                l.info("{} {} {} {}", did, false, version, _downstream);
+            }
+            if (_upstream != null) {
+                DID cur = _endpoints.device(_upstream);
+                if (!cur.equals(did)) {
+                    l.info("close upstream {} {}", _upstream, _downstream);
+                    ChannelFuture f = new DefaultChannelFuture(_upstream, false);
+                    _upstream.getPipeline().sendDownstream(new ShutdownEvent(_upstream, f));
+                    // NB: netty doesn't like await() being called inside an i/o thread, for
+                    // good reasons. It's actually safe to do here because upstream and downstream
+                    // use distinct pools of i/o threads so there's no room for deadlock and the
+                    // downstream wait is unavoidable. It's not ideal because other downstream
+                    // channels using the same i/o thread may experience delays. Another alternative
+                    // would be to always disable read on the downstream channel while a response is
+                    // expected. It's not clear how foolproof that would be though...
+                    SettableFuture<Void> ff = SettableFuture.create();
+                    f.addListener(cf -> {
+                        if (cf.isSuccess()) {
+                            ff.set(null);
+                        } else {
+                            ff.setException(cf.getCause());
+                        }
+                    });
+                    ff.get();
+                    _upstream = null;
+                }
+            }
+            if (_upstream == null || !_upstream.isConnected()) {
+                _upstream = _endpoints.connect(_principal, did, strictConsistency, version, pipeline());
+                l.info("opened upstream {} {}", _upstream, _downstream);
+            }
+
+            if (_upstream == null) {
+                sendError(downstream, HttpResponseStatus.SERVICE_UNAVAILABLE);
+                return;
             }
 
             // remove gateway-specific header
             req.headers().remove(Names.COOKIE);
             req.headers().remove(HEADER_ROUTE);
-            req.headers().remove(HEADER_CONSISTENCY);
 
             _upstream.write(message);
         } else {
@@ -129,52 +199,25 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 l.warn("ignore incoming message on {}", downstream);
             } else {
                 _upstream.write(message);
+                if (((HttpChunk)message).isLast()) {
+                    // stop reading incoming messages until the response is sent
+                    // this is necessary to prevent pipelined requests from breaking
+                    // when sent to different upstreams
+                    downstream.setReadable(false);
+                }
             }
         }
     }
 
-    private @Nullable Channel getUpstreamChannel(HttpRequest req)
-    {
-        // First request in a given gateway connection
-        //  - derive user id from OAuth token to pick an appropriate server
-        //    and avoid load from unauthorized clients
-        if (_principal == null) {
-            try {
-                _principal = _auth.authenticate(req);
-            } catch (UnauthorizedUserException e) {
-                return null;
-            }
-        }
-
-        Version version = Version.fromRequestPath(req.getUri());
-
-        // The Route header overrides any cookie and enforces strict consistency
-        boolean strictConsistency;
-        DID did = parseDID(req.headers().get(HEADER_ROUTE));
-        if (did != null) {
-            strictConsistency = true;
-        } else {
-            did = parseDID(getCookies(req).get(COOKIE_ROUTE));
-            strictConsistency = shouldEnforceStrictConsistency(req);
-        }
-
-        l.info("{} {} {}", did, strictConsistency, version);
-
-        return _endpoints.connect(_principal, did, strictConsistency && did != null, version,
-                Channels.pipeline(
-                        new IdleStateHandler(_timer, READ_TIMEOUT, WRITE_TIMEOUT, 0, TIMEOUT_UNIT),
-                        new HttpClientCodec(),
-                        new HttpResponseProxyHandler()
-                ));
+    private ChannelPipeline pipeline() {
+        return Channels.pipeline(
+                new IdleStateHandler(_timer, READ_TIMEOUT, WRITE_TIMEOUT, 0, TIMEOUT_UNIT),
+                new HttpClientCodec(),
+                new HttpResponseProxyHandler()
+        );
     }
 
-    private static boolean shouldEnforceStrictConsistency(HttpRequest r)
-    {
-        String flag = r.headers().get(HEADER_CONSISTENCY);
-        return flag != null && "strict".equalsIgnoreCase(flag);
-    }
-
-    private void sendError(Channel downstream, HttpResponseStatus status)
+    private static void sendError(Channel downstream, HttpResponseStatus status)
     {
         if (downstream.isConnected()) {
             HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, status);
@@ -184,8 +227,6 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (status == HttpResponseStatus.UNAUTHORIZED) {
                 response.headers().set(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
             }
-            // reset server id cookie
-            addCookie(response, COOKIE_ROUTE, "");
             downstream.write(response);
         }
     }
@@ -194,7 +235,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e)
             throws Exception
     {
-        l.warn("exception on downstream channel {} {}", e.getChannel(), e.getCause());
+        l.warn("exception on downstream channel {} {}", e.getChannel(), BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
         if (!(e.getCause() instanceof ClosedChannelException)) {
             l.warn("", e.getCause());
             e.getChannel().close();
@@ -231,7 +272,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         if (_upstream != null && _upstream.isConnected()) _upstream.close();
     }
 
-    private void addCookie(HttpResponse response, String name, String value)
+    private static void addCookie(HttpResponse response, String name, String value)
     {
         Cookie cookie = new DefaultCookie(name, value);
         cookie.setPath("/");
@@ -245,6 +286,31 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         private final AtomicLong _expectedResponses = new AtomicLong();
         private final AtomicBoolean _expectingResponseChunks = new AtomicBoolean();
         private final AtomicBoolean _expectingRequestChunks = new AtomicBoolean();
+
+        private final AtomicBoolean _shutdown = new AtomicBoolean();
+        private final AtomicReference<ChannelFuture> _shutdownFuture = new AtomicReference<>();
+
+        @Override
+        public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+            if (e instanceof ShutdownEvent) {
+                if (!_shutdownFuture.compareAndSet(null, e.getFuture())) {
+                    throw new IllegalStateException("multiple shutdown requests " + _downstream + " " + _upstream);
+                }
+                if (_expectedResponses.get() == 0) {
+                    completeShutdown();
+                }
+            } else {
+                super.handleDownstream(ctx, e);
+            }
+        }
+
+        private void completeShutdown() {
+            ChannelFuture f = _shutdownFuture.get();
+            if (f != null && _shutdown.compareAndSet(false, true)) {
+                _upstream.close();
+                f.setSuccess();
+            }
+        }
 
         @Override
         public void writeRequested(ChannelHandlerContext ctx, MessageEvent me)
@@ -280,11 +346,13 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 HttpResponse response = (HttpResponse)m;
                 int status = response.getStatus().getCode();
 
-                // add route id for session consistency
-                addCookie(response, COOKIE_ROUTE, _endpoints.device(upstream).toStringFormal());
+                response.headers().set(HEADER_ROUTE, _endpoints.device(upstream).toStringFormal());
 
                 // add list of alternate routes for flexible failure handling
-                response.headers().set(HEADER_ALT_ROUTES, join(_endpoints.alternateDevices(upstream)));
+                response.headers().set(HEADER_ALT_ROUTES,
+                        _endpoints.alternateDevices(upstream)
+                                .map(UniqueID::toStringFormal)
+                                .collect(Collectors.joining(",")));
 
                 // do not count 1xx provisional responses
                 if (status < 100 || status >= 200) updateExpectations(response);
@@ -308,7 +376,9 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
             _expectingResponseChunks.set(response.isChunked());
             if (!response.isChunked()) {
-                _expectedResponses.decrementAndGet();
+                if (_expectedResponses.decrementAndGet() == 0) {
+                    completeShutdown();
+                }
             }
         }
 
@@ -320,8 +390,12 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             }
 
             if (chunk.isLast()) {
-                _expectedResponses.decrementAndGet();
+                if (_expectedResponses.decrementAndGet() == 0) {
+                    completeShutdown();
+                }
                 _expectingResponseChunks.set(false);
+                // resume processing requests once response is fully sent
+                _downstream.setReadable(true);
             }
         }
 
@@ -348,12 +422,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (!_downstream.isConnected()) return;
             final boolean upstreamWritable = ctx.getChannel().isWritable();
             l.info("{} downstream {}", upstreamWritable ? "resume" : "suspend", _downstream);
-            _downstream.setReadable(upstreamWritable);
+            // only alter downstream readability while waiting for request chunks
+            if (_expectingRequestChunks.get()) {
+                _downstream.setReadable(upstreamWritable);
+            }
         }
 
         @Override
         public void setInterestOpsRequested(ChannelHandlerContext ctx, ChannelStateEvent cse) {
-            if (!_upstream.isReadable() && ((int)cse.getValue() & Channel.OP_READ) != 0) {
+            if (!ctx.getChannel().isReadable() && ((int)cse.getValue() & Channel.OP_READ) != 0) {
                 _closeIfIdle.set(false);
             }
             ctx.sendDownstream(cse);
@@ -363,7 +440,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent cse)
         {
             l.info("upstream channel closed {} up: {} {} down: {} {} exp: {} {}", cse.getChannel(),
-                    _upstream.isReadable(), _upstream.isWritable(),
+                    ctx.getChannel().isReadable(), ctx.getChannel().isWritable(),
                     _downstream.isReadable(), _downstream.isWritable(),
                     _expectedResponses.get(), _expectingRequestChunks.get());
 
@@ -380,6 +457,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
         private void cleanDownstreamClose()
         {
+            // don't close downstream if it switched to a different upstream already
+            if (_shutdown.get()) return;
             // If a partial response was written we have no choice but to abruptly close the
             // connection. Otherwise we can do slightly better by returning a 502 for each
             // pipelined request.
@@ -401,17 +480,18 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         @Override
         public void channelIdle(ChannelHandlerContext ctx, IdleStateEvent e)
         {
+            Channel c = ctx.getChannel();
             if (e.getState() == IdleState.READER_IDLE) {
                 if (_expectingRequestChunks.get() && _expectedResponses.get() == 1) {
                     return;
                 }
-                l.info("read idle {} {}", _expectedResponses.get(), _upstream);
+                l.info("read idle {} {}", _expectedResponses.get(), c);
                 if (_expectedResponses.get() > 0) {
                     // if we paused upstream to avoid overloading downstream we shouldn't fault
                     // upstream for being idle...
-                    if (!_upstream.isReadable()) {
+                    if (!c.isReadable()) {
                         l.warn("lingering unreadable upstream {} [down: {} {}]",
-                                _upstream, _downstream.isWritable(), _downstream);
+                                c, _downstream.isWritable(), _downstream);
                         return;
                     }
 
@@ -420,42 +500,32 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                     // This makes the timeout effectively a random number between 10s and 20s
                     if (_closeIfIdle.compareAndSet(false, true)) return;
 
-                    l.info("close idle upstream {}", _upstream);
+                    l.info("close idle upstream {}", c);
                     // avoid forwarding any response Netty may still deliver
                     ctx.getPipeline().remove(this);
                     cleanDownstreamClose();
                     // close connection if requests remain unanswered for too long
                     // to prevent bad state buildup
-                    _upstream.close();
+                    c.close();
                 } else {
                     _closeIfIdle.set(false);
                 }
             } else if (e.getState() == IdleState.WRITER_IDLE) {
                 if (_expectedResponses.get() > 0 && !_expectingRequestChunks.get()) return;
 
-                l.info("write idle {}", _upstream);
+                l.info("write idle {}", c);
 
                 // if we paused downstream to avoid overloading upstream we shouldn't fault
                 // downstream for being idle...
-                if (!_upstream.isWritable()) {
+                if (!c.isWritable()) {
                     l.warn("lingering unwritable upstream {} [down: {} {}]",
-                            _upstream, _downstream.isReadable(), _downstream);
+                            c, _downstream.isReadable(), _downstream);
                     return;
                 }
 
                 // close upstream connection if no requests have been forwarded during the last 30s
-                _upstream.close();
+                c.close();
             }
         }
-    }
-
-    private static String join(Iterable<? extends UniqueID> ids)
-    {
-        String s = "";
-        for (UniqueID i : ids) {
-            if (!s.isEmpty()) s += ",";
-            s += i.toStringFormal();
-        }
-        return s;
     }
 }

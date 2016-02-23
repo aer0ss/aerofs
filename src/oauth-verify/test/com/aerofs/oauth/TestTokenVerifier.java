@@ -13,17 +13,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TestTokenVerifier extends AbstractBaseTest
 {
-    static final String ID = "id";
-    static final String SECRET = "secret";
-    static final String AUTH = TokenVerificationClient.makeAuth(ID, SECRET);
-
     @Mock Ticker ticker;
     @Mock VerifyTokenResponse response;
     @Mock TokenVerificationClient client;
@@ -33,13 +28,13 @@ public class TestTokenVerifier extends AbstractBaseTest
     @Before
     public void setUp() throws Exception
     {
-        verifier = new TokenVerifier(ID, SECRET, client,
+        verifier = new TokenVerifier(client,
                 CacheBuilder.newBuilder()
                         .maximumSize(1)
                         .expireAfterWrite(1, TimeUnit.SECONDS)
                         .ticker(ticker));
 
-        when(client.verify(anyString(), eq(AUTH)))
+        when(client.verify(anyString()))
                 .thenReturn(UncancellableFuture.createSucceeded(response));
     }
 
@@ -48,7 +43,7 @@ public class TestTokenVerifier extends AbstractBaseTest
     {
         assertEquals(response, verifier.verifyToken("foo"));
 
-        verify(client).verify("foo", AUTH);
+        verify(client).verify("foo");
     }
 
     @Test
@@ -58,7 +53,7 @@ public class TestTokenVerifier extends AbstractBaseTest
         assertEquals(response, verifier.verifyToken("foo"));
         assertEquals(response, verifier.verifyToken("foo"));
 
-        verify(client).verify("foo", AUTH);
+        verify(client).verify("foo");
     }
 
     @Test
@@ -68,8 +63,8 @@ public class TestTokenVerifier extends AbstractBaseTest
         assertEquals(response, verifier.verifyToken("bar"));
         assertEquals(response, verifier.verifyToken("foo"));
 
-        verify(client, times(2)).verify("foo", AUTH);
-        verify(client, times(1)).verify("bar", AUTH);
+        verify(client, times(2)).verify("foo");
+        verify(client, times(1)).verify("bar");
     }
 
     @Test
@@ -79,6 +74,6 @@ public class TestTokenVerifier extends AbstractBaseTest
         when(ticker.read()).thenReturn(2 * C.SEC * C.NSEC_PER_MSEC);
         assertEquals(response, verifier.verifyToken("foo"));
 
-        verify(client, times(2)).verify("foo", AUTH);
+        verify(client, times(2)).verify("foo");
     }
 }

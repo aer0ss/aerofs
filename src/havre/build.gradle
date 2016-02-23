@@ -22,6 +22,8 @@ dependencies {
     compile 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
     compile project(':src/tunnel')
     compile project(':src/oauth-verify')
+    compile project(path: ':src/aero-auth', configuration: 'client')
+    compile project(':src/ssmp')
     testCompile 'com.jayway.restassured:rest-assured:2.8.0'
     testCompile project(path: ':src/base', configuration: 'testutil')
 }
