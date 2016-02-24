@@ -29,11 +29,13 @@ below.
    little unlock button and enter the keychain password (which is _not_ the same as the mount
    password). For this, also ask Matt.
 
-3. Make and push messaging images to the Registry. To do this, run the following commands:
+3. Make and push Eyja javascript/images for iOS, Android and web. To do this, run 
+the following commands:
 
-       ~/repos/aeroim-client/bin/aero web build
+       ~/repos/aeroim-client/bin/aero build
        ~/repos/aeroim-client/bin/aero web publish
-
+      
+       
 4. Package the AeroIM installers into the appliance by running:
 
        ~/repos/aeroim-client/bin/aero desktop build <appliance_version_to_build>
@@ -42,6 +44,9 @@ below.
 
        invoke --signed clean proto build_client package_clients build_docker_images build_vm
 
+	*Note: you will not be able to successfully build the appliance if the keys for 
+	building the Eyja iOS app are present on the build machine. See below.
+	
    [FIXME](https://aerofs.atlassian.net/browse/ENG-2455): during the build_vm phase, ssh onto the
    ship-enterprise builder using the ssh command provided in the execution output. Then run
    `top -d 0.1` to speed up the docker pull.
@@ -84,10 +89,13 @@ below.
        cd ~/repos/support-website && python deploy.py
        
 
-# Eyja iOS App Build
+# Eyja App Build
 
 
-### Step 1 - Get the Certs and Provisioning Profiles
+### Step 1 - Get the Certs and Provisioning Profiles for iOS
+**Important**: Build this app on a machine other than the build machine due to
+conflicting certs for the appliance and the app. This will not be an issue when 
+we upgrade our Apple certs. 
 
 1. I assume you have Xcode and Xcode Command line tools installed and have a Gerrit
  account.
@@ -102,7 +110,7 @@ to `ssh://rahul@gerrit.arrowfs.org:29418/ios-certificates`.
    
    ``` 
    $ cd ios
-   $ fastlane ios initialize
+   $ fastlane ios initialize username:<your_gerrit_username>
    ```
    
    This will get you all the certificates and provisioning profiles and put them where
@@ -111,7 +119,7 @@ to `ssh://rahul@gerrit.arrowfs.org:29418/ios-certificates`.
 5. When fastlane asks for the *passphrase* to decrypt the keys and certificates it 
 downloads, enter the `101University210`.
 
-### Step 2 - Build the code
+### Step 2 - Build the code for iOS
 
 Open `Eyja.xcodeproj` in Xcode. From there, you should be able to build.
 
@@ -119,11 +127,20 @@ Open `Eyja.xcodeproj` in Xcode. From there, you should be able to build.
 ## Distribution Instructions
 
 ### Internal Distribution
+to distribute phone apps via crashlytics:
 
-``` 
-$ cd ios
-$ fastlane ios beta
+
 ```
+~/repos/aeroim-client/bin/aero clean 
+~/repos/aeroim-client/bin/aero install
+
+~/repos/aeroim-client/bin/aero ios build
+~/repos/aeroim-client/bin/aero android build
+
+~/repos/aeroim-client/bin/aero ios publish
+~/repos/aeroim-client/bin/aero android publish
+```
+This will send an email with the download link to users.
 
 ### AppStore Distribution
 
