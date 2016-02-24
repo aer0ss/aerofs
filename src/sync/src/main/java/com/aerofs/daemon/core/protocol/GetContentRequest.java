@@ -31,6 +31,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
@@ -98,7 +99,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
                     // transfer notifications causes much confusion
                     throw new ExAborted("wait for hash " + soid);
                 }
-            } catch (ExNotFound e) {}
+            } catch (ExNotFound| ExFileNotFound e) {}
         }
 
         PBGetContentRequest.Prefix prefix = getIncrementalDownloadInfo_(soid);
