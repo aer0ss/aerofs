@@ -152,7 +152,7 @@ func GetDirectConvo(tx *sql.Tx, caller, other string) *Convo {
 
 func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {
 	c := &Convo{
-		Id:          util.GenerateRandomId(),
+		Id:          util.GenerateChannelId(),
 		Type:        "GROUP",
 		CreatedTime: time.Now(),
 		Name:        *p.Name,
@@ -169,7 +169,7 @@ func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {
 
 func CreateDirectConvo(tx *sql.Tx, p *DirectConvoWritable) *Convo {
 	c := &Convo{
-		Id:          util.GenerateRandomId(),
+		Id:          util.GenerateDirectConvoId(p.Members),
 		Type:        "DIRECT",
 		CreatedTime: time.Now(),
 		Members:     p.Members,
