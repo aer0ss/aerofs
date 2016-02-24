@@ -45,7 +45,7 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 				err := ctx.spartaClient.AddSharedFolderMember(p.Sid, uid)
 				errors.PanicOnErr(err)
 			}
-			ctx.lipwigClient.SubscribeAndHandle(p.Sid)
+			ctx.lipwigClient.SubscribeAndHandlePolaris(p.Sid)
 		}
 		tx := dao.BeginOrPanic(ctx.db)
 		convo = dao.CreateGroupConvo(tx, p, caller)

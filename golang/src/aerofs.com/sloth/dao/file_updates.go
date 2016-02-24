@@ -32,7 +32,7 @@ func SetLastLogicalTimestamp(tx *sql.Tx, sid string, timestamp int64) {
 }
 
 func InsertFileUpdateMessage(tx *sql.Tx, sid, uid, json string) {
-	cid := getCidForSid(tx, sid)
+	cid := GetCidForSid(tx, sid)
 	InsertMessage(tx, &Message{
 		Time:   time.Now(),
 		Body:   json,

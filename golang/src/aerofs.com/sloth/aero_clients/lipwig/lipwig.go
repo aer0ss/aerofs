@@ -7,8 +7,10 @@ import (
 	"aerofs.com/sloth/aero-clients/sparta"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/util/asynccache"
+	"crypto/sha256"
 	"crypto/tls"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	lipwig "github.com/aerofs/lipwig/client"
@@ -30,19 +32,22 @@ type Client struct {
 	client lipwig.Client
 }
 
-// SubscribeAndHandle sets up an SSMP subscription to the given store, and
-// handles all incoming SSMP events
-func (c *Client) SubscribeAndHandle(sid string) error {
+// SubscribeAndHandlePolaris sets up an SSMP subscription for the given store
+// and handles all incoming SSMP events from Polaris
+func (c *Client) SubscribeAndHandlePolaris(sid string) error {
 	topic := "pol/" + sid
-	log.Print("ssmp: subscribing to ", topic)
-	resp, err := c.client.Subscribe(topic)
-	if err != nil {
-		return err
-	}
-	if resp.Code != 200 {
-		return errors.New(fmt.Sprint("ssmp: subscribe ", sid, " -> ", resp.Code))
-	}
-	return nil
+	return c.subscribe(topic)
+}
+
+// SubscribeAndHandleAcl sets up an SSMP subscription for the teamserver and
+// handles all incoming SSMP events relating to all ACL changes
+//
+// See SSMPIdentifiers.java for the format of the SSMP topic
+func (c *Client) SubscribeAndHandleAcl() error {
+	uid := ":2"
+	hash := sha256.Sum256([]byte(uid))
+	topic := "acl/" + base64.StdEncoding.EncodeToString(hash[:])
+	return c.subscribe(topic)
 }
 
 // Start creates a new connection to lipwig, subscribes to all relevant
@@ -72,22 +77,42 @@ func Start(
 		log.Panic("ssmp: login failed ", resp)
 	}
 
-	// subscribe via SSMP
+	// start syncing based on incoming SSMP events
+	go handler.syncTransformsLoop()
+
+	// subscribe to ACL updates
+	if err := client.SubscribeAndHandleAcl(); err != nil {
+		log.Panic(err)
+	}
+
+	// subscribe to Polaris updates for all stores
 	for _, sid := range sids {
-		if err := client.SubscribeAndHandle(sid); err != nil {
+		if err := client.SubscribeAndHandlePolaris(sid); err != nil {
 			log.Panic(err)
 		}
 	}
+
+	// fetch changes to store membership that have occurred while sloth was down
+	handler.syncAcls()
 
 	// fetch new transforms that have occurred while sloth was down
 	for _, sid := range sids {
 		handler.syncTransforms(sid)
 	}
 
-	// start syncing based on incoming SSMP events
-	go handler.syncTransformsLoop()
-
 	return client
+}
+
+func (c *Client) subscribe(topic string) error {
+	log.Print("ssmp: subscribing to ", topic)
+	resp, err := c.client.Subscribe(topic)
+	if err != nil {
+		return err
+	}
+	if resp.Code != 200 {
+		return errors.New(fmt.Sprint("ssmp: subscribe ", topic, " -> ", resp.Code))
+	}
+	return nil
 }
 
 //
@@ -101,6 +126,7 @@ type eventHandler struct {
 	polarisClient *polaris.Client
 	spartaClient  *sparta.Client
 	sidsToSync    chan string
+	aclEpoch      uint64
 }
 
 func (h *eventHandler) HandleEvent(event lipwig.Event) {
@@ -111,6 +137,13 @@ func (h *eventHandler) HandleEvent(event lipwig.Event) {
 	// Spawn a goroutine for the actual handling.
 	if strings.HasPrefix(to, "pol/") {
 		h.sidsToSync <- to[4:]
+	} else if strings.HasPrefix(to, "acl/") {
+		// epoch, err := strconv.ParseUint(string(event.Payload), 10, 64)
+		// if err != nil {
+		// 	log.Printf("ssmp: non-numeric acl payload: %v\n", string(event.Payload))
+		// 	return
+		// }
+		go h.syncAcls()
 	} else {
 		log.Print("ssmp: unknown channel ", to)
 	}

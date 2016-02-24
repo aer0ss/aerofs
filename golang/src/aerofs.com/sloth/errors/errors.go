@@ -25,6 +25,14 @@ func PanicAndRollbackOnErr(err error, tx *sql.Tx) {
 	PanicOnErr(err)
 }
 
+// RecoverAndLog, when deferred, recovers from any panic and logs
+// the cause
+func RecoverAndLog() {
+	if r := recover(); r != nil {
+		log.Print("recovered: ", r)
+	}
+}
+
 // Return true iff the given error is a mysql error due to a failed unique
 // constraint
 func UniqueConstraintFailed(err error) bool {

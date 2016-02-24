@@ -8,7 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -18,20 +21,31 @@ const (
 	DUMMY_DID             = "00000000000000000000000000000000"
 )
 
+type spartaDevice struct {
+	Owner string
+}
+
+type spartaUser struct {
+	Email string
+}
+
+type SharedFolder struct {
+	Id      string
+	Name    string
+	Members []spartaUser
+}
+
+type spartaMembersResponse []spartaUser
+
 // Client has helpful methods which wrap the Sparta API
 type Client struct {
 	deploymentSecret string
 	pool             httpClientPool.Pool
 }
 
-// Unmarshal sparta /devices/{did} json response and discard everything except
-// the owner UID
-type spartaDIDResponse struct {
-	Owner string
-}
-
 // GetDeviceOwner returns the UID of the device's owner
 func (c *Client) GetDeviceOwner(did string) (string, error) {
+	log.Print("fetch device owner ", did)
 	url := BASE_URL + "/devices/" + did
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -45,15 +59,11 @@ func (c *Client) GetDeviceOwner(did string) (string, error) {
 	if resp.R.StatusCode != 200 {
 		return "", errors.New(fmt.Sprint(resp.R.StatusCode, " fetching owner for DID ", did))
 	}
-	var spartaResponse spartaDIDResponse
+	var spartaResponse spartaDevice
 	if err := json.Unmarshal(resp.Body, &spartaResponse); err != nil {
 		return "", err
 	}
 	return spartaResponse.Owner, nil
-}
-
-type spartaSharedFolderResponse struct {
-	Id string
 }
 
 // CreateSharedFolder returns the SID of the newly-created shared folder
@@ -76,7 +86,7 @@ func (c *Client) CreateSharedFolder(uid, name string) (string, error) {
 	if resp.R.StatusCode != 201 {
 		return "", errors.New(fmt.Sprint(resp.R.StatusCode, " creating shared folder"))
 	}
-	var response spartaSharedFolderResponse
+	var response SharedFolder
 	if err := json.Unmarshal(resp.Body, &response); err != nil {
 		return "", err
 	}
@@ -108,6 +118,60 @@ func (c *Client) AddSharedFolderMember(sid, uid string) error {
 	return nil
 }
 
+func (c *Client) GetSharedFolderMembers(sid string) ([]string, error) {
+	log.Print("fetch members for ", sid)
+	url := fmt.Sprint(BASE_URL, "/shares/", sid, "/members")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Aero-Service-Shared-Secret sloth "+c.deploymentSecret)
+	resp := <-c.pool.Do(req)
+	if resp.Err != nil {
+		return nil, resp.Err
+	}
+	if resp.R.StatusCode != 200 {
+		return nil, errors.New(fmt.Sprint(resp.R.StatusCode, " getting members for ", sid))
+	}
+	var membersResponse spartaMembersResponse
+	if err := json.Unmarshal(resp.Body, &membersResponse); err != nil {
+		return nil, err
+	}
+
+	members := make([]string, 0, len(membersResponse))
+	for _, u := range membersResponse {
+		members = append(members, u.Email)
+	}
+
+	return members, nil
+}
+
+func (c *Client) GetAllSharedFolders() (shares []SharedFolder, epoch uint64, err error) {
+	url := fmt.Sprint(BASE_URL, "/users/:2/shares")
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Authorization", "Aero-Service-Shared-Secret sloth "+c.deploymentSecret)
+	resp := <-c.pool.Do(req)
+	if resp.Err != nil {
+		err = resp.Err
+		return
+	}
+	if resp.R.StatusCode != 200 {
+		err = errors.New(fmt.Sprint(resp.R.StatusCode, " getting shared folders"))
+		return
+	}
+
+	err = json.Unmarshal(resp.Body, &shares)
+	if err != nil {
+		return
+	}
+
+	epoch, err = getEpochFromResponse(resp.R)
+	return
+}
+
 func NewClient(deploymentSecret string) *Client {
 	return &Client{
 		deploymentSecret: deploymentSecret,
@@ -123,4 +187,13 @@ func getDelegatedAuthHeader(uid, secret string) string {
 		base64.StdEncoding.EncodeToString([]byte(uid)),
 		DUMMY_DID,
 	}, " ")
+}
+
+func getEpochFromResponse(r *http.Response) (uint64, error) {
+	etag := r.Header.Get("ETag")
+	match := regexp.MustCompile("^W/\"([0-9a-fA-F]+)\"$").FindStringSubmatch(etag)
+	if match == nil || len(match) != 2 {
+		return 0, errors.New("invalid ETag: " + etag)
+	}
+	return strconv.ParseUint(match[1], 16, 64)
 }

@@ -4,6 +4,7 @@ import (
 	"aerofs.com/sloth/errors"
 	. "aerofs.com/sloth/structs"
 	"aerofs.com/sloth/util"
+	"aerofs.com/sloth/util/set"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -13,8 +14,6 @@ import (
 
 const CHANNEL = 1
 const DIRECT = 2
-
-type stringSet map[string]struct{}
 
 const CONVO_QUERY_COLS = "id, type, name, sid, is_public, created_time"
 
@@ -185,8 +184,10 @@ func UpdateConvo(tx *sql.Tx, c *Convo, p *GroupConvoWritable, caller string) *Co
 		return &updated
 	}
 	updated.Members = p.Members
-	added := difference(p.Members, c.Members)
-	removed := difference(c.Members, p.Members)
+	oldMembers := set.From(c.Members)
+	newMembers := set.From(p.Members)
+	added := newMembers.Diff(oldMembers)
+	removed := oldMembers.Diff(newMembers)
 	now := time.Now()
 	for uid := range removed {
 		RemoveMember(tx, c.Id, uid)
@@ -199,9 +200,42 @@ func UpdateConvo(tx *sql.Tx, c *Convo, p *GroupConvoWritable, caller string) *Co
 	return &updated
 }
 
+// GetAllStoreMembership returns a map of SID -> Set<UID> for all store-bound
+// conversations.
+func GetAllStoreMembership(tx *sql.Tx) map[string]set.Set {
+	query := fmt.Sprint(
+		"SELECT LOWER(HEX(sid)), user_id FROM convos INNER JOIN convo_members ",
+		"ON convos.id = convo_id ",
+		"WHERE sid IS NOT NULL",
+	)
+	rows, err := tx.Query(query)
+	if err != nil {
+		errors.PanicAndRollbackOnErr(err, tx)
+	}
+	defer rows.Close()
+
+	members := make(map[string]set.Set)
+
+	for rows.Next() {
+		var sid, uid string
+		err := rows.Scan(&sid, &uid)
+		if err != nil {
+			errors.PanicAndRollbackOnErr(err, tx)
+		}
+		m, ok := members[sid]
+		if !ok {
+			m = set.New()
+		}
+		m.Add(uid)
+		members[sid] = m
+	}
+	return members
+}
+
 func GetMembers(tx *sql.Tx, cid string) []string {
 	rows, err := tx.Query("SELECT user_id FROM convo_members WHERE convo_id=?", cid)
 	errors.PanicAndRollbackOnErr(err, tx)
+	defer rows.Close()
 	var members []string
 	for rows.Next() {
 		var uid string
@@ -209,7 +243,6 @@ func GetMembers(tx *sql.Tx, cid string) []string {
 		errors.PanicAndRollbackOnErr(err, tx)
 		members = append(members, uid)
 	}
-	rows.Close()
 	return members
 }
 
@@ -248,6 +281,15 @@ func GetGroupSids(tx *sql.Tx) []string {
 		sids = append(sids, sid)
 	}
 	return sids
+}
+
+// GetCidForSid returns the convo id for the convo bound to store `sid`.
+// this function panics unless there exists exactly one matching convo.
+func GetCidForSid(tx *sql.Tx, sid string) string {
+	var cid string
+	err := tx.QueryRow("SELECT id FROM convos WHERE sid=?", hexDecode(tx, sid)).Scan(&cid)
+	errors.PanicAndRollbackOnErr(err, tx)
+	return cid
 }
 
 //
@@ -321,15 +363,6 @@ func getMembers(tx *sql.Tx, cid string) []string {
 	return members
 }
 
-// getCidForSid returns the convo id for the convo bound to store `sid`.
-// this function panics unless there exists exactly one matching convo.
-func getCidForSid(tx *sql.Tx, sid string) string {
-	var cid string
-	err := tx.QueryRow("SELECT id FROM convos WHERE sid=?", hexDecode(tx, sid)).Scan(&cid)
-	errors.PanicAndRollbackOnErr(err, tx)
-	return cid
-}
-
 func toTypeString(ctype int) string {
 	switch ctype {
 	case CHANNEL:
@@ -339,22 +372,6 @@ func toTypeString(ctype int) string {
 	default:
 		panic("unknown convo type: " + string(ctype))
 	}
-}
-
-func difference(a, b []string) stringSet {
-	s := sliceToSet(a)
-	for _, v := range b {
-		delete(s, v)
-	}
-	return s
-}
-
-func sliceToSet(s []string) stringSet {
-	m := make(stringSet)
-	for _, v := range s {
-		m[v] = struct{}{}
-	}
-	return m
 }
 
 // get the values of a map as a slice
