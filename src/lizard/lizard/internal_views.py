@@ -68,7 +68,7 @@ def customer_actions(org_id):
         return redirect(url_for('.queues'))
     # Set some convenient defaults for paid license for another 35 seats, ~1 year
     form.seats.data = 35
-    form.expiry_date.data = datetime.datetime.today()
+    form.expiry_date.data = datetime.datetime.today() + datetime.timedelta(days=30)
     form.is_trial.data = False
     form.allow_audit.data = True
     form.allow_identity.data = True
