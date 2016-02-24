@@ -263,8 +263,8 @@ public class CompInviteUsers extends Composite
                         workImpl(invitees, permissions, notes, true);
                     }
                 } else {
-                    String exAlreadyExistMessage = "One or more invited people are already " +
-                            "members of this folder.";
+                    String exAlreadyExistMessage = "The following users/groups are already members of this folder: " +
+                            t.getMessage() + ". Please remove them and try again." ;
                     String exNoPermMessage = "You don't have permission to invite users to " +
                             "this folder.";
 

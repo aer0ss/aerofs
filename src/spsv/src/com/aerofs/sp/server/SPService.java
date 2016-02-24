@@ -126,7 +126,6 @@ import static com.aerofs.base.config.ConfigurationProperties.*;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 public class SPService implements ISPService
@@ -1363,6 +1362,7 @@ public class SPService implements ISPService
         // that all business logic checks pass and the changes are successfully committed to the
         // DB.
         List<InvitationEmailer> emailers = Lists.newLinkedList();
+        List<String> invalidUsersOrGroups = new ArrayList<>();
 
         for (SubjectPermissions srp : srps) {
             if (srp._subject instanceof UserID) {
@@ -1373,12 +1373,18 @@ public class SPService implements ISPService
                             " Please contact your AeroFS administrator to invite the user.");
                 }
                 Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
-                AffectedAndNeedsEmail updates = sf.addUserWithGroup(sharee, null, actualPermissions, sharer);
-                affected.addAll(updates._affected);
-                if (updates._needsEmail) {
-                    emailers.add(
-                            _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
-                                    actualPermissions, note, folderName));
+                try {
+                    AffectedAndNeedsEmail updates = sf.addUserWithGroup(sharee, null, actualPermissions, sharer);
+
+                    affected.addAll(updates._affected);
+                    if (updates._needsEmail) {
+                        emailers.add(
+                                _invitationHelper.createFolderInvitationAndEmailer(sf, sharer, sharee,
+                                        actualPermissions, note, folderName));
+                    }
+                } catch (ExAlreadyExist e) {
+                    invalidUsersOrGroups.add(sharee.id().getString());
+                    continue;
                 }
 
                 events.add(auditSharing(sf, sharer, "folder.invite")
@@ -1391,11 +1397,14 @@ public class SPService implements ISPService
                 // not have to be applied, as group sharing can only occur within an organization.
                 throwIfNotOwner(sharer.getOrganization(), group);
                 Permissions permissions = rules.onUpdatingACL(sf, group, srp._permissions);
-                AffectedUserIDsAndInvitedUsers updates = group.joinSharedFolder(sf, permissions, sharer);
-                affected.addAll(updates._affected);
-                emailers.addAll(_invitationHelper.createFolderInvitationAndEmailer(
-                        sf, sharer, updates._users, permissions, note, folderName));
-
+                try {
+                    AffectedUserIDsAndInvitedUsers updates = group.joinSharedFolder(sf, permissions, sharer);
+                    affected.addAll(updates._affected);
+                    emailers.addAll(_invitationHelper.createFolderInvitationAndEmailer(
+                            sf, sharer, updates._users, permissions, note, folderName));
+                } catch (ExAlreadyExist e) {
+                    invalidUsersOrGroups.add(group.getCommonName());
+                }
                 // Audit event for each invitation.
                 for (User sharee :  group.listMembers()) {
                     events.add(auditSharing(sf, sharer, "folder.invite")
@@ -1407,6 +1416,10 @@ public class SPService implements ISPService
                 l.warn("{}: {}", msg, srp._subject);
                 throw new ExBadArgs(msg + ".");
             }
+        }
+
+        if  (!invalidUsersOrGroups.isEmpty()) {
+            throw new ExAlreadyExist(StringUtils.join(invalidUsersOrGroups, ", "));
         }
 
         if (sf.getNumberOfActiveMembers() > SPParam.MAX_SHARED_FOLDER_MEMBERS) {
