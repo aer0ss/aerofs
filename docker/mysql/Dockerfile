@@ -9,5 +9,7 @@ VOLUME /var/lib/mysql
 
 EXPOSE 3306
 
+ENV export TERM=xterm
+
 ENTRYPOINT [ "/container-scripts/restart-on-error", "/entrypoint.sh" ]
 CMD [ "mysqld_safe" ]
