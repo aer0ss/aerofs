@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.CA;
@@ -357,6 +358,9 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                             }
                         } else {
                             l.warn("conversion op failed {} {} {}", or.errorCode, or.errorMessage, GsonUtil.GSON.toJson(ops.get(i)));
+                            if (or.errorCode == BatchResult.PolarisError.INSUFFICIENT_PERMISSIONS) {
+                                throw new ExNoPerm();
+                            }
                             throw new Exception("failed to complete operations");
                         }
                     }
@@ -386,6 +390,10 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
 
         @Override
         public void onFailure_(Throwable t) {
+            if (t instanceof ExNoPerm) {
+                l.warn("exiting submission early of SID {} because of insufficient perms", _sid);
+                completionSignaler.release();
+            }
             failures++;
             if (failures > MAX_FAILURES) {
                 lastError = t;
