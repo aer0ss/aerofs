@@ -130,24 +130,9 @@ func GetConvo(tx *sql.Tx, cid, caller string) *Convo {
 	return c
 }
 
-func GetDirectConvo(tx *sql.Tx, caller, other string) *Convo {
-	row := tx.QueryRow(fmt.Sprint(
-		"SELECT ", CONVO_QUERY_COLS, " FROM convos WHERE type=? ",
-		"AND id IN (SELECT convo_id FROM convo_members WHERE user_id=?) ",
-		"AND id IN (SELECT convo_id FROM convo_members WHERE user_id=?) ",
-	), DIRECT, caller, other)
-	c := parseConvoRow(tx, row)
-
-	if c == nil {
-		return nil
-	}
-
-	c.Members = []string{caller, other}
-	c.IsPinned = isPinned(tx, c.Id, caller)
-
-	// FIXME: query receipts table
-
-	return c
+func GetDirectConvo(tx *sql.Tx, members []string, caller string) *Convo {
+	cid := util.GenerateDirectConvoId(members)
+	return GetConvo(tx, cid, caller)
 }
 
 func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {

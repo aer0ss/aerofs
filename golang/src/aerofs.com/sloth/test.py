@@ -397,7 +397,7 @@ try:
                 "members": ["jgray", "dgray", "ggray"],
             }),
             headers=JGRAY_AUTH)
-    assert r.status_code == 400, r
+    assert r.status_code == 200, r
 
     # POST /convos DIRECT
     r = s.post("{}/convos".format(BASE_URL),

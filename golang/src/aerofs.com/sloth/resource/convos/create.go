@@ -44,23 +44,18 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 			response.WriteErrorString(400, "Request body must have a \"members\" key")
 			return
 		}
-		if len(p.Members) != 2 {
-			response.WriteErrorString(400, "Request body must list exactly two members")
+		if len(p.Members) < 2 {
+			response.WriteErrorString(400, "Request body must list at least two members")
 			return
 		}
-		var other string
-		if caller == p.Members[0] {
-			other = p.Members[1]
-		} else if caller == p.Members[1] {
-			other = p.Members[1]
-		} else {
-			response.WriteErrorString(400, "Caller must be a member of new direct convo")
+		if !contains(p.Members, caller) {
+			response.WriteErrorString(400, "Members list must include caller")
 			return
 		}
 
 		tx := dao.BeginOrPanic(ctx.db)
 		defer tx.Rollback()
-		convo = dao.GetDirectConvo(tx, caller, other)
+		convo = dao.GetDirectConvo(tx, p.Members, caller)
 		if convo == nil {
 			convo = dao.CreateDirectConvo(tx, p)
 		}
@@ -74,4 +69,13 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 	response.WriteEntity(convo)
 	broadcast.SendConvoEvent(ctx.broadcaster, convo.Id, convo.Members)
 	broadcast.SendMessageEvent(ctx.broadcaster, convo.Id, convo.Members)
+}
+
+func contains(xs []string, x string) bool {
+	for _, p := range xs {
+		if p == x {
+			return true
+		}
+	}
+	return false
 }
