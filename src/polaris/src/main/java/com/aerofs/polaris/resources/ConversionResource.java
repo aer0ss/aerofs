@@ -16,6 +16,8 @@ import com.aerofs.polaris.dao.types.LockableLogicalObject;
 import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.Notifier;
 import com.google.common.base.Preconditions;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.skife.jdbi.v2.DBI;
@@ -42,6 +44,7 @@ public class ConversionResource {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransformBatchResource.class);
     private final ObjectStore objectStore;
     private final DBI dbi;
+    private final Cache<OIDAndComponent, List<Conversion.Tick>> distVersionCache = CacheBuilder.newBuilder().softValues().maximumSize(1024*128).build();
 
     public ConversionResource(@Context DBI dbi, @Context ObjectStore objects, @Context Notifier notifier) {
         this.objectStore = objects;
@@ -117,7 +120,7 @@ public class ConversionResource {
                     Preconditions.checkArgument(ic.aliases != null, "conversion operations must include aliases");
 
                     UniqueID child = mergeMultipleResolutions(dao, conversion, token, principal.getDevice(), store, resolveChild(dao, conversion, store, ic));
-                    List<Conversion.Tick> currentVersion = conversion.getDistributedVersion(child, Conversion.COMPONENT_META);
+                    List<Conversion.Tick> currentVersion = getDistributedVersion(child, Conversion.COMPONENT_META, conversion);
                     UniqueID currentParent = Identifiers.isSharedFolder(child) ? dao.mountPoints.getMountPointParent(store, child) : dao.children.getParent(child);
                     UniqueID folderToShare = null;
                     InsertChild originalInsert = null;
@@ -179,7 +182,7 @@ public class ConversionResource {
                 case UPDATE_CONTENT: {
                     UpdateContent uc = (UpdateContent) operation;
                     Preconditions.checkArgument(uc.versions != null, "conversion operations must include distributed versions");
-                    List<Conversion.Tick> currentVersion = conversion.getDistributedVersion(oid, Conversion.COMPONENT_CONTENT);
+                    List<Conversion.Tick> currentVersion = getDistributedVersion(oid, Conversion.COMPONENT_CONTENT, conversion);
                     if (newVersionDominates(currentVersion, uc.versions)) {
                         LockableLogicalObject o = dao.objects.get(oid);
                         Preconditions.checkState(o != null, "cannot find object %s to update", oid);
@@ -334,7 +337,7 @@ public class ConversionResource {
         if (!conflict.equals(child)) {
             // N.B. cannot just drop operations making a folder because there could be further operations under that folder which will persistently fail
             // instead, we move them into the tree - meaning one of the objects gets renamed
-            if (newVersionDominates(conversion.getDistributedVersion(conflict, Conversion.COMPONENT_META), ic.versions)) {
+            if (newVersionDominates(getDistributedVersion(conflict, Conversion.COMPONENT_META, conversion), ic.versions)) {
                 LOGGER.info("moving name conflict {} with new object {} from under parent {}", conflict, child, parent);
                 objectStore.performTransform(dao, token, device, parent, new MoveChild(conflict, parent, nonConflictingName(dao, parent, conflict, ic.childName)));
                 return makeOperation(parent, currentParent, child, ic);
@@ -379,12 +382,16 @@ public class ConversionResource {
     private void saveVersion(Conversion conversion, UniqueID oid, int component, Map<DID, Long> version)
     {
         List<DID> devices = Lists.newArrayList();
-        List<Long> ticks = Lists.newArrayList();
+        List<Long> versions = Lists.newArrayList();
+        List<Conversion.Tick> ticks = Lists.newArrayList();
         version.forEach((key, value) -> {
             devices.add(key);
-            ticks.add(value);
+            versions.add(value);
+            ticks.add(new Conversion.Tick(key, value));
         });
-        conversion.insertTick(oid, component, devices, ticks);
+        conversion.insertTick(oid, component, devices, versions);
+        OIDAndComponent k = new OIDAndComponent(oid, component);
+        distVersionCache.put(k, ticks);
     }
 
     private static boolean notNullAndNotEqual(@Nullable Object match, Object target)
@@ -432,6 +439,31 @@ public class ConversionResource {
             conflict = dao.children.getActiveChildNamed(parent, newName.getBytes(UTF8));
         }
         return newName.getBytes(UTF8);
+    }
+
+    private List<Conversion.Tick> getDistributedVersion(UniqueID oid, int component, Conversion conversion) {
+        OIDAndComponent key = new OIDAndComponent(oid, component);
+        List<Conversion.Tick> cached = distVersionCache.getIfPresent(key);
+        if (cached == null) {
+            cached = conversion.getDistributedVersion(oid, component);
+            distVersionCache.put(key, cached);
+        }
+        return cached;
+    }
+
+    private static class OIDAndComponent {
+        final UniqueID oid;
+        final int component;
+
+        OIDAndComponent(UniqueID oid, int component) {
+            this.oid = oid;
+            this.component = component;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(oid, component);
+        }
     }
 }
 
