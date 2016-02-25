@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const GROUP = 1
+const CHANNEL = 1
 const DIRECT = 2
 
 type stringSet map[string]struct{}
@@ -153,13 +153,13 @@ func GetDirectConvo(tx *sql.Tx, caller, other string) *Convo {
 func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {
 	c := &Convo{
 		Id:          util.GenerateChannelId(),
-		Type:        "GROUP",
+		Type:        "CHANNEL",
 		CreatedTime: time.Now(),
 		Name:        *p.Name,
 		IsPublic:    *p.IsPublic,
 		Members:     p.Members,
 	}
-	insertNewConvo(tx, c, GROUP)
+	insertNewConvo(tx, c, CHANNEL)
 	for _, uid := range c.Members {
 		InsertMember(tx, c.Id, uid)
 		InsertMemberAddedMessage(tx, c.Id, uid, caller, c.CreatedTime)
@@ -251,7 +251,7 @@ func InsertMemberRemovedMessage(tx *sql.Tx, cid, uid, caller string, time time.T
 
 // GetGroupSids returns the sids of all group convos bound to a shared folder
 func GetGroupSids(tx *sql.Tx) []string {
-	rows, err := tx.Query("SELECT sid FROM convos WHERE sid IS NOT NULL AND type=?", GROUP)
+	rows, err := tx.Query("SELECT sid FROM convos WHERE sid IS NOT NULL AND type=?", CHANNEL)
 	defer rows.Close()
 	errors.PanicAndRollbackOnErr(err, tx)
 	var sids []string
@@ -346,8 +346,8 @@ func getCidForSid(tx *sql.Tx, sid string) string {
 
 func toTypeString(ctype int) string {
 	switch ctype {
-	case GROUP:
-		return "GROUP"
+	case CHANNEL:
+		return "CHANNEL"
 	case DIRECT:
 		return "DIRECT"
 	default:

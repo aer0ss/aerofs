@@ -9,7 +9,7 @@ import (
 	"github.com/emicklei/go-restful"
 )
 
-const GROUP = 1
+const CHANNEL = 1
 const DIRECT = 2
 
 type baseRequest struct {
@@ -24,7 +24,7 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 
 	var convo *Convo
 	switch r.Type {
-	case "GROUP":
+	case "CHANNEL":
 		p := new(GroupConvoWritable)
 		err := request.ReadEntity(p)
 		errors.PanicOnErr(err)

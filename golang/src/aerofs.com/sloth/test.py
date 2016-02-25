@@ -156,7 +156,7 @@ try:
     # POST /convos missing key
     r = s.post(BASE_URL + "/convos",
             json.dumps({
-                "name": "F!RST GROUP",
+                "name": "F!RST CHANNEL",
                 "members": ["dgray", "jgray"],
             }),
             headers=JGRAY_AUTH)
@@ -165,7 +165,7 @@ try:
     # POST /convos no auth
     r = s.post(BASE_URL + "/convos",
             json.dumps({
-                "name": "F!RST GROUP",
+                "name": "F!RST CHANNEL",
                 "isPublic": True,
                 "members": ["dgray", "jgray"],
             }))
@@ -174,14 +174,14 @@ try:
     # POST /convos
     r = s.post(BASE_URL + "/convos",
             json.dumps({
-                "type": "GROUP",
-                "name": "F!RST GROUP",
+                "type": "CHANNEL",
+                "name": "F!RST CHANNEL",
                 "isPublic": True,
                 "members": ["dgray", "jgray"],
             }),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("name") == "F!RST GROUP", r.text
+    assert r.json().get("name") == "F!RST CHANNEL", r.text
     assert r.json().get("isPublic") == True, r.text
     assert r.json().get("members") == ["dgray", "jgray"], r.text
     cid = r.json().get("id")
@@ -193,9 +193,9 @@ try:
     r = s.get(BASE_URL + "/convos", headers=JGRAY_AUTH)
     assert r.ok, r
     c = r.json().get("convos").get(cid)
-    assert c.get("type") == "GROUP", r.text
+    assert c.get("type") == "CHANNEL", r.text
     assert c.get("id") == cid, r.text
-    assert c.get("name") == "F!RST GROUP", r.text
+    assert c.get("name") == "F!RST CHANNEL", r.text
     assert c.get("isPublic") == True, r.text
     assert c.get("members") == ["dgray", "jgray"], r.text
     assert c.get("createdTime") == created_time, r.text
@@ -211,9 +211,9 @@ try:
     # GET /convos/cid
     r = s.get(BASE_URL + "/convos/" + cid, headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("type") == "GROUP", r.text
+    assert r.json().get("type") == "CHANNEL", r.text
     assert r.json().get("id") == cid, r.text
-    assert r.json().get("name") == "F!RST GROUP", r.text
+    assert r.json().get("name") == "F!RST CHANNEL", r.text
     assert r.json().get("isPublic") == True, r.text
     assert r.json().get("members") == ["dgray", "jgray"], r.text
     assert r.json().get("createdTime") == created_time, r.text
@@ -221,9 +221,9 @@ try:
     # GET /convos/cid public
     r = s.get(BASE_URL + "/convos/" + cid, headers=GGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("type") == "GROUP", r.text
+    assert r.json().get("type") == "CHANNEL", r.text
     assert r.json().get("id") == cid, r.text
-    assert r.json().get("name") == "F!RST GROUP", r.text
+    assert r.json().get("name") == "F!RST CHANNEL", r.text
     assert r.json().get("isPublic") == True, r.text
     assert r.json().get("members") == ["dgray", "jgray"], r.text
     assert r.json().get("createdTime") == created_time, r.text
@@ -250,9 +250,9 @@ try:
             }),
             headers=JGRAY_AUTH)
     assert r.ok, r
-    assert r.json().get("type") == "GROUP", r.text
+    assert r.json().get("type") == "CHANNEL", r.text
     assert r.json().get("id") == cid, r.text
-    assert r.json().get("name") == "F!RST GROUP", r.text
+    assert r.json().get("name") == "F!RST CHANNEL", r.text
     assert r.json().get("isPublic") == False, r.text
     assert r.json().get("members") == ["dgray", "jgray"], r.text
     assert r.json().get("createdTime") == created_time, r.text
@@ -620,7 +620,7 @@ try:
 
     # GET group member history new group
     r = s.post("{}/convos".format(BASE_URL), json.dumps({
-            "type": "GROUP",
+            "type": "CHANNEL",
             "name": "shoop de groop",
             "isPublic": True,
             "members": ["dgray", "jgray"],
