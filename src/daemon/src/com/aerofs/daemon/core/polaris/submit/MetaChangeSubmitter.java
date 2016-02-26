@@ -6,9 +6,11 @@ package com.aerofs.daemon.core.polaris.submit;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -31,6 +33,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.UniqueID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -73,6 +76,8 @@ public class MetaChangeSubmitter implements Submitter
     private final DirectoryService _ds;
     private final TransManager _tm;
     private final MapSIndex2Store _sidx2s;
+    private final LocalACL _lacl;
+    private final CfgLocalUser _localUser;
 
     @Inject
     public MetaChangeSubmitter(
@@ -87,6 +92,8 @@ public class MetaChangeSubmitter implements Submitter
             PauseSync pauseSync,
             DirectoryService ds,
             TransManager tm,
+            LocalACL lacl,
+            CfgLocalUser localUser,
             MapSIndex2Store sidx2s)
     {
         _client = client;
@@ -101,6 +108,8 @@ public class MetaChangeSubmitter implements Submitter
         _ds = ds;
         _tm = tm;
         _sidx2s = sidx2s;
+        _lacl = lacl;
+        _localUser = localUser;
     }
 
     @Override
@@ -159,6 +168,12 @@ public class MetaChangeSubmitter implements Submitter
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
             cb.onSuccess_(false);
+            return;
+        }
+
+        if (!_lacl.check_(_localUser.get(), sidx, Permissions.EDITOR)) {
+            l.warn("not editor {}", sidx);
+            cb.onFailure_(new ExNoPerm());
             return;
         }
 

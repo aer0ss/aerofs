@@ -6,9 +6,11 @@ package com.aerofs.daemon.core.polaris.submit;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.Batch;
@@ -29,6 +31,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -70,12 +73,15 @@ public class ContentChangeSubmitter implements Submitter
     private final CfgLocalDID _did;
     private final PolarisContentVersionControl _cvc;
     private final ContentSubmitConflictHandler _ch;
+    private final LocalACL _lacl;
+    private final CfgLocalUser _localUser;
 
     @Inject
     public ContentChangeSubmitter(PolarisAsyncClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
             PauseSync pauseSync, TransManager tm, ContentProvider provider, CfgLocalDID did,
-            PolarisContentVersionControl cvc, ChangeEpochDatabase cedb, ContentSubmitConflictHandler ch)
+            PolarisContentVersionControl cvc, ChangeEpochDatabase cedb, ContentSubmitConflictHandler ch,
+            LocalACL lacl, CfgLocalUser localUser)
     {
         _client = client;
         _rldb = rldb;
@@ -89,6 +95,8 @@ public class ContentChangeSubmitter implements Submitter
         _cvc = cvc;
         _cedb = cedb;
         _ch = ch;
+        _lacl = lacl;
+        _localUser = localUser;
     }
 
     @Override
@@ -108,6 +116,12 @@ public class ContentChangeSubmitter implements Submitter
         if (_pauseSync.isPaused()) {
             l.warn("paused {}", sidx);
             cb.onSuccess_(false);
+            return;
+        }
+
+        if (!_lacl.check_(_localUser.get(), sidx, Permissions.EDITOR)) {
+            l.warn("not editor {}", sidx);
+            cb.onFailure_(new ExNoPerm());
             return;
         }
 
