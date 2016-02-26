@@ -244,16 +244,15 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws ExBadArgs, ExNotFound, SQLException
     {
         validateAuth(token, Scope.READ_ACL, sf);
-        List<SFMember> members = listMembers(sf);
-        SFMember match = throwIfNotInList(members, member, "No such member");
-
-        EntityTag etag = getEntityTag(members, listPendingMembers(sf), listGroupMembers(sf));
+        // FIXME (RD) this route uses the effective permissions, unlike all the other members routes
+        Permissions p = throwIfNotAMember(sf, member, "No such member");
+        EntityTag etag = getEntityTag(sf);
         if (ifNoneMatch.isValid() && ifNoneMatch.matches(etag)) {
             return Response.notModified(etag).build();
         }
 
         return Response.ok()
-                .entity(match)
+                .entity(toMember(member, p))
                 .tag(etag)
                 .build();
     }
@@ -297,7 +296,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             }
         }
 
-        if (members.stream().filter(m -> m.email.equals(user.id().getString())).findAny().orElse(null) != null) {
+        if (sf.getStateNullable(user) == SharedFolderState.JOINED) {
             return Response.status(Status.CONFLICT)
                     .entity(new Error(Type.CONFLICT, "Member already exists"))
                     .build();
@@ -306,7 +305,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         ISharingRules rules = _sharingRules.create(caller);
         Permissions req = rules.onUpdatingACL(sf, user, Permissions.fromArray(member.permissions));
 
-        if (pending.stream().filter(m -> m.email.equals(user.id().getString())).findAny().orElse(null) != null) {
+        // POST when the user is already in the shared folder, but not joined, will join the user
+        if (sf.getPermissionsNullable(user) != null) {
             sf.setState(user, SharedFolderState.JOINED);
             sf.setPermissions(user, req);
         } else {
@@ -346,14 +346,11 @@ public class SharedFolderResource extends AbstractSpartaResource
         checkArgument(member.permissions != null, "Request body missing required field: permissions");
         User caller = validateAuth(token, Scope.WRITE_ACL, sf);
         sf.throwIfNoPrivilegeToChangeACL(caller);
-
-        List<SFMember> members = listMembers(sf);
-        SFMember userMember = throwIfNotInList(members, user, "No such member");
         Permissions oldPermissions = sf.getPermissions(user);
 
         List<SFPendingMember> pending = listPendingMembers(sf);
         List<SFGroupMember> groups = listGroupMembers(sf);
-        EntityTag etag = getEntityTag(members, pending, groups);
+        EntityTag etag = getEntityTag(listMembers(sf), pending, groups);
         if (ifMatch.isValid() && !ifMatch.matches(etag)) {
             return Response.status(Status.PRECONDITION_FAILED)
                     .tag(etag)
@@ -384,7 +381,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         // TODO: outside transaction
         _sfnEmailer.sendRoleChangedNotificationEmail(sf, caller, user, oldPermissions, req);
         return Response.ok()
-                .entity(userMember)
+                .entity(toMember(user, req))
                 .tag(getEntityTag(listMembers(sf), pending, groups))
                 .build();
     }
@@ -608,8 +605,10 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         User caller = validateAuth(token, Scope.WRITE_ACL, sf);
-
         sf.throwIfNoPrivilegeToChangeACL(caller);
+        if (!group.inSharedFolder(sf)) {
+            throw new ExNotFound("No such member");
+        }
 
         List<SFMember> members = listMembers(sf);
         List<SFPendingMember> pending = listPendingMembers(sf);
@@ -871,11 +870,12 @@ public class SharedFolderResource extends AbstractSpartaResource
         return member;
     }
 
-    static void throwIfNotAMember(SharedFolder sf, User caller, String message)
+    static Permissions throwIfNotAMember(SharedFolder sf, User caller, String message)
             throws SQLException, ExNotFound
     {
         Permissions p = sf.getPermissionsNullable(caller);
         if (p == null) throw new ExNotFound(message);
+        return p;
     }
 
     static SFMember toMember(User u, Permissions p) throws ExNotFound, SQLException
