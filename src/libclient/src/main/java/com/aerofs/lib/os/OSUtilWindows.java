@@ -4,6 +4,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
@@ -38,8 +39,10 @@ public class OSUtilWindows implements IOSUtil
         // Before you update this method, please take a look at ULRtrootMigration first.
         try {
             return getLocalAppDataPath() + '\\' + L.productSpaceFreeName();
-        } catch (FileNotFoundException ex) {
-            return "C:\\" + L.productSpaceFreeName();
+        } catch (FileNotFoundException e) {
+            System.err.println("cannot access rtroot");
+            ExitCode.FAIL_TO_LAUNCH.exit("cannot access rtroot");
+            throw new AssertionError("cannot access rtroot");
         }
     }
 
