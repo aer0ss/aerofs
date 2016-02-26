@@ -136,7 +136,7 @@ public class TransportResource extends ExternalResource
                 clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 clientSocketChannelFactory, serverSocketChannelFactory,
-                new SSMPConnectionService(outgoingEventSink, linkStateService, ssmp),
+                new SSMPConnectionService(outgoingEventSink, linkStateService, ssmp, localdid),
                 new LocationManager(ssmp),
                 roundTripTimes);
 

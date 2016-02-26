@@ -171,7 +171,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
                 new ZephyrParams(), timer, queue, linkStateService, clientSslEngineFactory,
                 new ServerSSLEngineFactory(keyProvider, trustedCA),
                 getClientChannelFactory(), getServerChannelFactory(),
-                new SSMPConnectionService(queue, linkStateService, ssmp),
+                new SSMPConnectionService(queue, linkStateService, ssmp, localdid),
                 new LocationManager(ssmp),
                 new RoundTripTimes());
     }
