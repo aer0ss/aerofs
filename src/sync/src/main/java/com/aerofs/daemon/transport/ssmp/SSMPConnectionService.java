@@ -13,6 +13,7 @@ import com.aerofs.daemon.transport.lib.*;
 import com.aerofs.daemon.transport.presence.IStoreInterestListener;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.ssmp.*;
 import com.aerofs.ssmp.SSMPClient.ConnectionListener;
@@ -38,6 +39,7 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
 
     private final CoreQueue _q;
     private final SSMPConnection _c;
+    private final CfgLocalDID _localDID;
 
     private boolean linkUp = false;
 
@@ -45,9 +47,11 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
     public final SSMPPresenceProcessor presenceProcessor = new SSMPPresenceProcessor();
 
     @Inject
-    public SSMPConnectionService(CoreQueue q, LinkStateService lss, SSMPConnection c) {
+    public SSMPConnectionService(CoreQueue q, LinkStateService lss, SSMPConnection c,
+                                 CfgLocalDID localDID) {
         _q = q;
         _c = c;
+        _localDID = localDID;
 
         // maxcast
         c.addConnectionListener(this);
@@ -79,6 +83,13 @@ public class SSMPConnectionService implements ConnectionListener, EventHandler,
 
             // unsubscribe/mcast race
             if (!_interest.contains(sid)) return;
+
+            // ssmp is not supposed to allow two connections with the same id
+            // but it can currently happen because of a race condition
+            if (did.equals(_localDID.get())) {
+                l.warn("self presence {} {}", did, sid);
+                return;
+            }
 
             l.debug("{} recv mc {}", did, sid);
 
