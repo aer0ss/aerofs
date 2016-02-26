@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.polaris.submit;
 
+import com.aerofs.base.acl.Permissions;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -21,6 +23,8 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.UserID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -56,6 +60,7 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
     private final MapAlias2Target a2t = mock(MapAlias2Target.class);
     private final TransManager tm = mock(TransManager.class);
     private final PauseSync pause = mock(PauseSync.class);
+    private final LocalACL lacl = mock(LocalACL.class);
 
     private final Trans t = mock(Trans.class);
 
@@ -72,9 +77,11 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
         when(mcdb.deleteChange_(any(SIndex.class), anyLong(), eq(t))).thenReturn(true);
         when(a2t.dereferenceAliasedOID_(any(SOID.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
+        when(lacl.check_(any(UserID.class), any(SIndex.class), any(Permissions.class)))
+                .thenReturn(true);
 
         mcs = new MetaChangeSubmitter(client, mcdb, mbdb, rldb, cvdb, cedb, sidx2sid, a2t, pause, ds, tm,
-                mock(MapSIndex2Store.class));
+                lacl, mock(CfgLocalUser.class), mock(MapSIndex2Store.class));
     }
 
     void givenLocalChanges(MetaChange... c) throws SQLException
