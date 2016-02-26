@@ -215,7 +215,7 @@ public class ContentChangeSubmitter implements Submitter
 
         LocalChange change = new LocalChange();
         change.type = Type.UPDATE_CONTENT;
-        change.localVersion = Objects.firstNonNull(_cvdb.getVersion_(c.sidx, c.oid), 0L);
+        change.localVersion = Math.max(Objects.firstNonNull(_cvdb.getVersion_(c.sidx, c.oid), 0L), 0L);
         change.mtime = content.mtime;
         change.size = content.length;
         change.hash = content.hash.toHex();
