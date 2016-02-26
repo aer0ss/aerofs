@@ -105,17 +105,14 @@ public class DlgSignIn extends TitleAreaDialog
         if (_showOpenIdDialog) {
             createOpenIdComposite(area)
                     .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
+            if (_displayUserPassLogin) {
+                createDivider(area, "OR")
+                        .setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+            }
         }
 
-        if(_showOpenIdDialog && _displayUserPassLogin) {
-            createDivider(area, "OR")
-                    .setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        }
-
-        if(_displayUserPassLogin || !_showOpenIdDialog) {
-            createCredentialComposite(area)
-                    .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
-        }
+        createCredentialComposite(area)
+                .setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;
@@ -189,41 +186,43 @@ public class DlgSignIn extends TitleAreaDialog
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        if (_showOpenIdDialog) {
+        if (_showOpenIdDialog && _displayUserPassLogin) {
             Label label = createLabel(composite, SWT.NONE);
             label.setText(L.product() + " user without " + Identity.SERVICE_IDENTIFIER + " accounts?");
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1));
         }
 
-        Label lblEmail = createLabel(composite, SWT.NONE);
-        lblEmail.setText(S.SETUP_USER_ID + ": ");
-        lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+        if (_displayUserPassLogin || !_showOpenIdDialog) {
+            Label lblEmail = createLabel(composite, SWT.NONE);
+            lblEmail.setText(S.SETUP_USER_ID + ": ");
+            lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
-        _txtUserID = new Text(composite, SWT.BORDER);
-        _txtUserID.addVerifyListener(verifyEvent -> verify(getNewText(_txtUserID.getText(), verifyEvent)));
-        _txtUserID.setLayoutData(createTextBoxLayoutData());
-        _controls.add(_txtUserID);
+            _txtUserID = new Text(composite, SWT.BORDER);
+            _txtUserID.addVerifyListener(verifyEvent -> verify(getNewText(_txtUserID.getText(), verifyEvent)));
+            _txtUserID.setLayoutData(createTextBoxLayoutData());
+            _controls.add(_txtUserID);
 
-        Label lblPassword = createLabel(composite, SWT.NONE);
-        lblPassword.setText(S.SETUP_PASSWD + ": ");
-        lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+            Label lblPassword = createLabel(composite, SWT.NONE);
+            lblPassword.setText(S.SETUP_PASSWD + ": ");
+            lblPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 
-        // N.B. because MacOSX can't handle password fields' verify events
-        // correctly, we have to use ModifyListeners
-        _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
-        _txtPasswd.addModifyListener(ev -> verify(null));
-        _txtPasswd.setLayoutData(createTextBoxLayoutData());
-        _controls.add(_txtPasswd);
+            // N.B. because MacOSX can't handle password fields' verify events
+            // correctly, we have to use ModifyListeners
+            _txtPasswd = new Text(composite, SWT.BORDER | SWT.PASSWORD);
+            _txtPasswd.addModifyListener(ev -> verify(null));
+            _txtPasswd.setLayoutData(createTextBoxLayoutData());
+            _controls.add(_txtPasswd);
 
-        createLabel(composite, SWT.NONE);
+            createLabel(composite, SWT.NONE);
 
-        Link lnkForgotPassword = new Link(composite, SWT.NONE);
-        lnkForgotPassword.setText("<a>Forgot your password?</a>");
-        lnkForgotPassword.setToolTipText("");
-        lnkForgotPassword.addSelectionListener(
-                GUIUtil.createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
-        lnkForgotPassword.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
-        _controls.add(lnkForgotPassword);
+            Link lnkForgotPassword = new Link(composite, SWT.NONE);
+            lnkForgotPassword.setText("<a>Forgot your password?</a>");
+            lnkForgotPassword.setToolTipText("");
+            lnkForgotPassword.addSelectionListener(
+                    GUIUtil.createUrlLaunchListener(WWW.PASSWORD_RESET_REQUEST_URL));
+            lnkForgotPassword.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 2, 1));
+            _controls.add(lnkForgotPassword);
+        }
 
         createLabel(composite, SWT.NONE);
         createStatusComposite(composite).setLayoutData(
