@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.MultiuserImmigrantDetector;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
@@ -38,7 +38,7 @@ public class MultiuserModule extends AbstractModule
 
         bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
-        bind(ImmigrantDetector.class).to(MultiuserImmigrantDetector.class);
+        bind(ImmigrantDetector.class).to(NullImmigrantDetector.class);
 
         bind(ACLFilter.class).to(MultiuserACLFilter.class);
         bind(IStoreJoiner.class).to(MultiuserStoreJoiner.class);

@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.sql.SQLException;
 
-public class MultiuserImmigrantDetector extends ImmigrantDetector
+public class NullImmigrantDetector extends ImmigrantDetector
 {
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc,

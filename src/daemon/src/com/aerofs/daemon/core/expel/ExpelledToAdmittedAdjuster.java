@@ -81,6 +81,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 
         // FIXME: ugh! nasty immigration business down here
         // unfortunately it is far from trivial to refactor
+        // FIXME(phoenix): remove all migration stuff when burning legacy code path
         _ds.walk_(soidRoot, p, new IObjectWalker<ResolvedPath>() {
             @Override
             public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
