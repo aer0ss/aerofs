@@ -8,23 +8,41 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.ds.*;
+import com.aerofs.daemon.core.ds.CA;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.ObjectSurgeon;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.migration.RemoteTreeCache;
-import com.aerofs.daemon.core.phy.*;
+import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalPrefix;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.api.RemoteChange;
-import com.aerofs.daemon.core.polaris.db.*;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ChangeEpochDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentChangesDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueWrapper;
+import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaBufferDatabase.BufferedChange;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase;
 import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteChild;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
-import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.core.store.StoreDeleter;
+import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -35,7 +53,12 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.*;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
@@ -83,7 +106,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final LogicalStagingArea _sa;
     private final VersionUpdater _vu;
     private final ChangeEpochDatabase _cedb;
-    private final ContentFetchQueueDatabase _cfqdb;
+    private final ContentFetchQueueWrapper _cfqw;
     private final PolarisContentVersionControl _cvc;
 
     // FIXME: remove once TS is burned
@@ -98,7 +121,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                            StoreHierarchy stores, StoreCreator sc, IMapSID2SIndex sid2sidx,
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
                            LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
-                           PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb,
+                           PolarisContentVersionControl cvc, ContentFetchQueueWrapper cfqw,
                            TransManager tm, CfgLocalUser localUser)
     {
         _tm = tm;
@@ -124,7 +147,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _sa = sa;
         _vu = vu;
         _cvc = cvc;
-        _cfqdb = cfqdb;
+        _cfqw = cfqw;
         _localUser =  localUser;
     }
 
@@ -311,7 +334,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 _cvc.setContentVersion_(sidxTo, immigrant, v, _cedb.getChangeEpoch_(sidxTo), t);
             }
             if (_rcdb.hasRemoteChanges_(sidxTo, immigrant, v != null ? v : 0)) {
-                _cfqdb.insert_(sidxTo, immigrant, t);
+                _cfqw.insert_(sidxTo, immigrant, t);
             }
         } else if (oa.isDir()) {
             l.info("migrate children {}{} {}{}", sidxFrom, emigrant, sidxTo, immigrant);

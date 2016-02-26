@@ -1,17 +1,17 @@
 package com.aerofs.daemon.core.ds;
 
-import java.util.SortedMap;
-
-import com.aerofs.lib.Util;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.ids.OID;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.ids.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSortedMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import java.util.SortedMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -62,6 +62,8 @@ public class OA
     private final Type _type;
     @Nullable private final FID _fid;
     private int _flags;
+    private final boolean _synced;
+    private final long _oosChildren;
 
     // Sorted map of KIndices and corresponding CAs.
     // Useful for iterating over KIndices in sorted order.
@@ -73,17 +75,18 @@ public class OA
     public static final String ROOT_DIR_NAME = "";
 
     @Nonnull public static OA createFile(SOID soid, OID parent, String name,
-            SortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
+            SortedMap<KIndex, CA> cas, int flags, @Nullable FID fid,
+            boolean synced)
     {
         return new OA(soid, parent, name, Type.FILE, ImmutableSortedMap.copyOfSorted(cas),
-                flags, fid);
+                flags, fid, synced, 0);
     }
 
     @Nonnull public static OA createNonFile(SOID soid, OID parent, String name, Type type,
-            int flags, @Nullable FID fid)
+            int flags, @Nullable FID fid, boolean synced, long oosChildren)
     {
         checkArgument(!type.equals(Type.FILE), "%s %s", type, soid);
-        return new OA(soid, parent, name, type, null, flags, fid);
+        return new OA(soid, parent, name, type, null, flags, fid, synced, oosChildren);
     }
 
     /**
@@ -91,7 +94,8 @@ public class OA
      * directory or an anchor
      */
     private OA(SOID soid, OID parent, String name, Type type,
-            @Nullable ImmutableSortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
+            @Nullable ImmutableSortedMap<KIndex, CA> cas, int flags, @Nullable FID fid,
+            boolean synced, long oosChildren)
     {
         checkArgument(soid.oid().isRoot() || !soid.oid().equals(parent), parent);
 
@@ -102,13 +106,16 @@ public class OA
         _cas = cas;
         _flags = flags;
         _fid = fid;
+        _synced = synced;
+        _oosChildren = oosChildren;
     }
 
     @Override
     public String toString()
     {
         return "s " + _soid + " p " + _parent + " n " + Util.crc32(_name)
-                + " f " + String.format("%08X", _flags) + " fid " + _fid + " cas " + _cas;
+                + " f " + String.format("%08X", _flags) + " fid " + _fid + " cas " + _cas
+                + " synced " + _synced + " oosChildren " + _oosChildren;
     }
 
     /**
@@ -272,5 +279,13 @@ public class OA
     @Nullable public FID fidNoExpulsionCheck()
     {
         return _fid;
+    }
+
+    public boolean synced() {
+        return _synced;
+    }
+
+    public long oosChildren() {
+        return _oosChildren;
     }
 }

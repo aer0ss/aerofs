@@ -1,24 +1,13 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.*;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.Set;
-import java.util.SortedMap;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
+import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
@@ -26,19 +15,25 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
-import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.id.FID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.ids.OID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import java.sql.*;
+import java.util.Set;
+import java.util.SortedMap;
+
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.SyncSchema.C_STORE_SIDX;
+import static com.aerofs.daemon.lib.db.SyncSchema.C_STORE_USAGE;
+import static com.aerofs.daemon.lib.db.SyncSchema.T_STORE;
 
 /*
  * When possible, use the DirectoryService class which provides a high-level wrapper for this class.
@@ -96,8 +91,7 @@ public class MetaDatabase extends AbstractDatabase
 
     @Override
     public void insertOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
-            Trans t)
-        throws SQLException, ExAlreadyExist
+            Trans t) throws SQLException, ExAlreadyExist
     {
         try {
             if (_psInsOA == null) _psInsOA = c()
@@ -107,14 +101,18 @@ public class MetaDatabase extends AbstractDatabase
                         + C_OA_NAME + ","
                         + C_OA_OID + ","
                         + C_OA_TYPE + ","
-                        + C_OA_FLAGS + ")"
-                        + " values (?,?,?,?,?,?)");
+                        + C_OA_FLAGS + ","
+                        + C_OA_SYNCED + ","
+                        + C_OA_OOS_CHILDREN +")"
+                        + " values (?,?,?,?,?,?,?,?)");
             _psInsOA.setInt(1, sidx.getInt());
             _psInsOA.setBytes(2, oidParent.getBytes());
             _psInsOA.setString(3, name);
             _psInsOA.setBytes(4, oid.getBytes());
             _psInsOA.setInt(5, type.ordinal());
             _psInsOA.setInt(6, flags);
+            _psInsOA.setBoolean(7, true);
+            _psInsOA.setLong(8, 0);
             _psInsOA.executeUpdate();
 
         } catch (SQLException e) {
@@ -419,7 +417,8 @@ public class MetaDatabase extends AbstractDatabase
         try {
             if (_psGetOA == null) _psGetOA = c().prepareStatement("select "
                     + C_OA_PARENT + "," + C_OA_NAME + "," + C_OA_TYPE + ","
-                    + C_OA_FLAGS + "," + C_OA_FID + " from "
+                    + C_OA_FLAGS + "," + C_OA_FID + "," + C_OA_SYNCED
+                    + "," + C_OA_OOS_CHILDREN + " from "
                     + T_OA + " where " + C_OA_SIDX + "=? and " + C_OA_OID
                     + "=?");
 
@@ -433,14 +432,16 @@ public class MetaDatabase extends AbstractDatabase
                     int flags = rs.getInt(4);
                     byte[] bs = rs.getBytes(5);
                     FID fid = bs == null ? null : new FID(bs);
+                    Boolean synced = rs.getBoolean(6);
+                    Long oosChildren = rs.getLong(7);
 
                     assert !rs.next();
 
                     switch (type) {
                         case FILE:
-                            return OA.createFile(soid, parent, name, getCAs_(soid), flags, fid);
+                            return OA.createFile(soid, parent, name, getCAs_(soid), flags, fid, synced);
                         default:
-                            return OA.createNonFile(soid, parent, name, type, flags, fid);
+                            return OA.createNonFile(soid, parent, name, type, flags, fid, synced, oosChildren);
                     }
                 } else {
                     return null;
@@ -714,5 +715,13 @@ public class MetaDatabase extends AbstractDatabase
     public void setBytesUsed_(SIndex sidx, long total, Trans t) throws SQLException
     {
         update(_pswSetBytesUsed, total, sidx.getInt());
+    }
+
+    private final PreparedStatementWrapper _pswUpdateSyncColumns = new PreparedStatementWrapper(
+            DBUtil.updateWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_OID + "=?", C_OA_SYNCED, C_OA_OOS_CHILDREN));
+    @Override
+    public boolean updateSyncColumns_(SIndex sidx, OID oid, boolean synced, long oosChildren, Trans t) throws SQLException
+    {
+        return update(_pswUpdateSyncColumns, synced, oosChildren, sidx.getInt(), oid.getBytes()) == 1;
     }
 }

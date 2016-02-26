@@ -5,43 +5,37 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.base.Loggers;
-import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
-import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.ids.UniqueID;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import javax.annotation.Nullable;
+
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
+import java.util.*;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -158,7 +152,7 @@ public class MockDS
                 @Override
                 public Object answer(InvocationOnMock invocation)
                 {
-                    return _childStores.get((SIndex)invocation.getArguments()[0]);
+                    return _childStores.get(invocation.getArguments()[0]);
                 }
             });
             when(stores.getParents_(any(SIndex.class))).thenAnswer(new Answer<Object>() {
@@ -256,6 +250,8 @@ public class MockDS
             when(_oa.isExpelled()).thenReturn(expelled || parentExpelled);
             when(_oa.isSelfExpelled()).thenReturn(expelled);
             when(_oa.parent()).thenReturn(_soid.oid().isRoot() ? _soid.oid() : _parent._soid.oid());
+            when(_oa.synced()).thenReturn(true);
+            when(_oa.oosChildren()).thenReturn(0L);
 
             ////////
             // wire services

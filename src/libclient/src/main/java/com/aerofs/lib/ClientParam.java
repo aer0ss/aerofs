@@ -10,7 +10,10 @@ import com.aerofs.ids.SID;
 import java.net.InetAddress;
 import java.util.Optional;
 
-import static com.aerofs.base.config.ConfigurationProperties.*;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getOptionalStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BASE_CA_CERT;
 
 /**
@@ -149,7 +152,7 @@ public class ClientParam
         // UI and processes can access them.
         public static final int DAEMON_POST_UPDATE_TASKS = 61;
         public static final int UI_POST_UPDATE_TASKS = 2;
-        public static final int PHOENIX_CONVERSION_TASKS = 4;
+        public static final int PHOENIX_CONVERSION_TASKS = 5;
     }
 
     public static class Ritual

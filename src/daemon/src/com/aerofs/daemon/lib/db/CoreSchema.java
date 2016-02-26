@@ -4,12 +4,13 @@
 
 package com.aerofs.daemon.lib.db;
 
-import java.sql.SQLException;
-import java.sql.Statement;
-
+import com.aerofs.daemon.core.status.db.OutOfSyncFilesDatabase;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
+
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class CoreSchema extends SyncSchema
 {
@@ -20,18 +21,20 @@ public class CoreSchema extends SyncSchema
             C_SC_DID        = "sc_d",
 
             // Object Attributes
-            T_OA          = "o",
-            C_OA_SIDX     = "o_s",          // SIndex
-            C_OA_OID      = "o_o",          // OID
+            T_OA                = "o",
+            C_OA_SIDX           = "o_s",          // SIndex
+            C_OA_OID            = "o_o",          // OID
             // global attributes. part of metadata
-            C_OA_NAME     = "o_n",          // String
+            C_OA_NAME           = "o_n",          // String
             // OID. the parent of the root folder is the SID of the parent store. this is to
             // facilitate OID-to-path lookups
-            C_OA_PARENT   = "o_p",
-            C_OA_TYPE     = "o_d",          // Type
-            C_OA_FLAGS    = "o_l",          // int
+            C_OA_PARENT         = "o_p",
+            C_OA_TYPE           = "o_d",          // Type
+            C_OA_FLAGS          = "o_l",          // int
             // local attributes. never transmitted through wire
-            C_OA_FID      = "o_f",          // blob. file id (i.e. i-node number)
+            C_OA_FID            = "o_f",          // blob. file id (i.e. i-node number)
+            C_OA_SYNCED         = "o_x",
+            C_OA_OOS_CHILDREN   = "o_c",
 
             // Content Attributes
             T_CA            = "c",
@@ -77,7 +80,16 @@ public class CoreSchema extends SyncSchema
             // unlinked external folders
             T_UNLINKED_ROOT = "pr",
             C_UNLINKED_ROOT_SID = "pr_s",
-            C_UNLINKED_ROOT_NAME = "pr_n";
+            C_UNLINKED_ROOT_NAME = "pr_n",
+
+            // files marked out of sync.  only files, not directories.
+            T_OUT_OF_SYNC_FILES             = "os",
+            C_OUT_OF_SYNC_FILES_IDX         = "os_i",
+            C_OUT_OF_SYNC_FILES_SIDX        = "os_s",
+            C_OUT_OF_SYNC_FILES_OID         = "os_o",
+            // a long is used to limit space and allow use of System.currentTimeMillis()
+            C_OUT_OF_SYNC_FILES_TIMESTAMP   = "os_t";
+
 
 
     private final InjectableDriver _dr;
@@ -101,6 +113,8 @@ public class CoreSchema extends SyncSchema
                         C_OA_TYPE + " integer not null, " +
                         C_OA_FID + dbcw.fidType(_dr.getFIDLength()) + "," +
                         C_OA_FLAGS + " integer not null," +
+                        C_OA_SYNCED + dbcw.boolType() + "default 1," +
+                        C_OA_OOS_CHILDREN + dbcw.longType() + "default 0," +
                         "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
                         ")" + dbcw.charSet());
 
@@ -179,5 +193,24 @@ public class CoreSchema extends SyncSchema
                 C_SC_DID + " blob," +
                 "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
                 ")" + dbcw.charSet());
+
+        //TODO uncomment when sync status flag is removed
+        //createOutOfSyncFilesTable(s, dbcw);
+    }
+
+    /**
+     * Creates a table to be used to store out of sync files.  OID is used as the primary key
+     * instead of (SIndex, OID) so that a separate index isn't required in order to simplify
+     * pagination through the table: see {@link OutOfSyncFilesDatabase#selectPage_(com.aerofs.ids.OID, int)}
+     */
+    public static void createOutOfSyncFilesTable(Statement s, IDBCW dbcw) throws SQLException {
+        //create out of sync files table
+        s.executeUpdate("create table " + T_OUT_OF_SYNC_FILES + "(" +
+                C_OUT_OF_SYNC_FILES_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
+                C_OUT_OF_SYNC_FILES_SIDX + " integer not null," +
+                C_OUT_OF_SYNC_FILES_OID + dbcw.uniqueIdType() + "not null," +
+                C_OUT_OF_SYNC_FILES_TIMESTAMP + dbcw.longType() + "not null)");
+        s.executeUpdate("create unique index " + T_OUT_OF_SYNC_FILES + "0 on " + T_OUT_OF_SYNC_FILES +
+                    "(" + C_OUT_OF_SYNC_FILES_SIDX + "," + C_OUT_OF_SYNC_FILES_OID + ")");
     }
 }

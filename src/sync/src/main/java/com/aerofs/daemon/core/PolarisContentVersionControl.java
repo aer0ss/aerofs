@@ -20,14 +20,12 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 // TODO: move as much distrib/central switcharoo as possible into this class
 public class PolarisContentVersionControl implements IContentVersionControl
@@ -40,11 +38,13 @@ public class PolarisContentVersionControl implements IContentVersionControl
     private final CoreExponentialRetry _cer;
     private final CoreScheduler _sched;
     private final ChangeEpochDatabase _cedb;
+    private final List<IContentVersionListener> _listeners;
 
     @Inject
     public PolarisContentVersionControl(CentralVersionDatabase cvdb, ChangeEpochDatabase cedb,
             ContentChangesDatabase ccdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s,
-            NewUpdatesSender nus, CoreExponentialRetry cer, CoreScheduler sched)
+            NewUpdatesSender nus, CoreExponentialRetry cer, CoreScheduler sched,
+            Set<IContentVersionListener> listeners)
     {
         _cvdb = cvdb;
         _ccdb = ccdb;
@@ -54,6 +54,17 @@ public class PolarisContentVersionControl implements IContentVersionControl
         _cer = cer;
         _sched = sched;
         _cedb = cedb;
+        if (listeners != null) {
+            _listeners = Lists.newArrayList(listeners);
+        } else {
+            _listeners = Collections.emptyList();
+        }
+    }
+
+    private void notifyListeners_(SIndex sidx, OID oid, long v, Trans t) throws SQLException {
+        for (IContentVersionListener listener : _listeners) {
+            listener.onSetVersion_(sidx, oid, v, t);
+        }
     }
 
     private static class Updated {
@@ -116,6 +127,7 @@ public class PolarisContentVersionControl implements IContentVersionControl
             _tlUpdated.get(t).put(sidx, u);
         }
         u.add(oid, lts);
+        notifyListeners_(sidx, oid, v, t);
     }
 
     @Override

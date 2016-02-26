@@ -5,28 +5,25 @@
 package com.aerofs.daemon.core.collector;
 
 import com.aerofs.base.BaseSecUtil;
+import com.aerofs.daemon.core.CoreExponentialRetry;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueWrapper;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator;
 import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator.Filter.Action;
+import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.daemon.core.CoreExponentialRetry;
-import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
-import com.aerofs.daemon.core.transfers.download.Downloads;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
-import com.aerofs.daemon.lib.db.ITransListener;
-import com.aerofs.daemon.lib.db.StoreDatabase;
+import com.aerofs.daemon.core.transfers.download.Downloads;
+import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
+import com.aerofs.daemon.lib.db.*;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.bf.BFOID;
@@ -37,6 +34,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,13 +49,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TestCollector extends AbstractTest
 {
@@ -67,6 +59,7 @@ public class TestCollector extends AbstractTest
 
     @Spy ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw);
     @Spy ContentFetchQueueDatabase cfqdb = new ContentFetchQueueDatabase(idbcw, sco, sdo);
+    @Spy ContentFetchQueueWrapper cfqw = new ContentFetchQueueWrapper(cfqdb);
     @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw);
     @Spy CentralVersionDatabase cvdb = new CentralVersionDatabase(idbcw, sdo);
     @Spy RemoteContentDatabase rcdb = new RemoteContentDatabase(idbcw, sco, sdo);
@@ -148,7 +141,7 @@ public class TestCollector extends AbstractTest
                 }
             }
         };
-        cfqdb.insert_(soid.sidx(), soid.oid(), t);
+        cfqw.insert_(soid.sidx(), soid.oid(), t);
         rcdb.insert_(soid.sidx(), soid.oid(), 42, DID.generate(), new ContentHash(BaseSecUtil.hash()), 0L, t);
 
         when(filter.filter_(soid)).thenReturn(Action.Fetch);
@@ -247,7 +240,7 @@ public class TestCollector extends AbstractTest
     {
         SOID soid = new SOID(sidx, OID.generate());
 
-        cfqdb.insert_(sidx, soid.oid(), t);
+        cfqw.insert_(sidx, soid.oid(), t);
         when(filter.filter_(soid)).thenReturn(Action.Ignore);
 
         collector.add_(d0, BFOID.of(soid.oid()), t);
@@ -261,7 +254,7 @@ public class TestCollector extends AbstractTest
         SOID skip = new SOID(sidx, OID.generate());
         SOID soid = new SOID(sidx, OID.generate());
 
-        cfqdb.insert_(sidx, skip.oid(), t);
+        cfqw.insert_(sidx, skip.oid(), t);
         when(filter.filter_(skip)).thenReturn(Action.Ignore);
 
         MockAsyncDownload madl = addVersionFor(soid);

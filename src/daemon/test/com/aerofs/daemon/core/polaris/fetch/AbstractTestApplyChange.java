@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.device.Devices;
+import com.aerofs.daemon.core.notification.ISyncNotificationSubscriber;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -29,6 +30,7 @@ import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
+import com.aerofs.daemon.core.status.ISyncStatusPropagator;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.core.transfers.download.Downloads;
 import com.aerofs.daemon.core.transfers.download.IContentDownloads;
@@ -58,8 +60,13 @@ import com.aerofs.ssmp.SSMPConnection;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.inject.*;
+import com.google.common.util.concurrent.AbstractFuture;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
+
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -77,9 +84,18 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static com.google.inject.multibindings.Multibinder.newSetBinder;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -237,6 +253,11 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(Timer.class).toInstance(TimerUtil.getGlobalTimer());
 
                 bind(EffectiveUserList.class).toInstance(mock(EffectiveUserList.class));
+
+                bind(ISyncNotificationSubscriber.class).toInstance(new ISyncNotificationSubscriber() {});
+                bind(ISyncStatusPropagator.class).toInstance(new ISyncStatusPropagator() {});
+                newSetBinder(binder(), IContentVersionListener.class);
+                newSetBinder(binder(), IShareListener.class);
             }
 
             @Provides
@@ -252,6 +273,8 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
             public IPhysicalStorage providePS() { return ps; }
 
         });
+        
+        doReturn(new AbstractFuture<Void>() {}).when(inj.getInstance(SSMPConnection.class)).request(any());
 
         dbcw.init_();
         inj.getInstance(Stores.class).init_();

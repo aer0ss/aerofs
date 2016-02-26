@@ -6,24 +6,25 @@ package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.UniqueID;
 import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
+import com.aerofs.daemon.core.status.ISyncStatusPropagator;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.*;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.id.FID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -193,7 +194,9 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
     @Nullable public abstract OA getAliasedOANullable_(SOID soid) throws SQLException;
 
     /**
-     * N.B. should be called by HdCreateObject only
+     * N.B. should be called by HdCreateObject only.
+     * N.B. the file will be marked as in-sync initially. Make an appropriate call to
+     *  {@link ISyncStatusPropagator} if necessary.
      * @throws ExNotFound if the parent is not found
      */
     public abstract void createOA_(Type type, SIndex sidx, OID oid, OID oidParent, String name,
@@ -381,4 +384,7 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
     public abstract IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
 
     public abstract long getBytesUsed_(SIndex sidx) throws SQLException;
+
+    public abstract void setOASyncAttributes(SOID soid, boolean synced, long oosChildren, Trans t)
+            throws SQLException;
 }

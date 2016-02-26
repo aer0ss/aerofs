@@ -6,98 +6,58 @@ package com.aerofs.daemon.core.polaris.fetch;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.SSMPNotificationSubscriber;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.ssmp.*;
-import com.aerofs.ssmp.SSMPClient.ConnectionListener;
+import com.aerofs.ssmp.SSMPConnection;
+import com.aerofs.ssmp.SSMPEvent;
 import com.aerofs.ssmp.SSMPEvent.Type;
-import com.aerofs.ssmp.SSMPRequest.SubscriptionFlag;
+import com.aerofs.ssmp.SSMPResponse;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.util.concurrent.Futures.addCallback;
-
-public class ChangeNotificationSubscriber implements ConnectionListener, EventHandler
+public class ChangeNotificationSubscriber extends SSMPNotificationSubscriber
 {
     private final static Logger l = Loggers.getLogger(ChangeNotificationSubscriber.class);
 
-    private final SSMPConnection _ssmp;
-    private final IMapSIndex2SID _sidx2sid;
     private final CoreScheduler _sched;
-
-    private final AtomicBoolean _connected = new AtomicBoolean();
-    private final Map<SID, Store> _stores = new ConcurrentHashMap<>();
 
     @Inject
     public ChangeNotificationSubscriber(SSMPConnection ssmp, IMapSIndex2SID sidx2sid,
                                         CoreScheduler sched)
     {
-        _ssmp = ssmp;
+        super(ssmp, sidx2sid);
         _sched = sched;
-        _sidx2sid = sidx2sid;
-    }
-
-    public void init_()
-    {
-        _ssmp.addConnectionListener(this);
-        _ssmp.addEventHandler(this);
-    }
-
-    public void subscribe_(Store s)
-    {
-        SID sid = _sidx2sid.get_(s.sidx());
-        _stores.put(sid, s);
-        if (_connected.get()) {
-            subscribe(sid);
-        }
-    }
-
-    public void unsubscribe_(Store s)
-    {
-        _stores.remove(_sidx2sid.get_(s.sidx()));
     }
 
     @Override
-    public void connected() {
-        _connected.set(true);
-        l.warn("connected to lipwig");
-        _stores.keySet().forEach(this::subscribe);
+    protected FutureCallback<SSMPResponse> subscribeCallback(SID sid) {
+        return new FutureCallback<SSMPResponse>() {
+            @Override
+            public void onSuccess(SSMPResponse r) {
+                if (r.code == SSMPResponse.OK) {
+                    l.warn("subscribed to polaris notif for {}", sid);
+                    scheduleFetch(sid);
+                } else {
+                    l.error("failed to polaris sub {} {}", sid, r.code);
+                    // TODO: exp retry?
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                // TODO: force reconnect?
+            }
+        };
     }
 
     @Override
-    public void disconnected() {
-        _connected.set(false);
-        l.warn("disconnected from lipwig");
-    }
-
-    private void subscribe(SID sid)
-    {
-        SSMPIdentifier topic = SSMPIdentifier.fromInternal("pol/" + sid.toStringFormal());
-        addCallback(_ssmp.request(SSMPRequest.subscribe(topic, SubscriptionFlag.NONE)),
-                new FutureCallback<SSMPResponse>() {
-                    @Override
-                    public void onSuccess(SSMPResponse r) {
-                        if (r.code == SSMPResponse.OK) {
-                            l.warn("subscribed to polaris notif for {}", sid);
-                            scheduleFetch(sid);
-                        } else {
-                            l.error("failed to polaris sub {} {}", sid, r.code);
-                            // TODO: exp retry?
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        // TODO: force reconnect?
-                    }
-                });
+    protected String getStoreTopic(SID sid) {
+        return "pol/" + sid.toStringFormal();
     }
 
     @Override

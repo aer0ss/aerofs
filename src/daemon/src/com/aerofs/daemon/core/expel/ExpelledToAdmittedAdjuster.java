@@ -9,13 +9,14 @@ import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
-import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueWrapper;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.store.*;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Sets;
@@ -37,13 +38,13 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final LogicalStagingArea _sa;
     private final LogicalStagingAreaDatabase _sadb;
     private final RemoteContentDatabase _rcdb;
-    private final ContentFetchQueueDatabase _cfqdb;
+    private final ContentFetchQueueWrapper _cfqw;
 
     @Inject
     public ExpelledToAdmittedAdjuster(StoreCreator sc,MapSIndex2Store sidx2s,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
             CentralVersionDatabase cvdb, LogicalStagingAreaDatabase sadb,
-            RemoteContentDatabase rcdb, ContentFetchQueueDatabase cfqdb)
+            RemoteContentDatabase rcdb, ContentFetchQueueWrapper cfqw)
     {
         _sc = sc;
         _ds = ds;
@@ -52,7 +53,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         _sidx2s = sidx2s;
         _cvdb = cvdb;
         _rcdb = rcdb;
-        _cfqdb = cfqdb;
+        _cfqw = cfqw;
         _sadb = sadb;
     }
 
@@ -155,7 +156,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         // see PolarisContentVersionControl#fileExpelled_
         _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
         if (!_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) return;
-        _cfqdb.insert_(soid.sidx(), soid.oid(), t);
+        _cfqw.insert_(soid.sidx(), soid.oid(), t);
 
         _tlaf.get(t).add_(soid.sidx());
     }

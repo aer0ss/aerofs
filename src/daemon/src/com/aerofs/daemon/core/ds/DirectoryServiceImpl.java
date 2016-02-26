@@ -4,43 +4,40 @@
 
 package com.aerofs.daemon.core.ds;
 
-import java.io.PrintStream;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Set;
-
 import com.aerofs.base.Loggers;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.*;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.Path;
+import java.io.PrintStream;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Set;
 
 import static com.aerofs.lib.Util.set;
 import static com.aerofs.lib.Util.unset;
@@ -417,9 +414,9 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         _mdb.setOAFlags_(soid, flags, t);
 
         if (nowExpelled) {
-            for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectExpelled_(soid, t);
-            }
+            for (IDirectoryServiceListener l : _listeners) l.objectExpelled_(soid, t);
+        } else {
+            for (IDirectoryServiceListener l : _listeners) l.objectAdmitted_(soid, t);
         }
 
         _cacheOA.invalidate_(soid);
@@ -568,5 +565,12 @@ public class DirectoryServiceImpl extends DirectoryService implements ObjectSurg
         _mdb.deleteOAsAndCAsForStore_(sidx, t);
         _cacheDS.invalidateAll_();
         _cacheOA.invalidateAll_();
+    }
+
+    @Override
+    public void setOASyncAttributes(SOID soid, boolean synced, long oosChildren, Trans t)
+            throws SQLException {
+        _mdb.updateSyncColumns_(soid.sidx(), soid.oid(), synced, oosChildren, t);
+        _cacheOA.invalidate_(soid);
     }
 }

@@ -55,12 +55,21 @@ public class PolarisSchema implements ISchema {
             // remote content fetch queue (per-store)
             T_CONTENT_QUEUE         = "cq",
             C_CONTENT_QUEUE_IDX     = "cq_i",
-            C_CONTENT_QUEUE_OID     = "cq_o";
+            C_CONTENT_QUEUE_OID     = "cq_o",
+
+            // content available post queue
+            T_AVAILABLE_CONTENT         = "ac",
+            C_AVAILABLE_CONTENT_SIDX    = "ac_s",
+            C_AVAILABLE_CONTENT_OID     = "ac_o",
+            C_AVAILABLE_CONTENT_VERSION = "ac_v";
 
 
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException {
         createPolarisFetchTables(s, dbcw);
+
+        //TODO uncomment when sync status flag is removed
+        //createAvailableContentTable(s, dbcw);
     }
 
     public static void createPolarisFetchTables(Statement s, IDBCW dbcw) throws SQLException
@@ -93,6 +102,14 @@ public class PolarisSchema implements ISchema {
 
         s.executeUpdate("create index " + T_META_BUFFER + "0 on " + T_META_BUFFER
                 + "(" + C_META_BUFFER_SIDX + "," + C_META_BUFFER_BOUND + ")");
+    }
 
+    public static void createAvailableContentTable(Statement s, IDBCW dbcw) throws SQLException {
+        //create available content table
+        s.executeUpdate("create table " + T_AVAILABLE_CONTENT + "("
+                + C_AVAILABLE_CONTENT_SIDX + " integer not null,"
+                + C_AVAILABLE_CONTENT_OID + dbcw.uniqueIdType() + "not null,"
+                + C_AVAILABLE_CONTENT_VERSION + dbcw.longType() + "not null,"
+                + "primary key(" + C_AVAILABLE_CONTENT_SIDX + ", " + C_AVAILABLE_CONTENT_OID + "))");
     }
 }

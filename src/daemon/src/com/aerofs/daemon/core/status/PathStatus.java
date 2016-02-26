@@ -13,8 +13,13 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
+
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.IN_SYNC;
+import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.UNKNOWN;
 
 /**
  * The "path status" is a compact status indicator at path (file/directory) granularity, suitable
@@ -23,18 +28,26 @@ import java.util.Map.Entry;
 public class PathStatus
 {
     private final PathFlagAggregator _tsa;
+    private final ISyncStatusPropagator _syncStatusPropagator;
 
     @Inject
-    public PathStatus(PathFlagAggregator tsa)
+    public PathStatus(PathFlagAggregator tsa, ISyncStatusPropagator syncStatusPropagator)
     {
         _tsa = tsa;
+        _syncStatusPropagator = syncStatusPropagator;
     }
 
-    public PBPathStatus getStatus_(Path path)
+    public PBPathStatus getStatus_(Path path) throws SQLException
     {
-        // TODO remove the Sync value here, once we rebuild the shell ext.
         return PBPathStatus.newBuilder()
-                .setSync(Sync.UNKNOWN)
+                .setSync(_syncStatusPropagator.getSync_(path))
+                .setFlags(_tsa.state_(path))
+                .build();
+    }
+
+    public PBPathStatus getStatus_(Path path, Sync sync) throws SQLException {
+        return PBPathStatus.newBuilder()
+                .setSync(sync == IN_SYNC ? IN_SYNC : UNKNOWN)
                 .setFlags(_tsa.state_(path))
                 .build();
     }
@@ -42,9 +55,10 @@ public class PathStatus
     /**
      * Update aggregated upload state
      * @return paths whose status was affected and their new aggregated status
+     * @throws SQLException
      */
     public Map<Path, PBPathStatus> setTransferState_(SOCID socid, @Nullable Path path,
-            TransferProgress value, int direction)
+            TransferProgress value, int direction) throws SQLException
     {
         assert !socid.cid().isMeta();
         return notificationsForFlagChanges_(
@@ -53,17 +67,17 @@ public class PathStatus
 
     /**
      * @return path whose status was affected and their new "path status"
+     * @throws SQLException
      */
-    private Map<Path, PBPathStatus> notificationsForFlagChanges_(Map<Path, Integer> flagChanges)
+    private Map<Path, PBPathStatus> notificationsForFlagChanges_(Map<Path, Integer> flagChanges) throws SQLException
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();
 
         for (Entry<Path, Integer> e : flagChanges.entrySet()) {
             Path path = e.getKey();
 
-            // TODO remove the Sync value here, once we rebuild the shell ext.
             notifications.put(path, PBPathStatus.newBuilder()
-                    .setSync(Sync.UNKNOWN)
+                    .setSync(_syncStatusPropagator.getSync_(path))
                     .setFlags(e.getValue())
                     .build());
         }
@@ -74,8 +88,9 @@ public class PathStatus
     /**
      * Update aggregated status flags
      * @return paths whose status was affected and their new aggregated status
+     * @throws SQLException
      */
-    public Map<Path, PBPathStatus> setConflictState_(Map<Path, Boolean> conflictChanges)
+    public Map<Path, PBPathStatus> setConflictState_(Map<Path, Boolean> conflictChanges) throws SQLException
     {
         Map<Path, Integer> flagChanges = Maps.newHashMap();
         for (Entry<Path, Boolean> e : conflictChanges.entrySet()) {

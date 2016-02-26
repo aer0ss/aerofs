@@ -1,22 +1,18 @@
 package com.aerofs.daemon.lib.db;
 
-import java.sql.SQLException;
-import java.util.Set;
+import com.aerofs.base.ex.ExAlreadyExist;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.lib.id.FID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.ids.OID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import java.sql.SQLException;
+import java.util.Set;
 
 // TODO return iterators instead of collections for all methods
 
@@ -101,4 +97,6 @@ public interface IMetaDatabase
     long getBytesUsed_(@Nullable SIndex sidx) throws SQLException;
 
     void setBytesUsed_(SIndex sidx, long l, Trans t) throws SQLException;
+
+    boolean updateSyncColumns_(SIndex sidx, OID oid, boolean synced, long oosChildren, Trans t) throws SQLException;
 }

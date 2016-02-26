@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.ds;
 
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
@@ -39,4 +39,8 @@ public interface IDirectoryServiceListener
     // NB: only called for explicitly expelled object
     // NOT for every implicitly expelled children
     default void objectExpelled_(SOID soid, Trans t) throws SQLException {}
+
+    // NB: only called for explicitly expelled object
+    // NOT for every implicitly expelled children
+    default void objectAdmitted_(SOID soid, Trans t) throws SQLException {}
 }

@@ -46,6 +46,7 @@ public class DaemonPostUpdateTasks
             DPUTSubmitLocalTreeToPolaris.class,
             DPUTHandlePrePhoenixConflicts.class,
             DPUTDropLegacyTables.class,
+            DPUTSyncStatusTableAlterations.class
             // new tasks go here - also, update PHOENIX_CONVERSION_TASKS counter!
     };
 

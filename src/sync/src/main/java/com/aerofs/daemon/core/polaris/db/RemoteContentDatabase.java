@@ -4,14 +4,14 @@
 
 package com.aerofs.daemon.core.polaris.db;
 
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.store.IStoreCreationOperator;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
@@ -184,5 +184,18 @@ public class RemoteContentDatabase extends AbstractDatabase
         try (ResultSet rs = query(_pswGetMaxVersion.get(sidx), oid.getBytes())) {
             return rs.next() ? rs.getLong(1) : null;
         }
+    }
+
+    public RemoteContent getMaxRow_(SIndex sidx, OID oid) throws SQLException {
+        RemoteContent maxRow = null;
+        try (IDBIterator<RemoteContent> list = list_(sidx, oid)) {
+            while (list.next_()) {
+                RemoteContent remoteContent = list.get_();
+                if (maxRow == null || remoteContent.version > maxRow.version) {
+                    maxRow = remoteContent;
+                }
+            }
+        }
+        return maxRow;
     }
 }

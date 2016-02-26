@@ -4,22 +4,22 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ds.*;
+import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
+import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.object.ObjectDeleter;
+import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.lib.db.ExpulsionDatabase;
-import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
-import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.object.ObjectDeleter;
-import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.DaemonPolarisStore;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -34,11 +34,13 @@ import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
+
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
 import java.sql.SQLException;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -69,7 +71,7 @@ public class ImmigrantCreator
     private final ContentChangesDatabase _ccdb;
     private final RemoteContentDatabase _rcdb;
     private final ExpulsionDatabase _exdb;
-    private final ContentFetchQueueDatabase _cfqdb;
+    private final ContentFetchQueueWrapper _cfqw;
     private final MapSIndex2Store _sidx2s;
     private final PolarisAsyncClient _client;
 
@@ -80,7 +82,7 @@ public class ImmigrantCreator
             ObjectMover om, ObjectDeleter od, ObjectSurgeon os,
             RemoteLinkDatabase rldb, MetaChangesDatabase mcdb,
             ContentChangesDatabase ccdb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
-            ExpulsionDatabase exdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s,
+            ExpulsionDatabase exdb, ContentFetchQueueWrapper cfqw, MapSIndex2Store sidx2s,
             PolarisAsyncClient.Factory clientFactory)
     {
         _ds = ds;
@@ -95,7 +97,7 @@ public class ImmigrantCreator
         _rcdb = rcdb;
         _cvdb = cvdb;
         _exdb = exdb;
-        _cfqdb = cfqdb;
+        _cfqw = cfqw;
         _sidx2s = sidx2s;
         // TODO: use same instance as HdShareFolder?
         _client = clientFactory.create();
@@ -346,7 +348,7 @@ public class ImmigrantCreator
                 boolean isExpelled = _ds.getOA_(soidTo).isExpelled();
 
                 if (reuseId && preserveVersions_(sidxFrom, oidFrom, oaFrom.type(), sidxTo, t) && !isExpelled) {
-                    _cfqdb.insert_(sidxTo, oidFrom, t);
+                    _cfqw.insert_(sidxTo, oidFrom, t);
                 }
 
                 // no fiddling with physical objects if the target is expelled...
