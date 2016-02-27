@@ -301,6 +301,15 @@ def edit_preferences():
         user=user
     )
 
+@blueprint.route("/delete", methods=["GET", "POST"])
+def delete_user_account():
+
+    user = login.current_user
+    db.session.delete(user)
+    db.session.commit()
+    flash(u'Account deleted.', 'success')
+
+    return redirect(url_for(".login_page"))
 
 @blueprint.route("/users/invitation", methods=["POST"])
 @login.login_required
