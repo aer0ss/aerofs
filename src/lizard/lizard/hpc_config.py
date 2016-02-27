@@ -176,8 +176,10 @@ def repackage(self, subdomain):
         db.session.commit()
 
         #Let them know they have an appliance
-        admin = models.Admin.query.get(session.deployment.customer_id)
-        notifications.send_hpc_trial_setup_email(admin, session.base_url)
+        admins = models.Admin.query.filter_by(
+            customer_id=session.deployment.customer_id).all()
+        for admin in admins:
+            notifications.send_hpc_trial_setup_email(admin, session.base_url)
 
     except Exception as e:
         raise self.retry(exc=e, countdown=30, max_retries=10)
