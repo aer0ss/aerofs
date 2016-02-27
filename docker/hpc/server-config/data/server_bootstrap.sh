@@ -38,6 +38,13 @@ docker run --detach --restart=always                               \
     --name=hpc-logrotator                                          \
     registry.aerofs.com/aerofs/hpc-logrotator:latest
 
+# Monitoring
+docker run --detach --restart=always                               \
+    --publish=5000:5000                                            \
+    --volume=/var/run/docker.sock:/var/run/docker.sock             \
+    --volume=/var/hpc-monitoring:/state                            \
+    --name=hpc-monitoring                                          \
+    registry.aerofs.com/aerofs/hpc-monitoring:latest
 
 echo ""
 echo "HPC server configured successfully!"
