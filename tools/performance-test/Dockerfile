@@ -22,14 +22,14 @@ RUN apt-get update && apt-get install -y \
 
 # Terraform
 RUN cd /usr/local/bin &&\
-    curl -L https://bintray.com/artifact/download/mitchellh/terraform/terraform_0.6.6_linux_amd64.zip -o terraform.zip &&\
+    curl -L https://releases.hashicorp.com/terraform/0.6.6/terraform_0.6.6_linux_amd64.zip -o terraform.zip &&\
     unzip terraform.zip &&\
     rm terraform.zip
 
 # Ansible
-RUN wget https://launchpad.net/~ansible/+archive/ubuntu/ansible/+files/ansible_2.0.0.2-1ppa~vivid_all.deb -O /tmp/ansible.deb &&\
-    dpkg -i /tmp/ansible.deb &&\
-    rm -f /tmp/ansible.deb
+RUN wget https://launchpad.net/~ansible/+archive/ubuntu/ansible/+files/ansible_2.0.0.2-1ppa~vivid_all.deb -O ansible.deb &&\
+    dpkg -i ansible.deb &&\
+    rm -f ansible.deb
 
 # Terraform-inventory (to connect Terraform to Ansible)
 RUN cd /usr/local/bin &&\
@@ -39,9 +39,9 @@ RUN cd /usr/local/bin &&\
 
 # Vault
 RUN cd /usr/local/bin &&\
-    curl -L https://dl.bintray.com/mitchellh/vault/vault_0.2.0_linux_amd64.zip -o install.zip &&\
-    unzip install.zip &&\
-    rm install.zip
+    curl -L https://releases.hashicorp.com/vault/0.2.0/vault_0.2.0_linux_amd64.zip -o vault.zip &&\
+    unzip vault.zip &&\
+    rm vault.zip
 
 ENV VAULT_ADDR http://vault.arrowfs.org:8200
 
