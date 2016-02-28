@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.phy.linked.linker.scanner;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.Lazy;
 import com.aerofs.base.Loggers;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -39,7 +40,7 @@ import static com.aerofs.defects.Defects.newFrequentDefect;
 public class ScanSessionQueue implements IDumpStatMisc
 {
     private static Logger l = Loggers.getLogger(ScanSessionQueue.class);
-    private static Defect defect = newFrequentDefect("core.scan_session_queue");
+    private static Lazy<Defect> defect = new Lazy<>(() -> newFrequentDefect("core.scan_session_queue"));
 
     private static class TimeKey implements Comparable<TimeKey>
     {
@@ -368,7 +369,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     private void onException(Exception e, final TimeKey tk, final PathKey pk)
     {
-        defect.setMessage("scan exception retry")
+        defect.get().setMessage("scan exception retry")
                 .setException(e)
                 .sendAsync();
 
