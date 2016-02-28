@@ -165,8 +165,7 @@ shelobControllers.controller('FileListCtrl', ['$scope',  '$rootScope', '$http', 
             } else {
                 $q.reject({status:500});
             }
-
-        }, _handleFailure);
+        });
     };
 
     // Get link sharing data, check if objects are done loading
