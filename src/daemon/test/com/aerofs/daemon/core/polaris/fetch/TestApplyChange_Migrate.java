@@ -47,7 +47,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
     OID qux = OID.generate();
 
     DID did = DID.generate();
-    static final ContentHash h = new ContentHash(BaseSecUtil.hash());
+    static final ContentHash H = new ContentHash(BaseSecUtil.hash());
 
     static final byte[] EMPTY = {};
     static final byte[] CONTENT = {'d', 'e', 'a', 'd'};
@@ -95,7 +95,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                 insert(foo, "bar", bar, ObjectType.FOLDER),
                 insert(bar, "baz", baz, ObjectType.FILE),
                 insert(bar, "qux", qux, ObjectType.FOLDER),
-                updateContent(baz, did, h, 0L, 42L),
+                updateContent(baz, did, H, 0L, 42L),
                 share(foo)
         );
 
@@ -129,7 +129,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                 insert(OID.ROOT, "moved", bar2, ObjectType.FOLDER, bar),
                 insert(bar2, "baz", baz2, ObjectType.FILE, baz),
                 insert(bar2, "qux", qux2, ObjectType.FOLDER, qux),
-                updateContent(baz2, did, h, 0L, 42L)
+                updateContent(baz2, did, H, 0L, 42L)
         );
 
         apply(shared,
@@ -163,7 +163,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                 insert(foo, "bar", bar, ObjectType.FOLDER),
                 insert(bar, "baz", baz, ObjectType.FILE),
                 insert(bar, "qux", qux, ObjectType.FOLDER),
-                updateContent(baz, did, h, 0L, 42L),
+                updateContent(baz, did, H, 0L, 42L),
                 share(foo)
         );
 
@@ -202,7 +202,7 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                 insert(OID.ROOT, "moved", bar2, ObjectType.FOLDER, bar),
                 insert(bar2, "baz", baz2, ObjectType.FILE, baz),
                 insert(bar2, "qux", qux2, ObjectType.FOLDER, qux),
-                updateContent(baz2, did, h, 0L, 42L)
+                updateContent(baz2, did, H, 0L, 42L)
         );
 
         LogicalObjectsPrinter.printRecursively(rootSID, ds);
@@ -223,5 +223,50 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                                         folder("qux", qux)))));
 
         assertHasContentChanges(sidx, baz2);
+    }
+
+    // NB: this is not actually exercising migration but it requires a working physical storage...
+    @Test
+    public void shouldHandleMoveDeleteMove() throws Exception {
+        OID foo = OID.generate();
+        OID bar = OID.generate();
+        OID baz = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(bar, "baz", baz, ObjectType.FILE),
+                updateContent(baz, H, 0L, 1234L)
+        );
+
+        try (Trans t = tm.begin_()) {
+            setContent(sidx, baz, EMPTY, 1234, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        mds.expect(rootSID,
+                folder("foo", foo),
+                folder("bar", bar,
+                        file("baz", baz, content(EMPTY, 1234L))));
+
+        apply(
+                insert(foo, "bar", bar, ObjectType.FOLDER),
+                remove(OID.ROOT, bar),
+                remove(OID.ROOT, foo),
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                remove(foo, bar)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        // NB: the CA disappears because the deletion happens before the move
+        // TODO: ideally we'd restore the last local version from sync history in such a case
+        mds.expect(rootSID,
+                folder(ClientParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
+                folder("bar", bar,
+                        file("baz", baz)));
     }
 }

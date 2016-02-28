@@ -435,6 +435,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
         _ds.setOAParentAndName_(oaChild, oaParent, name, t);
 
+        // TODO: attempt to restore last local version when moving out of trash
         _expulsion.objectMoved_(pOld, oaChild.soid(), PhysicalOp.APPLY, t);
 
         // all local meta changes affecting the same child are now obsolete

@@ -492,18 +492,18 @@ public class ImmigrantCreator
         return shouldCollect;
     }
 
-    static class MigratedPath
+    public static class MigratedPath
     {
         public final ResolvedPath from;
         public final ResolvedPath to;
 
-        MigratedPath(ResolvedPath from, ResolvedPath to)
+        public MigratedPath(ResolvedPath from, ResolvedPath to)
         {
             this.from = from;
             this.to = to;
         }
 
-        MigratedPath join(OA from, SOID to, String name)
+        public MigratedPath join(OA from, SOID to, String name)
         {
             return new MigratedPath(this.from.join(from.soid(), from.name()), this.to.join(to, name));
         }

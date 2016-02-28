@@ -112,8 +112,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
     protected MapAlias2Target a2t;
     protected MetaChangesDatabase mcdb;
 
-    final Trans t = mock(Trans.class);
-
     protected IPhysicalStorage ps = setupPhysicalStorage();
     protected final Map<SOID, IPhysicalFile> files = new HashMap<>();
 

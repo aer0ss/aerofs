@@ -16,7 +16,6 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -107,7 +106,7 @@ public class LogicalStagingAreaDatabase extends AbstractDatabase
 
         @Override
         public String toString() {
-            return "{" + Joiner.on(",").join(historyPath, rev) + "}";
+            return "{" + historyPath +"," + rev + "}";
         }
     }
 

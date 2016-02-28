@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
+import com.aerofs.daemon.core.migration.ImmigrantCreator.MigratedPath;
 import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -30,6 +31,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
@@ -82,36 +84,37 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         // FIXME: ugh! nasty immigration business down here
         // unfortunately it is far from trivial to refactor
         // FIXME(phoenix): remove all migration stuff when burning legacy code path
-        _ds.walk_(soidRoot, p, new IObjectWalker<ResolvedPath>() {
+        _ds.walk_(soidRoot, new MigratedPath(pathOld, p), new IObjectWalker<MigratedPath>() {
             @Override
-            public ResolvedPath prefixWalk_(ResolvedPath parentPath, OA oa)
+            public MigratedPath prefixWalk_(MigratedPath parentPath, OA oa)
                     throws Exception {
                 boolean isRoot = soidRoot.equals(oa.soid());
 
-                ResolvedPath path = isRoot ? parentPath : parentPath.join(oa.soid(), oa.name());
+                MigratedPath path = isRoot ? parentPath : parentPath.join(oa, oa.soid(), oa.name());
 
                 // skip the current node and its children if the effective state of the current
                 // object doesn't change
                 if (oa.isSelfExpelled()) return null;
 
-                _sa.ensureClean_(path, t);
+                _sa.ensureClean_(path.from, t);
 
                 // NB: MUST refresh OA in case the staging area had to clean things up
                 oa = _ds.getOA_(oa.soid());
 
                 switch (oa.type()) {
                 case FILE:
+                    checkState(oa.cas().isEmpty());
                     _imd.detectAndPerformImmigration_(oa, op, t);
                     fileAdmitted_(oa.soid(), t);
                     return null;
                 case DIR:
-                    _ps.newFolder_(path).create_(op, t);
+                    _ps.newFolder_(path.to).create_(op, t);
                     return path;
                 case ANCHOR:
                     boolean immigrated = _imd.detectAndPerformImmigration_(oa, op, t);
                     if (!immigrated) {
                         SID sid = SID.anchorOID2storeSID(oa.soid().oid());
-                        IPhysicalFolder pf = _ps.newFolder_(path);
+                        IPhysicalFolder pf = _ps.newFolder_(path.to);
                         pf.create_(op, t);
                         _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
                         pf.promoteToAnchor_(sid, op, t);
@@ -124,7 +127,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
             }
 
             @Override
-            public void postfixWalk_(ResolvedPath parentPath, OA oa) throws SQLException {
+            public void postfixWalk_(MigratedPath parentPath, OA oa) throws SQLException {
                 // remove SA entry to prevent future cleanup of admitted subtree
                 // NB: only delete the SA entry in the postfixWalk, after the subtree is cleaned or
                 // the prefixWalk_ will not clean children correctly

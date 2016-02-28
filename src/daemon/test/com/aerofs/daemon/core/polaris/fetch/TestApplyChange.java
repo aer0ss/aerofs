@@ -16,6 +16,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -35,8 +36,14 @@ import static org.mockito.Mockito.verify;
 // TODO: more name conflict tests
 public class TestApplyChange extends AbstractTestApplyChange
 {
+    static final byte[] EMPTY = {};
+    static final ContentHash H = new ContentHash(BaseSecUtil.hash());
+
     private void addMetaChange(SIndex sidx) throws SQLException {
-        mcdb.insertChange_(sidx, OID.generate(), OID.generate(), "dummy", t);
+        try (Trans t = tm.begin_()) {
+            mcdb.insertChange_(sidx, OID.generate(), OID.generate(), "dummy", t);
+            t.commit_();
+        }
     }
     
     @Test
@@ -348,8 +355,11 @@ public class TestApplyChange extends AbstractTestApplyChange
     public void shouldDeleteChild() throws Exception
     {
         OID oid = OID.generate();
-        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
-        ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
+        try (Trans t = tm.begin_()) {
+            rldb.insertParent_(sidx, oid, OID.ROOT, "foo", state.changes.size(), t);
+            ds.createOA_(OA.Type.DIR, sidx, oid, OID.ROOT, "foo", t);
+            t.commit_();
+        }
         state.get(sidx).put(OID.ROOT, 1L);
 
         apply(
@@ -422,7 +432,10 @@ public class TestApplyChange extends AbstractTestApplyChange
     {
         addMetaChange(sidx);
         OID alias = OID.generate();
-        ds.createOA_(OA.Type.DIR, sidx, alias, OID.ROOT, "foo", t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.DIR, sidx, alias, OID.ROOT, "foo", t);
+            t.commit_();
+        }
 
         OID oid = OID.generate();
 
@@ -755,8 +768,11 @@ public class TestApplyChange extends AbstractTestApplyChange
     public void shouldRenameRemoteObject() throws Exception
     {
         OID local = OID.generate();
-        ds.createOA_(OA.Type.DIR, sidx, local, OID.ROOT, "foo", t);
-        rldb.insertParent_(sidx, local, OID.ROOT, "foo", 2, t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.DIR, sidx, local, OID.ROOT, "foo", t);
+            rldb.insertParent_(sidx, local, OID.ROOT, "foo", 2, t);
+            t.commit_();
+        }
 
         OID remote = OID.generate();
 
@@ -783,7 +799,10 @@ public class TestApplyChange extends AbstractTestApplyChange
 
         // local change: tmp
         addMetaChange(sidx);
-        ds.createOA_(OA.Type.DIR, sidx, OID.generate(), OID.ROOT, "tmp", t);
+        try (Trans t = tm.begin_()) {
+            ds.createOA_(OA.Type.DIR, sidx, OID.generate(), OID.ROOT, "tmp", t);
+            t.commit_();
+        }
 
         apply(
                 rename(OID.ROOT, "tmp", b),
@@ -844,8 +863,11 @@ public class TestApplyChange extends AbstractTestApplyChange
         OID oid = OID.generate();
         ContentHash h = new ContentHash(BaseSecUtil.hash());
         mds.create(rootSID, file("foo", oid, content(3L, 42, h)));
-        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
-        ccdb.insertChange_(sidx, oid, t);
+        try (Trans t = tm.begin_()) {
+            rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
+            ccdb.insertChange_(sidx, oid, t);
+            t.commit_();
+        }
 
         assertNull(cvdb.getVersion_(sidx, oid));
         assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
@@ -863,22 +885,24 @@ public class TestApplyChange extends AbstractTestApplyChange
     public void shouldAvoidFalseContentConflict() throws Exception
     {
         OID oid = OID.generate();
-        ContentHash h = new ContentHash(BaseSecUtil.hash());
-        mds.create(rootSID, file("foo", oid, content(3L, 42, h)));
-        rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
-        ccdb.insertChange_(sidx, oid, t);
+        mds.create(rootSID, file("foo", oid, content(3L, 42, H)));
+        try (Trans t = tm.begin_()) {
+            rldb.insertParent_(sidx, oid, OID.ROOT, "foo", 0L, t);
+            ccdb.insertChange_(sidx, oid, t);
+            t.commit_();
+        }
 
         assertNull(cvdb.getVersion_(sidx, oid));
-        assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
+        assertEquals(H, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
 
         apply(
-                updateContent(oid, h, 3L, 0L)
+                updateContent(oid, H, 3L, 0L)
         );
 
         assertFalse(ccdb.hasChange_(sidx, oid));
         assertEquals((Long) 1L, cvdb.getVersion_(sidx, oid));
         assertTrue(rcdb.hasRemoteChanges_(sidx, oid, 0L));
-        assertEquals(h, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
+        assertEquals(H, ds.getCAHash_(new SOKID(sidx, oid, KIndex.MASTER)));
     }
 
     @Test
