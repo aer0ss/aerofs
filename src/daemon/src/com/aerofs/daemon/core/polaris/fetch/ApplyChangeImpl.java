@@ -172,6 +172,12 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     public void insert_(SOID parent, OID oidChild, String name, ObjectType objectType,
                  @Nullable OID migrant, long mergeBoundary, Trans t) throws Exception {
         OA.Type type = type(objectType);
+
+        // insert, delete sequence can leave a buffered OID
+        // a subsequent insert should not try to re-insert the object into the meta buffer
+        boolean isBuffered = _mbdb.isBuffered_(new SOID(parent.sidx(), oidChild));
+        if (isBuffered) return;
+
         // buffer inserts if:
         //   1. there are local changes
         //   2. the parent is already buffered

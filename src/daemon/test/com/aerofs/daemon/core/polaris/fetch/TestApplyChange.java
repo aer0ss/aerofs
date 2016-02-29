@@ -401,6 +401,33 @@ public class TestApplyChange extends AbstractTestApplyChange
     }
 
     @Test
+    public void shouldHandleBufferedInsertDeleteInsert() throws Exception
+    {
+        // force buffering
+        addMetaChange(sidx);
+
+        OID oid = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "foo", oid, ObjectType.FOLDER),
+                remove(OID.ROOT, oid),
+                insert(OID.ROOT, "foo", oid, ObjectType.FOLDER)
+        );
+
+        // verify
+        assertNull(ds.getOANullable_(new SOID(sidx, oid)));
+
+        // change to remote logical tree
+        assertEquals(OID.ROOT, rldb.getParent_(sidx, oid).parent);
+        assertIsBuffered(true, oid);
+
+        ac.applyBufferedChanges_(sidx, 42);
+
+        mds.expect(rootSID,
+                folder("foo", oid));
+    }
+
+    @Test
     public void shouldInsertBufferedObjectUnderTrash() throws Exception
     {
         // force buffering
