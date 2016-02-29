@@ -5,6 +5,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNoResource;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.activity.OutboundEventLogger;
@@ -134,6 +135,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
             l.warn("{} fail process msg cause:{}", msg.did(), CoreProtocolUtil.typeString(msg.pb()),
                     BaseLogUtil.suppress(e,
                             ExUpdateInProgress.class,
+                            ExNoResource.class,
                             ExNoComponentWithSpecifiedVersion.class));
             _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
         }
