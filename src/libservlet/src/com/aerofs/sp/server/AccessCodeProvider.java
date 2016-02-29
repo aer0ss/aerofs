@@ -4,6 +4,7 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.base.Loggers;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 
 public class AccessCodeProvider
@@ -12,7 +13,7 @@ public class AccessCodeProvider
 
     // Important: recall that IdentitySessionManager speaks seconds, not milliseconds,
     // due to the underlying key-expiration technology.
-    private static final int TIMEOUT_SEC = 180;
+    private static final int TIMEOUT_SEC = 30;
 
     private final AuditClient               _auditClient;
     private final IdentitySessionManager    _identitySessionManager;

@@ -30,7 +30,10 @@ import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common.*;
+import com.aerofs.proto.Common.PBException;
+import com.aerofs.proto.Common.PBFolderInvitation;
+import com.aerofs.proto.Common.PBPermissions;
+import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.*;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
@@ -102,6 +105,7 @@ import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -110,6 +114,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.MessagingException;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
@@ -123,10 +128,14 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.base.config.ConfigurationProperties.*;
+import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
+
 import static java.lang.String.format;
 
 public class SPService implements ISPService
@@ -1706,9 +1715,20 @@ public class SPService implements ISPService
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String token = _zelda.createAccessToken(soid, accessCode, 0);
 
-        UrlShare link = _factUrlShare.save(restObject, token, requester.id());
-        PBRestObjectUrl pbRestObjectUrl = link.toPB();
-        _sqlTrans.commit();
+        UrlShare link;
+        PBRestObjectUrl pbRestObjectUrl;
+        try {
+            link = _factUrlShare.save(restObject, token, requester.id());
+            pbRestObjectUrl = link.toPB();
+            _sqlTrans.commit();
+        } catch (Exception e) {
+            try {
+                _zelda.deleteToken(token);
+            } catch (IOException e1) {
+                l.error("error cleaning up tokens", e);
+            }
+            throw e;
+        }
 
         _auditClient.event(AuditTopic.LINK, "link.create")
                 .add("ip", _remoteAddress.get())
@@ -1789,10 +1809,20 @@ public class SPService implements ISPService
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
                 firstNonNull(oldExpiry, 0L));
-        _zelda.deleteToken(link.getToken());
 
-        link.setRequireLogin(requireLogin, newToken);
-        _sqlTrans.commit();
+        try {
+            link.setRequireLogin(requireLogin, newToken);
+            _sqlTrans.commit();
+        } catch (Exception e) {
+            try {
+                _zelda.deleteToken(newToken);
+            } catch (IOException e1) {
+                l.error("error cleaning up tokens", e);
+            }
+            throw e;
+        }
+
+        _zelda.deleteToken(link.getToken());
 
         _auditClient.event(AuditTopic.LINK, "link.set_require_login")
                 .add("ip", _remoteAddress.get())
@@ -1818,10 +1848,20 @@ public class SPService implements ISPService
 
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, expires);
-        _zelda.deleteToken(link.getToken());
 
-        link.setExpires(expires, newToken);
-        _sqlTrans.commit();
+        try {
+            link.setExpires(expires, newToken);
+            _sqlTrans.commit();
+        } catch (Exception e) {
+            try {
+                _zelda.deleteToken(newToken);
+            } catch (IOException e1) {
+                l.error("error cleaning up tokens", e);
+            }
+            throw e;
+        }
+
+        _zelda.deleteToken(link.getToken());
 
         _auditClient.event(AuditTopic.LINK, "link.set_expiry")
                 .add("ip", _remoteAddress.get())
@@ -1847,10 +1887,20 @@ public class SPService implements ISPService
 
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, 0);
-        _zelda.deleteToken(link.getToken());
 
-        link.removeExpires(newToken);
-        _sqlTrans.commit();
+        try {
+            link.removeExpires(newToken);
+            _sqlTrans.commit();
+        } catch (Exception e) {
+            try {
+                _zelda.deleteToken(newToken);
+            } catch (IOException e1) {
+                l.error("error cleaning up tokens", e);
+            }
+            throw e;
+        }
+
+        _zelda.deleteToken(link.getToken());
 
         _auditClient.event(AuditTopic.LINK, "link.remove_expiry")
                 .add("ip", _remoteAddress.get())
@@ -1873,10 +1923,10 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
-        _zelda.deleteToken(link.getToken());
-
         link.delete();
         _sqlTrans.commit();
+
+        _zelda.deleteToken(link.getToken());
 
         _auditClient.event(AuditTopic.LINK, "link.delete")
                 .add("ip", _remoteAddress.get())
@@ -1903,10 +1953,20 @@ public class SPService implements ISPService
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
                 firstNonNull(oldExpiry, 0L));
-        _zelda.deleteToken(link.getToken());
 
-        link.setPassword(password.toByteArray(), newToken);
-        _sqlTrans.commit();
+        try {
+            link.setPassword(password.toByteArray(), newToken);
+            _sqlTrans.commit();
+        } catch (Exception e) {
+            try {
+                _zelda.deleteToken(newToken);
+            } catch (IOException e1) {
+                l.error("error cleaning up tokens", e);
+            }
+            throw e;
+        }
+
+        _zelda.deleteToken(link.getToken());
 
         _auditClient.event(AuditTopic.LINK, "link.set_password")
                 .add("ip", _remoteAddress.get())
@@ -3840,12 +3900,12 @@ public class SPService implements ISPService
         int groupCount = org.countGroups();
         ListGroupsReply reply = ListGroupsReply.newBuilder()
                 .addAllGroups(groups2pbGroups(org.listGroups(maxResults, offset, searchPrefix)))
-                .setTotalCount(org.countGroups())
+                .setTotalCount(groupCount)
                 .build();
         _sqlTrans.commit();
 
         l.info("{} listed groups; total: {}", user, reply.getGroupsCount());
-        
+
         return createReply(reply);
     }
 

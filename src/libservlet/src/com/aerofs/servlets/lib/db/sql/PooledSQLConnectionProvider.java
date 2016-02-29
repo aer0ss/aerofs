@@ -7,8 +7,9 @@ package com.aerofs.servlets.lib.db.sql;
 import com.aerofs.lib.LibParam;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import org.apache.tomcat.jdbc.pool.PoolProperties;
+
 import org.apache.tomcat.jdbc.pool.DataSource;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -48,6 +49,7 @@ public class PooledSQLConnectionProvider implements IDatabaseConnectionProvider<
         p.setConnectionProperties(
                 "cachePrepStmts=true; autoReconnect=true; " +
                 "useUnicode=true; characterEncoding=utf8;");
+        p.setJdbcInterceptors("ResetAbandonedTimer");
 
         return new DataSource(p);
     }
