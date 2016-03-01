@@ -816,7 +816,6 @@ public class TestConversionResource {
         submitBatchSuccessfully(rootStore, batch);
 
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
-        assertThat(t.maxTransformCount, equalTo(3L));
         assertThat(t.transforms.size(), equalTo(1));
         assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
         assertThat(t.transforms.get(0).getChild(), equalTo(child));
