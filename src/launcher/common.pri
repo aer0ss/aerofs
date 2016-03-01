@@ -24,7 +24,7 @@ win32 {
     DEFINES += WIN32
     RESOURCE_CLIENT = $$AEROFS_ROOT/resource/client/win
 
-    # Link statically with MSVC C++ runtime library to avoid depending on MSVC100.DLL and MSVCR100.DLL
+    # Link statically with MSVC C++ runtime library to avoid depending on MSVC120.DLL and MSVCR120.DLL
     QMAKE_CXXFLAGS_RELEASE -= -MD
     QMAKE_CXXFLAGS_RELEASE += -MT
     QMAKE_CXXFLAGS_DEBUG -= -MD

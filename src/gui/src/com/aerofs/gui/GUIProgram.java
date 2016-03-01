@@ -30,11 +30,11 @@ public class GUIProgram implements IProgram
     private static final String WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE =
             L.product() +
                     " cannot launch because the Microsoft Visual " +
-                    "C++ 2010 redistributable package is not installed. Please go to the " +
-                    "following URL to download and install it:\n\nhttp://ae.ro/msvcpp2010";
+                    "C++ 2013 redistributable package is not installed. Please go to the " +
+                    "following URL to download and install it:\n\nhttp://ae.ro/msvcpp2013";
 
     private static final String WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE =
-            "aerofsd.dll could not load because MSVC 2010 redistributables are missing";
+            "aerofsd.dll could not load because MSVC 2013 redistributables are missing";
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
@@ -51,7 +51,7 @@ public class GUIProgram implements IProgram
             // installed. Display a message box to the user so that he can fix the problem
             if (OSUtil.isWindows()) {
                 try {
-                    System.loadLibrary("msvcp100");
+                    System.loadLibrary("msvcp120");
                 } catch (UnsatisfiedLinkError e1) {
                     linkError = new UnsatisfiedLinkError(WINDOWS_MISSING_MSVC_DLL_EXCEPTION_MESSAGE);
                     showInitErrors("", WINDOWS_UNSATISFIED_LINK_ERROR_MESSAGE);
