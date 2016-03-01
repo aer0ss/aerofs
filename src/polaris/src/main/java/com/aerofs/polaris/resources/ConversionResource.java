@@ -123,7 +123,6 @@ public class ConversionResource {
                     List<Conversion.Tick> currentVersion = getDistributedVersion(child, Conversion.COMPONENT_META, conversion);
                     UniqueID currentParent = Identifiers.isSharedFolder(child) ? dao.mountPoints.getMountPointParent(store, child) : dao.children.getParent(child);
                     UniqueID folderToShare = null;
-                    InsertChild originalInsert = null;
                     // first clause is for multiple users inserting a shared folder
                     if ((Identifiers.isSharedFolder(child) && currentParent == null) || newVersionDominates(currentVersion, ic.versions)) {
                         if (Identifiers.isSharedFolder(child) && currentParent == null)  {
@@ -133,11 +132,11 @@ public class ConversionResource {
                             if (folderAlias == null) {
                                 // folder doesn't exist yet, need to create aliases for the original folder
                                 conversion.addAlias(folder, store, child);
-                            } else {
+                            } else if (!folderAlias.equals(store)){
                                 folderToShare = child;
-                                originalInsert = ic;
                                 // repurpose the op to move the pre-sharing folder to the right spot and name
-                                ic = new InsertChild(folderAlias, dao.objectTypes.get(folderAlias), ic.childName, null, toMap(currentVersion), ic.aliases);
+                                ic = new InsertChild(folderAlias, dao.objectTypes.get(folderAlias), ic.childName, null,
+                                        toMap(getDistributedVersion(folderAlias, Conversion.COMPONENT_META, conversion)), Lists.newArrayList());
                                 child = folderAlias;
                                 currentParent = dao.children.getParent(child);
                             }
@@ -154,7 +153,7 @@ public class ConversionResource {
                                     objectStore.performTransform(dao, token, principal.getDevice(), currentParent, new MoveChild(conflict, currentParent, nonConflictingName(dao, currentParent, conflict, oldName)));
                                 }
                                 objectStore.performTransform(dao, token, principal.getDevice(), child, new Restore());
-                                result = performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
+                                performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
                             } else {
                                 LOGGER.info("discarding op {} on deleted/migrated {}", ic, child);
                             }
@@ -173,7 +172,7 @@ public class ConversionResource {
                     }
 
                     if (folderToShare != null) {
-                        for (TransformBatchOperation op : shareFolder(dao, conversion, store, child, folderToShare, oid, originalInsert)) {
+                        for (TransformBatchOperation op : shareFolder(dao, conversion, store, child, folderToShare, oid, ic.childName)) {
                             result = objectStore.performTransform(dao, token, principal.getDevice(), op.oid, op.operation);
                         }
                     }
@@ -232,26 +231,28 @@ public class ConversionResource {
         }
     }
 
-    private List<TransformBatchOperation> shareFolder(DAO dao, Conversion conversion, UniqueID rootStore, UniqueID folder, UniqueID store, UniqueID destination, InsertChild ic)
+    private List<TransformBatchOperation> shareFolder(DAO dao, Conversion conversion, UniqueID rootStore, UniqueID folder, UniqueID store, UniqueID destination, byte[] name)
     {
+        Preconditions.checkState(Identifiers.isRootStore(rootStore), "sharing folder %s not under non-root store %s", folder, rootStore);
         List<TransformBatchOperation> ops = Lists.newArrayList();
         UniqueID parent = dao.children.getParent(folder);
         Preconditions.checkState(parent != null, "found an alias target %s without a parent", folder);
 
         if (folder.equals(SID.convertedStoreSID2folderOID(new SID(store)))) {
+            Preconditions.checkState(parent.equals(destination), "folder to be shared %s not at right destination");
             // we make the SHARE operation an exception here, in that it will restore a deleted object if necessary
             ops.add(new TransformBatchOperation(parent, new Share(folder)));
             conversion.remapAlias(rootStore, folder, store);
         } else {
             // messy folder to shared folder aliasing, delete the mismatch and start the folder from scratch
             ops.add(new TransformBatchOperation(parent, new RemoveChild(new OID(folder))));
-            ops.add(new TransformBatchOperation(destination, new InsertChild(store, ObjectType.STORE, ic.childName, null, null, null)));
+            ops.add(new TransformBatchOperation(destination, new InsertChild(store, ObjectType.STORE, name, null, null, null)));
             // don't remap the alias here, because we don't want the shared folder to be affected by further changes to folder
         }
         return ops;
     }
 
-    private ArrayList<UniqueID> resolveChild(DAO dao, Conversion conversion, UniqueID store, InsertChild ic)
+    private Set<UniqueID> resolveChild(DAO dao, Conversion conversion, UniqueID store, InsertChild ic)
     {
         assert ic.aliases != null;
         Set<UniqueID> resolutions = Sets.newHashSet();
@@ -260,7 +261,7 @@ public class ConversionResource {
             // Shared Folders cannot have any aliases
             Preconditions.checkArgument(ic.aliases.isEmpty(), "shared folder should not have any aliases");
             resolutions.add(ic.child);
-            return Lists.newArrayList(resolutions);
+            return resolutions;
         }
 
         // a couple things could happen here:
@@ -292,14 +293,14 @@ public class ConversionResource {
                 resolutions.add(ic.child);
             }
         }
-        return Lists.newArrayList(resolutions);
+        return resolutions;
     }
 
-    public UniqueID mergeMultipleResolutions(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID store, ArrayList<UniqueID> resolutions)
+    public UniqueID mergeMultipleResolutions(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID store, Set<UniqueID> resolutions)
     {
         Preconditions.checkArgument(resolutions.size() > 0, "cannot merge empty list of resolutions");
         if (resolutions.size() == 1) {
-            return resolutions.get(0);
+            return resolutions.iterator().next();
         }
         // use the same method the daemon does to choose the target
         UniqueID target = Collections.max(resolutions);
