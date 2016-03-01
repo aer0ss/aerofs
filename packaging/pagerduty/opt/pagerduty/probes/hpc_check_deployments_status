@@ -12,6 +12,7 @@ then
 elif [ $# != 0 ]
 then
 	echo "usage: $0 [url]" >&2
+	exit
 fi
 
 if [ "$(curl -s -o /dev/null -w "%{http_code}" $URL)" != "200" ]

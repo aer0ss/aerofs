@@ -20,6 +20,7 @@ then
 elif [ $# != 0 ]
 then
 	echo "usage: $0 [url] [cpu_threshold] [mem_threshold] [disk_threshold]" >&2
+	exit
 fi
 
 URL=$HOST?cpu_threshold=$CPU\&mem_threshold=$MEM\&disk_threshold=$DISK
