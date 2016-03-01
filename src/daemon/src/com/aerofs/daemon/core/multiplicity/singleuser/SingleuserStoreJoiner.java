@@ -30,7 +30,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgRootSID;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.aerofs.ritual_notification.RitualNotificationServer;
@@ -46,6 +45,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderJoinNotification;
 import static com.aerofs.daemon.core.notification.Notifications.newSharedFolderKickoutNotification;
@@ -61,7 +61,6 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final UnlinkedRootDatabase _urdb;
-    private final CfgUsePolaris _usePolaris;
     private final PolarisAsyncClient _polaris;
     private final RemoteLinkDatabase _rldb;
 
@@ -71,7 +70,7 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStoreHierarchy stores, ObjectCreator oc,
             ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
             SharedFolderAutoUpdater lod, StoreDeleter sd, IMapSIndex2SID sidx2sid,
-            IMapSID2SIndex sid2sidx, UnlinkedRootDatabase urdb, CfgUsePolaris usePolaris,
+            IMapSID2SIndex sid2sidx, UnlinkedRootDatabase urdb,
             PolarisAsyncClient polaris, RemoteLinkDatabase rldb)
     {
         super(ds, os, oc, od);
@@ -83,7 +82,6 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _urdb = urdb;
-        _usePolaris = usePolaris;
         _polaris = polaris;
         _rldb = rldb;
     }
@@ -110,46 +108,42 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
 
         SIndex rootSidx = _sid2sidx.get_(_cfgRootSID.get());
 
-        if (_usePolaris.get()) {
-            OID anchor = SID.storeSID2anchorOID(sid);
-            if (_rldb.getParent_(rootSidx, anchor) != null) {
-                l.info("anchor already exists {}", sid);
-                return;
-            }
+        OID anchor = SID.storeSID2anchorOID(sid);
+        if (_rldb.getParent_(rootSidx, anchor) != null) {
+            l.info("anchor already exists {}", sid);
+            return;
+        }
 
-            if (_rldb.getParent_(rootSidx, SID.anchorOID2folderOID(anchor)) != null) {
-                l.info("original folder already exists {}", sid);
-                return;
-            }
+        if (_rldb.getParent_(rootSidx, SID.anchorOID2folderOID(anchor)) != null) {
+            l.info("original folder already exists {}", sid);
+            return;
+        }
 
-            // create anchor on polaris directly
-            LocalChange c = new LocalChange();
-            c.type = Type.INSERT_CHILD;
-            c.child = anchor.toStringFormal();
-            c.childName = info._name;
-            c.childObjectType = ObjectType.STORE;
-            // pick a locally non-conflicting name to ensure eventual success
-            while (_ds.getChild_(rootSidx, OID.ROOT, c.childName) != null) {
-                c.childName = FileUtil.nextFileName(c.childName);
-            }
-            SettableFuture<Void> f = SettableFuture.create();
+        // create anchor on polaris directly
+        LocalChange c = new LocalChange();
+        c.type = Type.INSERT_CHILD;
+        c.child = anchor.toStringFormal();
+        c.childName = info._name;
+        c.childObjectType = ObjectType.STORE;
+        // pick a locally non-conflicting name to ensure eventual success
+        while (_ds.getChild_(rootSidx, OID.ROOT, c.childName) != null) {
+            c.childName = FileUtil.nextFileName(c.childName);
+        }
+        SettableFuture<Void> f = SettableFuture.create();
 
-            _polaris.post("/objects/" + _cfgRootSID.get().toStringFormal(), c, new AsyncTaskCallback() {
-                @Override
-                public void onSuccess_(boolean hasMore) { f.set(null); }
+        _polaris.post("/objects/" + _cfgRootSID.get().toStringFormal(), c, new AsyncTaskCallback() {
+            @Override
+            public void onSuccess_(boolean hasMore) { f.set(null); }
 
-                @Override
-                public void onFailure_(Throwable t) { f.setException(t); }
-            }, SingleuserStoreJoiner::handle, _sameThread);
+            @Override
+            public void onFailure_(Throwable t) { f.setException(t); }
+        }, SingleuserStoreJoiner::handle, _sameThread);
 
-            try {
-                f.get();
-            } catch (ExecutionException e) {
-                Throwables.propagateIfPossible(e.getCause(), Exception.class);
-                throw e;
-            }
-        } else {
-            createAnchorIfNeeded_(sidx, sid, info._name, rootSidx, t);
+        try {
+            f.get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException e) {
+            Throwables.propagateIfPossible(e.getCause(), Exception.class);
+            throw e;
         }
 
         final Path path = new Path(_cfgRootSID.get(), info._name);

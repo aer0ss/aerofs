@@ -24,8 +24,8 @@ import static com.aerofs.lib.configuration.ClientConfigurationLoader.PROPERTY_BA
 public class ClientParam
 {
     // This number increments every time the protocol is updated
-    public static final int CORE_PROTOCOL_VERSION       = 0x637265CF;
-    public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
+    public static final int CORE_PROTOCOL_VERSION       = 0x637265D2;
+    public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DF0;
 
     // the block size used for content hashing and block storage (see BlockStorage)
     public static final long FILE_BLOCK_SIZE                 = 4 * C.MB;
@@ -149,7 +149,7 @@ public class ClientParam
         // UI and processes can access them.
         public static final int DAEMON_POST_UPDATE_TASKS = 61;
         public static final int UI_POST_UPDATE_TASKS = 2;
-        public static final int PHOENIX_CONVERSION_TASKS = 3;
+        public static final int PHOENIX_CONVERSION_TASKS = 4;
     }
 
     public static class Ritual

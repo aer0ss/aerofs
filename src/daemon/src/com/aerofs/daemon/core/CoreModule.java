@@ -81,8 +81,6 @@ public class CoreModule extends AbstractModule
         bind(AuditParam.class).toInstance(auditParam);
 
         bind(IPathResolver.class).to(DirectoryServiceImpl.class);
-        bind(ContentSender.class).to(LegacyContentSender.class);
-        bind(ContentReceiver.class).to(LegacyContentReceiver.class);
         bind(ContentProvider.class).to(DaemonContentProvider.class);
         bind(OutboundEventLogger.class).to(auditParam._enabled
                 ? LegacyOutboundEventLogger.class
@@ -99,21 +97,17 @@ public class CoreModule extends AbstractModule
         bind(AbstractLogicalStagingArea.class).to(LogicalStagingArea.class);
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);
-        bind(INativeVersionDatabase.class).to(NativeVersionDatabase.class);
-        bind(IImmigrantVersionDatabase.class).to(ImmigrantVersionDatabase.class);
         bind(IMetaDatabase.class).to(MetaDatabase.class);
         bind(IMetaDatabaseWalker.class).to(MetaDatabase.class);
         bind(IPulledDeviceDatabase.class).to(PulledDeviceDatabase.class);
         bind(IAliasDatabase.class).to(AliasDatabase.class);
         bind(IPrefixVersionDatabase.class).to(PrefixVersionDatabase.class);
         bind(IExpulsionDatabase.class).to(ExpulsionDatabase.class);
-        bind(ICollectorSequenceDatabase.class).to(CollectorSequenceDatabase.class);
         bind(ICollectorFilterDatabase.class).to(CollectorFilterDatabase.class);
         bind(ISenderFilterDatabase.class).to(SenderFilterDatabase.class);
         bind(ISIDDatabase.class).to(SIDDatabase.class);
         bind(IStoreDatabase.class).to(StoreDatabase.class);
         bind(ICollectorStateDatabase.class).to(StoreDatabase.class);
-        bind(IStoreContributorsDatabase.class).to(StoreContributorsDatabase.class);
         bind(IACLDatabase.class).to(ACLDatabase.class);
         bind(IActivityLogDatabase.class).to(ActivityLogDatabase.class);
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
@@ -127,35 +121,20 @@ public class CoreModule extends AbstractModule
         // schemas from leaking outside of the packages that actually use them
         multibind(binder(), ISchema.class, CoreSchema.class);
         multibind(binder(), ISchema.class, TamperingDetectionSchema.class);
+        multibind(binder(), ISchema.class, PolarisSchema.class);
 
-        // TODO(phoenix): remove this check when rolling out Polaris
-        if (new CfgUsePolaris().get()) {
-            // to keep maximum flexibility, avoid rolling out schema changes for now
-            multibind(binder(), ISchema.class, PolarisSchema.class);
+        bind(Store.Factory.class).to(DaemonPolarisStore.Factory.class);
+        bind(NewUpdates.Impl.class).to(PhoenixNewUpdates.class);
+        bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
+        // client/SA behavioral differences
+        bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
+        bind(IContentDownloads.class).to(Downloads.class);
+        bind(Causality.class).to(PolarisCausality.class);
+        bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
+        bind(ContentSubmitConflictHandler.class).to(DaemonContentConflictHandler.class);
 
-            bind(Store.Factory.class).to(DaemonPolarisStore.Factory.class);
-            bind(NewUpdates.Impl.class).to(PhoenixNewUpdates.class);
-            bind(IContentVersionControl.class).to(PolarisContentVersionControl.class);
-            // client/SA behavioral differences
-            bind(ApplyChange.Impl.class).to(ApplyChangeImpl.class);
-            bind(IContentDownloads.class).to(Downloads.class);
-            bind(Causality.class).to(PolarisCausality.class);
-            bind(ContentFetcherIterator.Filter.class).to(DefaultFetchFilter.class);
-            bind(ContentSubmitConflictHandler.class).to(DaemonContentConflictHandler.class);
-
-            multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
-            multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
-        } else {
-            bind(Causality.class).to(LegacyCausality.class);
-            bind(Store.Factory.class).to(LegacyStore.Factory.class);
-            bind(NewUpdates.Impl.class).to(LegacyNewUpdates.class);
-            bind(IContentVersionControl.class).to(LegacyContentVersionControl.class);
-
-            multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsRequest.class);
-            multibind(binder(), CoreProtocolReactor.Handler.class, GetVersionsResponse.class);
-            multibind(binder(), CoreProtocolReactor.Handler.class, GetComponentRequest.class);
-            multibind(binder(), CoreProtocolReactor.Handler.class, ComputeHash.class);
-        }
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetContentRequest.class);
+        multibind(binder(), CoreProtocolReactor.Handler.class, GetFilterRequest.class);
 
         multibind(binder(), HealthCheckService.ScheduledRunnable.class, CoreProgressWatcher.class);
         multibind(binder(), HealthCheckService.ScheduledRunnable.class, DeadlockDetector.class);

@@ -7,7 +7,7 @@ import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.ex.Exceptions;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.collector.Collector2;
+import com.aerofs.daemon.core.collector.ContentFetcher;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.RPC;
@@ -267,7 +267,7 @@ public class FilterFetcher
             l.info("{} receive gf response for {} {}", from, sidx, filter);
 
             try (Trans t = _tm.begin_()) {
-                _sidx2s.get_(sidx).iface(Collector2.class).add_(from, filter, t);
+                _sidx2s.get_(sidx).iface(ContentFetcher.class).add_(from, filter, t);
                 _pulleddb.insert_(sidx, from, t);
                 t.commit_();
             }

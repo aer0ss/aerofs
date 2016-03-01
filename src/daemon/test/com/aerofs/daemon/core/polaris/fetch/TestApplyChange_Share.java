@@ -861,7 +861,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foo", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foo", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 
@@ -931,7 +931,7 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 
@@ -999,9 +999,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, t);
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
-                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 
@@ -1033,9 +1033,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, t);
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
-                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 
@@ -1067,9 +1067,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, t);
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
-                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 
@@ -1102,9 +1102,9 @@ public class TestApplyChange_Share extends AbstractTestApplyChange {
         // restore anchor after unlink
         try (Trans t = tm.begin_()) {
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(foo)),
-                    OID.ROOT, "foolish", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "foolish", PhysicalOp.MAP, false, t);
             oc.createMeta_(Type.ANCHOR, new SOID(sidx, SID.folderOID2convertedAnchorOID(bar)),
-                    OID.ROOT, "bargain", PhysicalOp.MAP, false, false, t);
+                    OID.ROOT, "bargain", PhysicalOp.MAP, false, t);
             t.commit_();
         }
 

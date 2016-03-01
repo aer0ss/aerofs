@@ -4,13 +4,11 @@
 
 package com.aerofs.daemon.core.transfers.download;
 
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.ex.*;
 import com.aerofs.ids.DID;
-import com.aerofs.daemon.core.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -18,28 +16,17 @@ import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.transfers.download.dependence.*;
-import com.aerofs.daemon.core.transfers.download.dependence.DependencyEdge.DependencyType;
-import com.aerofs.daemon.core.transfers.download.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
-import com.aerofs.daemon.lib.exception.ExDependsOn;
-import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
-import java.util.Set;
-import java.util.Stack;
 
 import static com.aerofs.daemon.core.transfers.download.IAsyncDownload.ExProcessReplyFailed;
 import static com.aerofs.daemon.core.transfers.download.IAsyncDownload.ExRemoteCallFailed;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Base download class that contains state and logic for low-level download
@@ -48,7 +35,7 @@ class Download
 {
     protected static final Logger l = Loggers.getLogger(Download.class);
 
-    final SOCID _socid;
+    final SOID _soid;
     protected final To _from;
     protected final Token _tk;
 
@@ -72,14 +59,11 @@ class Download
     protected class Cxt implements IDownloadContext
     {
         private DID did;
-        final Stack<SOCID> chain = new Stack<>();
-        final Set<SOCID> resolved = Sets.newHashSet();
-        final DownloadDependenciesGraph deps = new DownloadDependenciesGraph();
 
         @Override
         public String toString()
         {
-            return "{" + did + "," + chain + "}";
+            return "{" + did + "}";
         }
 
         @Override
@@ -87,120 +71,54 @@ class Download
         {
             return _tk;
         }
-
-        @Override
-        public void downloadSync_(SOCID socid, DependencyType type) throws ExUnsatisfiedDependency
-        {
-            assert type == DependencyType.PARENT || type == DependencyType.UNSPECIFIED : type;
-            l.info("dl dep {} {} {}", chain.peek(), socid, type);
-
-            downloadSync_(type == DependencyType.PARENT
-                    ? new ParentDependencyEdge(chain.peek(), socid)
-                    : new DependencyEdge(chain.peek(), socid));
-        }
-
-        private void downloadSync_(DependencyEdge edge) throws ExUnsatisfiedDependency
-        {
-            l.info("{} cxt.dlsync {}", edge, did);
-            try {
-                try {
-                    deps.addEdge_(edge);
-                    try {
-                        assert !resolved.contains(edge.dst) : edge.dst + " " + this;
-
-                        new Download(_f, edge.dst, _f._factTo.create_(did), this)
-                                .download_();
-
-                        assert resolved.contains(edge.dst) : edge.dst + " " + this;
-                        l.info("{} dep solved", did);
-                    } finally {
-                        deps.removeEdge_(edge);
-                    }
-                } catch (ExDownloadDeadlock e) {
-                    // rethrow if cycle cannot be broken
-                    // rationale: transient cycles have been encountered during emigration
-                    // The daemon is killed and restarted which burns CPU/disk (scanning files,
-                    // re-establishing network connections, ...) and the short downtime is enough
-                    // to cause the occasional CI failure.
-                    // TODO: figure out how to prevent such transient cycles from appearing
-                    // (investigate race-conditions or restructure emigration)
-                    if (!_f._ddr.resolveDeadlock_(e._cycle, this)) throw e;
-                }
-            } catch (Exception e) {
-                l.info("{} dep error {} {}", did, edge.dst,
-                        BaseLogUtil.suppress(e, ExNoComponentWithSpecifiedVersion.class));
-                throw new ExUnsatisfiedDependency(edge.dst, did, e);
-            }
-        }
-
-        @Override
-        public boolean hasResolved_(SOCID socid)
-        {
-            return resolved.contains(socid);
-        }
     }
 
     protected static class Factory
     {
-        protected final CfgUsePolaris _usePolaris;
         protected final To.Factory _factTo;
         protected final DirectoryService _ds;
         protected final Downloads _dls;
-        protected final GetComponentRequest _gcc;
-        protected final GetComponentResponse _gcr;
         protected final GetContentRequest  _pgcc;
         protected final GetContentResponse _pgcr;
-        protected final DownloadDeadlockResolver _ddr;
         protected final IMapSIndex2SID _sidx2sid;
 
         @Inject
         protected Factory(DirectoryService ds, Downloads dls,
-                To.Factory factTo, GetComponentRequest gcc, GetComponentResponse gcr,
-                DownloadDeadlockResolver ddr, IMapSIndex2SID sidx2sid,
-                CfgUsePolaris usePolaris, GetContentRequest pgcc, GetContentResponse pgcr)
+                To.Factory factTo, IMapSIndex2SID sidx2sid,
+                GetContentRequest pgcc, GetContentResponse pgcr)
         {
             _ds = ds;
             _dls = dls;
-            _gcc = gcc;
-            _gcr = gcr;
-            _usePolaris = usePolaris;
             _pgcc = pgcc;
             _pgcr = pgcr;
-            _ddr = ddr;
             _factTo = factTo;
             _sidx2sid = sidx2sid;
         }
     }
 
-    protected Download(Factory f, SOCID socid, To from, @Nonnull Token tk)
+    protected Download(Factory f, SOID soid, To from, @Nonnull Token tk)
     {
         _f = f;
-        _socid = socid;
+        _soid = soid;
         _from = from;
         _tk = tk;
     }
 
-    private Download(Factory f, SOCID socid, To from, Cxt cxt)
-    {
-        this(f, socid, from, cxt.token());
-        _cxt = cxt;
-    }
-
-    protected DID download_() throws SQLException, ExAborted, ExUnsatisfiedDependency,
+    protected DID download_() throws SQLException, ExAborted,
             ExNoAvailDevice, ExRemoteCallFailed, ExProcessReplyFailed
     {
         boolean ok = false;
         try {
-            l.debug("dl {} from {}", _socid, _from);
+            l.debug("dl {} from {}", _soid, _from);
             DID did = downloadImpl_();
             ok = true;
             return did;
         } finally {
-            l.debug("end {} {}", _socid, ok);
+            l.debug("end {} {}", _soid, ok);
         }
     }
 
-    private DID downloadImpl_() throws SQLException, ExAborted, ExUnsatisfiedDependency,
+    private DID downloadImpl_() throws SQLException, ExAborted,
             ExNoAvailDevice, ExRemoteCallFailed, ExProcessReplyFailed
     {
         while (true) {
@@ -209,7 +127,7 @@ class Download
             // must not break out of context when re-trying an object after resolving a dependency
             DID did = _cxt.did != null ? _cxt.did : _from.pick_();
 
-            l.info("{} fetch {} {}", did, _socid, _cxt);
+            l.info("{} fetch {} {}", did, _soid, _cxt);
 
             if (fetchComponent_(did)) return did;
         }
@@ -219,34 +137,26 @@ class Download
      * Check for content->meta dependency and expulsion. Even though GetComponentReply will check
      * again, we do it here to avoid useless round-trips with remote peers when possible.
      */
-    private void checkForMeta() throws SQLException, ExAborted, ExUnsatisfiedDependency
+    private void checkForMeta() throws SQLException, ExAborted
     {
-        if (_socid.cid().isMeta()) return;
-
-        if (_f._sidx2sid.getNullable_(_socid.sidx()) == null) {
-            throw new ExAborted("store expelled: " + _socid.sidx());
+        if (_f._sidx2sid.getNullable_(_soid.sidx()) == null) {
+            throw new ExAborted("store expelled: " + _soid.sidx());
         }
 
-        OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
+        OA oa = _f._ds.getAliasedOANullable_(_soid);
         if (oa == null) {
-            if (!_f._usePolaris.get()) {
-                SOCID dst = new SOCID(_socid.soid(), CID.META);
-                _f._dls.downloadSync_(dst, _from.allDIDs(), _cxt);
-                oa = _f._ds.getAliasedOANullable_(_socid.soid());
-            }
-            if (oa == null) throw new ExAborted("meta dl failed");
+            throw new ExAborted("meta dl failed");
         }
 
         if (oa.isExpelled()) {
-            throw new ExAborted("object expelled: " + _socid);
+            throw new ExAborted("object expelled: " + _soid);
         }
     }
 
     private boolean fetchComponent_(DID did)
-            throws SQLException, ExAborted, ExUnsatisfiedDependency,
+            throws SQLException, ExAborted,
             ExNoAvailDevice, ExRemoteCallFailed, ExProcessReplyFailed
     {
-        boolean ok = false;
         DigestedMessage msg = remoteCall_(did);
         if (!did.equals(msg.did())) {
             l.error("did mismatch {} {}", did, msg.did());
@@ -254,29 +164,19 @@ class Download
                     new ExProtocolError("did mismatch " + did + " " + msg.did()));
         }
 
-        try {
-            assert _cxt.did == null || did.equals(_cxt.did) : _cxt + " " + msg;
-            _cxt.did = did;
-            _cxt.chain.push(_socid);
-            _cxt.resolved.add(_socid);
+        assert _cxt.did == null || did.equals(_cxt.did) : _cxt + " " + msg;
+        _cxt.did = did;
 
-            l.debug("{} gcr {}", msg.did(), _socid);
+        l.debug("{} gcr {}", msg.did(), _soid);
 
-            ok = processReply_(msg, _cxt);
-            return ok;
-        } finally {
-            if (!ok) _cxt.resolved.remove(_socid);
-            _cxt.chain.pop();
-        }
+        return processReply_(msg, _cxt);
     }
 
     private DigestedMessage remoteCall_(DID did)
             throws SQLException, ExAborted, ExNoAvailDevice, ExRemoteCallFailed
     {
         try {
-            return _f._usePolaris.get()
-                    ? _f._pgcc.remoteRequestContent_(_socid.soid(), did, _tk)
-                    : _f._gcc.remoteRequestComponent_(_socid, did, _tk);
+            return _f._pgcc.remoteRequestContent_(_soid, did, _tk);
         } catch (SQLException | ExAborted | ExNoAvailDevice e) {
             throw e;
         } catch (Exception e) {
@@ -285,55 +185,24 @@ class Download
     }
 
     private boolean processReply_(DigestedMessage msg, Cxt cxt)
-            throws SQLException, ExAborted, ExUnsatisfiedDependency, ExProcessReplyFailed
+            throws SQLException, ExAborted, ExProcessReplyFailed
     {
         try {
             boolean failed = true;
             try {
-                if (_f._sidx2sid.getNullable_(_socid.sidx()) == null) {
-                    throw new ExExpelled("store " + _socid.sidx() + " not longer present");
+                if (_f._sidx2sid.getNullable_(_soid.sidx()) == null) {
+                    throw new ExExpelled("store " + _soid.sidx() + " not longer present");
                 }
-                if (_f._usePolaris.get()) {
-                    checkState(_socid.cid().isContent());
-                    _f._pgcr.processResponse_(_socid.soid(), msg, cxt.token());
-                } else {
-                    _f._gcr.processResponse_(_socid, msg, cxt);
-                }
+                _f._pgcr.processResponse_(_soid, msg, cxt.token());
                 failed = false;
             } finally {
-                l.debug("{} ended {} {} over {}", msg.did(), _socid, failed ? "FAILED" : "OK", msg.tp());
+                l.debug("{} ended {} {} over {}", msg.did(), _soid, failed ? "FAILED" : "OK", msg.tp());
             }
             return true;
-        } catch (ExNameConflictDependsOn e) {
-            SOCID src = cxt.chain.peek();
-            SOCID dst = new SOCID(src.sidx(), e._ocid);
-            // name conflict dep needs to be resolved within same dl context
-            try {
-                cxt.downloadSync_(NameConflictDependencyEdge.fromException(src, dst, e));
-            } catch (ExUnsatisfiedDependency ex) {
-                if (ex._e instanceof ExProcessReplyFailed &&
-                    ((ExProcessReplyFailed)ex._e)._e instanceof ExNoComponentWithSpecifiedVersion) {
-                    // this exception indicate that the local version of the dependency dominates
-                    // the remote one, therefore we can proceed with name conflict resolution
-                    l.warn("{} local {} dominates remote", cxt.did, dst);
-                    cxt.resolved.add(dst);
-                } else {
-                    throw ex;
-                }
-            }
-        } catch (ExDependsOn e) {
-            // ideally PARENT dependencies could be resolved outside of the download context
-            // however that would require maintaining a per-device dependency graph as well as
-            // a per-device map of ongoing downloads and that is beyond the scope of this commit
-            // as it does not impact correctness but is mostly a corner case optimisation
-            // TODO: avoid duplicate concurrent requests w/ per-device tracking of ongoing downloads
-            cxt.downloadSync_(new SOCID(_socid.sidx(), e._ocid), e._type);
         } catch (ExUpdateInProgress e) {
             onUpdateInProgress(msg.did());
-        } catch (SQLException | ExAborted | ExUnsatisfiedDependency e) {
+        } catch (SQLException | ExAborted e) {
             throw e;
-        } catch (ExRestartWithHashComputed e) {
-            // retry
         } catch (ExStreamInvalid e) {
             if (e.getReason() == InvalidationReason.UPDATE_IN_PROGRESS) {
                 onUpdateInProgress(msg.did());
@@ -364,11 +233,11 @@ class Download
         // too many retries: abort dl to free token
         // the collector will retry at a later time (i.e. on next iteration)
         if (++_updateRetry > MAX_UPDATE_RETRY) {
-            l.warn("{} {}: update in prog for too long. abort", did, _socid);
+            l.warn("{} {}: update in prog for too long. abort", did, _soid);
             throw new ExAborted("update in progress");
         }
 
-        l.info("{} {}: update in prog. retry later", did, _socid);
+        l.info("{} {}: update in prog. retry later", did, _soid);
         _tk.sleep_(UPDATE_RETRY_DELAY, "retry dl (update in prog)");
     }
 }

@@ -1,5 +1,6 @@
 package com.aerofs.lib.db;
 
+import com.aerofs.daemon.core.polaris.db.PolarisSchema;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.testlib.InMemorySQLiteDBCW;
@@ -43,6 +44,7 @@ public class InMemoryCoreDBCW extends InMemorySQLiteDBCW
         super.init_();
         try (Statement s = getConnection().createStatement()) {
             new CoreSchema(_dr).create_(s, this);
+            new PolarisSchema().create_(s, this);
         }
     }
 }

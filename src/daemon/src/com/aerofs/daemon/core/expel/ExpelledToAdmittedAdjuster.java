@@ -1,12 +1,10 @@
 package com.aerofs.daemon.core.expel;
 
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.migration.ImmigrantCreator.MigratedPath;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -15,14 +13,10 @@ import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -37,11 +31,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
-    private final ImmigrantDetector _imd;
-    private final ICollectorSequenceDatabase _csdb;
-    private final NativeVersionControl _nvc;
     private final MapSIndex2Store _sidx2s;
-    private final CfgUsePolaris _usePolaris;
     private final CentralVersionDatabase _cvdb;
     private final StoreCreator _sc;
     private final LogicalStagingArea _sa;
@@ -50,21 +40,16 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     private final ContentFetchQueueDatabase _cfqdb;
 
     @Inject
-    public ExpelledToAdmittedAdjuster(StoreCreator sc, ImmigrantDetector imd,
+    public ExpelledToAdmittedAdjuster(StoreCreator sc,MapSIndex2Store sidx2s,
             DirectoryService ds, IPhysicalStorage ps, LogicalStagingArea sa,
-            NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s,
-            CfgUsePolaris usePolaris, CentralVersionDatabase cvdb, LogicalStagingAreaDatabase sadb,
+            CentralVersionDatabase cvdb, LogicalStagingAreaDatabase sadb,
             RemoteContentDatabase rcdb, ContentFetchQueueDatabase cfqdb)
     {
         _sc = sc;
-        _imd = imd;
         _ds = ds;
         _ps = ps;
         _sa = sa;
-        _nvc = nvc;
-        _csdb = csdb;
         _sidx2s = sidx2s;
-        _usePolaris = usePolaris;
         _cvdb = cvdb;
         _rcdb = rcdb;
         _cfqdb = cfqdb;
@@ -81,9 +66,6 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
         // mightily confusing
         ResolvedPath p = _ds.resolve_(soidRoot);
 
-        // FIXME: ugh! nasty immigration business down here
-        // unfortunately it is far from trivial to refactor
-        // FIXME(phoenix): remove all migration stuff when burning legacy code path
         _ds.walk_(soidRoot, new MigratedPath(pathOld, p), new IObjectWalker<MigratedPath>() {
             @Override
             public MigratedPath prefixWalk_(MigratedPath parentPath, OA oa)
@@ -104,21 +86,17 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                 switch (oa.type()) {
                 case FILE:
                     checkState(oa.cas().isEmpty());
-                    _imd.detectAndPerformImmigration_(oa, op, t);
                     fileAdmitted_(oa.soid(), t);
                     return null;
                 case DIR:
                     _ps.newFolder_(path.to).create_(op, t);
                     return path;
                 case ANCHOR:
-                    boolean immigrated = _imd.detectAndPerformImmigration_(oa, op, t);
-                    if (!immigrated) {
-                        SID sid = SID.anchorOID2storeSID(oa.soid().oid());
-                        IPhysicalFolder pf = _ps.newFolder_(path.to);
-                        pf.create_(op, t);
-                        _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
-                        pf.promoteToAnchor_(sid, op, t);
-                    }
+                    SID sid = SID.anchorOID2storeSID(oa.soid().oid());
+                    IPhysicalFolder pf = _ps.newFolder_(path.to);
+                    pf.create_(op, t);
+                    _sc.addParentStoreReference_(sid, oa.soid().sidx(), oa.name(), t);
+                    pf.promoteToAnchor_(sid, op, t);
                     return null;
                 default:
                     assert false;
@@ -174,20 +152,11 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     {
         checkArgument(_ds.getOA_(soid).isFile());
 
-        if (_usePolaris.get()) {
-            // see PolarisContentVersionControl#fileExpelled_
-            _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
-            if (!_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) return;
-            _cfqdb.insert_(soid.sidx(), soid.oid(), t);
-        } else {
-            SOCID socid = new SOCID(soid, CID.CONTENT);
+        // see PolarisContentVersionControl#fileExpelled_
+        _cvdb.deleteVersion_(soid.sidx(), soid.oid(), t);
+        if (!_rcdb.hasRemoteChanges_(soid.sidx(), soid.oid(), 0L)) return;
+        _cfqdb.insert_(soid.sidx(), soid.oid(), t);
 
-            // Ignore if the content doesn't have KML version. Strictly speaking this is not needed
-            // because the collector automatically skips objects with zero KML
-            if (_nvc.getKMLVersion_(socid).isZero_()) return;
-
-            _csdb.insertCS_(socid, t);
-        }
         _tlaf.get(t).add_(soid.sidx());
     }
 }

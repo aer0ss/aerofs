@@ -4,14 +4,10 @@
 
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.ExInvalidID;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -44,23 +40,5 @@ public class EmigrantUtil
     public static boolean isEmigrantName(String name)
     {
         return name.length() == EMIGRANT_NAME_LEN;
-    }
-
-    /**
-     * @return null if the name doesn't indicates an emigrated object
-     */
-    public static @Nullable SID getEmigrantTargetSID(String name)
-    {
-        if (!isEmigrantName(name)) return null;
-
-        try {
-            // FIXME: we should not use a string store id
-            return new SID(new UniqueID(name, EMIGRANT_NAME_LEN - SID_STRING_LEN,
-                    EMIGRANT_NAME_LEN));
-        } catch (ExInvalidID e) {
-            Loggers.getLogger(EmigrantUtil.class)
-                    .debug("name format error. ignored for emigration: " + name);
-            return null;
-        }
     }
 }

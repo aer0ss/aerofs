@@ -27,7 +27,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.google.common.base.Joiner;
@@ -45,9 +44,9 @@ import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 
-public class Collector2 implements IDumpStatMisc
+public class ContentFetcher implements IDumpStatMisc
 {
-    private static final Logger l = Loggers.getLogger(Collector2.class);
+    private static final Logger l = Loggers.getLogger(ContentFetcher.class);
 
     private final SIndex _sidx;
     private final CollectorFilters _cfs;
@@ -85,16 +84,16 @@ public class Collector2 implements IDumpStatMisc
             _factIter = factIter;
         }
 
-        public Collector2 create_(SIndex sidx)
+        public ContentFetcher create_(SIndex sidx)
                 throws SQLException
         {
-            return new Collector2(this, sidx);
+            return new ContentFetcher(this, sidx);
         }
     }
 
     private final Factory _f;
 
-    private Collector2(Factory f, SIndex sidx)
+    private ContentFetcher(Factory f, SIndex sidx)
             throws SQLException
     {
         _f = f;
@@ -391,37 +390,37 @@ public class Collector2 implements IDumpStatMisc
         }
 
         @Override
-        public void onDownloadSuccess_(SOCID socid, DID from)
+        public void onDownloadSuccess_(SOID soid, DID from)
         {
             postDownloadCompletionTask_();
         }
 
         @Override
-        public void onPartialDownloadSuccess_(SOCID socid, DID didFrom) { }
+        public void onPartialDownloadSuccess_(SOID soid, DID didFrom) { }
 
         @Override
-        public void onGeneralError_(SOCID socid, Exception e)
+        public void onGeneralError_(SOID soid, Exception e)
         {
-            l.debug("cdl {}: {}", socid, BaseLogUtil.suppress(e,
+            l.debug("cdl {}: {}", soid, BaseLogUtil.suppress(e,
                     ExAborted.class, ExNoAvailDevice.class, ExTimeout.class, ExStreamInvalid.class));
 
             // For general errors, we want to re-run this collector.
             // Indicate the BFs are dirty for all devices of interest so
             // that they are re-introduced into the next collector iteration.
             for (DID did : _dids) _cfs.setDirtyBit_(did);
-            checkState(!_dids.isEmpty(), "%s %s", socid, e);
+            checkState(!_dids.isEmpty(), "%s %s", soid, e);
             scheduleBackoff_();
             postDownloadCompletionTask_();
         }
 
         @Override
-        public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
+        public void onPerDeviceErrors_(SOID soid, Map<DID, Exception> did2e)
         {
             // Gather the set of DIDs from which we received non-permanent errors
             // 1) First determine those *with* permanent errors
             Set<DID> didsWithPermanentErrors = Sets.newHashSetWithExpectedSize(did2e.size());
             for (Entry<DID, Exception> entry : did2e.entrySet()) {
-                if (isPermanentError(socid.soid(), entry.getValue())) {
+                if (isPermanentError(soid, entry.getValue())) {
                     didsWithPermanentErrors.add(entry.getKey());
                 }
             }
@@ -463,7 +462,7 @@ public class Collector2 implements IDumpStatMisc
             // a KML cleanup (assuming all devices advertising the files can be contacted in the
             // same collector iteration...)
 
-            l.debug("cdl {} didsWPerm {} didsWOPerm {}", socid,
+            l.debug("cdl {} didsWPerm {} didsWOPerm {}", soid,
                     didsWithPermanentErrors, didsWithoutPermanentErrors);
 
             postDownloadCompletionTask_();

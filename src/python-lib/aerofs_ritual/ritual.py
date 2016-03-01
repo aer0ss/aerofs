@@ -260,6 +260,9 @@ class _RitualServiceWrapper(object):
         pbpath = self.wait_path(path)
         return self._service.test_get_object_identifier(pbpath)
 
+    def test_get_pbpath_identifier(self, pbpath):
+        return self._service.test_get_object_identifier(pbpath)
+
     def update_acl_pbpath(self, pbpath, subject, role):
         permissions = PBPermissions()
         _role_to_pb(permissions, role)

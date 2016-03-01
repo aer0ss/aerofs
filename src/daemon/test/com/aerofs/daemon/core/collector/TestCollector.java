@@ -4,6 +4,14 @@
 
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.base.BaseSecUtil;
+import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.db.ContentFetchQueueDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator;
+import com.aerofs.daemon.core.polaris.fetch.ContentFetcherIterator.Filter.Action;
+import com.aerofs.daemon.core.store.StoreCreationOperators;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
@@ -13,22 +21,20 @@ import com.aerofs.daemon.core.transfers.download.Downloads;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
 import com.aerofs.daemon.lib.db.CollectorFilterDatabase;
-import com.aerofs.daemon.lib.db.CollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
-import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import org.junit.After;
@@ -56,20 +62,25 @@ import static org.mockito.Mockito.when;
 public class TestCollector extends AbstractTest
 {
     InMemoryCoreDBCW idbcw = new InMemoryCoreDBCW();
+    StoreCreationOperators sco = mock(StoreCreationOperators.class);
+    StoreDeletionOperators sdo = mock(StoreDeletionOperators.class);
+
     @Spy ICollectorFilterDatabase cfdb = new CollectorFilterDatabase(idbcw);
-    @Spy ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(idbcw);
+    @Spy ContentFetchQueueDatabase cfqdb = new ContentFetchQueueDatabase(idbcw, sco, sdo);
     @Spy ICollectorStateDatabase cidb = new StoreDatabase(idbcw);
+    @Spy CentralVersionDatabase cvdb = new CentralVersionDatabase(idbcw, sdo);
+    @Spy RemoteContentDatabase rcdb = new RemoteContentDatabase(idbcw, sco, sdo);
 
     @Mock Trans t;
     @Mock TransManager tm;
     @Mock CoreScheduler sched;
-    @Mock CollectorSkipRule csr;
     @Mock Downloads dls;
+    @Mock ContentFetcherIterator.Filter filter;
 
     @InjectMocks CoreExponentialRetry er;
-    @InjectMocks CollectorIterator.Factory factIter;
+    @InjectMocks ContentFetcherIterator.Factory factIter;
 
-    Collector collector;
+    ContentFetcher collector;
 
     SIndex sidx = new SIndex(1);
     DID d0 = DID.generate();
@@ -97,10 +108,11 @@ public class TestCollector extends AbstractTest
         Store store = mock(Store.class);
         when(store.sidx()).thenReturn(sidx);
 
-        new StoreDatabase(idbcw).insert_(sidx, "", false, t);
+        new StoreDatabase(idbcw).insert_(sidx, "", t);
+        cfqdb.createStore_(sidx, t);
+        rcdb.createStore_(sidx, t);
 
-
-        Collector.Factory fact = new Collector.Factory(sched, csdb, csr, dls, tm, er, cfdb,
+        ContentFetcher.Factory fact = new ContentFetcher.Factory(sched, dls, tm, er, cfdb,
                 factIter);
         collector = fact.create_(sidx);
 
@@ -124,133 +136,121 @@ public class TestCollector extends AbstractTest
      * NB: the download behavior will be repeated for however many attempts the collector makes,
      * until it is overriden by another call to addVersion (or alternatively by modifying the mock)
      */
-    private MockAsyncDownload addVersionFor(final SOCID socid) throws SQLException
+    private MockAsyncDownload addVersionFor(final SOID soid) throws SQLException
     {
         MockAsyncDownload madl = new MockAsyncDownload() {
             @Override
             public void completed() {
                 try {
-                    when(csr.shouldSkip_(socid)).thenReturn(true);
+                    when(filter.filter_(soid)).thenReturn(Action.Fetch);
                 } catch (SQLException e) {
                     throw new AssertionError();
                 }
             }
         };
-        csdb.insertCS_(socid, t);
-        when(csr.shouldSkip_(socid)).thenReturn(false);
-        when(dls.downloadAsync_(eq(socid), anySetOf(DID.class),
+        cfqdb.insert_(soid.sidx(), soid.oid(), t);
+        rcdb.insert_(soid.sidx(), soid.oid(), 42, DID.generate(), new ContentHash(BaseSecUtil.hash()), 0L, t);
+
+        when(filter.filter_(soid)).thenReturn(Action.Fetch);
+        when(dls.downloadAsync_(eq(soid), anySetOf(DID.class),
                 any(ITokenReclamationListener.class),
                 any(IDownloadCompletionListener.class))).thenAnswer(madl);
         return madl;
     }
 
-    private void verifyDownloadRequest(SOCID socid, DID... dids)
+    private void verifyDownloadRequest(SOID soid, DID... dids)
     {
-        verifyDownloadRequest(socid, times(1), dids);
+        verifyDownloadRequest(soid, times(1), dids);
     }
 
-    private void verifyDownloadRequest(SOCID socid, VerificationMode mode, DID... dids)
+    private void verifyDownloadRequest(SOID soid, VerificationMode mode, DID... dids)
     {
-        verify(dls, mode).downloadAsync_(eq(socid), eq(ImmutableSet.copyOf(dids)),
+        verify(dls, mode).downloadAsync_(eq(soid), eq(ImmutableSet.copyOf(dids)),
                 any(ITokenReclamationListener.class), any(IDownloadCompletionListener.class));
     }
 
     @Test
     public void shouldCollectOneComponent() throws Exception
     {
-        SOCID socid = new SOCID(sidx, OID.generate(), CID.META);
+        SOID soid = new SOID(sidx, OID.generate());
 
-        addVersionFor(socid);
-        collector.add_(d0, BFOID.of(socid.oid()), t);
+        addVersionFor(soid);
+        collector.add_(d0, BFOID.of(soid.oid()), t);
 
-        verifyDownloadRequest(socid, d0);
+        verifyDownloadRequest(soid, d0);
     }
 
     @Test
-    public void shouldCollectTwoComponentsSameObject() throws Exception
+    public void shouldCollectDifferentObjectsFromDifferentDevices() throws Exception
     {
-        SOCID meta = new SOCID(sidx, OID.generate(), CID.META);
-        SOCID content = new SOCID(meta.soid(), CID.CONTENT);
+        SOID o0 = new SOID(sidx, OID.generate());
+        SOID o1 = new SOID(sidx, OID.generate());
 
-        addVersionFor(meta);
-        addVersionFor(content);
-
-        collector.add_(d0, BFOID.of(meta.oid()), t);
-
-        verifyDownloadRequest(meta, d0);
-        verifyDownloadRequest(content, d0);
-    }
-
-    @Test
-    public void shouldCollectDifferentObjetsFromDifferentDevices() throws Exception
-    {
-        SOCID meta = new SOCID(sidx, OID.generate(), CID.META);
-        SOCID content = new SOCID(sidx, OID.generate(), CID.CONTENT);
-
-        MockAsyncDownload madl = addVersionFor(meta);
-        addVersionFor(content);
+        MockAsyncDownload madl = addVersionFor(o0);
+        addVersionFor(o1);
 
         collector.online_(d1);
-        collector.add_(d0, BFOID.of(meta.oid()), t);
+        collector.add_(d0, BFOID.of(o0.oid()), t);
 
         // if we don't simulate download completion the collector will issue a new downloadAsync
         // when it is restarted as a result of adding d1's bloom filter...
         madl.ok(d0);
 
-        collector.add_(d1, BFOID.of(content.oid()), t);
+        collector.add_(d1, BFOID.of(o1.oid()), t);
 
-        verifyDownloadRequest(meta, d0);
-        verifyDownloadRequest(content, d1);
+        verifyDownloadRequest(o0, d0);
+        verifyDownloadRequest(o1, d1);
     }
 
     @Test
     public void shouldStopIteratingWhenRunningOutOfTokens() throws Exception
     {
-        SOCID meta = new SOCID(sidx, OID.generate(), CID.META);
-        SOCID content = new SOCID(meta.soid(), CID.CONTENT);
+        SOID o0 = new SOID(sidx, OID.generate());
+        SOID o1 = new SOID(sidx, OID.generate());
 
-        MockAsyncDownload madl = addVersionFor(meta);
-        addVersionFor(content);
+        MockAsyncDownload madl = addVersionFor(o0);
+        addVersionFor(o1);
 
         // simulate lack of Token for first download request
         madl.outOfToken();
 
-        collector.add_(d0, BFOID.of(meta.oid()), t);
+        collector.add_(d0, BFOID.of(o0.oid()), t);
 
-        verifyDownloadRequest(meta, d0);
+        verifyDownloadRequest(o0, d0);
         verifyNoMoreInteractions(dls);
     }
 
     @Test
     public void shouldResumeIteratingWhenTokenReclaimed() throws Exception
     {
-        SOCID meta = new SOCID(sidx, OID.generate(), CID.META);
-        SOCID content = new SOCID(meta.soid(), CID.CONTENT);
+        SOID o0 = new SOID(sidx, OID.generate());
+        SOID o1 = new SOID(sidx, OID.generate());
 
-        MockAsyncDownload madl = addVersionFor(meta);
-        addVersionFor(content);
+        MockAsyncDownload madl = addVersionFor(o0);
+        addVersionFor(o1);
 
         madl.outOfToken();
 
-        collector.add_(d0, BFOID.of(meta.oid()), t);
+        collector.add_(d0, BFOID.of(o0.oid()), t);
+        collector.add_(d0, BFOID.of(o1.oid()), t);
 
         // simulate availability of new token-> restart collection
         madl.reclaim();
 
         // two download requests are made for META: the first is rejected due to lack of Tokens
-        verifyDownloadRequest(meta, times(2), d0);
-        verifyDownloadRequest(content, d0);
+        verifyDownloadRequest(o0, times(2), d0);
+        verifyDownloadRequest(o1, d0);
     }
 
     @Test
     public void shouldDiscard() throws Exception
     {
-        SOCID socid = new SOCID(sidx, OID.generate(), CID.META);
+        SOID soid = new SOID(sidx, OID.generate());
 
-        csdb.insertCS_(socid, t);
-        when(csr.shouldSkip_(socid)).thenReturn(true);
+        cfqdb.insert_(sidx, soid.oid(), t);
+        when(filter.filter_(soid)).thenReturn(Action.Ignore);
 
-        collector.add_(d0, BFOID.of(socid.oid()), t);
+        collector.add_(d0, BFOID.of(soid.oid()), t);
 
         verifyZeroInteractions(dls);
     }
@@ -258,21 +258,21 @@ public class TestCollector extends AbstractTest
     @Test
     public void shouldNotDiscardWrongObject() throws Exception
     {
-        SOCID skip = new SOCID(sidx, OID.generate(), CID.CONTENT);
-        SOCID socid = new SOCID(sidx, OID.generate(), CID.META);
+        SOID skip = new SOID(sidx, OID.generate());
+        SOID soid = new SOID(sidx, OID.generate());
 
-        csdb.insertCS_(skip, t);
-        when(csr.shouldSkip_(skip)).thenReturn(true);
+        cfqdb.insert_(sidx, skip.oid(), t);
+        when(filter.filter_(skip)).thenReturn(Action.Ignore);
 
-        MockAsyncDownload madl = addVersionFor(socid);
-        collector.add_(d0, BFOID.of(socid.oid()), t);
+        MockAsyncDownload madl = addVersionFor(soid);
+        collector.add_(d0, BFOID.of(soid.oid()), t);
 
         // indicate that the first download is done
         madl.ok(d0);
 
-        addVersionFor(socid);
-        collector.add_(d0, BFOID.of(socid.oid()), t);
+        addVersionFor(soid);
+        collector.add_(d0, BFOID.of(soid.oid()), t);
 
-        verifyDownloadRequest(socid, times(2), d0);
+        verifyDownloadRequest(soid, times(2), d0);
     }
 }

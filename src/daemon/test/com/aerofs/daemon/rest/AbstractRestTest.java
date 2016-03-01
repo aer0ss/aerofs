@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
+import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.DaemonContentProvider;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -53,9 +54,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.VerifyTokenResponse;
@@ -91,6 +90,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -120,7 +120,6 @@ public class AbstractRestTest extends BaseAbstractRestTest
     protected static final Logger l = Loggers.getLogger(AbstractRestTest.class);
 
     protected @Mock DirectoryService ds;
-    protected @Mock NativeVersionControl nvc;
     protected @Mock ObjectCreator oc;
     protected @Mock ObjectDeleter od;
     protected @Mock VersionUpdater vu;
@@ -156,6 +155,10 @@ public class AbstractRestTest extends BaseAbstractRestTest
         om.inject_(vu, ds, expulsion);
         om = spy(om);
 
+        CompletableFuture<RemoteLink> completed = new CompletableFuture<>();
+        completed.complete(null);
+        when(rldb.wait_(any(SIndex.class), any(OID.class))).thenReturn(completed);
+
         when(ds.getCAHash_(any(SOKID.class))).thenReturn(new ContentHash(CONTENT_HASH));
         when(ic.move_(any(SOID.class), any(SOID.class), anyString(), any(PhysicalOp.class), eq(t)))
                 .thenAnswer(invocation -> {
@@ -168,12 +171,12 @@ public class AbstractRestTest extends BaseAbstractRestTest
                                 t);
                         return soid;
                     } else {
-                        return ic.createLegacyImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
-                                soidToParent, toName, op, t);
+                        return ic.createImmigrantRecursively_(ds.resolve_(soid).parent(), soid,
+                                soidToParent, toName, op, null, t);
                     }
                 });
 
-        doNothing().when(vu).update_(any(SOCKID.class), any(Trans.class));
+        doNothing().when(vu).update_(any(SOCID.class), any(Trans.class));
         // start REST service
 
         inj = coreInjector();
@@ -241,7 +244,6 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 bind(CfgLocalUser.class).toInstance(localUser);
                 bind(CfgCACertificateProvider.class).toInstance(cacert);
                 bind(StoreHierarchy.class).toInstance(ss);
-                bind(NativeVersionControl.class).toInstance(nvc);
                 bind(DirectoryService.class).toInstance(ds);
                 bind(LocalACL.class).toInstance(acl);
                 bind(IMapSID2SIndex.class).toInstance(sm);
@@ -264,7 +266,6 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 bind(ICollectorStateDatabase.class).toInstance(csdb);
                 bind(CentralVersionDatabase.class).toInstance(_cvdb);
                 bind(IVersionUpdater.class).toInstance(vu);
-                bind(CfgUsePolaris.class).toInstance(usePolaris);
                 bind(IPathResolver.class).toInstance(ds);
                 bind(RestContentHelper.class).to(DaemonRestContentHelper.class);
                 bind(ContentProvider.class).toInstance(provider);
@@ -442,8 +443,8 @@ public class AbstractRestTest extends BaseAbstractRestTest
             }
             return null;
         }).when(ds).setOAParentAndName_(any(OA.class), any(OA.class), anyString(), eq(t));
-        when(ic.createLegacyImmigrantRecursively_(any(ResolvedPath.class), eq(objectSoid), eq(parentSoid),
-                eq(newName), eq(PhysicalOp.APPLY), eq(t)))
+        when(ic.createImmigrantRecursively_(any(ResolvedPath.class), eq(objectSoid), eq(parentSoid),
+                eq(newName), eq(PhysicalOp.APPLY), eq(null), eq(t)))
                 .thenAnswer(invocation -> {
                     Object[] args = invocation.getArguments();
                     SOID objectSoid1 = (SOID)args[1];

@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.first_launch.OIDGenerator;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalTree;
 import com.aerofs.daemon.core.phy.linked.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.phy.linked.linker.PathCombo;
-import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
+import com.aerofs.daemon.core.mock.ExArbitrary;
 import com.aerofs.daemon.core.mock.logical.*;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SOID;

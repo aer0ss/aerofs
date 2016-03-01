@@ -14,7 +14,6 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -26,7 +25,6 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -61,12 +59,10 @@ public class ImmigrantCreator
 
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
-    private final ObjectCreator _oc;
     private final ObjectMover _om;
     private final ObjectDeleter _od;
     private final ObjectSurgeon _os;
     private final IMapSIndex2SID _sidx2sid;
-    private final CfgUsePolaris _polaris;
     private final RemoteLinkDatabase _rldb;
     private final CentralVersionDatabase _cvdb;
     private final MetaChangesDatabase  _mcdb;
@@ -81,8 +77,8 @@ public class ImmigrantCreator
 
     @Inject
     public ImmigrantCreator(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
-            ObjectMover om, ObjectDeleter od, ObjectCreator oc, ObjectSurgeon os,
-            CfgUsePolaris polaris, RemoteLinkDatabase rldb, MetaChangesDatabase mcdb,
+            ObjectMover om, ObjectDeleter od, ObjectSurgeon os,
+            RemoteLinkDatabase rldb, MetaChangesDatabase mcdb,
             ContentChangesDatabase ccdb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
             ExpulsionDatabase exdb, ContentFetchQueueDatabase cfqdb, MapSIndex2Store sidx2s,
             PolarisAsyncClient.Factory clientFactory)
@@ -92,14 +88,12 @@ public class ImmigrantCreator
         _sidx2sid = sidx2sid;
         _om = om;
         _od = od;
-        _oc = oc;
         _os = os;
         _rldb = rldb;
         _mcdb = mcdb;
         _ccdb = ccdb;
         _rcdb = rcdb;
         _cvdb = cvdb;
-        _polaris = polaris;
         _exdb = exdb;
         _cfqdb = cfqdb;
         _sidx2s = sidx2s;
@@ -118,17 +112,6 @@ public class ImmigrantCreator
     private static Type migratedType(Type t)
     {
         return t == Type.ANCHOR ? Type.DIR : t;
-    }
-
-    /**
-     * When a shared folder is converted back to a regular folder we need to generate a new OID
-     * to break the link between the two objects. This is necessary to avoid all sorts of nasty
-     * coupling. For instance, reusing the original folder OID would prevent the new folder from
-     * being re-shared later.
-     */
-    private static OID migratedOID(OID oid)
-    {
-        return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
     }
 
     private UniqueID rootOID2SID(SIndex sidx, OID oid)
@@ -162,87 +145,84 @@ public class ImmigrantCreator
         if (soidToParent.sidx().equals(soid.sidx())) {
             _om.moveInSameStore_(soid, soidToParent.oid(), toName, op, true, t);
             return soid;
-        } else if (_polaris.get()) {
-            // NB: this is really gross, especially considering that this can be triggered by
-            // a filesystem notification
-            // Ideally cross-store moves would be submitted asynchronously, like regular meta
-            // changes. However the current state of things makes that extremely hard to do safely.
-            // Better solutions would require either dropping support for legacy p2p entirely or
-            // maintaining two completely different code bases with largely incompatible DB schemas.
-            // Neither of these is currently acceptable.
-            // Hopefully offline cross-store moves are rare enough that the synchronous polaris
-            // request doesn't cause too much trouble
-            // TODO: revisit this once p2p meta sync is burned
-
-            // Wait until we the object being migrated is in the remote tree
-            //  - if it's not know to polaris, the transform will be rejected with a 404
-            //  - otherwise we want to avoid races where we migrate an object before receiving
-            //    the ack of its INSERT transform and end up restoring the object incorrectly,
-            //    which in turn can result in the object being incorrectly deleted if it is migrated
-            //    back and forth between two stores.
-            if (_rldb.getParent_(soid.sidx(), soid.oid()) == null) {
-                throw new ExMigrationDelayed("unresolved src meta: " + soid);
-            }
-            if (!soidToParent.oid().isRoot() && _rldb.getParent_(soidToParent.sidx(), soidToParent.oid()) == null) {
-                throw new ExMigrationDelayed("unresolved dst meta: " + soidToParent);
-            }
-
-            OA oa = _ds.getOA_(soid);
-            LocalChange c = new LocalChange();
-            c.type = LocalChange.Type.MOVE_CHILD;
-            c.child = soid.oid().toStringFormal();
-            c.newChildName = toName;
-            c.newParent = rootOID2SID(soidToParent.sidx(), soidToParent.oid()).toStringFormal();
-            SettableFuture<UniqueID> f = SettableFuture.create();
-            _client.post("/objects/" + rootOID2SID(soid.sidx(), oa.parent()).toStringFormal(), c,
-                    new AsyncTaskCallback() {
-                        @Override
-                        public void onSuccess_(boolean hasMore) {}
-
-                        @Override
-                        public void onFailure_(Throwable t) {
-                            f.setException(t);
-                        }
-                    }, r -> handle_(f, r), _sameThread);
-            // wait for polaris response
-            try {
-                f.get();
-            } catch (ExecutionException e) {
-                l.info("", e);
-                throw new ExMigrationDelayed(e.getMessage());
-            }
-
-            // polaris accepted the move, proceed with local migration
-            // NB: it is unfortunate but necessary to do a local migration before receiving the
-            // migrated transforms from polaris as the caller expects the tree to be migrated
-            // immediately and there is no tractable way to change that since this method is called
-            // to adjust the logical tree after a filesystem change.
-            // This will result in conflicting OIDs which will eventually be resolved by aliasing
-            // or renaming. Some duplication may arise if the local tree diverged from the remote
-            // tree. This is suboptimal but about as good as can be done at this point.
-            // Slightly better edge-case behavior might be achievable through extensive change in
-            // the logical object tree but the amount of work required would be significant and the
-            // benefits marginal so it is left as an exercise for the future maintainer.
-            // TODO: revisit this once p2p meta sync is burned
-            ResolvedPath p = _ds.resolve_(oa);
-            OA oaParentTo = _ds.getOA_(soidToParent);
-            ResolvedPath dest = _ds.resolve_(oaParentTo).join(soid, toName);
-            if (!oa.isExpelled() && !oaParentTo.isExpelled()) {
-                if (oa.isFile()) {
-                    for (KIndex kidx : oa.cas().keySet()) {
-                        _ps.newFile_(p, kidx).move_(dest, kidx, op, t);
-                    }
-                } else {
-                    _ps.newFolder_(p).move_(dest, op, t);
-                }
-                op = PhysicalOp.MAP;
-            }
-            return createImmigrantRecursively_(p.parent(), soid, soidToParent,
-                    toName, op, null, t);
-        } else {
-            return createLegacyImmigrantRecursively_(_ds.resolve_(soid).parent(), soid, soidToParent,
-                    toName, op, t);
         }
+
+        // NB: this is really gross, especially considering that this can be triggered by
+        // a filesystem notification
+        // Ideally cross-store moves would be submitted asynchronously, like regular meta
+        // changes. However the current state of things makes that extremely hard to do safely.
+        // Better solutions would require either dropping support for legacy p2p entirely or
+        // maintaining two completely different code bases with largely incompatible DB schemas.
+        // Neither of these is currently acceptable.
+        // Hopefully offline cross-store moves are rare enough that the synchronous polaris
+        // request doesn't cause too much trouble
+        // TODO: revisit this once p2p meta sync is burned
+
+        // Wait until we the object being migrated is in the remote tree
+        //  - if it's not know to polaris, the transform will be rejected with a 404
+        //  - otherwise we want to avoid races where we migrate an object before receiving
+        //    the ack of its INSERT transform and end up restoring the object incorrectly,
+        //    which in turn can result in the object being incorrectly deleted if it is migrated
+        //    back and forth between two stores.
+        if (_rldb.getParent_(soid.sidx(), soid.oid()) == null) {
+            throw new ExMigrationDelayed("unresolved src meta: " + soid);
+        }
+        if (!soidToParent.oid().isRoot() && _rldb.getParent_(soidToParent.sidx(), soidToParent.oid()) == null) {
+            throw new ExMigrationDelayed("unresolved dst meta: " + soidToParent);
+        }
+
+        OA oa = _ds.getOA_(soid);
+        LocalChange c = new LocalChange();
+        c.type = LocalChange.Type.MOVE_CHILD;
+        c.child = soid.oid().toStringFormal();
+        c.newChildName = toName;
+        c.newParent = rootOID2SID(soidToParent.sidx(), soidToParent.oid()).toStringFormal();
+        SettableFuture<UniqueID> f = SettableFuture.create();
+        _client.post("/objects/" + rootOID2SID(soid.sidx(), oa.parent()).toStringFormal(), c,
+                new AsyncTaskCallback() {
+                    @Override
+                    public void onSuccess_(boolean hasMore) {}
+
+                    @Override
+                    public void onFailure_(Throwable t) {
+                        f.setException(t);
+                    }
+                }, r -> handle_(f, r), _sameThread);
+        // wait for polaris response
+        try {
+            f.get();
+        } catch (ExecutionException e) {
+            l.info("", e);
+            throw new ExMigrationDelayed(e.getMessage());
+        }
+
+        // polaris accepted the move, proceed with local migration
+        // NB: it is unfortunate but necessary to do a local migration before receiving the
+        // migrated transforms from polaris as the caller expects the tree to be migrated
+        // immediately and there is no tractable way to change that since this method is called
+        // to adjust the logical tree after a filesystem change.
+        // This will result in conflicting OIDs which will eventually be resolved by aliasing
+        // or renaming. Some duplication may arise if the local tree diverged from the remote
+        // tree. This is suboptimal but about as good as can be done at this point.
+        // Slightly better edge-case behavior might be achievable through extensive change in
+        // the logical object tree but the amount of work required would be significant and the
+        // benefits marginal so it is left as an exercise for the future maintainer.
+        // TODO: revisit this once p2p meta sync is burned
+        ResolvedPath p = _ds.resolve_(oa);
+        OA oaParentTo = _ds.getOA_(soidToParent);
+        ResolvedPath dest = _ds.resolve_(oaParentTo).join(soid, toName);
+        if (!oa.isExpelled() && !oaParentTo.isExpelled()) {
+            if (oa.isFile()) {
+                for (KIndex kidx : oa.cas().keySet()) {
+                    _ps.newFile_(p, kidx).move_(dest, kidx, op, t);
+                }
+            } else {
+                _ps.newFolder_(p).move_(dest, op, t);
+            }
+            op = PhysicalOp.MAP;
+        }
+        return createImmigrantRecursively_(p.parent(), soid, soidToParent,
+                toName, op, null, t);
     }
 
     private boolean handle_(SettableFuture<UniqueID> f, HttpResponse r) throws Exception {
@@ -507,128 +487,5 @@ public class ImmigrantCreator
         {
             return new MigratedPath(this.from.join(from.soid(), from.name()), this.to.join(to, name));
         }
-    }
-
-    /**
-     * Recursively migrate the object corresponding to {@code soidFromRoot} to
-     * under {@code soidToRootParent}.
-     *
-     * This method assumes that permissions have been checked.
-     *
-     * @param soidFromRoot the SOID of the root object to be migrated
-     * @param soidToRootParent the SOID of the parent to which the root object will be migrated
-     * @return the new SOID of the root object
-     */
-    public SOID createLegacyImmigrantRecursively_(ResolvedPath pathFromParent, final SOID soidFromRoot,
-                                                  final SOID soidToRootParent, final String toRootName, final PhysicalOp op, final Trans t)
-            throws Exception
-    {
-        // thou shalt not move ROOT or TRASH folder
-        checkArgument(!soidFromRoot.oid().isRoot());
-        checkArgument(!soidFromRoot.oid().isTrash());
-        // ensure moving across store boundary
-        checkArgument(!soidFromRoot.sidx().equals(soidToRootParent.sidx()));
-
-        MigratedPath pathParent = new MigratedPath(
-                pathFromParent,
-                _ds.resolve_(soidToRootParent).substituteLastSOID(soidToRootParent));
-
-        _ds.walk_(soidFromRoot, pathParent, new IObjectWalker<MigratedPath>() {
-            @Override
-            public MigratedPath prefixWalk_(MigratedPath pathParent, OA oaFrom)
-                    throws Exception
-            {
-                // do not walk trash
-                if (oaFrom.soid().oid().isTrash()) return null;
-
-                // when walking across store boundary (i.e through an anchor), we do not need
-                // to re-create the root dir in the destination, however we need to make sure
-                // any physical trace of the former anchor disappears
-                if (oaFrom.soid().oid().isRoot()) return pathParent;
-
-                SOID soidToParent = pathParent.to.isEmpty()
-                        ? soidToRootParent : pathParent.to.soid();
-                SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
-                String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
-
-                // make sure the physical file reflect the migrated SOID before any MAP operation
-                if (op == PhysicalOp.MAP) {
-                    ResolvedPath pathFrom = pathParent.from.join(oaFrom.soid(), oaFrom.name());
-                    if (oaFrom.isFile()) {
-                        for (KIndex kidx : oaFrom.cas().keySet()) {
-                            _ps.newFile_(pathFrom, kidx).updateSOID_(soidTo, t);
-                        }
-                    } else {
-                        _ps.newFolder_(pathFrom).updateSOID_(soidTo, t);
-                    }
-                }
-
-                OA oaToExisting = _ds.getOANullable_(soidTo);
-                Type typeTo = migratedType(oaFrom.type());
-
-                if (oaToExisting == null) {
-                    _oc.createImmigrantMeta_(typeTo, oaFrom.soid(), soidTo, soidToParent.oid(),
-                            name, op, true, t);
-                } else {
-                    // Comment (B)
-                    //
-                    // It's an invariant that at any given time, among all the
-                    // objects sharing the same OID in the local system, at
-                    // most one of them is admitted, this is guaranteed by the
-                    // implementation. See the invariant in AdmittedObjectLocator.
-                    checkState(typeTo == oaToExisting.type());
-                    checkState(oaFrom.isExpelled() || oaToExisting.isExpelled(),
-                            oaFrom + " " + oaToExisting);
-                    _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, true, t);
-                }
-
-                // remove the tag file from the destination to gracefully handle both MAP and APPLY
-                if (oaFrom.isAnchor()) {
-                    // the IPhysicalFolder needs to be created with the anchor OID
-                    // but we cannot simply reuse that of the old OA because it probably does not
-                    // point to the correct path...
-                    _ps.newFolder_(_ds.resolve_(soidTo))
-                            .demoteToRegularFolder_(SID.anchorOID2storeSID(oaFrom.soid().oid()), op, t);
-                }
-
-                return pathParent.join(oaFrom, soidTo, name);
-            }
-
-            @Nullable SID _sid;
-
-            @Override
-            public void postfixWalk_(MigratedPath pathParent, OA oaFrom)
-                    throws Exception
-            {
-                if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
-
-                if (_sid == null) {
-                    _sid = pathParent.to.isEmpty()
-                            ? pathParent.to.sid()
-                            : _sidx2sid.get_(pathParent.to.soid().sidx());
-                }
-
-                // The use and abuse of PhysicalOp in Aliasing and migration has been a major
-                // source of grief when doing changes in the core. We really need to come up
-                // with better semantics.
-                // In this case we should not use MAP when deleting because this would try to
-                // delete NROs/conflicts that don't actually exist as they've been renamed to
-                // reflect the SOID change.
-                PhysicalOp realOp = op == PhysicalOp.MAP ? PhysicalOp.NOP : op;
-
-                if (oaFrom.isAnchor()) {
-                    // NB: to properly leave the store we must not keep track of the emigration
-                    _od.delete_(oaFrom.soid(), realOp, t);
-                } else {
-                    // NOP is used for files as their content has already been moved as required
-                    // in the prefix walk and we don't want to mistakenly delete them when the
-                    // migration doesn't change the physical path (i.e. sharing)
-                    if (oaFrom.isFile()) realOp = PhysicalOp.NOP;
-                    _od.deleteAndEmigrate_(oaFrom.soid(), realOp, _sid, t);
-                }
-            }
-        });
-
-        return new SOID(soidToRootParent.sidx(), soidFromRoot.oid());
     }
 }

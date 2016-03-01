@@ -69,28 +69,28 @@ public class TestStores extends AbstractTest
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnSettingParentsOnNonexisingStore() throws SQLException
     {
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidxParent, "", t);
         sh.addParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnDeletingParentsOnNonexisingStore() throws SQLException
     {
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidxParent, "", t);
         sh.deleteParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnSettingParentsOnNonexisingParent() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
+        sh.add_(sidx, "", t);
         sh.addParent_(sidx, sidxParent, t);
     }
 
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnDeletingParentsOnNonexisingParent() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
+        sh.add_(sidx, "", t);
         sh.deleteParent_(sidx, sidxParent, t);
     }
 
@@ -109,8 +109,8 @@ public class TestStores extends AbstractTest
     @Test(expected = SQLException.class)
     public void shouldFailAddingExisingStore() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidx, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidx, "", t);
     }
 
     @Test(expected = AssertionError.class)
@@ -122,7 +122,7 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldDeleteStorePersistentDataAfterCleaningDevices() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
+        sh.add_(sidx, "", t);
 
         ss.deleteStore_(sidx, t);
 
@@ -134,8 +134,8 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectParentSet() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidxParent), sh.getParents_(sidx));
@@ -144,8 +144,8 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectChildrenSet() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidx), sh.getChildren_(sidxParent));
@@ -154,9 +154,9 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectParentSetAfterInsert() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
-        sh.add_(sidxExtra, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
+        sh.add_(sidxExtra, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidxParent), sh.getParents_(sidx));
@@ -169,9 +169,9 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectChildrenSetAfterInsert() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
-        sh.add_(sidxExtra, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
+        sh.add_(sidxExtra, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidx), sh.getChildren_(sidxParent));
@@ -184,8 +184,8 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectParentSetAfterRemove() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidxParent), sh.getParents_(sidx));
@@ -198,8 +198,8 @@ public class TestStores extends AbstractTest
     @Test
     public void shouldReportCorrectChildrenSetAfterRemove() throws SQLException
     {
-        sh.add_(sidx, "", false, t);
-        sh.add_(sidxParent, "", false, t);
+        sh.add_(sidx, "", t);
+        sh.add_(sidxParent, "", t);
         sh.addParent_(sidx, sidxParent, t);
 
         assertEquals(ImmutableSet.of(sidx), sh.getChildren_(sidxParent));

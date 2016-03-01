@@ -295,7 +295,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 }
                 if (oaFrom.caMasterNullable() != null && _ccdb.hasChange_(sidxFrom, emigrant)) {
                     // add content change and schedule submit
-                    _vu.update_(new SOCKID(sidxTo, immigrant, CID.CONTENT, KIndex.MASTER), t);
+                    _vu.update_(new SOCID(sidxTo, immigrant, CID.CONTENT), t);
                 }
             }
             Long v = _cvdb.getVersion_(sidxTo, immigrant);
@@ -318,7 +318,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 OID mc = OID.generate();
                 _ds.createOA_(cc.type(), sidxTo, mc, immigrant, cc.name(), t);
                 // add meta change and schedule submit
-                _vu.update_(new SOCKID(sidxTo, mc, CID.META, KIndex.MASTER), t);
+                _vu.update_(new SOCID(sidxTo, mc, CID.META), t);
                 migrate_(sidxFrom, c, sidxTo, mc, t);
             }
         } else {
@@ -368,7 +368,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 if (v != null) {
                     _cvdb.setVersion_(pTo.soid().sidx(), pTo.soid().oid(), v, t);
                 }
-                _vu.update_(new SOCKID(pTo.soid(), CID.CONTENT, KIndex.MASTER), t);
+                _vu.update_(new SOCID(pTo.soid(), CID.CONTENT), t);
             }
         }
     }
@@ -553,9 +553,9 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                         OID cc = OID.generate();
                         OA oa = _ds.getOA_(new SOID(sidx, c.oid));
                         alias_(sidx, cc, oa, t);
-                        _vu.update_(new SOCKID(sidx, cc, CID.META, KIndex.MASTER), t);
+                        _vu.update_(new SOCID(sidx, cc, CID.META), t);
                         if (oa.caMasterNullable() != null) {
-                            _vu.update_(new SOCKID(sidx, cc, CID.CONTENT, KIndex.MASTER), t);
+                            _vu.update_(new SOCID(sidx, cc, CID.CONTENT), t);
                         }
                     }
                 } else if (to) {

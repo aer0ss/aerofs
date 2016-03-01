@@ -6,6 +6,9 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
 import com.aerofs.ids.OID;
@@ -25,7 +28,6 @@ import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.cfg.CfgRootSID;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.ritual_notification.RitualNotificationServer;
@@ -33,16 +35,19 @@ import com.aerofs.ritual_notification.RitualNotifier;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.util.concurrent.Executor;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TestSingleuserStoreJoiner extends AbstractTest
 {
@@ -61,7 +66,6 @@ public class TestSingleuserStoreJoiner extends AbstractTest
     @Mock IMapSID2SIndex sid2sidx;
     @Mock UnlinkedRootDatabase urdb;
     @Mock RitualNotifier _ritualNotifier;
-    @Mock CfgUsePolaris usePolaris;
     @Mock PolarisAsyncClient polaris;
     @Mock RemoteLinkDatabase rldb;
 
@@ -80,12 +84,31 @@ public class TestSingleuserStoreJoiner extends AbstractTest
         when(cfgRootSID.get()).thenReturn(rootSID);
         when(sid2sidx.get_(rootSID)).thenReturn(rootSidx);
         when(rns.getRitualNotifier()).thenReturn(_ritualNotifier);
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            ((Executor)args[4]).execute(() -> ((AsyncTaskCallback)args[2]).onSuccess_(true));
+            return null;
+        }).when(polaris).post(anyString(), any(), any(AsyncTaskCallback.class), any(), any(Executor.class));
     }
 
     private void verifyAnchorCreated(SID sid, String name) throws Exception
     {
-        verify(oc).createMeta_(eq(Type.ANCHOR), eq(new SOID(rootSidx, SID.storeSID2anchorOID(sid))),
-                eq(OID.ROOT), eq(name), eq(PhysicalOp.APPLY), eq(false), eq(false), eq(t));
+        verify(polaris).post(eq("/objects/" + rootSID.toStringFormal()),
+                argThat(new BaseMatcher<LocalChange>() {
+                    @Override
+                    public boolean matches(Object o) {
+                        return o instanceof LocalChange
+                                && ((LocalChange) o).type == LocalChange.Type.INSERT_CHILD
+                                && ((LocalChange) o).childName.equals(name)
+                                && ((LocalChange) o).childObjectType == ObjectType.STORE
+                                && ((LocalChange) o).child.equals(SID.storeSID2anchorOID(sid).toStringFormal());
+                    }
+
+                    @Override
+                    public void describeTo(Description description) {
+                        description.appendText("INSERT_ANCHOR(").appendValue(sid).appendText(")");
+                    }
+                }), any(AsyncTaskCallback.class), any(), any(Executor.class));
     }
 
     private static StoreInfo sf(String name, boolean external)

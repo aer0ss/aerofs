@@ -7,7 +7,6 @@ package com.aerofs.gui.conflicts;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Ritual.ExportConflictReply;
@@ -18,7 +17,6 @@ import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.aerofs.ritual.IRitualClientProvider;
 import com.aerofs.ui.UIUtil;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.apache.commons.lang.StringUtils;
@@ -122,21 +120,16 @@ public class ConflictsModel
 
                         private Branch createBranchFromPB(PBBranch pbBranch)
                         {
-                            List<Contributor> contributors = newArrayListWithCapacity(
-                                    pbBranch.getAncestorToBranchCount());
-
-                            for (PBPeer peer : pbBranch.getAncestorToBranchList()) {
-                                contributors.add(createContributorFromPB(peer));
-                            }
-
                             return new Branch(Conflict.this, new KIndex(pbBranch.getKidx()),
-                                    pbBranch.getLength(), pbBranch.getMtime(), contributors);
+                                    pbBranch.getLength(), pbBranch.getMtime(),
+                                    createContributorFromPB(pbBranch.getContributor()));
                         }
 
                         private Contributor createContributorFromPB(PBPeer pbPeer)
                         {
-                            return new Contributor(pbPeer.getUserName(), pbPeer.hasDeviceName() ?
-                                    pbPeer.getDeviceName() : "Unknown computer");
+                            if (pbPeer.getUserName().isEmpty()) return null;
+                            return new Contributor(pbPeer.getUserName(), pbPeer.hasDeviceName()
+                                    ? pbPeer.getDeviceName() : "Unknown computer");
                         }
                     }, executor);
         }
@@ -160,19 +153,19 @@ public class ConflictsModel
         public final KIndex _kidx;
         public final long _length;
         public final long _mtime;
-        public final Collection<Contributor> _contributors;
+        public final @Nullable Contributor _contributor;
 
         // the Branch object caches the path to the exported file to avoid multiple exports
         private @Nullable String _exportedPath;
 
         private Branch(Conflict conflict, KIndex kidx, long length, long mtime,
-                Collection<Contributor> contributors)
+                @Nullable Contributor contributor)
         {
             _conflict = conflict;
             _kidx = kidx;
             _length = length;
             _mtime = mtime;
-            _contributors = contributors;
+            _contributor = contributor;
 
             if (isMaster()) _exportedPath = UIUtil.absPathNullable(_conflict._path);
         }
@@ -183,36 +176,20 @@ public class ConflictsModel
         }
 
         public boolean isDummy() {
-            return new CfgUsePolaris().get() && _mtime == 0 && _contributors.isEmpty();
+            return _contributor == null;
         }
 
         public String formatVersion()
         {
             if (isMaster()) return "Current version on this computer";
 
-            // N.B. KIndex is 0-based whereas natural language is 1-based.
-            // this logic will cause the branches to read "Version 2", "Version 3", etc.
-            if (!new CfgUsePolaris().get()) return  "Version " + (_kidx.getInt() + 1);
-
-            if (isDummy()) {
+            if (_contributor == null) {
                 return "Unavailable remote version";
             }
 
-            Contributor c = _contributors.iterator().next();
-            return c.isLocalUser()
-                    ? "My version from " + c._devicename
-                    : "Version from " + c._username;
-        }
-
-        public String formatContributors()
-        {
-            List<String> contributors = newArrayListWithCapacity(_contributors.size());
-
-            for (Contributor contributor : _contributors) {
-                contributors.add(contributor.formatContributor());
-            }
-
-            return "Contributors: " + StringUtils.join(contributors, ", ");
+            return _contributor.isLocalUser()
+                    ? "My version from " + _contributor._devicename
+                    : "Version from " + _contributor._username;
         }
 
         public String formatFileSize()
@@ -309,11 +286,6 @@ public class ConflictsModel
         public boolean isLocalUser()
         {
             return _username.equals(_localUser.get().getString());
-        }
-
-        public String formatContributor()
-        {
-            return isLocalUser() ? "Me on " + _devicename : _username;
         }
     }
 }

@@ -18,7 +18,7 @@ public class EIGetAttr extends AbstractEBIMC
     public @Nullable OA _oa;  // null if not found (no ExNotFound is thrown)
 
     // a map from all branches of the object to the list of contributors for each object
-    public @Nullable Map<KIndex, List<PBPeer>> _div;
+    public @Nullable Map<KIndex, PBPeer> _div;
 
     public EIGetAttr(IIMCExecutor imce, Path path)
     {
@@ -29,7 +29,7 @@ public class EIGetAttr extends AbstractEBIMC
     /**
      * @param oa set to null if not found
      */
-    public void setResult_(@Nullable OA oa, @Nullable Map<KIndex, List<PBPeer>> div)
+    public void setResult_(@Nullable OA oa, @Nullable Map<KIndex, PBPeer> div)
     {
         _oa = oa;
         _div = div;

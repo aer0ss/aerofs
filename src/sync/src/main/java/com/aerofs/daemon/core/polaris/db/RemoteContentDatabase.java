@@ -64,9 +64,8 @@ public class RemoteContentDatabase extends AbstractDatabase
     }
 
     @Override
-    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException
+    public void createStore_(SIndex sidx, Trans t) throws SQLException
     {
-        if (!usePolaris) return;
         try (Statement s = c().createStatement()) {
             s.executeUpdate("create table " + tableName(sidx) + "("
                     + C_REMOTE_CONTENT_OID + _dbcw.uniqueIdType() + "not null,"

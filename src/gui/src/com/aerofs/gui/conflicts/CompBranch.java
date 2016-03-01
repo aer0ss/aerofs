@@ -12,7 +12,6 @@ import com.aerofs.gui.conflicts.ConflictsModel.Branch;
 import com.aerofs.gui.conflicts.DlgConflicts.IConflictEventListener;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.error.ErrorMessages;
 import com.google.common.util.concurrent.FutureCallback;
@@ -59,13 +58,6 @@ class CompBranch extends Composite
         Label lblMtime = createLabel(this, SWT.NONE);
         if (!dummy) lblMtime.setText(_branch.formatLastModified());
         lblMtime.setFont(makeSubtitle(lblMtime.getFont()));
-
-        if (!new CfgUsePolaris().get()) {
-            Label lblContributors = createLabel(this, SWT.WRAP);
-            if (!dummy) lblContributors.setText(_branch.formatContributors());
-            lblContributors.setFont(lblContributors.getFont());
-            lblContributors.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
-        }
 
         Label lblFilesize = createLabel(this, SWT.NONE);
         if (!dummy) lblFilesize.setText(_branch.formatFileSize());

@@ -9,9 +9,6 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.*;
 import com.aerofs.daemon.core.expel.AbstractLogicalStagingArea;
 import com.aerofs.daemon.core.expel.LogicalStagingArea;
-import com.aerofs.daemon.core.migration.IEmigrantDetector;
-import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.net.Transports;
@@ -74,7 +71,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,10 +89,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         //LogUtil.setLevel(Level.DEBUG);
         LogUtil.enableConsoleLogging();
     }
-
-    protected final CfgUsePolaris usePolaris = new CfgUsePolaris() {
-        @Override public boolean get() { return true; }
-    };
 
     protected final InMemoryCoreDBCW dbcw = new InMemoryCoreDBCW(mock(InjectableDriver.class));
 
@@ -179,7 +171,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
                 // FIXME: config
                 bind(ICfgStore.class).toInstance(mock(CfgDatabase.class));
-                bind(CfgUsePolaris.class).toInstance(usePolaris);
                 bind(CfgLocalUser.class).toInstance(new CfgLocalUser() {
                     @Override public UserID get() { return user; }
                 });
@@ -198,10 +189,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(ContentSender.class).toInstance(mock(ContentSender.class));
                 bind(ContentReceiver.class).toInstance(mock(ContentReceiver.class));
                 bind(ContentProvider.class).toInstance(mock(ContentProvider.class));
-                bind(IEmigrantTargetSIDLister.class).toInstance(mock(IEmigrantTargetSIDLister.class));
-                bind(IEmigrantDetector.class).toInstance(mock(IEmigrantDetector.class));
-                bind(ImmigrantDetector.class).toInstance(mock(ImmigrantDetector.class));
-                bind(NativeVersionControl.class).toInstance(mock(NativeVersionControl.class));
                 bind(NewUpdatesSender.class).toInstance(mock(NewUpdatesSender.class));
                 bind(Downloads.class).toInstance(mock(Downloads.class));
                 bind(Transports.class).toInstance(mock(Transports.class));
@@ -219,7 +206,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
                 bind(IMetaDatabase.class).to(MetaDatabase.class);
                 bind(IMetaDatabaseWalker.class).to(MetaDatabase.class);
                 bind(IAliasDatabase.class).to(AliasDatabase.class);
-                bind(ICollectorSequenceDatabase.class).to(CollectorSequenceDatabase.class);
+                bind(ICollectorStateDatabase.class).to(StoreDatabase.class);
                 bind(IPrefixVersionDatabase.class).to(PrefixVersionDatabase.class);
                 bind(IExpulsionDatabase.class).to(ExpulsionDatabase.class);
                 bind(ISIDDatabase.class).to(SIDDatabase.class);
@@ -267,10 +254,6 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
         });
 
         dbcw.init_();
-        try (Statement s = dbcw.getConnection().createStatement()) {
-            new PolarisSchema().create_(s, dbcw);
-        }
-        dbcw.commit_();
         inj.getInstance(Stores.class).init_();
         try {
             inj.getInstance(StoreCreator.class).createRootStore_(rootSID, "", mock(Trans.class));

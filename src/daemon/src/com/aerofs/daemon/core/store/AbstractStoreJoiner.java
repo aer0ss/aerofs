@@ -123,7 +123,7 @@ public abstract class AbstractStoreJoiner implements IStoreJoiner
         while (true) {
             try {
                 _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, PhysicalOp.APPLY,
-                        false, updateVersion, t);
+                        updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
                 l.warn("duplicate", BaseLogUtil.suppress(e, ExAlreadyExist.class));

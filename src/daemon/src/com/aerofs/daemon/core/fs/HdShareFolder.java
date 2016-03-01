@@ -16,14 +16,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.ResolvedPath;
-import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.migration.ImmigrantCreator;
-import com.aerofs.daemon.core.object.ObjectCreator;
-import com.aerofs.daemon.core.object.ObjectDeleter;
-import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreHierarchy;
@@ -32,13 +25,9 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.db.UnlinkedRootDatabase;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRoots;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
@@ -62,25 +51,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
-import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
-import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
-import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
-import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
     private final static Logger l = Loggers.getLogger(HdShareFolder.class);
 
     private final TokenManager _tokenManager;
-    private final TransManager _tm;
-    private final ObjectCreator _oc;
     private final DirectoryService _ds;
-    private final IPhysicalStorage _ps;
-    private final ImmigrantCreator _imc;
-    private final ObjectMover _om;
-    private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
     private final StoreHierarchy _ss;
     private final DescendantStores _dss;
@@ -88,36 +65,27 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final SPBlockingClient.Factory _factSP;
     private final UnlinkedRootDatabase _urdb;
     private final CfgAbsRoots _absRoots;
-    private final CfgUsePolaris _polaris;
     private final PolarisAsyncClient _client;
     private final RemoteLinkDatabase _rldb;
 
     private final Executor _sameThread = MoreExecutors.sameThreadExecutor();
 
     @Inject
-    public HdShareFolder(TokenManager tokenManager, TransManager tm, ObjectCreator oc,
-            IPhysicalStorage ps, DirectoryService ds, ImmigrantCreator imc, ObjectMover om,
-            ObjectDeleter od, IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
+    public HdShareFolder(TokenManager tokenManager, DirectoryService ds,
+            IMapSID2SIndex sid2sidx, StoreHierarchy ss, DescendantStores dss,
             ACLSynchronizer aclsync, InjectableSPBlockingClientFactory factSP,
-            CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb, CfgUsePolaris polaris,
+            CfgAbsRoots cfgAbsRoots, UnlinkedRootDatabase urdb,
             RemoteLinkDatabase rldb, PolarisAsyncClient.Factory clientFactory)
     {
         _ss = ss;
         _tokenManager = tokenManager;
-        _tm = tm;
-        _oc = oc;
         _ds = ds;
-        _ps = ps;
-        _imc = imc;
-        _om = om;
-        _od = od;
         _sid2sidx = sid2sidx;
         _dss = dss;
         _aclsync = aclsync;
         _factSP = factSP;
         _absRoots = cfgAbsRoots;
         _urdb = urdb;
-        _polaris = polaris;
         _rldb = rldb;
         // NB: do not reuse the background polaris connection to bypass pipelined messages and
         // reduce the likelihood of suffering from a broken connection
@@ -192,7 +160,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // of the stores' owner, multiple local failures can be handled properly,
         // while remote failures will prevent the system from being in a half-state
         //
-        if (!alreadyShared && _polaris.get()) {
+        if (!alreadyShared) {
             try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "share")) {
                 OID oid = SID.convertedStoreSID2folderOID(sid);
                 UniqueID parent = oa.parent().isRoot() ? ev._path.sid() : oa.parent();
@@ -218,7 +186,11 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
                     _client.post("/objects/" + parent.toStringFormal(), c,
                             new AsyncTaskCallback() {
                                 @Override
-                                public void onSuccess_(boolean hasMore) {}
+                                public void onSuccess_(boolean hasMore) {
+                                    // TODO(phoenix): extract job id and propagate to UI for spinner
+
+                                    f.set(null);
+                                }
 
                                 @Override
                                 public void onFailure_(Throwable t) {
@@ -226,7 +198,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
                                 }
                             }, r -> handle_(f, r), _sameThread);
 
-                    return f.get();
+                    return f.get(10, TimeUnit.SECONDS);
                 });
             } catch (ExecutionException e) {
                 Throwables.propagateIfPossible(e.getCause(), Exception.class);
@@ -236,15 +208,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         callSP_(sid, name, SubjectPermissionsList.mapToPB(ev._subject2role), ev._emailNote,
                 ev._suppressSharedFolderRulesWarnings);
-
-        if (!alreadyShared && !_polaris.get()) {
-            // resolve the path again to account for aliasing of the parent
-            // TODO: gracefully handle concurrent sharing of an ancestor/descendant
-            OA noa = throwIfUnshareable_(ev._path);
-            // TODO: gracefully handle aliasing of the object itself
-            if (!noa.soid().equals(oa.soid())) throw new ExAborted();
-            convertToSharedFolder_(ev._path, noa, sid);
-        }
 
         // ensure ACLs are updated (at the very least we need an entry for the local user...)
         _aclsync.syncToLocal_();
@@ -262,10 +225,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
             }
             throw new ExProtocolError(r.getStatus().getReasonPhrase());
         }
-
-        // TODO(phoenix): extract job id and propagate to UI for spinner
-
-        f.set(null);
 
         return false;
     }
@@ -313,97 +272,5 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
                 .shareFolder(folderName, BaseUtil.toPB(sid), roles, emailNote, false,
                         suppressSharingRulesWarnings)
         );
-    }
-
-    private void convertToSharedFolder_(Path path, OA oa, SID sid)
-            throws Exception
-    {
-        checkArgument(oa.isDir());
-
-        SOID soid = oa.soid();
-
-        cleanupAnchorCreatedByAutoJoin_(soid.sidx(), sid);
-
-        try  (Trans t = _tm.begin_()){
-            convertToSharedFolderImpl_(soid, oa.parent(), sid, path, t);
-            t.commit_();
-        }
-    }
-
-    /*
-     * As we release the core lock when making the SP call to join the shared folder it is
-     * possible that the new ACLs propagate before we regain the core lock. In this case
-     * we end up with an improperly named anchor associated with a superfluous physical
-     * directory. We need to fix this before we can proceed with the conversion.
-     *
-     * Due to some assertion enforced by VersionAssistant the deletion of this object may
-     * not take place in the transaction that does the actual migration.
-     */
-    private void cleanupAnchorCreatedByAutoJoin_(SIndex parentStore, SID sid) throws Exception
-    {
-        SOID anchor = new SOID(parentStore, SID.storeSID2anchorOID(sid));
-        OA oaAnchor = _ds.getOANullable_(anchor);
-        if (oaAnchor == null) return;
-
-        l.debug("cleanup auto-join {} {}", sid, oaAnchor.name());
-
-        try (Trans t = _tm.begin_()) {
-            _od.delete_(anchor, APPLY, t);
-            t.commit_();
-        }
-    }
-
-    /**
-     * Convert an existing folder into a store.
-     */
-    private void convertToSharedFolderImpl_(SOID soid, OID oidParent, SID sid, Path path, Trans t)
-            throws Exception
-    {
-        // Step 1: rename the folder into a temporary name, without incrementing its version.
-        checkArgument(!path.isEmpty());
-        Path pathTemp = path;
-
-        ResolvedPath from = _ds.resolve_(soid);
-
-        do {
-            pathTemp = path.removeLast().append(FileUtil.nextFileName(pathTemp.last()));
-        } while (_ds.resolveNullable_(pathTemp) != null);
-        _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, t);
-
-        // Step 2: create the new store with a derived SID
-        createNewStore(soid, oidParent, sid, path, t);
-
-        // Step 3: migrate files
-        SIndex sidxTo = _sid2sidx.get_(sid);
-        SOID soidToRoot = new SOID(sidxTo, OID.ROOT);
-        for (OID oidChild : _ds.getChildren_(soid)) {
-            SOID soidChild = new SOID(soid.sidx(), oidChild);
-            OA oaChild = _ds.getOA_(soidChild);
-            _imc.createLegacyImmigrantRecursively_(from, soidChild, soidToRoot, oaChild.name(), MAP, t);
-        }
-
-        // Step 4: delete the root folder
-        _od.deleteAndEmigrate_(soid, NOP, sid, t);
-    }
-
-    private void createNewStore(SOID soid, OID oidParent, SID sid, Path path, final Trans t)
-            throws Exception
-    {
-        l.debug("new store: {} {}", sid, path);
-        SOID soidAnchor = new SOID(soid.sidx(), SID.storeSID2anchorOID(sid));
-
-        _ps.newFolder_(_ds.resolve_(soid)).updateSOID_(soidAnchor, t);
-
-        OA oaAnchor = _ds.getOANullable_(soidAnchor);
-        if (oaAnchor != null) {
-            // any conflicting anchor created by auto-join upon ACL update should have been cleaned
-            // before starting the conversion process
-            checkState(oaAnchor.isExpelled(), "%s", oaAnchor);
-            // move anchor to appropriate path (does not affect physical objects)
-            _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, true, t);
-        } else {
-            // create anchor, root and trash, ...
-            _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), MAP, true, true, t);
-        }
     }
 }

@@ -175,6 +175,9 @@ public class SyncSchema implements ISchema
                         C_STORE_SIDX + " integer primary key," +
                         C_STORE_NAME + dbcw.nameType() + "," +
                         C_STORE_COLLECTING_CONTENT + dbcw.boolType() + " not null," +
+                        C_STORE_LTS_LOCAL + dbcw.longType() + "," +
+                        C_STORE_LTS_CONTENT + dbcw.longType() + "," +
+                        C_STORE_LTS_HIGHEST + dbcw.longType() + "," +
                         C_STORE_USAGE + " integer not null default 0" +
                         ")" + dbcw.charSet());
 

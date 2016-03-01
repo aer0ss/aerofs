@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.core.IVersionUpdater;
-import com.aerofs.daemon.core.collector.Collector2;
+import com.aerofs.daemon.core.collector.ContentFetcher;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.net.device.Device;
 import com.aerofs.daemon.core.net.device.Devices;
@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.polaris.submit.SubmissionScheduler;
 import com.aerofs.daemon.core.protocol.FilterFetcher;
 import com.aerofs.daemon.core.status.PauseSync;
+import com.aerofs.daemon.lib.db.ICollectorStateDatabase;
 import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
@@ -27,7 +28,7 @@ import static com.google.common.base.Preconditions.checkState;
 public class PolarisStore extends Store
 {
     private final ChangeFetchScheduler _cfs;
-    private final Collector2 _cf;
+    private final ContentFetcher _cf;
     private final SenderFilters _senderFilters;
     private final SubmissionScheduler<ContentChangeSubmitter> _ccss;
 
@@ -36,13 +37,14 @@ public class PolarisStore extends Store
         @Inject private Devices _devices;
         @Inject private ChangeNotificationSubscriber _cnsub;
         @Inject protected ChangeFetchScheduler.Factory _factCFS;
-        @Inject protected Collector2.Factory _factCF;
+        @Inject protected ContentFetcher.Factory _factCF;
         @Inject protected SenderFilters.Factory _factSF;
         @Inject protected PauseSync _pauseSync;
         @Inject private SubmissionScheduler.Factory<ContentChangeSubmitter> _factCCSS;
         @Inject private IVersionUpdater _vu;
         @Inject private PulledDeviceDatabase _pddb;
         @Inject private FilterFetcher _ff;
+        @Inject private ICollectorStateDatabase _csdb;
 
         public Store create_(SIndex sidx) throws SQLException
         {
@@ -54,19 +56,19 @@ public class PolarisStore extends Store
     protected final Factory _f;
 
     protected PolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs,
-                           Collector2 cf, SenderFilters sf, IVersionUpdater vu) throws SQLException
+                           ContentFetcher cf, SenderFilters sf, IVersionUpdater vu) throws SQLException
     {
         super(sidx, ImmutableMap.of(
                 ChangeFetchScheduler.class, cfs,
-                Collector2.class, cf,
+                ContentFetcher.class, cf,
                 SenderFilters.class, sf));
         _cfs = cfs;
         _cf = cf;
         _senderFilters = sf;
         _f = f;
         _ccss = f._factCCSS.create(sidx);
-        vu.addListener_((k, t) -> {
-            if (k.sidx().equals(sidx) && k.cid().isContent()) _ccss.startOnCommit_(t);
+        vu.addListener_((socid, t) -> {
+            if (socid.sidx().equals(sidx) && socid.cid().isContent()) _ccss.startOnCommit_(t);
         });
     }
 

@@ -5,12 +5,13 @@
 package com.aerofs.daemon.core.admin;
 
 import com.aerofs.base.ElapsedTimer;
+import com.aerofs.daemon.core.VersionUpdater;
+import com.aerofs.daemon.core.polaris.fetch.ChangeFetcher;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.activity.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -32,7 +33,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemoryCoreDBCW;
 import com.aerofs.lib.id.SIndex;
@@ -46,7 +46,6 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.inject.Injector;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +80,6 @@ public class TestHdGetActivities extends AbstractTest
     @Mock TransManager tm;
     @Mock Trans t;
     @Mock UserAndDeviceNameDatabase udndb;
-    @Mock NativeVersionControl nvc;
     @Mock StoreHierarchy stores;
     @Mock IMapSIndex2SID sidx2sid;
 
@@ -133,16 +131,11 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(CREATION_VALUE, mkpath("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, mkpath("a"), mkpath("b"), did1, did2, did3);
 
-        Injector inj = mock(Injector.class);
-        when(inj.getInstance(NativeVersionControl.class)).thenReturn(nvc);
-        CfgUsePolaris usePolaris = mock(CfgUsePolaris.class);
-        when(usePolaris.get()).thenReturn(false);
-        al = new ActivityLog(ds, aldb, cfgLocalDID, usePolaris, inj);
+        al = new ActivityLog(ds, aldb, cfgLocalDID, mock(VersionUpdater.class), mock(ChangeFetcher.class));
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tokenManager,  tm, d2u,
                 udndb, factSP, new ElapsedTimer.Factory());
 
-        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid,
-                mock(CfgUsePolaris.class));
+        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID, sidx2sid);
 
         when(cfgLocalUser.get()).thenReturn(me);
 

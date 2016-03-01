@@ -8,12 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.acl.ACLFilter;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
-import com.aerofs.daemon.core.migration.IEmigrantDetector;
-import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.QuotaEnforcement;
 import com.aerofs.daemon.core.store.IStoreJoiner;
@@ -35,10 +29,6 @@ public class MultiuserModule extends AbstractModule
         binder().disableCircularProxies();
 
         bind(AbstractPathResolver.Factory.class).to(MultiuserPathResolver.Factory.class);
-
-        bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
-        bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
-        bind(ImmigrantDetector.class).to(NullImmigrantDetector.class);
 
         bind(ACLFilter.class).to(MultiuserACLFilter.class);
         bind(IStoreJoiner.class).to(MultiuserStoreJoiner.class);

@@ -6,8 +6,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.aerofs.daemon.lib.db.SyncSchema.*;
-
 public class PolarisSchema implements ISchema {
     public static String
 
@@ -67,14 +65,6 @@ public class PolarisSchema implements ISchema {
 
     public static void createPolarisFetchTables(Statement s, IDBCW dbcw) throws SQLException
     {
-        // add epoch columns to store table
-        s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_LOCAL + dbcw.longType());
-        s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_CONTENT + dbcw.longType());
-        s.executeUpdate("alter table " + T_STORE
-                + " add column " + C_STORE_LTS_HIGHEST + dbcw.longType());
-
         s.executeUpdate("create table " + T_VERSION + "("
                 + C_VERSION_SIDX + " integer not null,"
                 + C_VERSION_OID + dbcw.uniqueIdType() + "not null,"

@@ -6,7 +6,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.labeling.L;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -20,18 +19,16 @@ public class StoreCreator
     private final IMapSID2SIndex _sid2sidx;
     private final AbstractLogicalStagingArea _sa;
     private final StoreCreationOperators _sco;
-    private final CfgUsePolaris _usePolaris;
 
     @Inject
     public StoreCreator(IMapSID2SIndex sid2sidx, StoreHierarchy ss, StoreCreationOperators sco,
-            IPhysicalStorage ps, AbstractLogicalStagingArea sa, CfgUsePolaris usePolaris)
+            IPhysicalStorage ps, AbstractLogicalStagingArea sa)
     {
         _ss = ss;
         _sid2sidx = sid2sidx;
         _ps = ps;
         _sa = sa;
         _sco = sco;
-        _usePolaris = usePolaris;
     }
 
     /**
@@ -83,12 +80,9 @@ public class StoreCreator
 
         l.info("create store {} {}", sidx, sid);
 
-        // TODO: ACL-controlled central/distrib store assignment and version conversion
-        boolean usePolaris = _usePolaris.get();
-
-        _sco.runAll_(sidx, usePolaris, t);
+        _sco.runAll_(sidx, t);
         _ps.createStore_(sidx, sid, name, t);
-        _ss.add_(sidx, name, usePolaris, t);
+        _ss.add_(sidx, name, t);
 
         return sidx;
     }

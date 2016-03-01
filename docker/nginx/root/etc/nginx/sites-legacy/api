@@ -1,3 +1,0 @@
-location /api/ {
-    include /etc/nginx/havre.conf;
-}

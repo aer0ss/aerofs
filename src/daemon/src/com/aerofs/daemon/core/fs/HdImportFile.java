@@ -21,13 +21,9 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.daemon.core.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.*;
 import com.aerofs.ids.OID;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.lib.id.SOKID;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 
@@ -87,7 +83,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
                 // a bogus empty version)
                 soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
                 _oc.createMeta_(OA.Type.FILE, soid, soidParent.oid(), ev._dest.last(),
-                        PhysicalOp.APPLY, false, true, t);
+                        PhysicalOp.APPLY, true, t);
                 t.commit_();
             }
         }
@@ -133,7 +129,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             _ds.setCA_(sokid, length, mtime, h, t);
 
             // increment version number after local update
-            _vu.update_(new SOCKID(sokid, CID.CONTENT), t);
+            _vu.update_(new SOCID(soid, CID.CONTENT), t);
 
             t.commit_();
         }

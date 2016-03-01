@@ -3,6 +3,7 @@ NB: this test assumes a single user but admits any mixture of regular clients an
 
 """
 import time
+import binascii
 
 import requests
 from syncdet.case import actor_count, actor_id, local_actor, instance_unique_hash32, instance_unique_string
@@ -40,7 +41,8 @@ def main():
     token = aerofs_oauth.get_access_token(auth_code, verify=False)
     print 'token is', token
 
-    pbpath = store_relative_to_pbpath(id.get_root_sid_bytes(local_actor().aero_userid), instance_unique_string())
+    sid = id.get_root_sid_bytes(local_actor().aero_userid)
+    pbpath = store_relative_to_pbpath(sid, instance_unique_string())
 
     # create a file in the root anchor
     # NB: use Ritual for TS-friendliness
@@ -52,6 +54,10 @@ def main():
     # wait for file to sync on all actors
     # NB: use Ritual for TS-friendliness
     r.wait_pbpath_with_content(pbpath, CONTENT)
+    oid = binascii.hexlify(r.test_get_pbpath_identifier(pbpath).oid)
+    resource = "/files/" + binascii.hexlify(sid) + oid + "/content"
+    print "url: {}".format(resource)
+
     sync("synced")
 
     # stop AeroFS on all actors
@@ -68,7 +74,7 @@ def main():
             run_ui()
         sync("start-{}".format(i))
 
-        # list contents of root anchor
+        # get file contents (only request that actually goes to daemon post-Phoenix)
         print 'calling api...'
         n = 0
         # the daemon may take a little while to establish a connection to the gateway
@@ -76,23 +82,16 @@ def main():
         #     503 Service Unavailable
         #     504 Gateway Timeout
         while True:
-            r = s.get(API_URL+"/children/")
-            if (r.status_code != 503 and r.status_code != 504) or n == 15:
+            r = s.get(API_URL+resource)
+            if (r.status_code != 503 and r.status_code != 504 and r.status_code != 404) or n == 15:
+                print '{}: {}'.format(r.status_code, r.text)
                 r.raise_for_status()
                 c = requests.utils.dict_from_cookiejar(r.cookies)
-                print '{}: {}'.format(c['route'], r.json())
-                # find file in list
-                # NB: poor TS isolation prevents us from using an assert here...
-                # alternatively we could use manual routing but that wouldn't really test fallback
-                if any(f["name"] == instance_unique_string() for f in r.json()["files"]):
+                print 'from {}'.format(c['route'])
+                if r.text == CONTENT:
                     break
-                else:
-                    print 'sigh at lack of TS isolation...'
-                    # reset session to hopefully stop talking to the interfering TS
-                    s = requests.Session()
-                    s.headers["Authorization"] = "Bearer " + token
             time.sleep(2 * POLLING_INTERVAL)
-            n = n+1
+            n += 1
 
         sync("stop-{}".format(i))
         if actor_id() == i:

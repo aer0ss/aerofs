@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.expel.LogicalStagingArea;
 import com.aerofs.daemon.core.first_launch.FirstLaunch;
 import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
@@ -35,8 +34,6 @@ public class Core implements IModule
 {
     private final FirstLaunch _fl;
     private final IDBCW _dbcw;
-    private final NativeVersionControl _nvc;
-    private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
     private final Stores _ss;
     private final LinkStateService _lss;
@@ -69,8 +66,6 @@ public class Core implements IModule
             Transports tps,
             LinkStateService lss,
             IPhysicalStorage ps,
-            NativeVersionControl nvc,
-            ImmigrantVersionControl ivc,
             IDBCW dbcw,
             SSMPConnection ssmp,
             ACLNotificationSubscriber aclsub,
@@ -98,8 +93,6 @@ public class Core implements IModule
         _lss = lss;
         _tps = tps;
         _ps = ps;
-        _nvc = nvc;
-        _ivc = ivc;
         _dbcw = dbcw;
         _ssmp = ssmp;
         _aclsub = aclsub;
@@ -135,9 +128,6 @@ public class Core implements IModule
 
         // initialize the transport first
         _tps.init_();
-
-        _nvc.init_();
-        _ivc.init_();
 
         // IMPORTANT: Linker need to be initialized before PhysicalStorage as LinkedStorage expects
         // LinkerRootMap to be initialized and that is the responsibility of the Linker

@@ -18,12 +18,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.util.concurrent.SettableFuture;
@@ -164,7 +159,7 @@ public class TestHashQueue extends AbstractTest
         ev.get().handle_();
 
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
-        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
+        verify(vu).update_(eq(new SOCID(soid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -184,7 +179,7 @@ public class TestHashQueue extends AbstractTest
         ev.get().handle_();
 
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
-        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
+        verify(vu).update_(eq(new SOCID(soid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -213,7 +208,7 @@ public class TestHashQueue extends AbstractTest
         ev.get().handle_();
 
         verify(ds).setCA_(eq(sokid), eq(0L), eq(42L), eq(EMPTY_HASH), any(Trans.class));
-        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
+        verify(vu).update_(eq(new SOCID(soid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test
@@ -241,7 +236,7 @@ public class TestHashQueue extends AbstractTest
         ev.get().handle_();
 
         verify(ds).setCA_(eq(sokid), eq(0L), eq(43L), eq(EMPTY_HASH), any(Trans.class));
-        verify(vu).update_(eq(new SOCKID(sokid, CID.CONTENT)), any(Trans.class));
+        verify(vu).update_(eq(new SOCID(soid, CID.CONTENT)), any(Trans.class));
     }
 
     @Test

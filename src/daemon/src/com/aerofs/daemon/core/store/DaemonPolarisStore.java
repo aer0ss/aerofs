@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.core.IVersionUpdater;
-import com.aerofs.daemon.core.collector.Collector2;
+import com.aerofs.daemon.core.collector.ContentFetcher;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.polaris.fetch.ChangeFetchScheduler;
 import com.aerofs.daemon.core.polaris.submit.MetaChangeSubmitter;
@@ -27,13 +27,13 @@ public class DaemonPolarisStore extends PolarisStore
         }
     }
 
-    private DaemonPolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs, Collector2 cf,
+    private DaemonPolarisStore(Factory f, SIndex sidx, ChangeFetchScheduler cfs, ContentFetcher cf,
                                SenderFilters sf, IVersionUpdater vu) throws SQLException
     {
         super(f, sidx, cfs, cf, sf, vu);
         _mcss = f._factMCSS.create(sidx);
-        vu.addListener_((k, t) -> {
-            if (k.sidx().equals(sidx) && k.cid().isMeta()) _mcss.startOnCommit_(t);
+        vu.addListener_((socid, t) -> {
+            if (socid.sidx().equals(sidx) && socid.cid().isMeta()) _mcss.startOnCommit_(t);
         });
     }
 

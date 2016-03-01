@@ -299,7 +299,7 @@ message PBBranch {
     // since the hypothetical common ancestor of *all* branches.
     //
     // NB: this field is only populated by GetObjectAttributes
-    repeated PBPeer ancestor_to_branch = 4;
+    optional PBPeer contributor = 4;
 }
 
 message ListNonRepresentableObjectsReply {

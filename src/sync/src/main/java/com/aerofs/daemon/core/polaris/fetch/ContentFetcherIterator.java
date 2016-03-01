@@ -59,7 +59,7 @@ public class ContentFetcherIterator
 
     public static class Filter
     {
-        enum Action
+        public enum Action
         {
             Remove,
             Ignore,
@@ -118,14 +118,6 @@ public class ContentFetcherIterator
         _current = null;
         _next = 0;
     }
-
-    /**
-     * @return the current item, null if the iterator was not started
-     */
-//    @Nullable OID currentNullable_()
-//    {
-//        return _current;
-//    }
 
     /**
      * @return the current item

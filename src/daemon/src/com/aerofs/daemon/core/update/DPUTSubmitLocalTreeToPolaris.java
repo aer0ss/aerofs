@@ -18,7 +18,6 @@ import com.aerofs.daemon.lib.db.ISIDDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LibParam;
@@ -115,10 +114,10 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             // create necessary polaris tables for the store
             // N.B. this is done after all the operations are submitted because the existence of these tables is used to short-circuit traversing the store's objects
             try (Trans t = _tm.begin_()) {
-                _mcdb.createStore_(s, true, t);
-                _rcdb.createStore_(s, true, t);
-                _cfdb.createStore_(s, true, t);
-                _ccdb.createStore_(s, true, t);
+                _mcdb.createStore_(s, t);
+                _rcdb.createStore_(s, t);
+                _cfdb.createStore_(s, t);
+                _ccdb.createStore_(s, t);
                 _cedb.setChangeEpoch_(s, -1L, t);
                 t.commit_();
             }
@@ -141,6 +140,8 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             @Nullable
             @Override
             public SOID prefixWalk_(SOID cookieFromParent, OA oa) throws Exception {
+                SIndex sidx = oa.soid().sidx();
+                OID oid = oa.soid().oid();
                 if (oa.soid().oid().isRoot()) {
                     // don't need to do anything for the root object
                     return oa.soid();
@@ -149,7 +150,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                     return null;
                 }
 
-                Version v = _nvdb.getLocalVersion_(new SOCKID(oa.soid(), CID.META, KIndex.MASTER));
+                Version v = _nvdb.getVersion_(sidx, oid, CID.META, KIndex.MASTER);
                 // sometimes version did is zero for anchors
                 if (!v.isZero_() || oa.type() == OA.Type.ANCHOR) {
                     ConversionChange insert = new ConversionChange();
@@ -165,7 +166,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                 }
 
                 if (oa.isFile()) {
-                    v = _nvdb.getLocalVersion_(new SOCKID(oa.soid(), CID.CONTENT, KIndex.MASTER));
+                    v = _nvdb.getVersion_(sidx, oid, CID.CONTENT, KIndex.MASTER);
                     CA ca = oa.caMasterNullable();
                     if (!v.isZero_() && ca != null) {
                         ContentHash hash = _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
@@ -178,7 +179,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                             update.size = ca.length();
                             update.hash = hash.toHex();
                             update.addVersion(v);
-                            changes.add(new Batch.BatchOp(oa.soid().oid().toStringFormal(), update));
+                            changes.add(new Batch.BatchOp(oid.toStringFormal(), update));
                         }
                     }
                 }
@@ -334,13 +335,13 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
                             try (Trans t = _tm.begin_()) {
                                 switch (op.operation.type) {
                                     case UPDATE_CONTENT: {
-                                        _nvdb.deleteLocalVersion_(new SOCKID(_sidx, new OID(op.oid), CID.CONTENT, KIndex.MASTER), change.getVersion(), t);
+                                        _nvdb.deleteVersion_(_sidx, new OID(op.oid), CID.CONTENT, KIndex.MASTER, change.getVersion(), t);
                                         // defer local version to remote changes
                                         _cvdb.setVersion_(_sidx, new OID(or.updated.get(0).object.oid), -1L, t);
                                         break;
                                     }
                                     case INSERT_CHILD: {
-                                        _nvdb.deleteLocalVersion_(new SOCKID(_sidx, new OID(change.child) , CID.META, KIndex.MASTER), change.getVersion(), t);
+                                        _nvdb.deleteVersion_(_sidx, new OID(change.child) , CID.META, KIndex.MASTER, change.getVersion(), t);
                                         break;
                                     }
                                     default: {

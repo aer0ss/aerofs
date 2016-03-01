@@ -6,10 +6,9 @@ package com.aerofs.daemon.core.transfers.download;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ex.ExOutOfSpace;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
@@ -35,7 +34,6 @@ import static org.mockito.Mockito.*;
 public class TestAsyncDownload extends AbstractDownloadTest
 {
     final SOID soid = new SOID(sidx, OID.generate());
-    final SOCID socid = new SOCID(soid, CID.CONTENT);
 
     @Before
     public void setUp() throws Exception
@@ -51,90 +49,90 @@ public class TestAsyncDownload extends AbstractDownloadTest
     @Test
     public void shouldDownload() throws Exception
     {
-        when(changes.hasRemoteChanges_(socid)).thenReturn(false);
+        when(changes.hasRemoteChanges_(soid)).thenReturn(false);
 
-        mockReplies(socid, did1);
+        mockReplies(soid, did1);
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
-        ordered.verify(dcl).onDownloadSuccess_(socid, did1);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did1);
+        ordered.verify(dcl).onDownloadSuccess_(soid, did1);
         verifyZeroInteractions(dls);
     }
 
     @Test
     public void shouldTrySecondDeviceWhenKMLsLeft() throws Exception
     {
-        mockReplies(socid, did1, did2);
-        when(changes.hasRemoteChanges_(socid))
+        mockReplies(soid, did1, did2);
+        when(changes.hasRemoteChanges_(soid))
                 .thenReturn(true)
                 .thenReturn(false);
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did1);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did2), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did2);
 
-        ordered.verify(dcl).onDownloadSuccess_(socid, did2);
+        ordered.verify(dcl).onDownloadSuccess_(soid, did2);
         verifyZeroInteractions(dls);
     }
 
     @Test
     public void shouldTrySecondDeviceWhenFirstFails() throws Exception
     {
-        when(changes.hasRemoteChanges_(socid)).thenReturn(false);
+        when(changes.hasRemoteChanges_(soid)).thenReturn(false);
 
-        mockReplies(socid, did1, did2);
+        mockReplies(soid, did1, did2);
         doAnswer(invocation -> {
             doNothing().when(gcr)
-                    .processResponse_(eq(socid), anyDM(), anyDC());
+                    .processResponse_(eq(soid), anyDM(), any(Token.class));
             throw new Exception();
-        }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(soid), anyDM(), any(Token.class));
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
-        ordered.verify(dcl).onDownloadSuccess_(socid, did2);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did2), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did2);
+        ordered.verify(dcl).onDownloadSuccess_(soid, did2);
         verifyZeroInteractions(dls);
     }
 
     @Test
     public void shouldTryAllDevicesWhenKMLsLeft() throws Exception
     {
-        mockReplies(socid, did1, did2, did3);
+        mockReplies(soid, did1, did2, did3);
 
-        when(changes.hasRemoteChanges_(socid)).thenReturn(true);
+        when(changes.hasRemoteChanges_(soid)).thenReturn(true);
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did1);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did1);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did2);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did2), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did2);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did3), eq(tk));
-        ordered.verify(dcl).onPartialDownloadSuccess_(socid, did3);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did3), eq(tk));
+        ordered.verify(dcl).onPartialDownloadSuccess_(soid, did3);
 
-        ordered.verify(dcl).onPerDeviceErrors_(socid, ImmutableMap.<DID, Exception>of());
+        ordered.verify(dcl).onPerDeviceErrors_(soid, ImmutableMap.<DID, Exception>of());
         verifyZeroInteractions(dls);
     }
 
@@ -147,7 +145,7 @@ public class TestAsyncDownload extends AbstractDownloadTest
                 did2, new Exception("bar"),
                 did3, new Exception("baz"));
 
-        mockReplies(socid, did1, did2, did3);
+        mockReplies(soid, did1, did2, did3);
         doAnswer(new Answer<Void>() {
             int idx = 0;
             @Override
@@ -155,38 +153,38 @@ public class TestAsyncDownload extends AbstractDownloadTest
             {
                 throw did2e.get(dids[idx++]);
             }
-        }).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
+        }).when(gcr).processResponse_(eq(soid), anyDM(), any(Token.class));
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did2), eq(tk));
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did2), eq(tk));
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did3), eq(tk));
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did3), eq(tk));
 
-        ordered.verify(dcl).onPerDeviceErrors_(socid, did2e);
+        ordered.verify(dcl).onPerDeviceErrors_(soid, did2e);
         verifyZeroInteractions(dls);
     }
 
     @Test
     public void shouldNotTryAllDevicesOnLocalFailure() throws Exception
     {
-        mockReplies(socid, did1);
+        mockReplies(soid, did1);
 
         ExOutOfSpace ex = new ExOutOfSpace();
-        doThrow(ex).when(gcr).processResponse_(eq(socid), anyDM(), anyDC());
+        doThrow(ex).when(gcr).processResponse_(eq(soid), anyDM(), any(Token.class));
 
-        asyncdl(socid)
+        asyncdl(soid)
                 .do_();
 
         InOrder ordered = inOrder(gcc, dcl);
 
-        ordered.verify(gcc).remoteRequestComponent_(eq(socid), eq(did1), eq(tk));
-        ordered.verify(dcl).onGeneralError_(socid, ex);
+        ordered.verify(gcc).remoteRequestContent_(eq(soid), eq(did1), eq(tk));
+        ordered.verify(dcl).onGeneralError_(soid, ex);
         verifyZeroInteractions(dls);
     }
 }

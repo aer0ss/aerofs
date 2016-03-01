@@ -173,7 +173,7 @@ public class StoreHierarchy
         return _sdb.getName_(sidx);
     }
 
-    void add_(final SIndex sidx, String name, boolean usePolaris, Trans t)
+    void add_(final SIndex sidx, String name, Trans t)
             throws SQLException
     {
         checkState(!_parents.containsKey(sidx), sidx);
@@ -181,7 +181,7 @@ public class StoreHierarchy
         checkState(_sdb.getParents_(sidx).isEmpty());
         checkState(_sdb.getChildren_(sidx).isEmpty());
 
-        _sdb.insert_(sidx, name, usePolaris, t);
+        _sdb.insert_(sidx, name, t);
 
         _listener.storeAdded_(sidx, t);
     }

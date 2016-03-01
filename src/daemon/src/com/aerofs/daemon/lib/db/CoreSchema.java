@@ -19,39 +19,6 @@ public class CoreSchema extends SyncSchema
             C_SC_SIDX       = "sc_s",
             C_SC_DID        = "sc_d",
 
-            // Distributed Versions
-            T_VER           = "v",
-            C_VER_SIDX      = "v_i",        // SIndex
-            C_VER_OID       = "v_o",        // OID
-            C_VER_CID       = "v_c",        // CID
-            // KIndex, INVALID if not local (null doesn't work well with "replace" statement when
-            // adding a KML version)
-            C_VER_KIDX      = "v_k",
-            C_VER_DID       = "v_d",        // DID
-            C_VER_TICK      = "v_t",        // Tick
-
-            // Knowledge
-            T_KWLG          = "k",
-            C_KWLG_SIDX     = "k_s",        // SIndex
-            C_KWLG_DID      = "k_d",        // DID
-            C_KWLG_TICK     = "k_t",        // Tick
-
-            // Immigrant Versions
-            T_IV            = "iv",
-            C_IV_SIDX       = "iv_s",       // SIndex
-            C_IV_IMM_DID    = "iv_id",      // immigrant DID
-            C_IV_IMM_TICK   = "iv_it",      // immigrant Tick
-            C_IV_OID        = "iv_o",       // OID
-            C_IV_CID        = "iv_c",       // CID
-            C_IV_DID        = "iv_d",       // DID
-            C_IV_TICK       = "iv_t",       // Tick
-
-            // Immigrant Knowledge
-            T_IK            = "ik",
-            C_IK_SIDX       = "ik_s",       // SIndex
-            C_IK_IMM_DID    = "ik_d",       // DID
-            C_IK_IMM_TICK   = "ik_t",       // Tick
-
             // Object Attributes
             T_OA          = "o",
             C_OA_SIDX     = "o_s",          // SIndex
@@ -83,27 +50,6 @@ public class CoreSchema extends SyncSchema
             C_ALIAS_SIDX         = "al_i",  // SIndex
             C_ALIAS_SOURCE_OID   = "al_s",  // Aliased oid
             C_ALIAS_TARGET_OID   = "al_t",  // Target
-
-            // Max ticks
-            T_MAXTICK          = "t",
-            C_MAXTICK_SIDX     = "t_s",     // SIndex
-            C_MAXTICK_OID      = "t_o",
-            C_MAXTICK_CID      = "t_c",     // CID
-            C_MAXTICK_DID      = "t_d",     // DID
-            C_MAXTICK_MAX_TICK = "t_m",     // Tick
-
-            // Collector Sequence
-            T_CS             = "cs",
-            C_CS_CS          = "cs_cs",     // long
-            C_CS_SIDX        = "cs_s",      // SIndex
-            C_CS_OID         = "cs_o",      // OID
-            C_CS_CID         = "cs_c",      // CID
-
-            // Greatest Ticks. this table has only one row. it's designed to maintain
-            // the greatest ticks that the local peers has ever used
-            T_GT             = "gt",
-            C_GT_NATIVE      = "gt_n",      // Tick
-            C_GT_IMMIGRANT   = "gt_i",      // Tick
 
             // Expulsion Table
             T_EX             = "e",
@@ -146,74 +92,6 @@ public class CoreSchema extends SyncSchema
     public void create_(Statement s, IDBCW dbcw) throws SQLException {
         super.create_(s, dbcw);
 
-        // NB. adding "unique (C_VER_DID, C_VER_TICK)" may change the behavior
-        // of "replace" statements
-        s.executeUpdate(
-                "create table " + T_VER + "(" +
-                        C_VER_SIDX + " integer not null," +
-                        C_VER_OID + dbcw.uniqueIdType() + " not null," +
-                        C_VER_CID + " integer not null," +
-                        C_VER_KIDX + " integer not null," +
-                        C_VER_DID + dbcw.uniqueIdType() + "not null, " +
-                        C_VER_TICK + dbcw.longType() + " not null," +
-                        "primary key (" + C_VER_SIDX + "," + C_VER_OID + "," +
-                        C_VER_CID + "," + C_VER_DID + "," + C_VER_KIDX + ")" +
-                        ")" + dbcw.charSet());
-
-        /*
-         * used by:
-         * 1. updateMaxTicks_
-         *
-         * NOTE: Although this is extremely similar to the primary key above,
-         * including C_VER_TICK allows us to avoid a table scan.
-         *
-         * NOTE: the usefulness of this index is NOT tested on mysql, and is
-         * removed from the sp daemon database for now.
-         */
-        s.executeUpdate(
-                "create index " + T_VER + "0 on " + T_VER +
-                        "(" + C_VER_SIDX + "," + C_VER_OID + "," + C_VER_CID +
-                        "," + C_VER_DID + "," + C_VER_TICK + ")"
-        );
-
-        s.executeUpdate(
-                "create table " + T_KWLG + "(" +
-                        C_KWLG_SIDX + " integer not null," +
-                        C_KWLG_DID + dbcw.uniqueIdType() + " not null," +
-                        C_KWLG_TICK + dbcw.longType() + " not null," +
-                        "primary key (" + C_KWLG_SIDX + "," + C_KWLG_DID + ")" +
-                        ")" + dbcw.charSet());
-
-        s.executeUpdate(
-                "create table " + T_IV + "(" +
-                        C_IV_SIDX + " integer not null," +
-                        C_IV_OID + dbcw.uniqueIdType() + " not null," +
-                        C_IV_CID + " integer not null," +
-                        C_IV_DID + dbcw.uniqueIdType() + "not null, " +
-                        C_IV_TICK + dbcw.longType() + " not null," +
-                        C_IV_IMM_DID + dbcw.uniqueIdType() + " not null, " +
-                        C_IV_IMM_TICK + dbcw.longType() + " not null," +
-                        "primary key (" + C_IV_SIDX + "," + C_IV_OID + "," +
-                        C_IV_CID + "," + C_IV_DID + ")" +
-                        ")" + dbcw.charSet());
-
-        /* used by:
-         * 1. getImmigrantTicks_()
-         * 2. getAllImmigrantVersionDIDs_()
-         */
-        s.executeUpdate(
-                "create unique index " + T_IV + "0 on " + T_IV +
-                        "(" + C_IV_SIDX + "," + C_IV_IMM_DID + "," + C_IV_IMM_TICK +
-                        ")");
-
-        s.executeUpdate(
-                "create table " + T_IK + "(" +
-                        C_IK_SIDX + " integer not null," +
-                        C_IK_IMM_DID + dbcw.uniqueIdType() + " not null," +
-                        C_IK_IMM_TICK + dbcw.longType() + " not null," +
-                        "primary key (" + C_IK_SIDX + "," + C_IK_IMM_DID + ")" +
-                        ")" + dbcw.charSet());
-
         s.executeUpdate(
                 "create table " + T_OA + "(" +
                         C_OA_SIDX + " integer not null," +
@@ -251,57 +129,6 @@ public class CoreSchema extends SyncSchema
         s.executeUpdate("create index if not exists "
                 + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
 
-        /*
-         * The mt (maxticks) table was created to solve performance problems with the GetVers query.
-         * GetVers calls Database::getTicks_ which, given the tuple (sid, did) returned a set of
-         * (oid, cid, max_tick) tuples for that (sid, did). This query involved an aggregate function (max),
-         * and multiple orderings (group by, order).
-         *
-         * To avoid performing this query on every call we create a side table called mt that hold the
-         * latest known max_tick for the tuple (sid, oid, cid, did). This side table is updated on each
-         * version increment or store deletion, and allows the GetVers message to be populated without using
-         * aggregate functions.
-         *
-         * There are two indexes on this table:
-         * 1. (sid, oid, cid, did): used on all insertions
-         * 2. (sid, did, max_tick): used by Database::getTicks
-         */
-        s.executeUpdate(
-                "create table " + T_MAXTICK + "(" +
-                        C_MAXTICK_SIDX + " integer not null, " +
-                        C_MAXTICK_OID + dbcw.uniqueIdType() + " not null, " +
-                        C_MAXTICK_CID + " integer not null, " +
-                        C_MAXTICK_DID + dbcw.uniqueIdType() + " not null, " +
-                        C_MAXTICK_MAX_TICK + dbcw.longType() + " not null, " +
-                        "primary key (" + C_MAXTICK_SIDX + ", " + C_MAXTICK_OID +
-                        ", " + C_MAXTICK_CID + ", " + C_MAXTICK_DID + ")" +
-                        ")" + dbcw.charSet());
-
-        // for getTicks_()
-        s.executeUpdate(
-                "create index " + T_MAXTICK + "0 on "
-                        + T_MAXTICK +
-                        "(" + C_MAXTICK_SIDX + "," + C_MAXTICK_DID + ", " +
-                        C_MAXTICK_MAX_TICK + ")");
-
-        s.executeUpdate(
-                "create table " + T_CS + "(" +
-                        C_CS_CS + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                        C_CS_SIDX + " integer not null," +
-                        C_CS_OID + dbcw.uniqueIdType() + "not null," +
-                        C_CS_CID + " integer not null," +
-                        "unique (" + C_CS_SIDX + "," + C_CS_OID + "," + C_CS_CID + ")" +
-                        ")" + dbcw.charSet());
-
-        // for getAllCS_()
-        s.executeUpdate(
-                // (sidx,cs_cs,oid,cid) is required as an index, so the queries of
-                // "sidx=#, order by cs_cs" in the callers of getFromCSImpl_()
-                // do not require a temporary b-tree
-                "create index " + T_CS + "0 on "
-                        + T_CS + "(" + C_CS_SIDX + "," + C_CS_CS + "," + C_CS_OID + ","
-                        + C_CS_CID + ")");
-
         s.executeUpdate(
                 "create table " + T_ALIAS + " (" +
                  C_ALIAS_SIDX + " integer not null," +
@@ -314,14 +141,6 @@ public class CoreSchema extends SyncSchema
         s.executeUpdate(
                 "create index " + T_ALIAS + "0 on " + T_ALIAS +
                     "(" + C_ALIAS_SIDX + "," + C_ALIAS_TARGET_OID + ")");
-
-        s.executeUpdate(
-                "create table " + T_GT + " (" +
-                C_GT_NATIVE + dbcw.longType() + "," +
-                C_GT_IMMIGRANT + dbcw.longType() + ")" + dbcw.charSet());
-        s.executeUpdate(
-                "insert into " + T_GT + " (" + C_GT_NATIVE + "," +
-                        C_GT_IMMIGRANT + ") values (0,0)");
 
         s.executeUpdate(
                 "create table " + T_EX + " (" +

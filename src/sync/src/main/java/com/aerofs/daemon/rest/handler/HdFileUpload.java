@@ -3,7 +3,6 @@ package com.aerofs.daemon.rest.handler;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.IVersionUpdater;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -252,7 +251,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
             _helper.updateContent(soid, h, t, length, mtime, wasPresent);
 
             // increment version number after update
-            _vu.update_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER), t);
+            _vu.update_(new SOCID(soid, CID.CONTENT), t);
 
             t.commit_();
         }

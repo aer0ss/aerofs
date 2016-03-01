@@ -11,5 +11,5 @@ import java.sql.SQLException;
 
 public interface IStoreCreationOperator
 {
-    void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException;
+    void createStore_(SIndex sidx, Trans t) throws SQLException;
 }

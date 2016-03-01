@@ -5,7 +5,6 @@ import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -27,16 +26,14 @@ public class ObjectCreator
     private final DirectoryService _ds;
     private final IPhysicalStorage _ps;
     private final VersionUpdater _vu;
-    private final ImmigrantDetector _imd;
     private final StoreCreator _sc;
 
     @Inject
-    public ObjectCreator(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd,
+    public ObjectCreator(DirectoryService ds, VersionUpdater vu,
             StoreCreator sc, IPhysicalStorage ps)
     {
         _ds = ds;
         _vu = vu;
-        _imd = imd;
         _sc = sc;
         _ps = ps;
     }
@@ -60,7 +57,7 @@ public class ObjectCreator
             _ds.setCA_(new SOKID(soid, kidx), pf.lengthOrZeroIfNotFile(),
                     pf.lastModified(), null, t);
 
-            _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
+            _vu.update_(new SOCID(soid, CID.CONTENT), t);
         }
         return soid;
     }
@@ -74,7 +71,7 @@ public class ObjectCreator
             throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), OID.generate());
-        createMeta_(type, soid, soidParent.oid(), name, op, false, true, t);
+        createMeta_(type, soid, soidParent.oid(), name, op, true, t);
         return soid;
     }
 
@@ -85,7 +82,7 @@ public class ObjectCreator
             throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), oid);
-        createMeta_(type, soid, soidParent.oid(), name, PhysicalOp.MAP, false, true, t);
+        createMeta_(type, soid, soidParent.oid(), name, PhysicalOp.MAP, true, t);
         if (type == Type.FILE) {
             _ps.newFile_(_ds.resolve_(soid), KIndex.MASTER).create_(PhysicalOp.MAP, t);
         }
@@ -98,30 +95,12 @@ public class ObjectCreator
      * immigration of physical folders and anchored stores
      */
     public void createMeta_(Type type, final SOID soid, OID oidParent, String name, PhysicalOp op,
-            boolean detectImmigration, boolean updateVersion, Trans t)
+                            boolean updateVersion, Trans t)
             throws Exception
     {
         boolean expelled = createOA_(type, soid, oidParent, name, updateVersion, t);
 
-        boolean immigrated = !detectImmigration || expelled ? false :
-            _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
-
-        adjustPhysicalObject_(soid, expelled, immigrated, op, t);
-    }
-
-    /**
-     * Create the metadata for an object being migrated from a different store
-     */
-    public void createImmigrantMeta_(OA.Type type, SOID soidFrom, SOID soidTo, OID oidToParent,
-            String name, PhysicalOp op, boolean updateVersion, Trans t)
-            throws Exception
-    {
-        boolean expelled = createOA_(type, soidTo, oidToParent, name, updateVersion, t);
-
-        boolean immigrated = !expelled && type == Type.FILE;
-        if (immigrated) _imd.immigrateFile_(_ds.getOA_(soidFrom), _ds.getOA_(soidTo), op, t);
-
-        adjustPhysicalObject_(soidTo, expelled, immigrated, op, t);
+        adjustPhysicalObject_(soid, expelled, false, op, t);
     }
 
     public boolean createOA_(Type type, final SOID soid, OID oidParent, String name,
@@ -135,7 +114,7 @@ public class ObjectCreator
 
         _ds.createOA_(type, soid.sidx(), soid.oid(), oidParent, name, t);
 
-        if (updateVersion) _vu.update_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
+        if (updateVersion) _vu.update_(new SOCID(soid, CID.META), t);
 
         return expelled;
     }

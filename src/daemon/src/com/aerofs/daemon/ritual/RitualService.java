@@ -252,7 +252,7 @@ public class RitualService implements IRitualService
      * listed in {@paramref div}, and each branch will contain the contributors in {@paramref div}.
      */
     private static PBObjectAttributes toPB(OA oa,
-            @Nullable Map<KIndex, List<PBPeer>> div)
+            @Nullable Map<KIndex, PBPeer> div)
     {
         PBObjectAttributes.Builder bd = PBObjectAttributes.newBuilder()
                 .setExcluded(oa.isExpelled());
@@ -274,7 +274,7 @@ public class RitualService implements IRitualService
                         .setMtime(en.getValue().mtime());
                 if (div != null) {
                     assert div.containsKey(en.getKey()) : oa + " " + en.getKey();
-                    bbd.addAllAncestorToBranch(div.get(en.getKey()));
+                    bbd.setContributor(div.get(en.getKey()));
                 }
                 bd.addBranch(bbd);
             }

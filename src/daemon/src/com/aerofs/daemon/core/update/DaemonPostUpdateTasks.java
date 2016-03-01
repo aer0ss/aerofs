@@ -5,7 +5,6 @@ import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgKey;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.google.inject.Injector;
 
 import javax.inject.Inject;
@@ -27,7 +26,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
-    private final CfgUsePolaris _usePolaris;
     private final Injector _injector;
 
     private final static int UNSUPPORTED = 55;
@@ -47,14 +45,14 @@ public class DaemonPostUpdateTasks
             DPUTAddPolarisFetchTables.class,
             DPUTSubmitLocalTreeToPolaris.class,
             DPUTHandlePrePhoenixConflicts.class,
+            DPUTDropLegacyTables.class,
             // new tasks go here - also, update PHOENIX_CONVERSION_TASKS counter!
     };
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CfgUsePolaris usePolaris, Injector inj)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, Injector inj)
     {
         _cfgDB = cfgDB;
-        _usePolaris = usePolaris;
         _injector = inj;
 
         // please update counters whenever new tasks are added
@@ -84,9 +82,7 @@ public class DaemonPostUpdateTasks
         // for safe scheduling/retry and giving UI feedback.
         // Eventually, when the legacy codepath is dropped, this can be folded back into the regular
         // DPUT sequence. This will require some care to avoid breaking the upgrade sequence...
-        if (_usePolaris.get()) {
-            run(PHOENIX_TASKS, PHOENIX_CONVERSION, 0, dryRun);
-        }
+        run(PHOENIX_TASKS, PHOENIX_CONVERSION, 0, dryRun);
     }
 
     private void run(Class<?>[] tasks, CfgKey k, int first, boolean dryRun) throws Exception {

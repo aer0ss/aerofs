@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -57,24 +57,24 @@ public interface IAsyncDownload
      * Try to download the target object until no KMLs are left or all devices have been tried
      * and inform listeners of success/failure appropriately
      */
-    default void do_(SOCID socid, Token tk, Map<DID, Exception> did2e,
-            List<IDownloadCompletionListener> listeners)
+    default void do_(SOID soid, Token tk, Map<DID, Exception> did2e,
+                     List<IDownloadCompletionListener> listeners)
     {
         try {
             final DID replier = doImpl_();
-            notifyListeners_(listener -> listener.onDownloadSuccess_(socid, replier), listeners);
+            notifyListeners_(listener -> listener.onDownloadSuccess_(soid, replier), listeners);
         } catch (ExNoAvailDevice e) {
-            logger.warn("{}: ", socid, BaseLogUtil.suppress(e));
+            logger.warn("{}: ", soid, BaseLogUtil.suppress(e));
             // This download object tracked all reasons (Exceptions) for why each device was
             // avoided. Thus if the To object indicated no devices were available, then inform
             // the listener about all attempted devices, and why they failed to deliver the socid.
-            notifyListeners_(listener -> listener.onPerDeviceErrors_(socid, did2e), listeners);
+            notifyListeners_(listener -> listener.onPerDeviceErrors_(soid, did2e), listeners);
         } catch (RuntimeException e) {
             // we don't want the catch-all block to swallow runtime exceptions
             SystemUtil.fatal(e);
         } catch (final Exception e) {
-            logger.warn("{} :", socid, BaseLogUtil.suppress(e, ExNoPerm.class));
-            notifyListeners_(listener -> listener.onGeneralError_(socid, e), listeners);
+            logger.warn("{} :", soid, BaseLogUtil.suppress(e, ExNoPerm.class));
+            notifyListeners_(listener -> listener.onGeneralError_(soid, e), listeners);
         } finally {
             tk.reclaim_();
         }
@@ -83,19 +83,19 @@ public interface IAsyncDownload
     @Nullable DID doImpl_() throws IOException, SQLException, ExNoAvailDevice,
             ExAborted, ExWrapped, ExNoPerm, ExSenderHasNoPerm, ExOutOfSpace;
 
-    default void handleProcessReplyFailed(ExProcessReplyFailed e, SOCID socid, To from,
+    default void handleProcessReplyFailed(ExProcessReplyFailed e, SOID soid, To from,
             Map<DID, Exception> did2e) throws ExNoPerm, ExOutOfSpace, IOException
     {
         if (e._e instanceof ExNoPerm) {
             // collector should only collect permitted components. no_perm may happen when
             // other user just changed the permission before this call.
-            logger.error("{}: we have no perm", socid);
+            logger.error("{}: we have no perm", soid);
             throw (ExNoPerm)e._e;
         } else if (e._e instanceof ExSenderHasNoPerm) {
-            logger.error("{}: sender has no perm", socid);
+            logger.error("{}: sender has no perm", soid);
             avoidDevice_(e._did, e, from, did2e);
         } else if (e._e instanceof ExNoComponentWithSpecifiedVersion) {
-            logger.info("{} from {}:", socid, e._did, BaseLogUtil.suppress(e._e));
+            logger.info("{} from {}:", soid, e._did, BaseLogUtil.suppress(e._e));
             avoidDevice_(e._did, e._e, from, did2e);
         } else if (e._e instanceof ExOutOfSpace) {
             throw (ExOutOfSpace)e._e;
@@ -103,18 +103,18 @@ public interface IAsyncDownload
             // TODO: make sure we only abort in case of local I/O error
             throw (IOException)e._e;
         } else {
-            logger.info("gcr fail {} from {}: ", socid, e._did, e._e);
+            logger.info("gcr fail {} from {}: ", soid, e._did, e._e);
 
-            onGeneralException(socid, e._e, e._did, from, did2e);
+            onGeneralException(soid, e._e, e._did, from, did2e);
         }
     }
 
-    default void handleRemoteCallFailed(ExRemoteCallFailed e, SOCID socid, To from,
+    default void handleRemoteCallFailed(ExRemoteCallFailed e, SOID soid, To from,
             Map<DID, Exception> did2e)
     {
         // NB: remote errors in the GCR are wrapped in ExProcessReplyFailed...
-        logger.info("gcc fail {}: ", socid, e._e);
-        onGeneralException(socid, e._e, null, from, did2e);
+        logger.info("gcc fail {}: ", soid, e._e);
+        onGeneralException(soid, e._e, null, from, did2e);
     }
 
     static interface IDownloadCompletionListenerVisitor
@@ -132,13 +132,13 @@ public interface IAsyncDownload
         }
     }
 
-    default void onGeneralException(SOCID socid, Exception e, DID replier, To from, Map<DID,
+    default void onGeneralException(SOID soid, Exception e, DID replier, To from, Map<DID,
             Exception> did2e)
     {
         if (e instanceof RuntimeException) SystemUtil.fatal(e);
 
         // RTN: retry now
-        logger.warn("{} : {} RTN ",socid, replier, BaseLogUtil.suppress(e,
+        logger.warn("{} : {} RTN ",soid, replier, BaseLogUtil.suppress(e,
                 ExAborted.class, ExNoAvailDevice.class, ExTimeout.class, ExStreamInvalid.class));
         if (replier != null) avoidDevice_(replier, e, from, did2e);
     }
@@ -161,16 +161,16 @@ public interface IAsyncDownload
         listeners.add(completionListener);
     }
 
-    default void onUpdateInProgress(DID did, int updateRetry, SOCID socid, Token tk) throws ExAborted
+    default void onUpdateInProgress(DID did, int updateRetry, SOID soid, Token tk) throws ExAborted
     {
         // too many retries: abort dl to free token
         // the collector will retry at a later time (i.e. on next iteration)
         if (updateRetry > MAX_UPDATE_RETRY) {
-            logger.warn("{} {}: update in prog for too long. abort", did, socid);
+            logger.warn("{} {}: update in prog for too long. abort", did, soid);
             throw new ExAborted("update in progress");
         }
 
-        logger.info("{} {}: update in prog. retry later", did, socid);
+        logger.info("{} {}: update in prog. retry later", did, soid);
         tk.sleep_(UPDATE_RETRY_DELAY, "retry dl (update in prog)");
     }
 }

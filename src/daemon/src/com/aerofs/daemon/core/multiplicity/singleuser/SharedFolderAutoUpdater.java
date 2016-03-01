@@ -123,7 +123,7 @@ class SharedFolderAutoUpdater implements IDirectoryServiceListener, IExpulsionLi
     }
 
     @Override
-    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException {
+    public void createStore_(SIndex sidx, Trans t) throws SQLException {
         removeLeaveCommandsFromQueue_(_sidx2sid.getLocalOrAbsent_(sidx), t);
     }
 

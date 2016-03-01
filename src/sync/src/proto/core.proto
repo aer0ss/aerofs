@@ -23,16 +23,10 @@ message PBCore {
 
         NEW_UPDATES = 1;
         UPDATE_SENDER_FILTER = 2;
-        GET_VERSIONS_REQUEST = 3;
-        GET_VERSIONS_RESPONSE = 4;
-        GET_COMPONENT_REQUEST = 5;
-        // Tell a peer to compute the hash for the named object+version so it'll be available to
-        // future GetComponentRequests
-        COMPUTE_HASH_REQUEST = 6;
-        RESOLVE_USER_ID_REQUEST = 7;
-        RESOLVE_USER_ID_RESPONSE = 8;
-        GET_CONTENT_REQUEST = 9;
-        GET_FILTER_REQUEST = 10;
+        GET_CONTENT_REQUEST = 3;
+        GET_FILTER_REQUEST = 4;
+        RESOLVE_USER_ID_REQUEST = 5;
+        RESOLVE_USER_ID_RESPONSE = 6;
     }
 
     required Type type = 1;
@@ -40,16 +34,11 @@ message PBCore {
 
     optional PBNewUpdates new_updates = 3;
     optional PBUpdateSenderFilter update_sender_filter = 4;
-    optional PBGetVersionsRequest get_versions_request = 5;
-    optional PBGetVersionsResponse get_versions_response = 6;
-    optional PBGetComponentRequest get_component_request = 7;
-    optional PBComputeHashRequest compute_hash_request = 8;
-    optional PBGetComponentResponse get_component_response = 9;
-    optional PBException exception_response = 10;
-    optional PBGetContentRequest get_content_request = 11;
-    optional PBGetContentResponse get_content_response = 12;
-    optional PBGetFilterRequest get_filter_request = 13;
-    optional PBGetFilterResponse get_filter_response = 14;
+    optional PBException exception_response = 5;
+    optional PBGetContentRequest get_content_request = 6;
+    optional PBGetContentResponse get_content_response = 7;
+    optional PBGetFilterRequest get_filter_request = 8;
+    optional PBGetFilterResponse get_filter_response = 9;
 }
 
 message PBUpdateSenderFilter {
@@ -95,93 +84,6 @@ message PBGetFilterResponse {
     // followed by <count> Store
 }
 
-// IMPORTANT:
-//
-// this message does _not_ contain repeated
-// PBGetVersionsRequestBlocks so that we can support
-// incremental processing. this allows us to
-// process block at a time and avoid OOMing instead of
-// waiting for the entire protobuf message to be
-// received
-message PBGetVersionsRequest {
-    // followed by one or more PBGetVersionsRequestBlocks
-}
-
-message PBGetVersionsRequestBlock {
-    required bytes store_id = 1;
-
-    repeated bytes device_id = 2;
-    repeated uint64 knowledge_tick = 3 [packed=true];
-    repeated uint64 immigrant_knowledge_tick = 4 [packed=true];
-
-    // the requester would like all filters from BASE
-    optional bool from_base = 5 [default = false];
-
-    optional bool is_last_block = 6 [default = false];
-}
-
-// IMPORTANT:
-//
-// this message does _not_ contain repeated
-// PBGetVersionsResponseBlocks so that we can support
-// incremental processing. this allows us to
-// process block at a time and avoid OOMing instead of
-// waiting for the entire protobuf message to be
-// received
-message PBGetVersionsResponse {
-    // followed by zero or more PBGetVersionsResponseBlocks
-}
-
-message PBGetVersionsResponseBlock {
-    optional PBStoreHeader store = 1;
-
-    // a block without the device_id field set has the same device_id as
-    // the previous block. the first block must have the field set unless
-    // it has no fields set except is_last_block
-    optional bytes device_id = 2;
-
-    repeated bytes object_id = 3;
-    repeated int32 com_id = 4 [packed=true];
-    repeated uint64 tick = 5 [packed=true];
-    optional uint64 knowledge_tick = 6;
-
-    repeated bytes immigrant_object_id = 7;
-    repeated int32 immigrant_com_id = 8 [packed=true];
-    repeated uint64 immigrant_imm_tick = 9 [packed=true];
-    repeated bytes immigrant_device_id = 10;
-    repeated uint64 immigrant_tick = 11 [packed=true];
-    optional uint64 immigrant_knowledge_tick = 12;
-
-    // this field marks the last block
-    optional bool is_last_block = 13 [default = false];
-}
-
-message PBStoreHeader {
-    required bytes store_id = 1;
-
-    // absent if the filter is empty
-    optional bytes sender_filter = 2;
-    optional uint64 sender_filter_index = 3;
-    optional uint64 sender_filter_update_seq = 4;
-    optional bool from_base = 5 [default = false];
-}
-
-message PBGetComponentRequest {
-    required bytes store_id = 1;
-    required bytes object_id = 2;
-    required uint32 com_id = 3;
-    required PBVer local_version = 4;
-
-    // present only if the component is content
-    optional uint64 prefix_length = 5 [ default = 0 ];
-
-    // valid only if prefix_length > 0
-    optional PBVer prefix_version = 6;
-
-    // provide optional content hash to avoid unnecessary IO
-    optional bytes hash_content = 7;
-}
-
 // trimmed-down p2p transfer for Phoenix
 message PBGetContentRequest {
     required bytes store_id = 1;
@@ -196,37 +98,6 @@ message PBGetContentRequest {
     }
 }
 
-message PBComputeHashRequest {
-    required bytes store_id = 1;
-    required bytes object_id = 2;
-    required PBVer remote_version = 3;
-}
-
-message PBGetComponentResponse {
-    required PBVer version = 1;
-
-    // present only for metadata
-    optional PBMeta meta = 3;
-
-    // gives the total length of the file
-    optional uint64 file_total_length = 4;
-
-    // present only for contents.
-    optional uint64 mtime = 5;
-
-    // sha256 of the entire file content
-    optional bytes hash = 6;
-
-    // present only for contents. must be equal to the same field in PBGetComponentRequest if not zero.
-    // It represents the length of the file prefix that we are skipping in our file_content
-    // That is, the file content length in this is file_total_length - prefix_length.
-    optional uint64 prefix_length = 7 [ default = 0 ];
-
-    optional bool is_content_same = 8 [default = false];
-
-    // followed by: optional bytes file_content
-}
-
 // trimmed-down p2p transfer for Phoenix
 message PBGetContentResponse {
     required uint64 version = 1;
@@ -235,40 +106,4 @@ message PBGetContentResponse {
     required bytes hash = 4;
     optional uint64 prefix_length = 5 [default = 0];
     required uint64 lts = 6;
-}
-
-//////////////////////////////////////
-// non-message data types
-
-message PBMeta {
-
-    enum Type {
-        // the order must be the same as the order in OA.Type
-        FILE = 0;
-        DIR = 1;
-        ANCHOR = 2;
-    }
-
-    required bytes parent_object_id = 1;
-    required string name = 2;
-    required Type type = 3;
-    // ignored, should always be 0
-    required int32 flags = 4;
-
-    // information about alias message.
-    optional bytes target_oid = 5;
-    optional PBVer target_version = 6;
-
-    // If the object has been emigrated as indicated by the object's parent and name field, this
-    // field records a chain of SIDs where the target object resides. The first SID refers to the
-    // parent of the target's residing store (whose own SID is encoded in the object's name).
-    // The last SID refers to the root store. When the target is in the root store, the list only
-    // contains the root SID.
-    //
-    // The list is empty if the store the target resides doesn't exist locally or the object is not
-    // emigrated.
-    //
-    // N.B. Multi-user systems never never populate the list. TODO (WW) use multiple lists?
-    //
-    repeated bytes emigrant_target_ancestor_sid = 7;
 }

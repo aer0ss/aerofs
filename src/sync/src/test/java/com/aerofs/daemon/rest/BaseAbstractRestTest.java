@@ -129,7 +129,6 @@ public class BaseAbstractRestTest extends AbstractTest
     private static Gson _gson = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
-    protected @Mock CfgUsePolaris usePolaris;
 
     protected static byte[] FILE_CONTENT = {'H', 'e', 'l', 'l', 'o'};
     protected final static byte[] CONTENT_HASH =
@@ -284,7 +283,6 @@ public class BaseAbstractRestTest extends AbstractTest
     public void setUp() throws Exception
     {
         when(ps.newPrefix_(any(SOKID.class), anyString())).thenReturn(pf);
-        when(usePolaris.get()).thenReturn(false);
         when(localUser.get()).thenReturn(user);
         when(localDID.get()).thenReturn(did);
 

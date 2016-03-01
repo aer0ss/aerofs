@@ -19,7 +19,6 @@ import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
@@ -378,36 +377,6 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
      * @return null if not found
      */
     @Nullable public abstract SOID getSOIDNullable_(FID fid) throws SQLException;
-
-    /**
-     * Invariant: if the object is expelled from the local device, the method must
-     * return false on non-meta branches; otherwise, the object is admitted and
-     * therefore can be present or absent.
-     */
-    public boolean isPresent_(SOCKID k) throws SQLException
-    {
-        OA oa = getOANullable_(k.soid());
-
-        if (oa == null) {
-            return false;
-        } else if (k.cid().isMeta()) {
-            return true;
-        } else {
-            return !oa.isExpelled() && oa.caNullable(k.kidx()) != null;
-        }
-    }
-
-    /**
-     * If no conflict exists, then returns the original name provided
-     */
-    public final String generateConflictFreeFileName_(@Nonnull Path pParent, String name)
-            throws SQLException, ExNotFound
-    {
-        while (resolveNullable_(pParent.append(name)) != null) {
-            name = FileUtil.nextFileName(name);
-        }
-        return name;
-    }
 
     public abstract IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
 

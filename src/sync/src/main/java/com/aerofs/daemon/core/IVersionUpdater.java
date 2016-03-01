@@ -12,9 +12,9 @@ public interface IVersionUpdater
     @FunctionalInterface
     public interface IListener
     {
-        public void updated_(SOCKID k, Trans t);
+        public void updated_(SOCID socid, Trans t);
     }
 
     public void addListener_(IListener l);
-    public void update_(SOCKID k, @Nonnull Trans t) throws SQLException, IOException;
+    public void update_(SOCID socid, @Nonnull Trans t) throws SQLException, IOException;
 }

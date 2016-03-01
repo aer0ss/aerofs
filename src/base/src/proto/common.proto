@@ -12,11 +12,6 @@ message PBPath {
     repeated string elem = 2;
 }
 
-message PBVer {
-    repeated bytes device_id = 1;
-    repeated uint64 tick = 2 [packed=true];
-}
-
 // Intended for rpc calls and replies that take no parameter
 message Void {}
 
@@ -195,14 +190,6 @@ message PBFolderInvitation {
     required bytes share_id = 1;
     required string folder_name = 2;
     required string sharer = 3;
-}
-
-// This message is not meant for remote communication. It is used to encode the aggregate sync
-// status stored in the local DB.
-// To reduce the size footprint of the aggregated sync status we leverage the varint encoding of
-// protobufs : https://developers.google.com/protocol-buffers/docs/encoding
-message PBCounterVector {
-    repeated int32 counter = 1 [packed = true];
 }
 
 // see CNameVerificationHandler.java

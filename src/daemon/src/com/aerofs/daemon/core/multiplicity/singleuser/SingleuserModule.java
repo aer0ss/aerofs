@@ -9,21 +9,11 @@ import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.acl.EffectiveUserList;
 import com.aerofs.daemon.core.ds.AbstractPathResolver;
 import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
-import com.aerofs.daemon.core.migration.IEmigrantDetector;
-import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTargetSIDLister;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantDetector;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantTargetSIDLister;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.SingleuserImmigrantDetector;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.ids.UserID;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
@@ -50,15 +40,6 @@ public class SingleuserModule extends AbstractModule
         bind(StoreHierarchy.class).to(SingleuserStoreHierarchy.class);
         bind(AbstractPathResolver.Factory.class).to(SingleuserPathResolver.Factory.class);
 
-        if (new CfgUsePolaris().get()) {
-            bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
-            bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
-            bind(ImmigrantDetector.class).to(NullImmigrantDetector.class);
-        } else {
-            bind(IEmigrantTargetSIDLister.class).to(EmigrantTargetSIDLister.class);
-            bind(IEmigrantDetector.class).to(EmigrantDetector.class);
-            bind(ImmigrantDetector.class).to(SingleuserImmigrantDetector.class);
-        }
         bind(IStoreJoiner.class).to(SingleuserStoreJoiner.class);
 
         bind(IQuotaEnforcement.class).to(NullQuotaEnforcement.class);

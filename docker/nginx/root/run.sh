@@ -24,13 +24,4 @@ else
     echo "${MONITOR_USER}:{SHA}${SHAED_PASS}" > "${FILE}"
 fi
 
-PHOENIX=$(/container-scripts/get-config-property base.phoenix.enabled)
-echo "Configuring API backend: phoenix=$PHOENIX"
-rm -f /etc/nginx/sites/api
-if [[ "$PHOENIX" == "true" ]] ; then
-    ln -s /etc/nginx/sites-phoenix/api /etc/nginx/sites/api
-else
-    ln -s /etc/nginx/sites-legacy/api /etc/nginx/sites/api
-fi
-
 /run-common.sh

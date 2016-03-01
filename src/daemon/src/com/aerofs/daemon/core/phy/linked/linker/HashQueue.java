@@ -27,11 +27,7 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
+import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.google.common.base.Joiner;
@@ -253,7 +249,7 @@ public class HashQueue
                 return;
             }
             l.info("change {} content {} {}", soid, oldHash, newHash);
-            _vu.update_(new SOCKID(k, CID.CONTENT), t);
+            _vu.update_(new SOCID(soid, CID.CONTENT), t);
         }
     }
 

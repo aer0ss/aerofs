@@ -18,8 +18,6 @@ LINE="$(docker images | grep ${SPECIMEN})"
 REGISTRY="$(echo "${LINE}" | awk '{print $1}' | sed -e "s,${SPECIMEN}$,,")"
 TAG="$(echo "${LINE}" | awk '{print $2}')"
 
-# Keep legacy sync as the default
-# necessary to cover legacy in CI until all customers are moved to Phoenix
 # Set log level to DEBUG for verbosity
 CONFIG="${REGISTRY}aerofs/config:${TAG}"
 echo "Modifying ${CONFIG} ..."
@@ -28,9 +26,6 @@ true && {
     cat > "${TMP}/Dockerfile" <<END
 FROM ${CONFIG}
 RUN  sed -i \
-        -e s/enable_phoenix=true// \
-        /external.properties.default && \
-     sed -i \
         -e s/log_level=INFO/log_level=DEBUG/ \
         /external.properties.docker.default
 END

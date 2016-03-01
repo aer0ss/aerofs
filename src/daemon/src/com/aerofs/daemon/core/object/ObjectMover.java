@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.CID;
 import com.aerofs.ids.OID;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 
 import javax.inject.Inject;
@@ -52,8 +52,7 @@ public class ObjectMover
         _ds.setOAParentAndName_(oaOld, oaParent, name, t);
 
         if (updateVersion) {
-            SOCKID k = new SOCKID(soid, CID.META);
-            _vu.update_(k, t);
+            _vu.update_(new SOCID(soid, CID.META), t);
         }
 
         _expulsion.objectMoved_(pOld, soid, op, t);

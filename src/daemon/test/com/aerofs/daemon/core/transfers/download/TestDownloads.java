@@ -7,10 +7,8 @@ package com.aerofs.daemon.core.transfers.download;
 import com.aerofs.daemon.core.lib.BaseDownloadsTest;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.ids.DID;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,9 +32,9 @@ public class TestDownloads extends BaseDownloadsTest
     {
         factDL = daemonFactDl;
         Downloads dlsImpl = new Downloads();
-        dlsImpl.inject_(sched, tokenManager, (AsyncDownload.Factory)factDL, mock(CfgUsePolaris.class));
+        dlsImpl.inject_(sched, tokenManager, (AsyncDownload.Factory)factDL);
         dls = dlsImpl;
-        when(daemonFactDl.create_(any(SOCID.class), anySetOf(DID.class),
+        when(daemonFactDl.create_(any(SOID.class), anySetOf(DID.class),
                 any(IDownloadCompletionListener.class), any(Token.class))).thenReturn((dl));
         when(cedb.getChangeEpoch_(any(SIndex.class))).thenReturn(null);
     }
@@ -56,7 +54,7 @@ public class TestDownloads extends BaseDownloadsTest
         // Factory in the old world needs to be aware of the component its downloading from other
         // peers while in polaris world it doesn't. This leads to different param list for the
         // create function.
-        verify(daemonFactDl).create_(eq(new SOCID(soid, CID.CONTENT)), eq(ImmutableSet.of(did)),
+        verify(daemonFactDl).create_(eq(soid), eq(ImmutableSet.of(did)),
                 eq(dcl), Matchers.eq(tk));
     }
 
@@ -64,7 +62,7 @@ public class TestDownloads extends BaseDownloadsTest
     public void shouldIncludeSameDeviceInOngoingDownload() throws Exception
     {
         super.shouldIncludeSameDeviceInOngoingDownload();
-        verify(daemonFactDl).create_(eq(new SOCID(soid, CID.CONTENT)),
+        verify(daemonFactDl).create_(eq(soid),
                 eq(ImmutableSet.of(did)), eq(dcl),Matchers.eq(tk));
         verifyNoMoreInteractions(factDL);
         verify(dl).include_(anySetOf(DID.class), eq(dcl));
@@ -75,7 +73,7 @@ public class TestDownloads extends BaseDownloadsTest
     public void shouldIncludeDifferentDeviceInOngoingDownload() throws Exception
     {
         super.shouldIncludeDifferentDeviceInOngoingDownload();
-        verify(daemonFactDl).create_(eq(new SOCID(soid, CID.CONTENT)),
+        verify(daemonFactDl).create_(eq(soid),
                 eq(ImmutableSet.of(did)), eq(dcl), Matchers.eq(tk));
         verifyNoMoreInteractions(factDL);
         verify(dl).include_(anySetOf(DID.class), eq(dcl));

@@ -157,7 +157,7 @@ public class StoreDatabase extends AbstractDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public void insert_(SIndex sidx, String name, boolean usePolaris, Trans t) throws SQLException
+    public void insert_(SIndex sidx, String name, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {
@@ -175,12 +175,10 @@ public class StoreDatabase extends AbstractDatabase
             _psAdd = null;
             throw detectCorruption(e);
         }
-        if (usePolaris) {
-            try (Statement s = c().createStatement()) {
-                s.executeUpdate("update " + T_STORE
-                                + " set " + C_STORE_LTS_LOCAL + "=-1"
-                                + " where " +  C_STORE_SIDX + "=" + sidx.getInt());
-            }
+        try (Statement s = c().createStatement()) {
+            s.executeUpdate("update " + T_STORE
+                            + " set " + C_STORE_LTS_LOCAL + "=-1"
+                            + " where " +  C_STORE_SIDX + "=" + sidx.getInt());
         }
     }
 

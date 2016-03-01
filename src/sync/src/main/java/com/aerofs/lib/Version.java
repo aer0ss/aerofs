@@ -5,10 +5,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
@@ -40,18 +38,6 @@ public class Version
     public static Version copyOf(Version v)
     {
         return new Version(Maps.newHashMap(v._map));
-    }
-
-    public static Version fromPB(PBVer pb)
-    {
-        Version v = empty();
-        assert pb.getDeviceIdCount() == pb.getTickCount();
-
-        for (int i = 0; i < pb.getDeviceIdCount(); i++) {
-            DID did = new DID(BaseUtil.fromPB(pb.getDeviceId(i)));
-            v.set_(did, pb.getTick(i));
-        }
-        return v;
     }
 
     /**
@@ -109,18 +95,6 @@ public class Version
         sb.append('}');
 
         return sb.toString();
-    }
-
-    public PBVer toPB_()
-    {
-        PBVer.Builder builder = PBVer.newBuilder();
-
-        for (Entry<DID, Tick> en : _map.entrySet()) {
-            builder.addDeviceId(BaseUtil.toPB(en.getKey()));
-            builder.addTick(en.getValue().getLong());
-        }
-
-        return builder.build();
     }
 
     public boolean isZero_()

@@ -29,6 +29,18 @@ public class Store implements Comparable<Store>, IDumpStatMisc, PauseSync.Listen
 
     private final ImmutableMap<Class<?>, Object> _ifaces;
 
+    public void startCollectingContent_(Trans t) {
+        // TODO: phoenix
+        // 1. set flag in ICollectorStateDatabase
+        // 2. start collector
+    }
+
+    public void stopCollectingContent_(Trans t) {
+        // TODO: phoenix
+        // 1. set flag in ICollectorStateDatabase
+        // 2. stop collector
+    }
+
     public interface Factory
     {
         Store create_(SIndex sidx) throws SQLException;

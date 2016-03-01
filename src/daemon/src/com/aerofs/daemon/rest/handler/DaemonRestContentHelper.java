@@ -10,7 +10,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.rest.util.RestObjectResolver;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.cfg.CfgUsePolaris;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
@@ -27,7 +26,6 @@ public class DaemonRestContentHelper extends RestContentHelper
 {
     @Inject private DirectoryService _ds;
     @Inject private RestObjectResolver _access;
-    @Inject private CfgUsePolaris cfgUsePolaris;
 
     private SIndex getSIndex(OA oa)
     {
@@ -64,9 +62,7 @@ public class DaemonRestContentHelper extends RestContentHelper
             Scope scope, Permissions perms) throws Exception
     {
         SOID soid = resolveObjectWithPerm(object, token, perms);
-        if (cfgUsePolaris.get()) {
-            waitForFile(soid);
-        }
+        waitForFile(soid);
         OA oa = _ds.getOAThrows_(soid);
         if (!oa.isFile()) throw new ExNotFound("No such file");
         if (oa.isExpelled()) {
@@ -84,17 +80,13 @@ public class DaemonRestContentHelper extends RestContentHelper
     public KIndex selectBranch(SOID soid) throws SQLException
     {
         OA oa = _ds.getOA_(soid);
-        // If using polaris, then check if we have conflict and return conflict branch.
-        if (cfgUsePolaris.get()) {
-            if (oa.cas().size() <= 1) {
-                return KIndex.MASTER;
-            }
-            checkState(oa.cas().size() <= 2, "Found %d CAs for object %s", oa.cas().size(), oa.soid());
-            return oa.cas().keySet().stream().
-                    findFirst().filter(kidx -> !kidx.equals(KIndex.MASTER)).get();
+        // check if we have conflict and return conflict branch
+        if (oa.cas().size() <= 1) {
+            return KIndex.MASTER;
         }
-        // If not using polaris, just return master branch
-        return KIndex.MASTER;
+        checkState(oa.cas().size() <= 2, "Found %d CAs for object %s", oa.cas().size(), oa.soid());
+        return oa.cas().keySet().stream().
+                findFirst().filter(kidx -> !kidx.equals(KIndex.MASTER)).get();
     }
 
     @Override

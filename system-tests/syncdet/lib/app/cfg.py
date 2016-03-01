@@ -96,9 +96,6 @@ class BaseCfg(object):
     def has_flag(self, f):
         return os.path.exists(os.path.join(self.get_rtroot(), f))
 
-    def usePolaris(self):
-        return self.has_flag("polaris")
-
 
 #####          #####
 ### Linux Config ###

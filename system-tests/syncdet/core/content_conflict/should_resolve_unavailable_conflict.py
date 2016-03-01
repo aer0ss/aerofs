@@ -6,17 +6,12 @@ import time
 from syncdet.case.sync import sync
 
 from aerofs_common import param
-from lib.app.cfg import get_cfg
 from lib import ritual
 from lib.files import instance_path, wait_dir, wait_file_with_content, wait_file_new_content
 from lib.network_partition import NetworkPartition
 
 
 def creator():
-    if not get_cfg().usePolaris():
-        print "phoenix-only test: ignore"
-        return
-
     os.makedirs(instance_path("foo"))
 
     sync(1)
@@ -35,10 +30,6 @@ def creator():
 
 
 def modifier():
-    if not get_cfg().usePolaris():
-        print "phoenix-only test: ignore"
-        return
-
     wait_dir(instance_path("foo"))
     sync(1)
 
@@ -67,10 +58,6 @@ def modifier():
 
 
 def spectator():
-    if not get_cfg().usePolaris():
-        print "phoenix-only test: ignore"
-        return
-
     sync(1)
     sync(2)
 

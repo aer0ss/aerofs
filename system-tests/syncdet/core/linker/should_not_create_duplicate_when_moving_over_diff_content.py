@@ -10,12 +10,10 @@ import os
 import time
 
 import common
-from .. import is_polaris
 from aerofs_common import param
 from lib import ritual
 from lib.files import instance_unique_path
 from lib.files.dirtree import InstanceUniqueDirTree, wait_for_any_but
-from syncdet.case import local_actor
 
 
 CONTENT_SOURCE = "dwelling"
@@ -65,9 +63,6 @@ def wait_for_final_state():
     _wait_for_final_state(InstanceUniqueDirTree({
         'sub': { 'target': CONTENT_TARGET }
     }))
-    # conflicts do not propagate through Polaris
-    if not is_polaris():
-        _wait_for_conflict()
 
 spec = common.update_in_partition_test(
     dt_base,

@@ -4,31 +4,20 @@ import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.UserID;
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgUsePolaris;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.PBBranch.PBPeer;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -37,19 +26,18 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
 {
     private final DirectoryService _ds;
 
-    private final NativeVersionControl _nvc;
     private final UserAndDeviceNames _udn;
     private final CentralVersionDatabase _cvdb;
     private final RemoteContentDatabase _rcdb;
 
     @Inject
-    public HdGetAttr(DirectoryService ds, CfgUsePolaris usePolaris, Injector inj, UserAndDeviceNames udn)
+    public HdGetAttr(DirectoryService ds, CentralVersionDatabase cvdb, RemoteContentDatabase rcdb,
+                     UserAndDeviceNames udn)
     {
         _ds = ds;
         _udn = udn;
-        _nvc = usePolaris.get() ? null : inj.getInstance(NativeVersionControl.class);
-        _cvdb = usePolaris.get() ? inj.getInstance(CentralVersionDatabase.class) : null;
-        _rcdb = usePolaris.get() ? inj.getInstance(RemoteContentDatabase.class) : null;
+        _cvdb = cvdb;
+        _rcdb = rcdb;
     }
 
     @Override
@@ -136,84 +124,26 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
     /**
      * @return a map from all branches of an object to the list of contributors for each branch.
      */
-    private Map<KIndex, List<PBPeer>> divergence(SOID soid, Set<KIndex> branches) throws Exception
+    private Map<KIndex, PBPeer> divergence(SOID soid, Set<KIndex> branches) throws Exception
     {
         if (branches.size() < 2) return null;
-        Map<KIndex, List<PBPeer>> editors = Maps.newHashMap();
+        Map<KIndex, PBPeer> editors = Maps.newHashMap();
 
-        if (_cvdb != null) {
-            checkState(branches.size() == 2);
-            editors.put(KIndex.MASTER,
-                    ImmutableList.of(peer(Cfg.did()).toPB()));
+        checkState(branches.size() == 2);
+        editors.put(KIndex.MASTER, peer(Cfg.did()).toPB());
 
-            // see DaemonConflictHandler/CentralVersionDatabase
-            // dummy conflict branch has null version, does not match any rcdb entry
-            Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
-            if (v == null) {
-                editors.put(KIndex.MASTER.increment(), ImmutableList.of());
-            } else {
-                // when a conflict branch is present it MUST be the last downloaded version
-                // therefore it is still present in the remote content db, from which the
-                // originator can be extracted
-                // TODO: check consistency (first rcdb entry should match cvdb)
-                editors.put(KIndex.MASTER.increment(),
-                        ImmutableList.of(peer(_rcdb.getOriginator_(soid)).toPB()));
-            }
-            return editors;
-        }
-
-        Version vMin = null;
-        Map<KIndex, Version> versions = Maps.newHashMap();
-        for (KIndex kidx : branches) {
-            Version v = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, kidx));
-            versions.put(kidx, v);
-            if (vMin == null) {
-                vMin = Version.copyOf(v);
-            } else {
-                vMin = min(vMin, v);
-            }
-        }
-
-        for (KIndex kidx : branches) {
-            List<PBPeer> l = Lists.newArrayList();
-            for (Peer p : contributors(versions.get(kidx), vMin)) l.add(p.toPB());
-            editors.put(kidx, l);
+        // see DaemonConflictHandler/CentralVersionDatabase
+        // dummy conflict branch has null version, does not match any rcdb entry
+        Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
+        if (v == null) {
+            editors.put(KIndex.MASTER.increment(), PBPeer.newBuilder().setUserName("").build());
+        } else {
+            // when a conflict branch is present it MUST be the last downloaded version
+            // therefore it is still present in the remote content db, from which the
+            // originator can be extracted
+            // TODO: check consistency (first rcdb entry should match cvdb)
+            editors.put(KIndex.MASTER.increment(), peer(_rcdb.getOriginator_(soid)).toPB());
         }
         return editors;
-    }
-
-    // we may consider putting this directly in Version as static method instead
-    private Version min(Version u, Version v)
-    {
-        Version result = Version.empty();
-
-        for (Entry<DID, Tick> entry : u.getAll_().entrySet()) {
-            DID did = entry.getKey();
-            long uTick = entry.getValue().getLong();
-            long vTick = v.get_(did).getLong();
-
-            if (vTick == 0) continue;
-
-            result.set_(did, Math.min(uTick, vTick));
-        }
-
-        return result;
-    }
-
-    /**
-     * @pre ancestor is an ancestor of v (i.e all its ticks are <= to those in v)
-     * @return set of peers for which the tick in v is superior to that in ancestor
-     * NB: aggregate peers (i.e other users) will be present if at least one of the subpeers
-     * (i.e devices) contributes to the version
-     */
-    private Set<Peer> contributors(Version v, Version ancestor) throws Exception
-    {
-        Set<Peer> r = Sets.newHashSet();
-        for (DID did : v.getAll_().keySet()) {
-            if (v.get_(did).getLong() > ancestor.get_(did).getLong()) {
-                r.add(peer(did));
-            }
-        }
-        return r;
     }
 }

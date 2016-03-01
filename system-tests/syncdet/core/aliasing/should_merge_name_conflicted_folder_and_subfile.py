@@ -6,8 +6,6 @@ This test creates a name conflict on both "folder" and its single subfile
 import os
 import time
 
-import lib.files
-from .. import is_polaris
 from lib import ritual
 from lib.network_partition import GlobalNetworkPartition
 from lib.files import instance_path
@@ -34,14 +32,10 @@ def _wait_for_conflicts(r):
 
 
 def wait_for_final_state(r):
-    if is_polaris():
-        p = instance_path("folder", _FILE_NAME)
-        sync_ng("conflict",
-                validator=lambda votes: sum(votes.itervalues()) == 1,
-                vote=lambda: 1 if len(r.get_object_attributes(p).object_attributes.branch) > 1 else None)
-    else:
-        # we should eventually receive two conflict branches
-        _wait_for_conflicts(r)
+    p = instance_path("folder", _FILE_NAME)
+    sync_ng("conflict",
+            validator=lambda votes: sum(votes.itervalues()) == 1,
+            vote=lambda: 1 if len(r.get_object_attributes(p).object_attributes.branch) > 1 else None)
 
 
 def create(r, file_name, file_content):
@@ -70,13 +64,10 @@ def receiver():
     with GlobalNetworkPartition():
         pass
 
-    if is_polaris():
-        wait_for_any(
-            InstanceUniqueDirTree({"folder": {_FILE_NAME: _FILE1_CONTENT}}),
-            InstanceUniqueDirTree({"folder": {_FILE_NAME: _FILE2_CONTENT}})
-        )
-    else:
-        _wait_for_conflicts(ritual.connect())
+    wait_for_any(
+        InstanceUniqueDirTree({"folder": {_FILE_NAME: _FILE1_CONTENT}}),
+        InstanceUniqueDirTree({"folder": {_FILE_NAME: _FILE2_CONTENT}})
+    )
 
 
 # Timeout is set to 65. Most runs take either 31 seconds or 61 seconds. 65 gives us a good cap.

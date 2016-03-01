@@ -23,10 +23,10 @@ public class StoreCreationOperators
         _ops.add(operator);
     }
 
-    void runAll_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException
+    void runAll_(SIndex sidx, Trans t) throws SQLException
     {
         for (IStoreCreationOperator operator : _ops) {
-            operator.createStore_(sidx, usePolaris, t);
+            operator.createStore_(sidx, t);
         }
     }
 }

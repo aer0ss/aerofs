@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.polaris.api;
 
+import com.aerofs.daemon.core.polaris.GsonUtil;
+
 public class LocalChange
 {
     public enum Type {
@@ -35,4 +37,9 @@ public class LocalChange
     public String hash;
     public Long size;
     public Long mtime;
+
+    @Override
+    public String toString() {
+        return GsonUtil.GSON.toJson(this);
+    }
 }

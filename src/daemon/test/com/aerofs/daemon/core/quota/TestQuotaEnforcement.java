@@ -68,7 +68,7 @@ public class TestQuotaEnforcement extends AbstractTest
 
     SIndex[] sidxs;
     SID[] sids;
-    LegacyStore[] ss;
+    Store[] ss;
 
     @Before
     public void setUp()
@@ -78,11 +78,11 @@ public class TestQuotaEnforcement extends AbstractTest
         int STORES = 3;
         sidxs = new SIndex[STORES];
         sids = new SID[STORES];
-        ss = new LegacyStore[STORES];
+        ss = new Store[STORES];
         for (int i = 0; i < STORES; i++) {
             sidxs[i] = new SIndex(i);
             sids[i] = SID.generate();
-            ss[i] = mock(LegacyStore.class);
+            ss[i] = mock(Store.class);
         }
 
         // Mock store management

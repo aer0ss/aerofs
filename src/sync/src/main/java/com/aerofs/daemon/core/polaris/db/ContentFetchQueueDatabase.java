@@ -45,9 +45,8 @@ public class ContentFetchQueueDatabase extends AbstractDatabase
     }
 
     @Override
-    public void createStore_(SIndex sidx, boolean usePolaris, Trans t) throws SQLException
+    public void createStore_(SIndex sidx, Trans t) throws SQLException
     {
-        if (!usePolaris) return;
         try (Statement s = c().createStatement()) {
             s.executeUpdate("create table " + tableName(sidx) + "("
                     + C_CONTENT_QUEUE_IDX + " integer primary key autoincrement,"

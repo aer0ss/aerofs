@@ -5,11 +5,7 @@
 package com.aerofs.daemon.core.ds;
 
 import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.ids.OID;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 
 import java.sql.SQLException;
@@ -32,9 +28,6 @@ public interface ObjectSurgeon
      * USE WITH EXTREME CAUTION (Aliasing is the only expected caller)
      */
     void replaceOID_(SOID alias, SOID target, Trans t) throws SQLException, ExAlreadyExist;
-
-    void swapOIDsInSameStore_(SIndex sidx, OID oid1, OID oid2, Trans t)
-            throws SQLException, ExNotFound, ExNotDir;
 
     /**
      * Deleting meta-data entry is currently only required while performing aliasing.

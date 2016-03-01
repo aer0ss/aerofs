@@ -161,13 +161,12 @@ public class QuotaEnforcement implements IQuotaEnforcement
             for (Entry<SID, Boolean> en : sid2bool.entrySet()) {
                 SID sid = new SID(en.getKey());
                 Store s = getStoreNullable_(sid);
-                // TODO(phoenix)
-                if (s == null || !(s instanceof LegacyStore)) continue;
+                if (s == null) continue;
 
                 if (en.getValue()) {
-                    ((LegacyStore)s).startCollectingContent_(t);
+                    s.startCollectingContent_(t);
                 } else {
-                    ((LegacyStore)s).stopCollectingContent_(t);
+                    s.stopCollectingContent_(t);
                 }
             }
             t.commit_();

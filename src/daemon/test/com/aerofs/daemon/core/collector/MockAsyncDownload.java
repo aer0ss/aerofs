@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.collector;
 import com.aerofs.ids.DID;
 import com.aerofs.daemon.core.transfers.download.IDownloadCompletionListener;
 import com.aerofs.daemon.core.tc.ITokenReclamationListener;
-import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -21,7 +21,7 @@ public class MockAsyncDownload implements Answer<Boolean>
 {
     private boolean _continuation;
 
-    private SOCID _socid;
+    private SOID _soid;
     private ITokenReclamationListener _trl;
     private IDownloadCompletionListener _dcl;
 
@@ -30,14 +30,14 @@ public class MockAsyncDownload implements Answer<Boolean>
     public Boolean answer(InvocationOnMock invocation) throws Throwable
     {
         Object[] args = invocation.getArguments();
-        SOCID socid = (SOCID)args[0];
+        SOID soid = (SOID)args[0];
         Set<DID> dids = (Set<DID>)args[1];
         ITokenReclamationListener tokenListener = (ITokenReclamationListener)args[2];
         IDownloadCompletionListener dlListener = (IDownloadCompletionListener)args[3];
-        return simulateDownload(socid, dids, tokenListener, dlListener);
+        return simulateDownload(soid, dids, tokenListener, dlListener);
     }
 
-    private boolean simulateDownload(SOCID socid, Set<DID> dids,
+    private boolean simulateDownload(SOID soid, Set<DID> dids,
             ITokenReclamationListener trl, IDownloadCompletionListener dcl)
     {
         if (_continuation) {
@@ -46,7 +46,7 @@ public class MockAsyncDownload implements Answer<Boolean>
             return false;
         }
 
-        _socid = socid;
+        _soid = soid;
 
         _trl = null;
         _dcl = dcl;
@@ -83,15 +83,15 @@ public class MockAsyncDownload implements Answer<Boolean>
     /**
      * Simulate successful download from the given device
      */
-    void ok(DID sender) { _dcl.onDownloadSuccess_(_socid, sender); completed(); }
+    void ok(DID sender) { _dcl.onDownloadSuccess_(_soid, sender); completed(); }
 
     /**
      * Simulate download failure with a general error
      */
-    void fail(Exception e) { _dcl.onGeneralError_(_socid, e); }
+    void fail(Exception e) { _dcl.onGeneralError_(_soid, e); }
 
     /**
      * Simulate download failure with per-device errors
      */
-    void fail(Map<DID, Exception> d2e) { _dcl.onPerDeviceErrors_(_socid, d2e); }
+    void fail(Map<DID, Exception> d2e) { _dcl.onPerDeviceErrors_(_soid, d2e); }
 }

@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.phy.linked.linker;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
+import com.aerofs.daemon.core.mock.ExArbitrary;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
