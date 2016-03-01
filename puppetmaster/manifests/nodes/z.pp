@@ -47,7 +47,7 @@ node "z.arrowfs.org" inherits default {
     "dryad port dryad.aerofs.com 443",
     "dryad url-internalcert https://dryad.aerofs.com/v1.0/status",
     "hpc hpc_check_deployments_status http://enterprise.aerofs.com:8000/hpc_deployments_status",
-    "hpc hpc_check_sys_stats http://enterprise.aerofs.com:8000/hpc_server_sys_stats",
+    "hpc hpc_check_sys_stats http://enterprise.aerofs.com:8000/hpc_server_sys_stats 80 80 80",
   ]:
     hour => "*",
     minute => "*/10",

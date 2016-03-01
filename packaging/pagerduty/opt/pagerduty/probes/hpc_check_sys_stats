@@ -5,7 +5,7 @@
 # exit 1 if the URL returns an error, i.e. HTTP 500.
 # TODO Add the CPU_TRHESHOLD, MEM_THRESHOLD and DISK_THRESHOLD as optional
 
-HOST='https://enterprise.aerofs.com:8000/hpc_server_sys_stats'
+HOST='http://enterprise.aerofs.com:8000/hpc_server_sys_stats'
 # Default values are 80.0 %
 CPU=80
 MEM=80

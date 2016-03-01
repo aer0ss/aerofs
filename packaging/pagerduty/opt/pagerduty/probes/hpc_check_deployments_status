@@ -4,7 +4,7 @@
 #
 # exit 1 if the URL returns an error, i.e. HTTP 500.
 
-URL='https://enterprise.aerofs.com:8000/hpc_deployments_status'
+URL='http://enterprise.aerofs.com:8000/hpc_deployments_status'
 
 if [ $# == 1 ]
 then
