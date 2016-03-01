@@ -55,6 +55,7 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         p.setConnectionProperties(
                 "cachePrepStmts=true; autoReconnect=true; " +
                 "useUnicode=true; characterEncoding=utf8;");
+        p.setJdbcInterceptors("ResetAbandonedTimer");
 
         return new DataSource(p);
     }

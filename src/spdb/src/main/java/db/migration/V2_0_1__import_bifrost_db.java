@@ -66,6 +66,7 @@ public class V2_0_1__import_bifrost_db implements JdbcMigration
         p.setRemoveAbandonedTimeout(30);
         p.setConnectionProperties("cachePrepStmts=true; autoReconnect=true; " +
                 "useUnicode=true; characterEncoding=utf8;");
+        p.setJdbcInterceptors("ResetAbandonedTimer");
 
         return new DataSource(p);
     }
