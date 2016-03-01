@@ -13,10 +13,8 @@ Eyja
 "Can’t you just send the file to me?"<br>
 "OK... hang on... there."<br>
 "Thanks. Does it have the edits I sent last week?"<br>
-"What edits?"
-
-Eyja brings your work together in one place. You will never have to ask 'where is the file?' again.
-
+"What edits?"  
+Eyja brings your work together in one place.
 
 # Mockups
 
@@ -35,9 +33,9 @@ Eyja brings your work together in one place. You will never have to ask 'where i
 	e.g. 'Marketing'
 	
 * `Direct Conversation` A conversation between multiple people with the following properties:
-	* Direct Conversations have a immutable name, with the first names of each member, ordered alphabetically.
+	* Direct Conversations have an immutable name, with the first names of each member, ordered alphabetically.
 	* Direct Conversations are private.
-	* Members cannot be added or removed. 
+	* Members cannot be added or removed.
 	e.g. 'Ned, Sansa, Tyrion'
 	
 * `1:1 Conversation` A Direct Conversation with only two people. Name for conversation is the first name of the other person talking.  
@@ -90,41 +88,61 @@ e.g. 'Jaime Lannister'
 The roster lists: 
 
 * Channels
-	* All channels the member belongs to.
-	* Ordered alphabetically.
+	* All channels the user belongs to.
+	* Ordered alphabetically.  
+	* All subfolders and files associated with the channel.
 
 * Direct Conversations
 	* Most recent 20 Direct Conversations. 
 	* Ordered alphabetically.
+	* All subfolders and files associated with the channel. 
 	
-### Channels
 
-A User can leave a channel. 
+### Privacy of Channels and Direct Conversations
+
+A `Public Channel` can be found and joined by anyone. Name, messages, members, and file updates can be seen and searched by anyone.  
+
+A `Private Channel` can be seen only by members. It cannot be joined. New members can be invited by existing members. Members can be expelled by existing members. Name, messages, memebers, and file updates can be seen by only by members.  
+
+A Direct Conversation can be seen only by members. It cannot be joined. New members cannot be invited by existing members. Name, messages, memebers, and file updates can be seen only by members.  
+
+A member of a public channel can make the channel private. 
+
+A private channel cannot be made public. 
+
+
 	
-### Direct Conversation
+### Join, Invite, Leave, Expel
 
-Direct Conversations are unique. If a user creates a conversation with members that already share a conversation, user comes back to the existing conversation.   
+In Public Channels:
+ 
+* A non-member can join.
+* A member can leave.
+* A member can invite another member.  
+* A member can expel another member.  
 
-A member can add or remove a user; however this means a new conversation is created with the new set of members (except if the conversation with the same members exist; in that case it will take the user to the new conversation). 
+In Private Channels:
+
+* A member can leave.
+* A member can invite another member.
+* A member can expel another member.
+* A non-member cannot join.
+
+In Direct Conversations:
+
+* No member can leave, join, invite, or expel. 
+
+	
+### Direct Conversations are Unique
+
+Direct Conversations are unique. If a user creates a conversation B with members that already share a conversation A, user comes back to the conversation A. 
+
 
 
 ### File Conversations
 
 File Conversations cannot include files or folders.  
 File Conversations exist only within either a Channel or a Direct Conversation.                
-
-
-### Public and Private 
-
-A `Public Conversation` can be found and joined by anyone. Name, messages, members, and file updates can be seen and searched by anyone.  
-
-A `Private Conversation` can be seen only by members. It cannot be joined. New members can be invited by existing members. Name, messages, memebers, and file updates can be seen by by members only.  
-
-Only channels can be public.
-
-A Public Conversation can be made private. Private conversations cannot be made public. 
-
-People joining private conversations cannot see the messages that were sent before their arrival.  
 
 
 
@@ -141,6 +159,7 @@ Folder: ~/Eyja/White Walkers
 e.g. 2  
 Direct Conversation with 'Arya Stark'
 ~/Eyja/Direct Conversations/Arya Stark/  
+
 
 
 ### Notifications 
@@ -498,6 +517,25 @@ someone modifies a message by deleting it
 
 Files uploade for file sending.
 
+
+creating add-hoc conversations
+A member can add or remove a user; however this means a new conversation is created with the new set of members (except if the conversation with the same members exist; in that case it will take the user to the new conversation). 
+
+
+
+
+Unicity:
+We could break immutability, but Compose a message will change. There 2 groups 'A, B, C'. A invites B and C to a new conversation. Now there are 3 groups 'A, B, C'.
+
+in 1:1 conversation 'A, B':
+
+- 'A' invites 'C' 
+	- if 'A, B, C' exists, it goes to the existing conversation.
+	- if 'A, B, C' does not exist, it asks 'A' 'do you want to keep history for 'C'?' Then it creates a new conversation. 'A, B, C'. 'B' sees that its messages with 'A' were shared with 'C'. While 'A' thought it was OK, 'B' thinks it isn't.
+
+- 'C' leaves. 
+	- if 'A, B' exists, not sure of what happens. Maybe 2 groups of 'A, B'? 
+	- if 'A, B' does not exist, the conversation becomes 'A, B'. This is a 1:1 conversation, but 'C' is shown in the history. 'A' asks herself 'If 'C' was in the conversation, does this mean my messages be shared with someone else?'
 
 
 
