@@ -194,8 +194,8 @@ public class UsersResource extends AbstractSpartaResource
                                @PathParam("email") User user)
             throws ExNotFound, SQLException
     {
-        User caller = validateAuth(token, Scope.READ_ACL, user);
-        EntityTag etag = caller == null ? null : new EntityTag(aclEtag(caller), true);
+        validateAuth(token, Scope.READ_ACL, user);
+        EntityTag etag = user == null ? null : new EntityTag(aclEtag(user), true);
         if (ifNoneMatch.isValid() && etag != null && ifNoneMatch.matches(etag)) {
             return Response.notModified(etag).build();
         }
