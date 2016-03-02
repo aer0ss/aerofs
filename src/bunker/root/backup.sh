@@ -32,13 +32,17 @@ fi
 echo ">>> Backing up configuration properties..."
 cp -a /opt/config/properties/external.properties aerofs-db-backup/external.properties
 
-echo ">>> Backing up charlie database..."
-cp -a /data/charlie aerofs-db-backup/charlie
+for svc in charlie waldo
+do
+    echo ">>> Backing up $svc database..."
+    cp -a /data/$svc aerofs-db-backup/$svc
+done
 
 echo ">>> Backing up onboard storage data..."
 cp -a /aerofs-storage aerofs-db-backup/aerofs-storage
 
 echo ">>> Creating backup file..."
+# FIXME: does this comment still make sense now that we use alpine?
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE
 # bsd tar does not handle extracting sparse files efficiently and fills all the holes
 # bsd tar also doesn't support producing sparse archives at all until 3.0.4S.

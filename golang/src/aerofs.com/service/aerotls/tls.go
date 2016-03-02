@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func NewConfig(name string) *tls.Config {
+func caCert(name string) (string, *x509.Certificate) {
 	c, err := config.NewClient(name).Get()
 	if err != nil {
 		panic(err)
@@ -26,6 +26,11 @@ func NewConfig(name string) *tls.Config {
 	if err != nil {
 		panic(err)
 	}
+	return host, cacert
+}
+
+func NewConfig(name string) *tls.Config {
+	host, cacert := caCert(name)
 
 	key, cert, err := setupCert(host, "/data/"+name+"/cert.pem")
 	if err != nil {
@@ -33,6 +38,29 @@ func NewConfig(name string) *tls.Config {
 	}
 
 	return NewTLSConfig(host, key, cert, cacert)
+}
+
+func NewClientConfig(name string) *tls.Config {
+	host, cacert := caCert(name)
+
+	roots := x509.NewCertPool()
+	roots.AddCert(cacert)
+
+	return &tls.Config{
+		ServerName:   host,
+		RootCAs:      roots,
+		MinVersion:   tls.VersionTLS12,
+		CipherSuites: CipherSuites,
+	}
+}
+
+var CipherSuites []uint16 = []uint16{
+	tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+	tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+	tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+	tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+	tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
 }
 
 func NewTLSConfig(host string, key *rsa.PrivateKey, cert *x509.Certificate, cacert *x509.Certificate) *tls.Config {
@@ -44,16 +72,9 @@ func NewTLSConfig(host string, key *rsa.PrivateKey, cert *x509.Certificate, cace
 	// In particular it doesn't support any non-EC DHE ciphers:
 	// https://github.com/golang/go/issues/7758
 	return &tls.Config{
-		ServerName: host,
-		MinVersion: tls.VersionTLS12,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-		},
+		ServerName:   host,
+		MinVersion:   tls.VersionTLS12,
+		CipherSuites: CipherSuites,
 		Certificates: []tls.Certificate{
 			tls.Certificate{
 				Certificate: [][]byte{

@@ -128,11 +128,14 @@ else
 
 fi
 
-# Only restore charlie db for backups that are new enough to contain it
-if [ -d aerofs-db-backup/charlie ] ; then
-    rm -rf /data/charlie
-    cp -a aerofs-db-backup/charlie /data/charlie
-fi
+# Only restore charlie/waldo db for backups that are new enough to contain it
+for svc in charlie waldo
+do
+    if [ -d aerofs-db-backup/$svc ] ; then
+        rm -rf /data/$svc
+        cp -a aerofs-db-backup/$svc /data/$svc
+    fi
+done
 
 # Restore onboard storage data if found in the backup file
 if [ -d aerofs-db-backup/aerofs-storage ]; then

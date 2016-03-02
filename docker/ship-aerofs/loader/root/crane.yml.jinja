@@ -108,6 +108,7 @@ containers:
         - status:status.service
         - sparta:sparta.service
         - trifrost:trifrost.service
+        - waldo:waldo.service
         - web:web.service
 
   bunker:
@@ -216,6 +217,17 @@ containers:
         - ca-server:ca.service
         - sparta:sparta.service
         - config:config.service
+
+  waldo:
+    image: aerofs/waldo
+    run:
+      detach: true
+      volumes-from:
+        # For /data/deployment_secret
+        - data
+      link:
+        - config:config.service
+        - lipwig:lipwig.service
 
   polaris:
     image: aerofs/polaris
@@ -393,6 +405,7 @@ containers:
         - sp:sp.service
         - sparta:sparta.service
         - verification:verification.service
+        - waldo:waldo.service
         - web:web.service
 
   onboard-sa:

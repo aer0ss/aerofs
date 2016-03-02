@@ -32,6 +32,7 @@ IMAGES:= \
 	../golang/src/aerofs.com/trifrost \
 	../golang/src/aerofs.com/ts-probe \
 	../golang/src/aerofs.com/valkyrie \
+	../golang/src/aerofs.com/waldo \
 	../src/web \
 	ship-aerofs/loader
 
