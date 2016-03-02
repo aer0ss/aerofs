@@ -479,7 +479,7 @@ public class User
      */
     public ImmutableSet<UserID> deactivate(ImmutableSet.Builder<Long> revokedSerials,
             @Nullable User newOwner)
-            throws SQLException, ExNotFound, ExInvalidID, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExInvalidID, ExNoAdminOrOwner, ExNoPerm
     {
         Preconditions.checkArgument(newOwner == null || !_id.equals(newOwner.id()));
 
@@ -539,7 +539,7 @@ public class User
         // user mustn't have any daemon running at this moment.
         try {
             rootStore.save("root store: " + _id, this);
-        } catch (ExNotFound | ExAlreadyExist e) {
+        } catch (ExNotFound | ExAlreadyExist | ExNoPerm e) {
             // The method throws ExNotFound if the owner doesn't exist and ExAlreadyExist if the
             // store already exists.
             SystemUtil.fatal(e);
@@ -613,7 +613,7 @@ public class User
      * folders for the team server.
      */
     public ImmutableCollection<UserID> setOrganization(Organization org, AuthorizationLevel level)
-            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExAlreadyExist, ExNoAdminOrOwner, ExNoPerm
     {
         // Delete organization invitation if any
         OrganizationInvitation oi = _f._factOrgInvite.create(this, org);

@@ -85,6 +85,7 @@ public final class SPSchema
             T_SF                            = "sp_shared_folder",
             C_SF_ID                         = "sf_id",
             C_SF_ORIGINAL_NAME              = "sf_original_name",
+            C_SF_LOCKED                     = "sf_locked_membership",
 
             T_SFN                           = "sp_shared_folder_names",
             C_SFN_STORE_ID                  = "sn_sid",

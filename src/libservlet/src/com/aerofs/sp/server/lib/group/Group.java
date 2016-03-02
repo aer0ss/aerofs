@@ -212,7 +212,7 @@ public class Group
     }
 
     public ImmutableCollection<UserID> delete()
-            throws SQLException, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExNoAdminOrOwner, ExNoPerm
     {
         throwIfDoesNotExist();
 
@@ -263,7 +263,7 @@ public class Group
     }
 
     public ImmutableCollection<UserID> removeMember(User user, @Nullable User newOwner)
-            throws SQLException, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExNoAdminOrOwner, ExNoPerm
     {
         // don't need to check if group exists, hasMember will do that
         if (!hasMember(user)) {

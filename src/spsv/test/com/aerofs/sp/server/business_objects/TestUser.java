@@ -8,6 +8,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
@@ -44,7 +45,7 @@ public class TestUser extends AbstractBusinessObjectTest
 {
 
     private void addSharedFolder(User sharer, List<User> sharees, String name, SharedFolderState sfs)
-            throws SQLException, ExAlreadyExist, ExNotFound
+            throws SQLException, ExAlreadyExist, ExNotFound, ExNoPerm
     {
         SharedFolder sf = factSharedFolder.create(SID.generate());
         sf.save(name, sharer);

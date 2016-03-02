@@ -54,10 +54,7 @@ import com.aerofs.sp.server.sharing_rules.SharingRulesFactory;
 import com.aerofs.sp.server.url_sharing.UrlShare;
 import com.aerofs.sp.sparta.Transactional;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import com.google.inject.Inject;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -78,6 +75,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -167,7 +165,7 @@ public class SharedFolderResource extends AbstractSpartaResource
                         version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? groups : null,
                         pending,
                         caller == null ? null : sf.isExternal(caller),
-                        callerPermissions == null ? null : callerPermissions.toArray()))
+                        callerPermissions == null ? null : callerPermissions.toArray(), sf.isLocked()))
                 .tag(etag)
                 .build();
     }
@@ -203,8 +201,21 @@ public class SharedFolderResource extends AbstractSpartaResource
             } while (sf.exists() && --attempts > 0);
         }
 
-        ImmutableCollection<UserID> affected = sf.save(share.name, caller);
+        Set<UserID> affected = Sets.newHashSet();
+        affected.addAll(sf.save(share.name, caller));
+        for (SFMember member : share.members) {
+            if (member.email.equals(caller.id().getString())) {
+                continue;
+            }
+            User user = _factUser.create(member.email);
+            if (!user.exists()) {
+                throw new ExNotFound("user not found: " + member.email);
+            }
+            sf.addUserWithGroup(user, null, Permissions.fromArray(member.permissions), caller);
+            affected.add(UserID.fromExternal(member.email));
+        }
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
+        if (share.isLocked != null && share.isLocked) sf.setLocked();
         _aclNotifier.publish_(affected);
 
         audit(sf, caller, token, "folder.create")
@@ -221,7 +232,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         return Response.created(URI.create(location))
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(), sf.getName(caller), members,
                         version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? groups : null,
-                        pending, sf.isExternal(caller), Permissions.OWNER.toArray()))
+                        pending, sf.isExternal(caller), Permissions.OWNER.toArray(), sf.isLocked()))
                 .tag(etag)
                 .build();
     }
@@ -309,7 +320,8 @@ public class SharedFolderResource extends AbstractSpartaResource
             }
         }
 
-        if (sf.getStateNullable(user) == SharedFolderState.JOINED) {
+        SharedFolderState currentState = sf.getStateNullable(user);
+        if (currentState == SharedFolderState.JOINED) {
             return Response.status(Status.CONFLICT)
                     .entity(new Error(Type.CONFLICT, "Member already exists"))
                     .build();

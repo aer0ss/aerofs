@@ -71,6 +71,25 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
     }
 
     @Test
+    public void shouldDisallowShareFolderWhenLocked()
+            throws Exception
+    {
+        shareFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+
+        sqlTrans.begin();
+        factSharedFolder.create(SID_1).setLocked();
+        sqlTrans.commit();
+
+        try {
+            shareFolder(USER_1, SID_1, USER_3, Permissions.allOf(Permission.WRITE));
+        } catch (ExNoPerm e) {
+            return;
+        }
+
+        fail("expected ExNoPerm sharing locked folder");
+    }
+
+    @Test
     public void shouldSuccessfullyShareFolderExternalWithOneUser()
             throws Exception
     {

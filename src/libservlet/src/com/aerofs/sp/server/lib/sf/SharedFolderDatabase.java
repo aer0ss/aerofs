@@ -39,21 +39,7 @@ import static com.aerofs.lib.db.DBUtil.insertedOrUpdatedOneRow;
 import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_EXTERNAL;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_GID;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STATE;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SFN_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.C_SFN_STORE_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SFN_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SF_ORIGINAL_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.T_AC;
-import static com.aerofs.sp.server.lib.SPSchema.T_SF;
-import static com.aerofs.sp.server.lib.SPSchema.T_SFN;
+import static com.aerofs.sp.server.lib.SPSchema.*;
 
 /**
  * N.B. only User.java may refer to this class
@@ -173,6 +159,27 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() && rs.getBoolean(1);
             }
+        }
+    }
+
+    public boolean isLocked(SID sid) throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SF, C_SF_ID + "=?", C_SF_LOCKED))) {
+            ps.setBytes(1, sid.getBytes());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
+    public void setLocked(SID sid) throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = prepareStatement(updateWhere(T_SF, C_SF_ID + "=?", C_SF_LOCKED))) {
+            ps.setBoolean(1, true);
+            ps.setBytes(2, sid.getBytes());
+
+            if (ps.executeUpdate() == 0) throw new ExNotFound();
         }
     }
 
@@ -302,8 +309,8 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public ImmutableMap<UserID, Permissions> getJoinedUsersAndRoles(SID sid) throws SQLException
     {
         try (PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " +
-                        C_AC_STATE + "=" + SharedFolderState.JOINED.ordinal() +
-                        " group by " + C_AC_USER_ID, C_AC_USER_ID, effectiveRole()))) {
+                C_AC_STATE + "=" + SharedFolderState.JOINED.ordinal() +
+                " group by " + C_AC_USER_ID, C_AC_USER_ID, effectiveRole()))) {
 
             ps.setBytes(1, sid.getBytes());
 

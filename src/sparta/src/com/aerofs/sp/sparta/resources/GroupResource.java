@@ -172,7 +172,7 @@ public class GroupResource extends AbstractSpartaResource
                         SharedFolderResource.listGroupMembers(sf),
                         SharedFolderResource.listPendingMembers(sf),
                         caller != null ? sf.isExternal(caller) : null,
-                        p != null ? p.toArray() : null));
+                        p != null ? p.toArray() : null, sf.isLocked()));
             }
         }
 

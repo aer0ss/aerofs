@@ -303,7 +303,7 @@ public class UsersResource extends AbstractSpartaResource
                 .entity(new com.aerofs.rest.api.SharedFolder(sf.id().toStringFormal(),
                         sf.getName(user), listMembers(sf),
                         version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
-                        listPendingMembers(sf), sf.isExternal(user), permissions))
+                        listPendingMembers(sf), sf.isExternal(user), permissions, sf.isLocked()))
                 .build();
     }
 
@@ -357,7 +357,7 @@ public class UsersResource extends AbstractSpartaResource
                         listMembers(sf),
                         version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? listGroupMembers(sf) : null,
                         listPendingMembers(sf),
-                        sf.isExternal(user), sf.getPermissions(user).toArray()));
+                        sf.isExternal(user), sf.getPermissions(user).toArray(), sf.isLocked()));
             }
         }
         return bd.build();

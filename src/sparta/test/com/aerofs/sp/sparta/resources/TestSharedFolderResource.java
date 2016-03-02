@@ -718,6 +718,25 @@ public class TestSharedFolderResource extends AbstractResourceTest
     }
 
     @Test
+    public void shouldNotAddPendingMemberWhenLocked() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        sqlTrans.begin();
+        factSF.create(sid).setLocked();
+        sqlTrans.commit();
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFPendingMember(other.getString(), new String[]{"WRITE"}, "Join us"),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(403)
+        .when().log().everything()
+                .post(RESOURCE + "/pending", sid.toStringFormal());
+    }
+
+
+    @Test
     public void shouldUpdatePermWhenAddPendingMemberTwice() throws Exception
     {
         SID sid = mkShare("Test", user.getString());
@@ -882,6 +901,24 @@ public class TestSharedFolderResource extends AbstractResourceTest
     }
 
     @Test
+    public void shouldNotAddMemberWhenLocked() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        sqlTrans.begin();
+        factSF.create(sid).setLocked();
+        sqlTrans.commit();
+
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFMember(other.getString(), null, null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(403)
+        .when().log().everything()
+                .post(RESOURCE + "/members", sid.toStringFormal());
+    }
+
+    @Test
     public void shouldAddMemberWithEtagMatch() throws Exception
     {
         SID sid = mkShare("Test", user.getString());
@@ -1036,7 +1073,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "Shareme", null, null, null, false, null),
+                .body(new SharedFolder(null, "Shareme", null, null, null, false, null, false),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)
@@ -1055,7 +1092,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
     {
         givenWriteAccess()
                 .contentType(ContentType.JSON)
-                .body(new SharedFolder(null, "External", null, null, null, true, null),
+                .body(new SharedFolder(null, "External", null, null, null, true, null, false),
                         ObjectMapperType.GSON)
         .expect()
                 .statusCode(201)

@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
+import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
@@ -268,7 +269,7 @@ public class LdapGroupSynchronizer
     }
 
     private void deleteGroupWithExternalID(String externalID)
-            throws SQLException, ExNoAdminOrOwner, ExNotFound
+            throws SQLException, ExNoAdminOrOwner, ExNotFound, ExNoPerm
     {
         _sqlTrans.begin();
         try {

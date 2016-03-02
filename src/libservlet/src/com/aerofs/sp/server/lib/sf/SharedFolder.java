@@ -177,7 +177,7 @@ public class SharedFolder
      * @throws com.aerofs.base.ex.ExNotFound if the owner is not found
      */
     public ImmutableCollection<UserID> save(String folderName, User owner)
-            throws ExNotFound, SQLException, ExAlreadyExist
+            throws ExNotFound, SQLException, ExAlreadyExist, ExNoPerm
     {
         _f._db.insert(_sid, folderName);
 
@@ -209,9 +209,9 @@ public class SharedFolder
      * @throws com.aerofs.base.ex.ExAlreadyExist if the user is already added.
      */
     public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)
-            throws ExAlreadyExist, SQLException, ExNotFound
+            throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
     {
-        _f._db.insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
+        insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
         setState(user, JOINED);
 
         addTeamServerForUserImpl(user);
@@ -220,12 +220,12 @@ public class SharedFolder
     }
 
     public void addPendingUser(User user, Permissions permissions, User sharer)
-            throws SQLException, ExAlreadyExist
+            throws SQLException, ExAlreadyExist, ExNoPerm
     {
         if (getStateNullable(user) != null) {
             throw new ExAlreadyExist("(userID, SID) pair already exist in the ACL table");
         }
-        _f._db.insertUser(_sid, user.id(), permissions, PENDING, sharer.id(), GroupID.NULL_GROUP);
+        insertUser(_sid, user.id(), permissions, PENDING, sharer.id(), GroupID.NULL_GROUP);
     }
 
     /** Adds an ACL specific to a group, inherits the state of any already existing ACL for this
@@ -262,7 +262,7 @@ public class SharedFolder
         // insert a new ACL if the row doesn't exist (first half of the if condition), or if the
         // new state isn't pending - so we can throw ExAlreadyExist on already joined users
         if (getPermissionsInGroupNullable(user, group) == null || newState != PENDING) {
-            _f._db.insertUser(_sid, user.id(), permissions, newState, sharerID, gid);
+            insertUser(_sid, user.id(), permissions, newState, sharerID, gid);
         }
 
         ImmutableCollection<UserID> affected = needToUpdateACLs(oldState, oldPermissions, newState,
@@ -331,6 +331,19 @@ public class SharedFolder
     }
 
     /**
+     * @return true iff the shared folder's membership is locked
+     */
+    public boolean isLocked() throws SQLException
+    {
+        return _f._db.isLocked(_sid);
+    }
+
+    public void setLocked() throws SQLException, ExNotFound
+    {
+        _f._db.setLocked(_sid);
+    }
+
+    /**
      * Add the user's Team Server ID to the ACL. No-op if there are other users on the shared folder
      * belonging to the same Team Server.
      */
@@ -363,13 +376,13 @@ public class SharedFolder
     }
 
     public ImmutableCollection<UserID> removeIndividualUser(User user)
-            throws ExNoAdminOrOwner, SQLException, ExNotFound
+            throws ExNoAdminOrOwner, SQLException, ExNotFound, ExNoPerm
     {
         return removeUserAndTransferOwnership(user, null, null);
     }
 
     public ImmutableCollection<UserID> removeUserWithGroup(User user, Group group)
-            throws SQLException, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExNoAdminOrOwner, ExNoPerm
     {
         return removeUserAndTransferOwnership(user, null, group);
     }
@@ -407,7 +420,7 @@ public class SharedFolder
 
     public ImmutableCollection<UserID> removeUserAndTransferOwnership(User user,
             @Nullable User newOwner, @Nullable Group group)
-            throws SQLException, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExNotFound, ExNoAdminOrOwner, ExNoPerm
     {
         ImmutableCollection<UserID> affected = removeUserAllowNoOwner(user, group);
         if (exists() && !hasOwnerLeft()) {
@@ -819,6 +832,19 @@ public class SharedFolder
                 count++;
         }
         return count;
+    }
+
+    /**
+     * This method wraps the database function but throws ExNoPerm if the folder is locked
+     */
+    private void insertUser(SID sid, UserID uid, Permissions permissions, SharedFolderState state,
+                            @Nullable UserID sharer, GroupID gid)
+            throws SQLException, ExNoPerm, ExAlreadyExist
+    {
+        if (this.isLocked()) {
+            throw new ExNoPerm("Cannot add member to locked shared folder");
+        }
+        _f._db.insertUser(sid, uid, permissions, state, sharer, gid);
     }
 
     // the only purpose of this class is to hold the result of getAllUsersRolesAndStates()

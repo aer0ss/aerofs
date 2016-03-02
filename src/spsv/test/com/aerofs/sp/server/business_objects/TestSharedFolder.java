@@ -809,7 +809,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
     private void addJoinedUser(SharedFolder sf, User user, Permissions permissions, User sharer,
             int usersExpectedToBeAffected)
-            throws SQLException, ExNotFound, ExAlreadyExist
+            throws SQLException, ExNotFound, ExAlreadyExist, ExNoPerm
     {
         sf.addPendingUser(user, permissions, sharer);
         assertEquals(sf.setState(user, SharedFolderState.JOINED).size(), usersExpectedToBeAffected);

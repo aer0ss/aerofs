@@ -20,10 +20,11 @@ public class SharedFolder
     // only set in server responses
     @Nullable
     public final String[] callerEffectivePermissions;
+    public final Boolean isLocked;
 
     public SharedFolder(String id, String name, Collection<SFMember> members,
             Collection<SFGroupMember> groupMembers, Collection<SFPendingMember> pending,
-            Boolean isExternal, @Nullable String[] callerEffectivePermissions)
+            Boolean isExternal, @Nullable String[] callerEffectivePermissions, Boolean isLocked)
     {
         this.id = id;
         this.name = name;
@@ -32,5 +33,6 @@ public class SharedFolder
         this.pending = pending;
         this.isExternal = isExternal;
         this.callerEffectivePermissions = callerEffectivePermissions;
+        this.isLocked = isLocked;
     }
 }
