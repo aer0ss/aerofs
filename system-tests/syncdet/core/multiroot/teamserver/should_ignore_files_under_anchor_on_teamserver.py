@@ -25,19 +25,24 @@ def teamserver():
     sync("shared")
     # disappearing file indicates the folder to anchor conversion was successful
     wait_path_to_disappear(path)
+    print "disappeared"
 
     # avoid race condition upon anchor conversion
     wait_dir(folder)
+    print "appeared"
 
     ignored = os.path.join(folder, "ignored")
     with open(ignored, "w") as f:
         f.write(CONTENT)
+
+    print "written"
 
     # this is not great but there's no perfect way to make sure the file is never picked up
     time.sleep(5)
 
     r = ritual.connect()
     expect_ritual_exception(r.get_object_attributes_no_wait, PBException.NOT_FOUND)(ignored)
+    print "done"
 
 
 def sharer():

@@ -1,10 +1,8 @@
 :include ../core/misc/test_misc_one_client_linux_group.scn
-:include ../api/test_api_one_client_linux_group.scn
 
 :scn,nofail all
     :serial
         misc_one_client_linux_group()
-        api_one_client_linux_group()
 
 :serial
     all()

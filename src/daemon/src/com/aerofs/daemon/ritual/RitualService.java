@@ -268,13 +268,13 @@ public class RitualService implements IRitualService
             bd.setType(PBObjectAttributes.Type.FILE);
 
             for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
+                KIndex kidx = en.getKey();
                 PBBranch.Builder bbd = PBBranch.newBuilder()
-                        .setKidx(en.getKey().getInt())
+                        .setKidx(kidx.getInt())
                         .setLength(en.getValue().length())
                         .setMtime(en.getValue().mtime());
-                if (div != null) {
-                    assert div.containsKey(en.getKey()) : oa + " " + en.getKey();
-                    bbd.setContributor(div.get(en.getKey()));
+                if (div != null && div.containsKey(kidx)) {
+                    bbd.setContributor(div.get(kidx));
                 }
                 bd.addBranch(bbd);
             }

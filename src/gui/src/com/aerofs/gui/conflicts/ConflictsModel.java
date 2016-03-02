@@ -118,16 +118,15 @@ public class ConflictsModel
                             callback.onFailure(throwable);
                         }
 
-                        private Branch createBranchFromPB(PBBranch pbBranch)
+                        private Branch createBranchFromPB(PBBranch b)
                         {
-                            return new Branch(Conflict.this, new KIndex(pbBranch.getKidx()),
-                                    pbBranch.getLength(), pbBranch.getMtime(),
-                                    createContributorFromPB(pbBranch.getContributor()));
+                            return new Branch(Conflict.this, new KIndex(b.getKidx()),
+                                    b.getLength(), b.getMtime(),
+                                    b.hasContributor() ? fromPB(b.getContributor()) : null);
                         }
 
-                        private Contributor createContributorFromPB(PBPeer pbPeer)
+                        private Contributor fromPB(PBPeer pbPeer)
                         {
-                            if (pbPeer.getUserName().isEmpty()) return null;
                             return new Contributor(pbPeer.getUserName(), pbPeer.hasDeviceName()
                                     ? pbPeer.getDeviceName() : "Unknown computer");
                         }

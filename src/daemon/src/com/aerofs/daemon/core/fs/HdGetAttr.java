@@ -135,9 +135,7 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
         // see DaemonConflictHandler/CentralVersionDatabase
         // dummy conflict branch has null version, does not match any rcdb entry
         Long v = _cvdb.getVersion_(soid.sidx(), soid.oid());
-        if (v == null) {
-            editors.put(KIndex.MASTER.increment(), PBPeer.newBuilder().setUserName("").build());
-        } else {
+        if (v != null) {
             // when a conflict branch is present it MUST be the last downloaded version
             // therefore it is still present in the remote content db, from which the
             // originator can be extracted

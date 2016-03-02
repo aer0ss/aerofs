@@ -33,6 +33,7 @@ import com.aerofs.ids.SID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 import com.google.common.collect.Lists;
@@ -85,17 +86,20 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final ContentFetchQueueDatabase _cfqdb;
     private final PolarisContentVersionControl _cvc;
 
+    // FIXME: remove once TS is burned
+    private final CfgLocalUser _localUser;
+
     @Inject
     public ApplyChangeImpl(DirectoryService ds, IPhysicalStorage ps, Expulsion expulsion,
                            MapAlias2Target a2t, ObjectSurgeon os, RemoteLinkDatabase rpdb,
                            CentralVersionDatabase cvdb, MetaBufferDatabase mbdb,
-                           MetaChangesDatabase mcdb,  ContentChangesDatabase ccdb,
+                           MetaChangesDatabase mcdb, ContentChangesDatabase ccdb,
                            RemoteContentDatabase rcdb, MetaChangeSubmitter submitter,
                            StoreHierarchy stores, StoreCreator sc, IMapSID2SIndex sid2sidx,
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
                            LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
                            PolarisContentVersionControl cvc, ContentFetchQueueDatabase cfqdb,
-                           TransManager tm)
+                           TransManager tm, CfgLocalUser localUser)
     {
         _tm = tm;
         _ds = ds;
@@ -121,6 +125,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _vu = vu;
         _cvc = cvc;
         _cfqdb = cfqdb;
+        _localUser =  localUser;
     }
 
     @Override
@@ -653,6 +658,14 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         // detect external root
         SIndex sidxTo = _sid2sidx.getNullable_(sid);
 
+        if (sidxTo != null || _localUser.get().isTeamServerID()) {
+            // anchor did not exist but store does: can happen on TS
+            l.warn("store already present before SHARE {} {}", sid, sidxTo);
+            // physical cleanup before anchor promotion
+            _ps.deleteFolderRecursively_(p, APPLY, t);
+            _ps.newFolder_(p).create_(APPLY, t);
+        }
+
         // NB: ideally we wouldn't do that when the anchor is expelled but it's simpler to create
         // the store, do the regular migration and then delete it than it would be to handle an
         // expelled destination in every parts of the migration...
@@ -664,10 +677,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             pf.promoteToAnchor_(sid, MAP, t);
         }
 
-        if (sidxTo != null) {
-            // anchor did not exist but store does
-            // can happen on Linked TS
-            l.warn("store already present before SHARE {} {}", sid, sidxTo);
+        if (sidxTo != null || _localUser.get().isTeamServerID()) {
+            // anchor did not exist but store does: can happen on TS
             cleanup_(soid, t);
         } else {
 

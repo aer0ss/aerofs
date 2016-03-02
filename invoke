@@ -547,7 +547,7 @@ def test_js(args):
     print colored("JS tests passed.", Colors.GREEN)
 
 def prepare_syncdet(args):
-    products = [ args.product ] if args.product else ["CLIENT"]
+    products = [ args.product ] if args.product else ["CLIENT", "TEAM_SERVER"]
     platforms = ["win", "osx", "linux"]
     Info = namedtuple('Info', ['prefix', 'extension', 'platform', 'product'])
     infos = [
