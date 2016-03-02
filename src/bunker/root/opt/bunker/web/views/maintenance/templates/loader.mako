@@ -1,65 +1,76 @@
+<%namespace name="progress_modal" file="progress_modal.mako"/>
+<%namespace file="modal.mako" name="modal"/>
+
+<%def name="modals()">
+
+<%modal:modal>
+    <%def name="id()">success-modal</%def>
+    <%def name="title()"><h4 class="text-success">Appliance Upgrade Succeeded</h4></%def>
+    <p>
+        You have successfully upgraded your AeroFS appliance to the latest version.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">fail-modal</%def>
+    <%def name="title()"><h4 class="text-error">Appliance Upgrade Failed</h4></%def>
+    <p>
+        AeroFS appliance upgrade failed. Please try again later.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">pull-fail-modal</%def>
+    <%def name="title()"><h4 class="text-error">Download Failed</h4></%def>
+    <p>
+        Failed to download latest AeroFS appliance images. Please try again later.
+    </p>
+</%modal:modal>
+
+<%progress_modal:progress_modal>
+    <%def name="id()">switch-wait-modal</%def>
+    <%def name="title()">Switching Appliance (Step 3/3)</%def>
+    <%def name="no_close()"/>
+    <p>
+        Switching your appliance to the latest version now. This can
+        take up to twenty minutes.
+        Please do not navigate away from this page...
+    </p>
+</%progress_modal:progress_modal>
+
+<%modal:modal>
+    <%def name="id()">pull-wait-modal</%def>
+    <%def name="title()">Downloading the Latest AeroFS Version (Step 1/3)</%def>
+    <%def name="no_close()"/>
+
+    <p>
+        Downloading the latest AeroFS appliance. This might take between one to two hours.
+        Please do not navigate away from this page...
+    </p>
+    <%def name="footer()">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+            </div>
+        </div>
+    </%def>
+</%modal:modal>
+
+</%def>
+
 <%def name="scripts()">
     <script>
 
-        ## Checks if the appliance is upgrading currently.
-        ## If an upgrade is in progress displays/passes along the relevant modals depending
-        ## upon what part of the upgrade process is currently in progress i.e. pulling new images
-        ## or downloading backup file or garbage cleaning old images. The assumption is that if we
-        ## are able to reach this page then the appliance is not switching/rebooting.
-        ## Expected signatures:
-        ##          modal pullWaitModal
-        ##          function onPullCompletion()
-        ##          modal pullFailModal
-        ##          progress-bar progress_bar
-        ##          function waitForBackup()
-        ##          modal switchWaitFailModal
-        ##          modal successModal
-        ##          modal failModal
-        ##          function onFailure(xhr)
-        function checkUpgradeInProgressOrStartNew(pullWaitModal, onPullCompletion, pullFailModal,
-                progress_bar, waitForBackup, switchWaitModal, successModal, failModal, onFailure) {
+        $('#pull-wait-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        })
 
-            $.get("${request.route_path('json-pull-images')}")
-            .done(function(resp) {
-                if (resp['running']) {
-                    waitForPullImages(pullWaitModal, onPullCompletion, pullFailModal, progress_bar);
-                } else {
-                    $.get("${request.route_path('json-backup')}")
-                    .done(function(resp) {
-                        if (resp['running']) {
-                            waitForBackup();
-                        } else {
-                            $.get("${request.route_path('json-repackaging')}")
-                            .done(function(resp) {
-                                if (resp['running']) {
-                                    switchWaitModal.modal('show');
-                                    waitForRepackaging(switchWaitModal, successModal, failModal);
-                                } else {
-                                    $.get("${request.route_path('json-gc')}")
-                                    .done(function(resp) {
-                                        if (resp['running']) {
-                                            switchWaitModal.modal('show');
-                                            waitForGC(switchWaitModal, successModal, failModal);
-                                        } else {
-                                            pullImages($('#pull-wait-modal'), onPullCompletion, $('#pull-fail-modal'), $('.progress-bar'));
-                                        }
-                                    }).fail(function(xhr) {
-                                        if (onFailure) onFailure(xhr);
-                                    });
-                                }
-                            }).fail(function(xhr) {
-                                if (onFailure) onFailure(xhr);
-                            });
-                        }
-                    }).fail(function(xhr) {
-                        if (onFailure) onFailure(xhr);
-                    });
-                }
-            }).fail(function(xhr) {
-                if (onFailure) onFailure(xhr);
-            });
-        }
-
+        $('#switch-wait-modal').modal({
+            backdrop: 'static',
+            keyboard: false,
+            show: false
+        })
         ## Checks if the appliance needs upgrading.
         ## Expected signatures:
         ##          function onSuccess()
@@ -73,68 +84,86 @@
             });
         }
 
+        function isInProgress(route, onFailure) {
+            $.get(route)
+            .done(function(resp) {
+                return resp['running']
+            }).fail(function(xhr) {
+                if (onFailure) {
+                    onFailure(xhr);
+                    throw "Couldn't complete request: " + route;
+                }
+            });
+        }
+
         ## Pulls latest images from registry.
         ## Expected signatures:
-        ##          modal waitModal - display modal when pulling images.
         ##          function onPullCompletion - Method that must be called after pull images is done.
-        ##          modal failModal - display modal when pull images fails.
-        ##          progress_bar - progress bar to show upgrade progress.
-        function pullImages(waitModal, onPullCompletion, failModal, progress_bar) {
+        function pullImages(onPullCompletion, handleFailed) {
             $.post("${request.route_path('json-pull-images')}")
             .done(function(resp) {
                 if (resp["status_code"] == 200 || resp["status_code"] == 409) {
-                    waitForPullImages(waitModal, onPullCompletion, failModal, progress_bar);
+                    waitForPullImages(onPullCompletion, handleFailed);
                 } else {
                     showErrorMessage("Failed to upgrade: ".concat(resp["status_code"]));
                 }
-            }).fail(failed);
+            }).fail(function(xhr) {
+                window.clearInterval(interval);
+                if (handleFailed) handleFailed(xhr);
+            });
         }
 
 
         ## Check if we have fetched the latest images from registry and display appropriate
         ## modals in case of failure or move on to next step (the onPullCompletion method).
         ## Expected signatures:
-        ##          modal waitModal - display modal when pulling is in progress.
         ##          function onPullCompletion - Method that must be called after pull images is done.
-        ##          modal failModal - display modal when pull images fails.
-        ##          progress_bar - progress bar to show upgrade progress.
-        function waitForPullImages(waitModal, onPullCompletion, failModal, progress_bar) {
-            waitModal.modal('show');
+        function waitForPullImages(onPullCompletion, handleFailed) {
+            $('#pull-wait-modal').modal('show');
             console.log("wait for pulling images to finish");
             var interval = window.setInterval(function() {
                 $.get("${request.route_path('json-pull-images')}")
                 .done(function(resp) {
                     if (resp['running']) {
-                        progress_bar.width((resp['pulling']/resp['total'] * 100) + "%");
+                        $('.progress-bar').width((resp['pulling']/resp['total'] * 100) + "%");
                     } else if (resp['succeeded']) {
                         console.log('Pulled images');
-                        waitModal.modal('hide');
+                        $('#pull-wait-modal').modal('hide');
                         window.clearInterval(interval);
                         if (onPullCompletion) onPullCompletion();
                     } else {
                         console.log('Pulling images failed');
                         window.clearInterval(interval);
-                        waitModal.modal('hide');
-                        failModal.modal('show');
+                        $('#pull-wait-modal').modal('hide');
+                        $('#pull-fail-modal').modal('show');
                         showErrorMessage("Failed to upgrade");
                     }
-                }).fail(failed);
+                }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    if (handleFailed) handleFailed(xhr);
+                });
             }, 5000);
         }
 
-        function postRepackage(waitModal, successModal, failModal) {
+        function postRepackage(handleFailed) {
             ## Delete the repackaging done file so that we can repackage.
             $.post("${request.route_path('json-del-repackage-done')}")
             .done(function(resp) {
                 $.post("${request.route_path('json-repackaging')}")
                 .done(function(resp) {
                     console.log("Repackaging installers...");
-                    waitForRepackaging(waitModal, successModal, failModal);
-                }).fail(failed);
-            }).fail(failed);
+                    waitForRepackaging(handleFailed);
+                }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    if (handleFailed) handleFailed(xhr);
+                });
+            }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    if (handleFailed) handleFailed(xhr);
+            });
         }
 
-        function waitForRepackaging(waitModal, successModal, failModal) {
+        function waitForRepackaging(handleFailed) {
             console.log('Wait for repackaging to finish');
             var interval = window.setInterval(function() {
                 $.get("${request.route_path('json-repackaging')}")
@@ -144,38 +173,61 @@
                     } else if (resp['succeeded']) {
                         console.log('packaging is done');
                         window.clearInterval(interval);
-                        postGC(waitModal, successModal, failModal);
+                        postGC(handleFailed);
                     } else {
                         window.clearInterval(interval);
                         console.log('repackaging has not succeeded');
-                        failModal.modal('show');
+                        $('#fail-modal').modal('show');
                     }
                 }).fail(function(xhr) {
                     window.clearInterval(interval);
-                    onFailure(xhr);
+                    handleFailed(xhr);
                 });
             }, 1000);
         }
 
-        function postGC(waitModal, successModal, failModal) {
+        function postGC(handleFailed) {
             $.post("${request.route_path('json-gc')}")
             .done(function(resp) {
                 if (resp["status_code"] == 200 || resp["status_code"] == 409) {
                     console.log('appliance switching complete. Now clean old images...');
-                    waitForGC(waitModal, successModal, failModal);
+                    waitForGC(handleFailed);
                 } else {
-                    failModal.modal('show');
+                    $('#fail-modal').modal('show');
                 }
-            }).fail(failed);
+            }).fail(function(xhr) {
+                if (handleFailed) handleFailed(xhr);
+            });
+        }
+
+        ## Garbage clean once we switch over to the new appliance.
+        function waitForGC(handleFailed) {
+            var interval = window.setInterval(function() {
+                $.get("${request.route_path('json-gc')}")
+                .done(function(resp) {
+                    if (resp['running']) {
+                        console.log('cleaning images...');
+                    } else if (resp['succeeded']) {
+                        console.log('cleaned old images');
+                        window.clearInterval(interval);
+                        $('#switch-wait-modal').modal('hide');
+                        $('#success-modal').modal('show');
+                    } else {
+                        console.log('cleaning failed');
+                        window.clearInterval(interval);
+                        $('#switch-wait-modal').modal('hide');
+                        $('#fail-modal').modal('show');
+                    }
+                }).fail(function(xhr) {
+                    window.clearInterval(interval);
+                    if (handleFailed) handleFailed(xhr);
+                });
+            }, 1000);
         }
 
         ## Switch existing appliance to latest version and garbage clean old unused version images once switched.
-        ## Expected signatures:
-        ##          modal waitModal - display modal when appliance switching is in progress.
-        ##          modal successModal - display modal both appliance switching + garbage cleaning is complete.
-        ##          modal failModal - display modal when switching or garbage cleaning fails.
-        function switchAppliance(waitModal, successModal, failModal) {
-            waitModal.modal('show');
+        function switchAppliance(handleFailed) {
+            $('#switch-wait-modal').modal('show');
             console.log("wait for appliance switching")
             $.get("${request.route_path('json-get-boot')}")
             .done(function(resp) {
@@ -185,44 +237,19 @@
                 .done(function() {
                     console.log("switching appliance...");
                     waitForReboot(bootID, function() {
-                        postRepackage(waitModal, successModal, failModal);
+                        postRepackage(handleFailed);
                     });
                 }).fail(function(xhr, textStatus, errorThrown) {
                     ## Ignore errors as the server might be killed before replying
                     console.log("Ignore json-boot failure(while switching): " + xhr.status + " " + textStatus + " " + errorThrown);
                     waitForReboot(bootID, function() {
-                        postRepackage(waitModal, successModal, failModal);
+                        postRepackage(handleFailed);
                     });
                 });
-            }).fail(failed);
+            }).fail(function(xhr) {
+                if (handleFailed) handleFailed(xhr);
+            });
         }
-
-        ## Garbage clean once we switch over to the new appliance.
-        ## Expected signatures:
-        ##          modal waitModal - display modal to hide when gc is complete.
-        ##          modal successModal - display modal when gc is complete.
-        ##          modal failModal - display modal when gc fails.
-        function waitForGC(waitModal, successModal, failModal) {
-            var interval = window.setInterval(function() {
-                $.get("${request.route_path('json-gc')}")
-                .done(function(resp) {
-                    if (resp['running']) {
-                        console.log('cleaning images...');
-                    } else if (resp['succeeded']) {
-                        console.log('cleaned old images');
-                        window.clearInterval(interval);
-                        waitModal.modal('hide');
-                        successModal.modal('show');
-                    } else {
-                        console.log('cleaning failed');
-                        window.clearInterval(interval);
-                        waitModal.modal('hide');
-                        failModal.modal('show');
-                    }
-                }).fail(failed);
-            }, 1000);
-        }
-
 
         ## Reboot the app then call callback if it's non-null.
         ## Expected signatures:

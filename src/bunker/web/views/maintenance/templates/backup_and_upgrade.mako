@@ -137,33 +137,6 @@
     </p>
 </%modal:modal>
 
-## TODO(AS): This is such a shameful shameful hack, I want to curl up in a ball and cry a river.
-## I have spent a lot of time, a lot of time trying to define these modals in loader.mako and make it work to
-## no avail. However, sending them as args to functions defined in loader.mako seems to do the trick. Why? IDK.
-<%modal:modal>
-    <%def name="id()">success-modal</%def>
-    <%def name="title()"><h4 class="text-success">Appliance Upgrade Succeeded</h4></%def>
-    <p>
-        You have successfully upgraded your AeroFS appliance to the latest version.
-    </p>
-</%modal:modal>
-
-<%modal:modal>
-    <%def name="id()">fail-modal</%def>
-    <%def name="title()"><h4 class="text-error">Appliance Upgrade Failed</h4></%def>
-    <p>
-        AeroFS appliance upgrade failed. Please try again later.
-    </p>
-</%modal:modal>
-
-<%modal:modal>
-    <%def name="id()">pull-fail-modal</%def>
-    <%def name="title()"><h4 class="text-error">Download Failed</h4></%def>
-    <p>
-        Failed to download latest AeroFS appliance images. Please try again later.
-    </p>
-</%modal:modal>
-
 <%modal:modal>
     <%def name="id()">upgrade-confirm-modal</%def>
     <%def name="title()"><h4 class="text-error">Confirm Upgrade</h4></%def>
@@ -209,34 +182,6 @@
     </%def>
 </%modal:modal>
 
-<%progress_modal:progress_modal>
-    <%def name="id()">switch-wait-modal</%def>
-    <%def name="title()">Switching Appliance (Step 3/3)</%def>
-    <%def name="no_close()"/>
-    <p>
-        Switching your appliance to the latest version now. This can
-        take up to twenty minutes.
-        Please do not navigate away from this page...
-    </p>
-</%progress_modal:progress_modal>
-
-<%modal:modal>
-    <%def name="id()">pull-wait-modal</%def>
-    <%def name="title()">Downloading the Latest AeroFS Version (Step 1/3)</%def>
-    <%def name="no_close()"/>
-
-    <p>
-        Downloading the latest AeroFS appliance. This might take between one to two hours.
-        Please do not navigate away from this page...
-    </p>
-    <%def name="footer()">
-        <div class="progress">
-            <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            </div>
-        </div>
-    </%def>
-</%modal:modal>
-
 <%modal:modal>
     <%def name="id()">shutdown-modal</%def>
     <%def name="title()">Please shut down appliance</%def>
@@ -272,6 +217,7 @@
 </%progress_modal:progress_modal>
 
 <%block name="scripts">
+    <%loader:modals/>
     <%loader:scripts/>
     <%progress_modal:scripts/>
     <%spinner:scripts/>
@@ -282,16 +228,6 @@
             disableEscapingFromModal($('div.modal'));
         });
 
-        $('#pull-wait-modal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: false
-        })
-        $('#switch-wait-modal').modal({
-            backdrop: 'static',
-            keyboard: false,
-            show: false
-        })
         $('#backup-only-progress-modal').modal({
             backdrop: 'static',
             keyboard: false,
@@ -332,17 +268,44 @@
             waitForBackup(switchToLatest, $('#backup-upgrade-progress-modal'));
         }
 
-        function doUpgrade() {
-            checkUpgradeInProgressOrStartNew($('#pull-wait-modal'), onPullCompletion, $('#pull-fail-modal'),
-                    $('.progress-bar'), onBackupInProgress, $('#switch-wait-modal'), $('#success-modal'),
-                    $('#fail-modal'), failed);
+        ## Function that starts a new upgrade if no upgrade in progress,
+        ## else resume currently running upgrade.
+        function resumeOrStartNewUpgrade() {
+            ## Upgrade process consists of pulling new images, backing up, switching
+            ## repackaging or GC'ing old images. Check where we are in the process and
+            ## resume from that stage. In case of no running upgrades, start a new upgrade process.
+            try {
+                if (isInProgress("${request.route_path('json-pull-images')}", handleFailed)) {
+                    console.log("resume from pulling images");
+                    waitForPullImages(onPullCompletion, handleFailed);
+                    return;
+                }
+                if (isInProgress("${request.route_path('json-backup')}", handleFailed)) {
+                    console.log("resume from backing up ");
+                    onBackupInProgress();
+                    return;
+                }
+                if (isInProgress("${request.route_path('json-repackaging')}", handleFailed)) {
+                    console.log("resume from repackaging");
+                    waitForRepackaging(handleFailed);
+                    return;
+                }
+                if (isInProgress("${request.route_path('json-gc')}", handleFailed)) {
+                    console.log("resume from gc");
+                    waitForGC(handleFailed);
+                    return;
+                }
+                pullImages(onPullCompletion, handleFailed);
+            } catch(err) {
+                console.log(err);
+            }
         }
 
         function confirmUpgrade() {
             var $modal = $('#upgrade-confirm-modal');
             $('#upgrade-confirm-btn').off().on('click', function() {
                 $modal.modal('hide');
-                doUpgrade();
+                resumeOrStartNewUpgrade();
             });
             $modal.modal('show');
         }
@@ -356,7 +319,7 @@
                     console.log("upgrade not needed");
                     $('#uptodate-modal').modal('show');
                 }
-            }, failed);
+            }, handleFailed);
         }
 
         function upgradeIfHasDiskSpace() {
@@ -367,7 +330,7 @@
                 } else {
                     $('#no-df-modal').modal('show');
                 }
-            }).fail(failed);
+            }).fail(handleFailed);
         }
 
         ## @param onBackupDone: a callback when backup succeeds. Expected signature:
@@ -381,7 +344,7 @@
             progressModal.modal('show');
             reboot('maintenance', function() {
                 performBackup(onBackupDone, progressModal);
-            }, failed);
+            }, handleFailed);
         }
 
         function performBackup(onBackupDone, progressModal) {
@@ -389,7 +352,7 @@
             $.post("${request.route_path('json-backup')}")
             .done(function() {
                 waitForBackup(onBackupDone, progressModal);
-            }).fail(failed);
+            }).fail(handleFailed);
         }
 
         function waitForBackup(onBackupDone, progressModal) {
@@ -404,14 +367,14 @@
                         window.clearInterval(interval);
                         if(onBackupDone)onBackupDone(function() {
                             download(progressModal);
-                        });
+                        }, handleFailed);
                     } else {
                         console.log('backup failed');
                         window.clearInterval(interval);
                         hideProgressModal(progressModal);
                         showErrorMessage("Backup failed.");
                     }
-                }).fail(failed);
+                }).fail(handleFailed);
             }, 1000);
         }
 
@@ -436,7 +399,7 @@
             window.location.assign('${request.route_path("download_backup_script")}');
         }
 
-        function failed(xhr) {
+        function handleFailed(xhr) {
             hideProgressModal($('#backup-upgrade-progress-modal'));
             hideProgressModal($('#backup-only-progress-modal'));
             showErrorMessageFromResponse(xhr);
@@ -458,13 +421,13 @@
             $('#shutdown-modal').modal('show');
         }
 
-        function switchToLatest(onSuccess) {
+        function switchToLatest(onSuccess, onFailure) {
             onSuccess();
             var $modal = $('#backup-done-confirm-modal');
             $('#backup-done-confirm-btn').off().on('click', function() {
                 $modal.modal('hide');
                 console.log("start switching appliance");
-                switchAppliance($('#switch-wait-modal'), $('#success-modal'), $('#fail-modal'));
+                switchAppliance(onFailure);
             });
             $modal.modal('show');
         }
