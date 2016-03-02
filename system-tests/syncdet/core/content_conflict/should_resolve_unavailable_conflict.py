@@ -47,7 +47,7 @@ def modifier():
         b = r.get_object_attributes(p).object_attributes.branch
         if len(b) > 1:
             print b[1]
-            assert b[1].mtime == 0 and b[1].length == 0 and b[1].contributor is None
+            assert b[1].mtime == 0 and b[1].length == 0 and not b[1].HasField("contributor")
             break
         time.sleep(param.POLLING_INTERVAL)
 
