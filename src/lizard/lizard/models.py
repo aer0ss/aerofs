@@ -59,10 +59,6 @@ class Customer(db.Model, TimeStampedMixin):
     # Company name, e.g. "Air Computing, Inc."
     name = db.Column(db.String(_USER_STRING_MAX_LEN), nullable=False)
 
-    # Whether the company is "active" - I had this in my drawing, but I'm not
-    # sure what this means yet.  Maybe we don't send emails if this is removed?
-    active = db.Column(db.Boolean, default=True, nullable=False)
-
     # Whether the company has accepted our license agreement.  If not, we
     # shouldn't let them request a license nor download a license.
     accepted_license = db.Column(db.Boolean, default=False, nullable=False)
@@ -202,7 +198,7 @@ class Admin(db.Model, TimeStampedMixin):
         # Required for Flask-Login integration.
         # Returns True if this user and this user's owning Customer are both
         # active, False otherwise
-        return self.active and self.customer.active
+        return self.active
 
     def is_authenticated(self):
         # Required for Flask-Login integration.

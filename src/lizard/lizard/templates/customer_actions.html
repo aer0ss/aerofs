@@ -10,12 +10,34 @@
 
 {% block content %}
     <h1>{{ customer.name }}</h1>
+
+    <h3>Customer</h3>
+    <table class="table">
+        <tr>
+            <th>Company Name</th>
+            <th colspan="3">Actions</th>
+        </tr>
+        <tr>
+            <td>{{ customer.name }}</td>
+            <td><a href="#" data-toggle="modal" data-target="#deleteCustomerAccountModal">Delete Account</a></td>
+        </tr>
+    </table>
+
     <h3>Members</h3>
-    <ul>
-        {% for admin in customer.admins.all() %}
-            <li>{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}</li>
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Status</th>
+        </tr>
+        {% for admin in customer.admins %}
+        <tr>
+            <td>{{ admin.first_name }} {{ admin.last_name }}</td>
+            <td>{{ admin.email }}</td>
+            <td>{% if admin.active == 1 %}Active{% else %}Inactive</td>{% endif %}
+        </tr>
         {% endfor %}
-    </ul>
+    </table>
 
     {% if customer.stripe_customer_id %}
         <h3>Credit Card Info</h3>
@@ -27,7 +49,7 @@
     {{ render_license_table(customer.licenses.all(), charges) }}
 
     <h3>Create license request</h3>
-    <form role="form" class="form-horizontal" action="" method="post">
+    <form role="form" action="" method="post">
         {{ form.hidden_tag() }}
         {{ render_field(form.seats) }}
         {{ render_field(form.expiry_date) }}
@@ -42,13 +64,51 @@
     </form>
     <p>&nbsp;</p>
     <h3>Create HPC Deployment</h3>
-        <form role="form" class="form-horizontal" action="{{ url_for('internal.hpc_deployments') }}" method="post">
+    <form role="form" action="{{ url_for('internal.hpc_deployments') }}" method="post">
         {{ hpc_form.hidden_tag() }}
         {{ render_field(hpc_form.customer_id, with_label=False, hidden=True) }}
         {{ render_field(hpc_form.subdomain) }}
         {{ submit_button("Create") }}
     </form>
+
+<!--Modals-->
+
+    <div class="modal fade" id="deleteCustomerAccountModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                    aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Warning</h4>
+          </div>
+          <div class="modal-body">
+            <p>You are about to delete this customer's account. This operation cannot be undone.</p>
+            <p>Are you sure you want to delete this account?</p>
+          </div>
+          <div class="modal-footer">
+              <div style="width:500px;">
+                <div style="float: right; width:73px">
+                  <form action="{{ url_for('internal.delete_customer_account', org_id=customer.id) }}" method="post">
+                      {{ form.hidden_tag() }}
+                      <button type="submit" class="btn btn-danger">Delete</button>
+                  </form>
+                </div>
+                <div style="float: left; width:427px">
+                  <form action="{{ url_for('internal.all_accounts') }}" method="post">
+                      {{ form.hidden_tag() }}
+                      <button style="background-color: white; color: darkblue; border: 1pt ridge darkblue"
+                            type="submit" class="btn btn-plain" data-dismiss="modal">Cancel</button>
+                  </form>
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
 {% endblock %}
+
+
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/bootstrap-datepicker.min.js') }}" ></script>

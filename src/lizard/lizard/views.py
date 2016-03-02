@@ -48,7 +48,7 @@ def login_page():
     form = forms.LoginForm()
     if form.validate_on_submit():
         admin = models.Admin.query.filter_by(email=form.email.data).first()
-        if not admin:
+        if not admin or not admin.active:
             # This user doesn't exist.
             flash(u"Email or password is incorrect", 'error')
         elif not scrypt.check_password_hash(form.password.data.encode('utf8'), admin.pw_hash.encode('utf8'), admin.salt.encode('utf8')):
@@ -62,8 +62,6 @@ def login_page():
                 analytics_client.track(admin.customer_id, "Logged In", {
                     'email': markupsafe.escape(admin.email)
                 })
-            else:
-                flash(u"Login failed for {}: probably marked inactive?".format(admin.email), 'error')
             next_url = request.args.get('next') or url_for(".index")
             # sanitize next_url to ensure that it's relative.  Avoids user
             # redirection attacks where you log in and then get redirected to an
@@ -113,10 +111,14 @@ def signup_request_headless_page():
 def request_signup(form):
     # If email already in Admin table, noop (but return success). We don't want to leak that an
     # account bound to an email exists by returning an error.
+    # If email already in Admin table but account is inactive, notify user via email that the
+    # the account is inactive.
     admin = models.Admin.query.filter_by(email=form.email.data).first()
     if admin:
         if form.promo_code.data is not None and len(form.promo_code.data) > 0:
             notifications.send_account_already_exists_with_promo_email(admin, form.promo_code.data)
+        elif not admin.active:
+            notifications.send_account_already_exists_but_inactive(admin)
         else:
             notifications.send_account_already_exists_email(admin)
         return
@@ -301,13 +303,14 @@ def edit_preferences():
         user=user
     )
 
-@blueprint.route("/delete", methods=["GET", "POST"])
-def delete_user_account():
+@blueprint.route("/deactivate_admin_account", methods=["POST"])
+def deactivate_admin_account():
 
-    user = login.current_user
-    db.session.delete(user)
+    admin = login.current_user
+    admin.active = '0'
+    admin.pw_hash = 'NULL'
     db.session.commit()
-    flash(u'Account deleted.', 'success')
+    flash(u'Account deactivated.', 'success')
 
     return redirect(url_for(".login_page"))
 
@@ -908,7 +911,7 @@ def start_password_reset():
     form = forms.PasswordResetForm()
     if form.validate_on_submit():
         admin = models.Admin.query.filter_by(email=form.email.data).first()
-        if admin:
+        if admin and admin.active:
             # Generate a blob hmaced
             email = form.email.data
             s = TimestampSigner(current_app.secret_key)

@@ -1,0 +1,10 @@
+Hi {{ admin.first_name }},
+
+An attempt has been made to create an AeroFS Private Cloud account using this email address. Our system has detected that you already have an account, but it is currently deactivated.
+
+Please contact us for further assistance.
+
+{{ contact_support_url }}
+
+Regards,
+The AeroFS Team

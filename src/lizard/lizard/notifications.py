@@ -55,6 +55,15 @@ def _account_already_exists_with_promo_email_for(admin, promo_code):
             admin=admin)
     return _make_email_message(admin.email, "Your AeroFS Account", text_body, html_body)
 
+def _account_already_exists_but_inactive_email_for(admin):
+    text_body = render_template("emails/account_already_exists_but_inactive.txt",
+            contact_support_url="http://ae.ro/1R4hJDN", _external=True,
+            admin=admin)
+    html_body = render_template("emails/account_already_exists_but_inactive.html",
+            contact_support_url="http://ae.ro/1R4hJDN", _external=True,
+            admin=admin)
+    return _make_email_message(admin.email, "Your AeroFS Account", text_body, html_body)
+
 def _verification_email_for(unbound_signup):
     signup_url = url_for(".signup_completion_page", signup_code=unbound_signup.signup_code, _external=True)
     print u"will email verification to {}, link {}".format(unbound_signup.email, signup_url)
@@ -155,6 +164,10 @@ def send_account_already_exists_with_promo_email(admin, promo_code):
 
 def send_account_already_exists_email(admin):
     msg = _account_already_exists_email_for(admin)
+    _send_email(admin.email, msg)
+
+def send_account_already_exists_but_inactive_email(admin):
+    msg = _account_already_exists_but_inactive_email_for(admin)
     _send_email(admin.email, msg)
 
 def send_verification_email(unbound_signup):

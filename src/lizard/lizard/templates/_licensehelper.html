@@ -39,8 +39,6 @@
 {% macro render_license_table(licenses, charges) %}
     <table class="table">
         <tr>
-            <th>Company</th>
-            <th>Members</th>
             <th>State</th>
             <th>Seats</th>
             <th>Free/Paid?</th>
@@ -55,8 +53,6 @@
         </tr>
         {% for license in licenses %}
         <tr>
-            <td>{{ license.customer.name }}</td>
-            <td>{% for admin in license.customer.admins.all() %}{{ admin.first_name }} {{ admin.last_name }} - {{ admin.email }}<br>{% endfor %}</td>
             <td>{{ pretty_state(license) }}</td>
             <td>{{ license.seats }}</td>
             <td>{% if license.is_trial %}Free{% else %}Paid license{% endif %}</td>

@@ -392,6 +392,15 @@ def release():
             vhd_url=appliance.vhd_url(current_ver),
             )
 
+@blueprint.route("/customers/<int:org_id>/delete_customer_account", methods=["POST"])
+def delete_customer_account(org_id):
+
+    customer = models.Customer.query.get_or_404(org_id)
+    db.session.delete(customer)
+    db.session.commit()
+    flash(u'Customer account deleted.', 'success')
+
+    return redirect(url_for("internal.all_accounts"))
 
 @blueprint.route("/hpc_deployments", methods=["GET", "POST"])
 def hpc_deployments():

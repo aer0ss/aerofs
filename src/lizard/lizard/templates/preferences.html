@@ -17,10 +17,10 @@
 
             <br>
             <div>
-                <a href="#" data-toggle="modal" data-target="#myModal">Delete Account</a>
+                <a href="#" data-toggle="modal" data-target="#deactivateAdminAccount">Deactivate Account</a>
             </div>
 
-        <div class="modal fade" id="myModal" tabindex="-1" role="dialog">
+        <div class="modal fade" id="deactivateAdminAccount" tabindex="-1" role="dialog">
           <div class="modal-dialog">
             <div class="modal-content">
               <div class="modal-header">
@@ -30,30 +30,29 @@
               </div>
               <div class="modal-body">
                 <p>You are about to delete your account. Once your account is deleted, you
-                    will no longer be able to log into your Private Cloud Dashboard.
-                    <br><br>
-                    Are you sure you want to delete your account?
-                </p>
+                    will no longer be able to log into your Private Cloud Dashboard.</p>
+                <p>Are you sure you want to delete your account?</p>
               </div>
               <div class="modal-footer">
                   <div style="width:500px;">
-                    <div style="float: right; width:100px">
-                      <form action="{{ url_for('.delete_user_account') }}">
-                          <button type="submit" class="btn btn-danger">Delete</button>
+                    <div style="float: right; width:65px">
+                      <form action="{{ url_for('.deactivate_admin_account') }}" method="post">
+                          {{ form.hidden_tag() }}
+                          <button type="submit" class="btn btn-warning">Deactivate</button>
                       </form>
                     </div>
-                    <div style="float: left; width:400px">
-                      <form action="{{ url_for('.edit_preferences') }}">
-                        <button style="background-color: white; color: darkblue; border: 1pt ridge darkblue"
+                    <div style="float: left; width:430px">
+                      <form action="{{ url_for('.edit_preferences') }}" method="post">
+                          {{ form.hidden_tag() }}
+                          <button style="background-color: white; color: darkblue; border: 1pt ridge darkblue"
                                 type="submit" class="btn btn-plain" data-dismiss="modal">Cancel</button>
                       </form>
                     </div>
                   </div>
-
               </div>
-            </div><!-- /.modal-content -->
-          </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
+            </div>
+          </div>
+        </div>
 
 
         </div>

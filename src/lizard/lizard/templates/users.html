@@ -11,6 +11,7 @@
             <tr>
                 <th class="name col-sm-6">Admin Name</th>
                 <th class="email col-sm-6">Email</th>
+                <th class="status col-sm-6">Status</th>
             </tr>
             </thead>
             <tbody>
@@ -18,12 +19,14 @@
             <tr class="user">
                 <td class="name">{{ admin.first_name }} {{ admin.last_name }}</td>
                 <td class="email">{{ admin.email }}</td>
+                <td class="status">{% if admin.active %}Active{% else %}Inactive</td>{% endif %}
             </tr>
             {% endfor %}
             {% for invite in user.customer.pending_invites %}
             <tr class="invite">
                 <td class="name"></td>
                 <td class="email">{{ invite.email }}</td>
+                <td class="status">Pending</td>
             </tr>
             {% endfor %}
             </tbody>
