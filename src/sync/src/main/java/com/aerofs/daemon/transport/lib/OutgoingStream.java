@@ -99,7 +99,7 @@ public class OutgoingStream implements ChannelFutureListener, AutoCloseable {
         }
         checkState(_state != State.CLOSED);
         if (_state == State.FAILED) throw new ExStreamInvalid(_reason);
-        if (_cause != null) Throwables.propagate(_cause);
+        if (_cause != null) Throwables.propagateIfPossible(_cause, IOException.class);
         _queued.getAndIncrement();
         _channel.write(TransportProtocolUtil.newStreamPayload(_sk.strmid, ++_seq, payload))
                 .addListener(this);
