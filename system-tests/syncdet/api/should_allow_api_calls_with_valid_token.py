@@ -1,6 +1,8 @@
 import os.path
 import requests
+import time
 import aerofs_oauth
+from aerofs_common import param
 from syncdet.case import local_actor
 from lib.files import instance_unique_path
 
@@ -19,7 +21,7 @@ def main():
 
     # get a token
     token = aerofs_oauth.get_access_token(auth_code, verify=False)
-    print 'token is', token 
+    print 'token is', token
 
     # create a file in the root anchor
     filepath = instance_unique_path()
@@ -29,12 +31,15 @@ def main():
 
     # list contents of root anchor
     print 'calling api...'
-    r = requests.get(API_URL+"/children/", headers={"Authorization": "Bearer " + token})
-    r.raise_for_status()
-    print r.json()
+    while True:
+        r = requests.get(API_URL+"/children/", headers={"Authorization": "Bearer " + token})
+        r.raise_for_status()
+        print r.json()
 
-    # find file in list
-    assert any(f["name"] == filename for f in r.json()["files"])
+        # find file in list
+        if any(f["name"] == filename for f in r.json()["files"]):
+            break
+        time.sleep(param.POLLING_INTERVAL)
 
 
 spec = {"entries": [main]}
