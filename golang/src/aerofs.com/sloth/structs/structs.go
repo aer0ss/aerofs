@@ -15,9 +15,12 @@ type User struct {
 }
 
 type Bot struct {
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	ConvoId string `json:"convoId"`
+	Id          string    `json:"id"`
+	Name        string    `json:"name"`
+	ConvoId     string    `json:"convoId"`
+	AvatarPath  string    `json:"avatarPath,omitempty"`
+	CreatorId   string    `json:"creatorId"`
+	CreatedTime time.Time `json:"createdTime"`
 }
 
 type Convo struct {
@@ -30,6 +33,7 @@ type Convo struct {
 	Name        string           `json:"name,omitempty"`
 	IsPublic    bool             `json:"isPublic"`
 	Members     []string         `json:"members"`
+	Bots        []string         `json:"bots"`
 }
 
 type Message struct {
@@ -72,8 +76,9 @@ type UserWritable struct {
 }
 
 type BotWritable struct {
-	Name    string `json:"name"`
-	ConvoId string `json:"convoId"`
+	Name      string `json:"name"`
+	ConvoId   string `json:"convoId"`
+	CreatorId string `json:"creatorId"`
 }
 
 type DirectConvoWritable struct {

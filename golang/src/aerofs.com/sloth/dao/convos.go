@@ -70,6 +70,23 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 	}
 	rows.Close()
 
+	// Retrieve all bots in user's conversations
+	rows, err = tx.Query(fmt.Sprint(
+		"SELECT id, convo_id FROM bots WHERE convo_id IN",
+		"(SELECT convo_id FROM convo_members WHERE user_id=?)",
+	), caller)
+	for rows.Next() {
+		var bid, cid string
+		err := rows.Scan(&bid, &cid)
+		errors.PanicAndRollbackOnErr(err, tx)
+		bots := convos[cid].Bots
+		bots = append(bots, bid)
+		convo := convos[cid]
+		convo.Bots = bots
+		convos[cid] = convo
+	}
+	rows.Close()
+
 	// query receipts table
 	rows, err = tx.Query(fmt.Sprint(
 		"SELECT user_id, convo_id, msg_id, time FROM last_read WHERE convo_id IN ",

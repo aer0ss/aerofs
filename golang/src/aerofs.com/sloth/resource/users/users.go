@@ -3,6 +3,7 @@ package users
 import (
 	"aerofs.com/sloth/aeroclients/sparta"
 	"aerofs.com/sloth/broadcast"
+	. "aerofs.com/sloth/constants"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
@@ -16,8 +17,6 @@ import (
 	"math/rand"
 	"strings"
 )
-
-const MAX_AVATAR_SIZE = 64 * 1024 // 64KB
 
 type context struct {
 	broadcaster     broadcast.Broadcaster

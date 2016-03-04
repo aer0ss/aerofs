@@ -35,8 +35,14 @@ func SendMessageReadEvent(b Broadcaster, cid, uid string, mid int64, members []s
 	multicastEventWithPayload(b, "MESSAGE_READ", cid, payload, members)
 }
 
+// Bot profile created,updated
 func SendBotEvent(b Broadcaster, bid string) {
 	broadcastSimpleEvent(b, "BOT", bid)
+}
+
+// Bot avatar updated
+func SendBotAvatarEvent(b Broadcaster, bid string) {
+	broadcastSimpleEvent(b, "BOT_AVATAR", bid)
 }
 
 func SendTypingEvent(b Broadcaster, uid string, cid string, members []string) {
