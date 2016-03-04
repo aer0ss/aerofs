@@ -4,6 +4,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.ids.SID;
 import com.aerofs.rest.api.SFGroupMember;
+import com.aerofs.sp.common.SharedFolderState;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -375,6 +376,34 @@ public class TestSharedFolderGroups extends AbstractResourceTest {
                 .header(Names.ETAG, getEtag(sid))
         .when().log().everything()
                 .delete(SINGLE_GROUP_RESOURCE, sid.toStringFormal(), gid.getString());
+    }
+
+    @Test
+    public void shouldIncludeGroupPermissions() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        GroupID gid = mkGroup("A Group");
+        addUserToGroup(gid, other);
+        addGroup(sid, gid, Permissions.VIEWER, user);
+        sqlTrans.begin();
+        factSF.create(sid).setState(factUser.create(other), SharedFolderState.JOINED);
+        sqlTrans.commit();
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("permissions", emptyIterable())
+        .when().log().everything()
+                .get(V13_RESOURCE + "members/{email}", sid.toStringFormal(), other.getString());
+
+        addUser(sid, other, Permissions.EDITOR);
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("permissions", hasItems("WRITE"))
+        .when().log().everything()
+                .get(V13_RESOURCE + "members/{email}", sid.toStringFormal(), other.getString());
     }
 
 }
