@@ -74,23 +74,27 @@ public class InviteesResource extends AbstractSpartaResource {
         OrganizationInvitation invitation = _factInvitation.create(invitee,
                 caller.getOrganization());
 
-        if (invitation.exists()) {
-            l.info("conflict creating invitation for {}", invitee.id().getString());
+        if (invitee.exists()) {
+            l.info("user already exist {}", invitee.id().getString());
             return Response.status(Response.Status.CONFLICT)
-                    .entity(new Error(Error.Type.CONFLICT, "User has already been invited"))
+                    .entity(new Error(Error.Type.CONFLICT, "User is already a member of AeroFS"))
                     .build();
         }
 
         InvitationHelper.InviteToSignUpResult result = _invitationHelper.inviteToSignUp(caller,
                 invitee);
-        invitation = _factInvitation.save(caller, invitee, caller.getOrganization(),
-                result._signUpCode);
+        if (invitation.exists()) {
+            _factInvitation.update(caller, invitee, caller.getOrganization());
+        } else {
+            _factInvitation.save(caller, invitee, caller.getOrganization(),
+                    result._signUpCode);
+        }
         result._emailer.send();
 
         String location = Service.DUMMY_LOCATION + 'v' + version + "/invitees/" + attrs.emailTo;
 
         return Response.created(URI.create(location))
-                .entity(new Invitee(invitation.getInvitee().id().getString(),
+                .entity(new Invitee(invitee.id().getString(),
                         caller.id().getString(), result._signUpCode))
                 .build();
     }
