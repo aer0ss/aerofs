@@ -85,4 +85,18 @@ public class TestInviteesResource extends AbstractResourceTest {
         .when().log().everything()
                 .delete(RESOURCE, user.getString());
     }
+
+    @Test
+    public void should403WithNewUserInviteRestrictions() {
+
+        prop.setProperty("signup_restriction", "ADMIN_INVITED");
+        givenOtherAccess()
+                .content(new Invitee("new@bar.baz", "other@bar.baz", null), ObjectMapperType.GSON)
+                .contentType(ContentType.JSON)
+        .expect()
+                .statusCode(403)
+        .when()
+                .post(RESOURCE_BASE);
+        prop.setProperty("signup_restriction", "");
+    }
 }

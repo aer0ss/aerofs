@@ -1065,4 +1065,22 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .get(RESOURCE, share.toStringFormal());
     }
 
+    @Test
+    public void should403IfSharingWithNonExistingUserWithNewUserInviteRestrictions() throws Exception
+    {
+        prop.setProperty("signup_restriction", "ADMIN_INVITED");
+        SID sid = mkShare("Test", user.getString());
+        String email = "blah@blah.blah";
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(new SFPendingMember(email, new String[]{"WRITE"}, "Join us"),
+                    ObjectMapperType.GSON)
+        .expect()
+                .statusCode(403)
+        .when().log().everything()
+            .post(RESOURCE + "/pending", sid.toStringFormal());
+
+        prop.setProperty("signup_restriction", "");
+    }
 }

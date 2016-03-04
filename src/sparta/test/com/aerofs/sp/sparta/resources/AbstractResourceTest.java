@@ -134,6 +134,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     protected OrganizationInvitation.Factory factInvitation;
     protected UrlShare.Factory factUrlShare;
     private int nextUserID = 1;
+    protected static final Properties prop = new Properties();
 
     private static final ThreadLocal<DateFormat> _dateFormat = new ThreadLocal<DateFormat>() {
         @Override
@@ -167,9 +168,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     @BeforeClass
     public static void commonSetup() throws Exception
     {
-        Properties prop = new Properties();
         prop.setProperty("bifrost.port", "0");
-        ConfigurationProperties.setProperties(prop);
 
         when(license.isValid()).thenReturn(true);
         when(license.seats()).thenReturn(Integer.MAX_VALUE);

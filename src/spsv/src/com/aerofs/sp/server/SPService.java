@@ -67,6 +67,7 @@ import com.aerofs.sp.server.authorization.DeviceAuthEndpoint;
 import com.aerofs.sp.server.authorization.DeviceAuthParam;
 import com.aerofs.sp.server.email.*;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.NewUserInviteRestriction;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
@@ -316,18 +317,6 @@ public class SPService implements ISPService
         public static int getValue()
         {
             return getSchedule().hours;
-        }
-    }
-
-    private enum NewUserSignupRestrictions
-    {
-        UNRESTRICTED,
-        USER_INVITED,
-        ADMIN_INVITED;
-
-        public static NewUserSignupRestrictions getRestrictionLevel()
-        {
-            return valueOf(getNonEmptyStringProperty("signup_restriction", "USER_INVITED"));
         }
     }
 
@@ -1368,10 +1357,6 @@ public class SPService implements ISPService
             if (srp._subject instanceof UserID) {
                 User sharee = _factUser.create((UserID)srp._subject);
 
-                if (!sharee.exists() && !isAllowedToInviteNewUsers(sharer)) {
-                    throw new ExNoPerm(sharee.id() + " is currently not invited to AeroFS." +
-                            " Please contact your AeroFS administrator to invite the user.");
-                }
                 Permissions actualPermissions = rules.onUpdatingACL(sf, sharee, srp._permissions);
                 try {
                     AffectedAndNeedsEmail updates = sf.addUserWithGroup(sharee, null, actualPermissions, sharer);
@@ -2348,7 +2333,7 @@ public class SPService implements ISPService
 
         // If it's an invitation-only system, only allow the first user to self sign up
         // (via the setup UI).
-        if (NewUserSignupRestrictions.getRestrictionLevel() != NewUserSignupRestrictions.UNRESTRICTED
+        if (NewUserInviteRestriction.getRestrictionLevel() != NewUserInviteRestriction.UNRESTRICTED
                 && _factUser.hasUsers()) {
             throw new ExNoPerm("invitation-only sign up");
         }
@@ -2378,12 +2363,6 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private boolean isAllowedToInviteNewUsers(User inviter) throws SQLException, ExNotFound
-    {
-        return inviter.isAdmin() ||
-                NewUserSignupRestrictions.getRestrictionLevel() != NewUserSignupRestrictions.ADMIN_INVITED;
-    }
-
     @Override
     public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws Exception
@@ -2397,7 +2376,7 @@ public class SPService implements ISPService
         l.info("{} sends organization invite to {}", inviter, invitee);
 
         InvitationEmailer emailer;
-        if (!isAllowedToInviteNewUsers(inviter)) {
+        if (!inviter.canInviteNewUsers()) {
             throw new ExNoPerm("You can only invite a new user if you are an admin.");
         } else if (!invitee.exists()) {
             // The user doesn't exist. Send him a sign-up invitation email only, and associate the
@@ -2442,7 +2421,6 @@ public class SPService implements ISPService
         } else {
             _factOrgInvite.save(inviter, invitee, org, signUpCode);
         }
-
 
         _auditClient.event(AuditTopic.USER, "user.org.invite")
                 .add("inviter", inviter.id())

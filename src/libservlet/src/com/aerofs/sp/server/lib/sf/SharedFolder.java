@@ -235,10 +235,18 @@ public class SharedFolder
      */
     public AffectedAndNeedsEmail addUserWithGroup(User user, @Nullable Group group,
             Permissions permissions, @Nullable User sharer)
-            throws SQLException, ExAlreadyExist, ExNotFound
+            throws SQLException, ExAlreadyExist, ExNotFound, ExNoPerm
     {
         GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
         UserID sharerID = sharer == null ? null : sharer.id();
+
+        // N.B. This check is only relevent when group is null i.e. user inviting another user.
+        if (gid == GroupID.NULL_GROUP && (!user.exists() && sharer != null &&
+                !sharer.canInviteNewUsers()))
+        {
+            throw new ExNoPerm(user.id() + " is currently not invited to AeroFS." +
+                    " Please contact your AeroFS administrator to invite the user.");
+        }
 
         SharedFolderState oldState = getStateNullable(user), newState = oldState;
         Permissions oldPermissions = getPermissionsNullable(user);

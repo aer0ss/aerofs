@@ -7,10 +7,7 @@ package com.aerofs.sp.server.lib.group;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.ex.ExAlreadyExist;
-import com.aerofs.base.ex.ExBadArgs;
-import com.aerofs.base.ex.ExNotFound;
-import com.aerofs.base.ex.ExNotLocallyManaged;
+import com.aerofs.base.ex.*;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -244,7 +241,7 @@ public class Group
             throws
             SQLException,
             ExAlreadyExist,
-            ExNotFound
+            ExNotFound, ExNoPerm
     {
         // Group members db does not know about group existence, so we must check that separately.
         throwIfDoesNotExist();
@@ -314,7 +311,7 @@ public class Group
      * email invitations
      */
     public AffectedUserIDsAndInvitedUsers joinSharedFolder(SharedFolder sf, Permissions permissions, User sharer)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExNoAdminOrOwner
+            throws SQLException, ExAlreadyExist, ExNotFound, ExNoAdminOrOwner, ExNoPerm
     {
         throwIfDoesNotExist();
         _f._gsdb.addSharedFolder(id(), sf.id(), permissions);

@@ -81,6 +81,12 @@ public class InviteesResource extends AbstractSpartaResource {
                     .build();
         }
 
+        if(!caller.canInviteNewUsers()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new Error(Error.Type.FORBIDDEN, "Only admins can invite new users"))
+                    .build();
+        }
+
         InvitationHelper.InviteToSignUpResult result = _invitationHelper.inviteToSignUp(caller,
                 invitee);
         if (invitation.exists()) {
@@ -123,3 +129,4 @@ public class InviteesResource extends AbstractSpartaResource {
         return Response.noContent().build();
     }
 }
+

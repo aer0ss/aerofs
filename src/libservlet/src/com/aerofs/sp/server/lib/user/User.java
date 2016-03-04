@@ -68,6 +68,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.api.core.HttpContext;
 
+import static com.aerofs.sp.server.lib.NewUserInviteRestriction.*;
+
 public class User
 {
     private final static Logger l = Loggers.getLogger(User.class);
@@ -1011,6 +1013,11 @@ public class User
             groups.add(_f._factGroup.create(gid));
         }
         return groups.build();
+    }
+
+    public boolean canInviteNewUsers() throws SQLException, ExNotFound
+    {
+        return isAdmin() || getRestrictionLevel() != ADMIN_INVITED;
     }
 
     public static class EmailAndName
