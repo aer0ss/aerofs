@@ -142,7 +142,6 @@ func CreateGroupConvo(tx *sql.Tx, p *GroupConvoWritable, caller string) *Convo {
 		Name:        *p.Name,
 		IsPublic:    *p.IsPublic,
 		Members:     p.Members,
-		Sid:         p.Sid,
 	}
 	insertNewConvo(tx, c, CHANNEL)
 	for _, uid := range c.Members {
@@ -290,6 +289,12 @@ func GetCidForSid(tx *sql.Tx, sid string) string {
 	err := tx.QueryRow("SELECT id FROM convos WHERE sid=?", hexDecode(tx, sid)).Scan(&cid)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return cid
+}
+
+func SetConvoSid(tx *sql.Tx, cid, sid string) {
+	bytes := hexDecode(tx, sid)
+	_, err := tx.Exec("UPDATE convos SET sid=? WHERE id=?", bytes, cid)
+	errors.PanicAndRollbackOnErr(err, tx)
 }
 
 //

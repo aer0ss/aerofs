@@ -1,7 +1,7 @@
 package users
 
 import (
-	"aerofs.com/sloth/aero_clients/sparta"
+	"aerofs.com/sloth/aeroclients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"

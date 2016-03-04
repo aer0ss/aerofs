@@ -84,7 +84,6 @@ type GroupConvoWritable struct {
 	Members  []string `json:"members"`
 	Name     *string  `json:"name"`
 	IsPublic *bool    `json:"isPublic"`
-	Sid      string   `json:"sid"`
 }
 
 type MessageWritable struct {

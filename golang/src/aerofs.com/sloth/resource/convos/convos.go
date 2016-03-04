@@ -1,16 +1,19 @@
 package convos
 
 import (
-	"aerofs.com/sloth/aero_clients/lipwig"
-	"aerofs.com/sloth/aero_clients/sparta"
+	"aerofs.com/sloth/aeroclients/lipwig"
+	"aerofs.com/sloth/aeroclients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"
+	. "aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
+	"aerofs.com/sloth/util/asynccache"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/emicklei/go-restful"
 	"time"
@@ -24,6 +27,7 @@ type context struct {
 	commandHandler  *commands.Handler
 	spartaClient    *sparta.Client
 	lipwigClient    *lipwig.Client
+	sidMap          asynccache.Map
 }
 
 //
@@ -49,6 +53,7 @@ func BuildRoutes(
 		commandHandler:  commands.NewHandler(db),
 		spartaClient:    spartaClient,
 		lipwigClient:    lipwigClient,
+		sidMap:          asynccache.New(createSharedFolderFunc(db, spartaClient, lipwigClient)),
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
@@ -93,6 +98,20 @@ func BuildRoutes(
 		Returns(401, "Invalid Authorization", nil).
 		Returns(403, "Forbidden", nil).
 		Returns(404, "Convo does not exist", nil)) // N.B. use PATCH?
+
+	//
+	// path: /convos/{cid}/share
+	//
+
+	ws.Route(ws.POST("/{cid}/share").To(ctx.createShare).
+		Doc("Create shared folder bound to convo").
+		Param(ws.PathParameter("cid", "Convo id").DataType("string")).
+		Consumes("*/*").
+		Returns(200, "Convo info", Convo{}).
+		Returns(401, "Invalid Authorization", nil).
+		Returns(403, "Forbidden", nil).
+		Returns(404, "Convo does not exist", nil).
+		Returns(409, "Convo already has a shared folder", nil))
 
 	//
 	// path: /convos/{cid}/members/{uid}
@@ -196,6 +215,19 @@ func (ctx *context) getById(request *restful.Request, response *restful.Response
 	}
 
 	response.WriteEntity(c)
+}
+
+func (ctx *context) createShare(request *restful.Request, response *restful.Response) {
+	cid := request.PathParameter("cid")
+	r := <-ctx.sidMap.Get(cid)
+	PanicOnErr(r.Error)
+
+	convo := getConvo(ctx.db, cid)
+	var targets []string
+	if !convo.IsPublic {
+		targets = convo.Members
+	}
+	broadcast.SendConvoEvent(ctx.broadcaster, cid, targets)
 }
 
 func (ctx *context) addMember(request *restful.Request, response *restful.Response) {
@@ -437,4 +469,46 @@ func getBroadcastTargets(convo *Convo) []string {
 		return convo.Members
 	}
 	return nil
+}
+
+func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClient *lipwig.Client) func(string) (string, error) {
+	return func(cid string) (string, error) {
+		c := getConvo(db, cid)
+		if c == nil {
+			return "", errors.New("Convo not found: " + cid)
+		}
+		if c.Sid != "" {
+			return c.Sid, nil
+		}
+		var err error
+		var sid string
+		switch c.Type {
+		case "CHANNEL":
+			sid, err = spartaClient.CreateSharedFolder(c.Members, c.Name)
+		case "DIRECT":
+			sid, err = spartaClient.CreateLockedSharedFolder(c.Members, c.Name)
+		default:
+			return "", errors.New("cannot create shared folder for convo type " + c.Type)
+		}
+		if err != nil {
+			return "", err
+		}
+		lipwigClient.SubscribeAndHandlePolaris(sid)
+		setConvoSid(db, cid, sid)
+		return sid, nil
+	}
+}
+
+func getConvo(db *sql.DB, cid string) *Convo {
+	tx := dao.BeginOrPanic(db)
+	defer tx.Rollback()
+
+	return dao.GetConvo(tx, cid, "")
+}
+
+func setConvoSid(db *sql.DB, cid, sid string) {
+	tx := dao.BeginOrPanic(db)
+	defer tx.Rollback()
+
+	dao.SetConvoSid(tx, cid, sid)
 }

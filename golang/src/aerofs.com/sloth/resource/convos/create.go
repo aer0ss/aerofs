@@ -7,7 +7,6 @@ import (
 	"aerofs.com/sloth/filters"
 	. "aerofs.com/sloth/structs"
 	"github.com/emicklei/go-restful"
-	"log"
 )
 
 const CHANNEL = 1
@@ -30,22 +29,8 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 		err := request.ReadEntity(p)
 		errors.PanicOnErr(err)
 		if p.Name == nil || p.Members == nil || p.IsPublic == nil {
-			response.WriteErrorString(400, "Request body must have \"name\", \"is_public\", and \"members\" keys")
+			response.WriteErrorString(400, "Request body must have \"name\", \"isPublic\", and \"members\" keys")
 			return
-		}
-		// if the "sid" field is not empty, this signals a request for a new
-		// shared folder
-		if p.Sid != "" {
-			p.Sid, err = ctx.spartaClient.CreateSharedFolder(p.Members[0], *p.Name)
-			errors.PanicOnErr(err)
-			log.Print("created share with id ", p.Sid)
-			// FIXME: sequential network calls are bad, and I feel bad
-			for _, uid := range p.Members {
-				log.Print("adding ", uid, " to ", p.Sid)
-				err := ctx.spartaClient.AddSharedFolderMember(p.Sid, uid)
-				errors.PanicOnErr(err)
-			}
-			ctx.lipwigClient.SubscribeAndHandlePolaris(p.Sid)
 		}
 		tx := dao.BeginOrPanic(ctx.db)
 		convo = dao.CreateGroupConvo(tx, p, caller)

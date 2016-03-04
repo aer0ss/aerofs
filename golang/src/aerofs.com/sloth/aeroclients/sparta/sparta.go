@@ -67,10 +67,30 @@ func (c *Client) GetDeviceOwner(did string) (string, error) {
 	return spartaResponse.Owner, nil
 }
 
-// CreateSharedFolder returns the SID of the newly-created shared folder
-func (c *Client) CreateSharedFolder(uid, name string) (string, error) {
+func (c *Client) CreateSharedFolder(uids []string, name string) (string, error) {
+	return c.createSharedFolder(uids, name, false)
+}
+
+func (c *Client) CreateLockedSharedFolder(uids []string, name string) (string, error) {
+	return c.createSharedFolder(uids, name, true)
+}
+
+// createSharedFolder returns the SID of the newly-created shared folder
+func (c *Client) createSharedFolder(uids []string, name string, isLocked bool) (string, error) {
+	owner := uids[0]
 	url := BASE_URL + "/shares"
-	body, err := json.Marshal(map[string]string{"name": name})
+	members := make([]map[string]interface{}, 0, len(uids))
+	for _, uid := range uids {
+		members = append(members, map[string]interface{}{
+			"email":       uid,
+			"permissions": []string{"WRITE", "MANAGE"},
+		})
+	}
+	body, err := json.Marshal(map[string]interface{}{
+		"name":      name,
+		"members":   members,
+		"is_locked": isLocked,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -78,7 +98,7 @@ func (c *Client) CreateSharedFolder(uid, name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Add("Authorization", getDelegatedAuthHeader(uid, c.deploymentSecret))
+	req.Header.Add("Authorization", getDelegatedAuthHeader(owner, c.deploymentSecret))
 	req.Header.Add("Content-Type", "application/json")
 	resp := <-c.pool.Do(req)
 	if resp.Err != nil {
