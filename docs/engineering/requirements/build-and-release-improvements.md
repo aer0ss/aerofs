@@ -19,29 +19,31 @@ monotonous tasks and decrease the time required to build and release a new appli
 ## Requirements
 
 ### Automating Builds
+
 Our current build process requires the engineer to manually run commands and monitor the output to
 determine if the commands executed successfully./All of these manual tasks should be obsoleted as
 follows:
 
 * Use CI to automate build process for Appliance and AeroIM
-* Have CI sign tihe installer
+* Have CI sign the installer
 * Have CI store images to S3
-	- VM images (ova, qcow2, vhd)
+	- VM images (OVA, QCow2, VHD)
 	- Docker images
 * Deploy lizard, developer website, PagerDuty services
 * Build Storage Agent, pretty much the same as Appliance VM
 
 ### Developer Productivity
+
 Areas that could improve a developer's productivity.
 
 * Build Farm to automate native code builds
 	- Currently, each developer needs to set up their own VM each time they make a change to native
-	code.
+	  code.
 * Merge AeroIM and Appliance into one repository
 	- Able to git tag everything under one release. Currently, it is only the Appliance releases
-	that are consistently being tagged.
+	  that are consistently being tagged.
 
-### Expand Test Coverage
+### Expand And Automate Test Coverage
 
 * Automate the following manual tests:
 	- Downloading backup file
@@ -54,4 +56,5 @@ Areas that could improve a developer's productivity.
 	- Verify that links are available and directs user to the appropriate page.
 
 ## Future
+
 Further requirements will be scoped for Storage Agent and other products in future releases.
