@@ -1809,6 +1809,7 @@ public class SPService implements ISPService
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
                 firstNonNull(oldExpiry, 0L));
+        String oldToken = link.getToken();
 
         try {
             link.setRequireLogin(requireLogin, newToken);
@@ -1822,7 +1823,7 @@ public class SPService implements ISPService
             throw e;
         }
 
-        _zelda.deleteToken(link.getToken());
+        _zelda.deleteToken(oldToken);
 
         _auditClient.event(AuditTopic.LINK, "link.set_require_login")
                 .add("ip", _remoteAddress.get())
@@ -1848,6 +1849,7 @@ public class SPService implements ISPService
 
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, expires);
+        String oldToken = link.getToken();
 
         try {
             link.setExpires(expires, newToken);
@@ -1861,7 +1863,7 @@ public class SPService implements ISPService
             throw e;
         }
 
-        _zelda.deleteToken(link.getToken());
+        _zelda.deleteToken(oldToken);
 
         _auditClient.event(AuditTopic.LINK, "link.set_expiry")
                 .add("ip", _remoteAddress.get())
@@ -1887,6 +1889,7 @@ public class SPService implements ISPService
 
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode, 0);
+        String oldToken = link.getToken();
 
         try {
             link.removeExpires(newToken);
@@ -1900,7 +1903,7 @@ public class SPService implements ISPService
             throw e;
         }
 
-        _zelda.deleteToken(link.getToken());
+        _zelda.deleteToken(oldToken);
 
         _auditClient.event(AuditTopic.LINK, "link.remove_expiry")
                 .add("ip", _remoteAddress.get())
@@ -1923,10 +1926,12 @@ public class SPService implements ISPService
         SharedFolder sf = _factSharedFolder.create(sid);
         sf.throwIfNoPrivilegeToChangeACL(requester);
 
+        String oldToken = link.getToken();
+
         link.delete();
         _sqlTrans.commit();
 
-        _zelda.deleteToken(link.getToken());
+        _zelda.deleteToken(oldToken);
 
         _auditClient.event(AuditTopic.LINK, "link.delete")
                 .add("ip", _remoteAddress.get())
@@ -1953,6 +1958,7 @@ public class SPService implements ISPService
         String accessCode = _accessCodeProvider.createAccessCodeForUser(requester);
         String newToken = _zelda.createAccessToken(soid.toStringFormal(), accessCode,
                 firstNonNull(oldExpiry, 0L));
+        String oldToken = link.getToken();
 
         try {
             link.setPassword(password.toByteArray(), newToken);
@@ -1966,7 +1972,7 @@ public class SPService implements ISPService
             throw e;
         }
 
-        _zelda.deleteToken(link.getToken());
+        _zelda.deleteToken(oldToken);
 
         _auditClient.event(AuditTopic.LINK, "link.set_password")
                 .add("ip", _remoteAddress.get())
