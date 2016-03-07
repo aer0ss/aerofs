@@ -29,13 +29,13 @@ below.
    little unlock button and enter the keychain password (which is _not_ the same as the mount
    password). For this, also ask Matt.
 
-3. Make and push Eyja javascript/images for iOS, Android and web. To do this, run 
+3. Make and push Eyja javascript/images for iOS, Android and web. To do this, run
 the following commands:
 
        ~/repos/aeroim-client/bin/aero build
        ~/repos/aeroim-client/bin/aero web publish
-      
-       
+
+
 4. Package the AeroIM installers into the appliance by running:
 
        ~/repos/aeroim-client/bin/aero desktop build <appliance_version_to_build>
@@ -44,9 +44,9 @@ the following commands:
 
        invoke --signed clean proto build_client package_clients build_docker_images build_vm
 
-	*Note: you will not be able to successfully build the appliance if the keys for 
-	building the Eyja iOS app are present on the build machine. See below.
-	
+   *Note: you will not be able to successfully build the appliance if the keys for
+   building the Eyja iOS app are present on the build machine. See below.
+
    [FIXME](https://aerofs.atlassian.net/browse/ENG-2455): during the build_vm phase, ssh onto the
    ship-enterprise builder using the ssh command provided in the execution output. Then run
    `top -d 0.1` to speed up the docker pull.
@@ -87,61 +87,56 @@ the following commands:
    [#success](https://aerofs.slack.com/messages/success) channel on slack.
 
        cd ~/repos/support-website && python deploy.py
-       
+
 
 # Eyja App Build
 
 
-### Step 1 - Get the Certs and Provisioning Profiles for iOS
-**Important**: Build this app on a machine other than the build machine due to
-conflicting certs for the appliance and the app. This will not be an issue when 
-we upgrade our Apple certs. 
+### Get the Certs and Provisioning Profiles
 
-1. I assume you have Xcode and Xcode Command line tools installed and have a Gerrit
- account.
-   
+**Important**: Build this app on a machine other than the build machine due to conflicting certs
+for the appliance and the app. This will not be an issue when we upgrade our Apple certs.
+
+1. I assume you have Xcode and Xcode Command line tools installed and have a Gerrit account.
+
 2. Install fastlane `gem install fastlane`
-   
-3. In the project, look for `fastlane/Fastfile` and add your Gerrit username to the 
-`git_url` field. For example, change `ssh://gerrit.arrowfs.org:29418/ios-certificates`
-to `ssh://rahul@gerrit.arrowfs.org:29418/ios-certificates`.
-   
+
+3. In the project, look for `fastlane/Fastfile` and add your Gerrit username to the  `git_url`
+   field. For example, change `ssh://gerrit.arrowfs.org:29418/ios-certificates` to
+   `ssh://rahul@gerrit.arrowfs.org:29418/ios-certificates`.
+
 4. Fastlane is the automation tool that lets you run your deployment in a pipeline.
-   
-   ``` 
-   $ cd ios
-   $ fastlane ios initialize username:<your_gerrit_username>
-   ```
-   
+
+       cd ios
+       fastlane ios initialize username:<your_gerrit_username>
+
    This will get you all the certificates and provisioning profiles and put them where
    they belong.
-   
-5. When fastlane asks for the *passphrase* to decrypt the keys and certificates it 
+
+5. When fastlane asks for the *passphrase* to decrypt the keys and certificates it
 downloads, enter the `101University210`.
 
-### Step 2 - Build the code for iOS
+### Build the code
 
 Open `Eyja.xcodeproj` in Xcode. From there, you should be able to build.
-
 
 ## Distribution Instructions
 
 ### Internal Distribution
-to distribute phone apps via crashlytics:
 
+To distribute phone apps via crashlytics:
 
-```
-~/repos/aeroim-client/bin/aero clean 
-~/repos/aeroim-client/bin/aero install
+    ~/repos/aeroim-client/bin/aero clean
+    ~/repos/aeroim-client/bin/aero install
 
-~/repos/aeroim-client/bin/aero ios build
-~/repos/aeroim-client/bin/aero android build
+    ~/repos/aeroim-client/bin/aero ios build
+    ~/repos/aeroim-client/bin/aero android build
 
-~/repos/aeroim-client/bin/aero ios publish
-~/repos/aeroim-client/bin/aero android publish
-```
+    ~/repos/aeroim-client/bin/aero ios publish
+    ~/repos/aeroim-client/bin/aero android publish
+
 This will send an email with the download link to users.
 
-### AppStore Distribution
+### App Store Distribution
 
-This feature is coming soon. Till then, talk to Rahul.
+This feature is coming soon. Until then, talk to Rahul.
