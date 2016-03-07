@@ -531,7 +531,8 @@ public final class ObjectStore {
         ObjectType storedChildObjectType = dao.objectTypes.get(childOid);
         if (storedChildObjectType != null) {
             Preconditions.checkArgument(childObjectType == null || childObjectType.equals(storedChildObjectType), "mismatched object type exp:%s act:%s", storedChildObjectType, childObjectType);
-            child = dao.objects.get(childOid);
+            child = getUnlockedObject(dao, childOid);
+            Preconditions.checkArgument(child.store.equals(childObjectType == ObjectType.STORE ? childOid : parent.store), "reinserting object %s under %s with conflicting store %s", childOid, parent, child.store);
             childObjectType = storedChildObjectType;
         } else {
             child = newObject(dao, childObjectType == ObjectType.STORE ? childOid : parent.store, childOid, childObjectType);

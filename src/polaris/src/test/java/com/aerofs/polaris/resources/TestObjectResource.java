@@ -889,6 +889,20 @@ public final class TestObjectResource {
         assertThat(result.jobID, notNullValue());
     }
 
+    @Test
+    public void cantReinsertLockedObject() throws Exception
+    {
+        SID root = SID.rootSID(USERID);
+        OID folder = PolarisHelpers.newFolder(AUTHENTICATED, root, "shared");
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, root, folder).jobID, 5);
+
+        UserID u2 = UserID.fromInternal("other@example.com");
+        DID d2 = DID.generate();
+        SID root2 = SID.rootSID(u2);
+        PolarisHelpers.newObject(PolarisHelpers.newAuthedAeroUserReqSpec(u2, d2), root2, folder, "same folder", ObjectType.FOLDER)
+            .statusCode(409);
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);
