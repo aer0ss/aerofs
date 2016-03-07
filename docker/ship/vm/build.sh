@@ -44,7 +44,8 @@ abspath() {
 
 THIS_DIR=$(abspath "$(dirname ${BASH_SOURCE[0]})")
 
-# See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux for color code
+# See http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+# for color codes.
 GREEN='0;32'
 CYAN='0;36'
 YELLOW='1;33'
@@ -61,9 +62,9 @@ setup_preload_registry() {
 
     # This function assumes:
     #
-    #    - Local insecure registries are allowed (i.e. the "--insecure-registry 127.0.0.0/8" docker daemon
-    #      option, which should be the default as of Docker 1.3.2.
-    #    - all the container images including the loader are locally available on the `latest` tag.
+    #    - Local insecure registries are allowed (i.e. the "--insecure-registry 127.0.0.0/8" docker
+    #      daemon option, which should be the default as of Docker 1.3.2.
+    #    - All the container images including the loader are locally available on the `latest` tag.
 
     local REPO_CONTAINER=$1
     local LOADER_IMAGE=$2
@@ -74,8 +75,8 @@ setup_preload_registry() {
         docker create -P --name ${REPO_CONTAINER} registry
     fi
 
-    # A potential bug of docker registry https://github.com/docker/docker-registry/issues/892 may cause the container
-    # sometimes fail to start. So we keep restarting it until success.
+    # A potential bug of docker registry https://github.com/docker/docker-registry/issues/892 may
+    # cause the container sometimes fail to start. So we keep restarting it until success.
     while true; do
         (set +e; docker start ${REPO_CONTAINER})
         sleep 3
@@ -84,7 +85,8 @@ setup_preload_registry() {
         echo "WARNING: ${REPO_CONTAINER} failed to start. Try again."
     done
 
-    # Find the registry's hostname. TODO (WW) use docker-machine for both CI and dev environment
+    # Find the registry's hostname.
+    # TODO use docker-machine for both CI and dev environment.
     local REPO_HOST
     if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
         # Use the hostname specified in DOCKER_HOST environment variable
@@ -135,8 +137,8 @@ build_cloud_config_and_vdi() {
         exit 44
     fi
 
-    # Copy the files to the output folder as the original file may be in a temp folder which can't be
-    # reliably bind mounted by docker-machine.
+    # Copy the files to the output folder as the original file may be in a temp folder which can't
+    # be reliably bind mounted by docker-machine.
     cp "${SHIP_YML}" "${OUTPUT}/ship.yml"
     local EXTRA_MOUNT="${OUTPUT}/extra"
     mkdir -p "${EXTRA_MOUNT}"
@@ -170,8 +172,6 @@ is_local_port_open() {
     [[ ${CODE} = 0 ]] && echo 1 || echo 0
 }
 
-# PREDOCKER: Most of this was adopted from make_ova.sh. Make sure they're still in sync
-# when deleting make_ova.sh.
 create_vm() {
     local VM=$1
     local CPUS=$2
@@ -194,15 +194,17 @@ create_vm() {
 delete_vm() {
     local VM=$1
     local VM_BASE_DIR="$2"
-    # Why suppress stderr? When no such VM is running, error output is annonying and we ignore the errors anyway
+    # Why suppress stderr? When no such VM is running, error output is annoying and we ignore the
+    # errors anyway.
     VBoxManage controlvm ${VM} poweroff 2>/dev/null || true
     VBoxManage unregistervm ${VM} 2>/dev/null || true
-    # Don't use 'unregistervm --delete' as the VM may refer to the vdi file we just created. Deleting the VM would
-    # delete this file.
+    # Don't use 'unregistervm --delete' as the VM may refer to the vdi file we just created.
+    # Deleting the VM would delete this file.
     rm -rf "${VM_BASE_DIR}"
 
-    # Delete the VM folder in the default machine folder. the unregistervm above may destroy the VM the user launches
-    # under the same VM name. Not deleting the folder may prevent the user from launching VMs under the same name.
+    # Delete the VM folder in the default machine folder. The unregistervm above may destroy the
+    # VM the user launches under the same VM name. Not deleting the folder may prevent the user
+    # from launching VMs under the same name.
     local VM_FOLDER=$(VBoxManage list systemproperties \
         | grep '^Default machine folder:' \
         | sed 's/^Default machine folder:[ ]*\(.*\)/\1/')
@@ -231,12 +233,11 @@ preload() {
     # Wait for ssh readiness
     (set +x
         echo "Waiting for VM to launch..."
-        # Wait for VM sshd to be ready
         while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
     )
 
     # Copy preload script to VM. Note:
-    # 1. Don't save the script to /tmp. For some reaon CoreOS may delete it while it's running.
+    # 1. Don't save the script to /tmp. For some reason CoreOS may delete it while it's running.
     # 2. The "./" in the path is for the "sudo $PRELOAD_SCRIPT" below to work.
     local PRELOAD_SCRIPT=./preload-guest.sh
     ssh ${SSH_ARGS} "cat > ${PRELOAD_SCRIPT} && chmod u+x ${PRELOAD_SCRIPT}" < "${THIS_DIR}/preload-guest.sh"
@@ -246,12 +247,12 @@ preload() {
         echo
         cecho ${CYAN} ">>> About to enter VM ($(date +%T)). You may access it from another terminal via:"
         echo
-        cecho ${CYAN} "    $ ssh ${SSH_ARGS}"
+        cecho ${CYAN} "    ssh ${SSH_ARGS}"
         echo
     )
 
-    # Run preload script in VM. This step can take a while, and some times for some reason ssh may disconnect in the
-    # middle. So we retry a few times.
+    # Run preload script in VM. This step can take a while, and some times for some reason ssh may
+    # disconnect in the middle. So we retry a few times.
     local DONE_FILE=repload.done
     local RETRY=0
     while true; do
@@ -305,16 +306,15 @@ convert_to_ova() {
     local FINAL_VM="$2"
     local OVA="$3"
 
-    # Design notes:
+    # Don't create the VM using FINAL_VM as its name: FINAL_VM may differ at each build (e.g.
+    # changing version nubmers). Using a constant VM name (the VM variable) allows us to cleanly
+    # remove the previous VM from a failed build.
     #
-    # Don't create the VM using FINAL_VM as its name: FINAL_VM may differ at each build (e.g. changing version nubmers).
-    # Using a constant VM name (the VM variable) allows us to cleanly remove the previous VM from a failed build.
+    # We therefore rename the VM to FINAL_NAME only before converting it to OVA, and rename it back
+    # when done, so later steps can refer to the VM.
     #
-    # We therefore rename the VM to FINAL_NAME only before converting it to OVA, and rename it back when done, so later
-    # steps can refer to the VM.
-    #
-    # Since the user may be running a VM with the same name as FINAL_VM, we use UUID to avoid confusing VirtualBox.
-    #
+    # Since the user may be running a VM with the same name as FINAL_VM, we use UUID to avoid
+    # confusing VirtualBox.
     local UUID=$(VBoxManage list vms | grep "^\"${VM}\"" | tr '{' ' ' | tr '}' ' ' | awk '{print $2}')
 
     VBoxManage modifyvm ${UUID} --name ${FINAL_VM}
@@ -374,7 +374,8 @@ main() {
     local OVA="${OUTPUT}/preloaded/${VM_IMAGE_NAME}.ova"
 
     if [ ${OF_PRELOADED} = 1 ]; then
-        # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the host.
+        # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the
+        # host.
         delete_vm ${VM} "${VM_BASE_DIR}"
     fi
 
