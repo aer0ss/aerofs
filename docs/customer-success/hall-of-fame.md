@@ -24,6 +24,16 @@ Jun 9, 2015
 Jun 1, 2015
 [Hans Ceelaert, Ceelaert Tax Consultancy](https://aerofs.zendesk.com/agent/tickets/16349)
 
+> I'm an IT professional and have experienced everything from awful to amazing
+> support levels. AeroFS has been among the best, in my opinion. I've contacted
+> them several times and always got a responsive personal reply to my
+> inquiries. They have been polite and thorough, making it a pleasant
+> experience. Now I not only like the product, but feel good about the company.
+> I don't always take the time to write comments like these, but I was
+> impressed enough to take the time.
+
+[Andy Blakely, AB Computer Services](https://aerofs.zendesk.com/agent/tickets/18725)
+
 <hr/>
 
 ## Matt Pillar
@@ -35,7 +45,7 @@ Jun 18, 2015
 [Christian Young, UC Davis ARMS Laboratory](https://aerofs.zendesk.com/agent/tickets/16607)
 
 > Matt answered my question swiftly and accurately. I get the feeling this is
-> real, knowledgable support as opposed to boilerplate support that only knows
+> real, knowledgeable support as opposed to boilerplate support that only knows
 > the first 20% of any answer. Thanks.
 
 Jun 11, 2016
@@ -57,7 +67,7 @@ Apr 17, 2015
 
 ## Suthan Nandakumar
 
-> Sathan did a great job answering my questions by providing documents that
+> Suthan did a great job answering my questions by providing documents that
 > explained what I needed to do.
 
 Jun 8, 2015
@@ -80,3 +90,16 @@ Apr 25, 2015
 
 Aug 20, 2015
 [Wayne Creech, Verizon](https://aerofs.zendesk.com/agent/tickets/17171)
+
+## Jeff Miller
+
+> Jeff was a great help, clear information, steps on how to proceed and helping
+> with changing control of our account over to me, 5 stars.
+
+Feb 23, 2016
+[Josh Vanwyk, JVR Global](https://aerofs.zendesk.com/agent/tickets/18507)
+
+> Tech support was fantastic. My questions were answered perfect. The support
+> tech was very knowledgeable about the product and what I was asking.
+
+[Keith Jones](https://aerofs.zendesk.com/agent/tickets/18521)
