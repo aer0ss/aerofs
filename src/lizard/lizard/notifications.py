@@ -9,7 +9,7 @@ from flask import current_app, render_template, url_for
 SUPPORT_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
 SLACK_WEBHOOK="https://hooks.slack.com/services/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"
-FAQS_URL = "https://support.aerofs.com/hc/en-us/articles/204592794",
+FAQS_URL = "https://support.aerofs.com/hc/en-us/articles/204592794"
 
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart("alternative")
