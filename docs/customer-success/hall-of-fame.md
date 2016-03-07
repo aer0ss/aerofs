@@ -11,7 +11,7 @@
 > very grateful because AeroFS is a crucial element in my academic work setup. 
 
 Jul 22, 2015
-[Cecilia Rennie, Universidad de la República](https://aerofs.zendesk.com/agent/tickets/16920)
+[Cecilia Rennie, Universidad de la Republica](https://aerofs.zendesk.com/agent/tickets/16920)
 
 > Elvis Ye responded quickly and answered my qualms in his first response.
 
@@ -32,7 +32,23 @@ Jun 1, 2015
 > I don't always take the time to write comments like these, but I was
 > impressed enough to take the time.
 
-[Andy Blakely, AB Computer Services](https://aerofs.zendesk.com/agent/tickets/18725)
+Feb 23, 2016 [Andy Blakely, AB Computer Services](https://aerofs.zendesk.com/agent/tickets/18725)
+
+<hr/>
+
+## Jeff Miller
+
+> Jeff was a great help, clear information, steps on how to proceed and helping
+> with changing control of our account over to me, 5 stars.
+
+Feb 23, 2016
+[Josh Vanwyk, JVR Global](https://aerofs.zendesk.com/agent/tickets/18507)
+
+> Tech support was fantastic. My questions were answered perfect. The support
+> tech was very knowledgeable about the product and what I was asking.
+
+Feb 23, 2016
+[Keith Jones](https://aerofs.zendesk.com/agent/tickets/18521)
 
 <hr/>
 
@@ -65,6 +81,17 @@ Apr 17, 2015
 
 <hr/>
 
+## Nicole Chang
+
+> Nicole fully understood my issue without requiring a lot of back and forth
+> questions and was interested in helping me with resolve the problem.
+> Excellent.
+
+Feb 23, 2016
+[Thieu, Top Goods LLC](https://aerofs.zendesk.com/agent/tickets/18674)
+
+<hr/>
+
 ## Suthan Nandakumar
 
 > Suthan did a great job answering my questions by providing documents that
@@ -90,16 +117,3 @@ Apr 25, 2015
 
 Aug 20, 2015
 [Wayne Creech, Verizon](https://aerofs.zendesk.com/agent/tickets/17171)
-
-## Jeff Miller
-
-> Jeff was a great help, clear information, steps on how to proceed and helping
-> with changing control of our account over to me, 5 stars.
-
-Feb 23, 2016
-[Josh Vanwyk, JVR Global](https://aerofs.zendesk.com/agent/tickets/18507)
-
-> Tech support was fantastic. My questions were answered perfect. The support
-> tech was very knowledgeable about the product and what I was asking.
-
-[Keith Jones](https://aerofs.zendesk.com/agent/tickets/18521)
