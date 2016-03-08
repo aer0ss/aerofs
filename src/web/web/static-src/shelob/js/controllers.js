@@ -311,7 +311,9 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
                 if (response.expires < 0) {
                     _handleFailure({status: 404});
                 } else {
-                    // ping API for child folder / file data
+                    // The API OAuth token must be set manually if it is not retrieved in the
+                    // API expireCb callback
+                    API.config.oauthToken = response.token;
                     _getFolders();
                 }
             }).error(function(response, status){
