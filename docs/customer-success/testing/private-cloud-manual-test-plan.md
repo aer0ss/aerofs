@@ -93,6 +93,7 @@ Tests appliance restore flow from a very old appliance version.
 
 - Launch latest build and restore from a much older backup file (recommend at least 5 release
   versions old)
+  **Note: if you're using the 1.0.19 backup file, setup the appliance on http instead of https
 - Verify restore is successful
 - Sign in using any user account
 

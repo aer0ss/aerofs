@@ -13,8 +13,8 @@ This process generates the following signed artifacts:
     - Signed Docker Images
 
 All of the above artifacts will share the same version. The version is computed using the latest
-version on the docker registry + 1. To specify a manual version, use `--release-version` in step 5
-below.
+version on the docker registry + 1. To specify a manual version, use `--release-version <version>` 
+in step 5 below.
 
 ## Procedure
 
@@ -32,6 +32,7 @@ below.
 3. Make and push Eyja javascript/images for iOS, Android and web. To do this, run
 the following commands:
 
+       git pull
        ~/repos/aeroim-client/bin/aero build
        ~/repos/aeroim-client/bin/aero web publish
 
