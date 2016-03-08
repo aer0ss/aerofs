@@ -24,6 +24,7 @@
                 ('email_integration', _("Email integration")),
                 ('identity', _("Identity")),
                 ('link_settings', _("Link sharing")),
+                ('onsite_log_server', ("On-site log server")),
                 ('password_restriction', _("Password restriction")),
                 ('registered_apps', _("Registered apps")),
                 ('session_management', _("Session management")),
