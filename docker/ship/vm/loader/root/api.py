@@ -191,7 +191,7 @@ def switch(repo, tag, target):
             print '{}\'s counterpart has no data volumes'.format(new_container)
             continue
         intersected_volumes = volumes & counterpart_volumes
-        if not counterpart_volumes:
+        if not intersected_volumes:
             print '{} has no intersecting data volumes'.format(new_container)
             continue
         if has_container(new_container):
