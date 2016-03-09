@@ -50,7 +50,19 @@ public class CollectLogsServlet extends HttpServlet
 
     private final Logger l = Loggers.getLogger(CollectLogsServlet.class);
 
-    private static final String OPTION_ONSITE = "on-site";
+    protected enum LogCollectionMode {
+        SEND_CLIENT_LOGS_ONSITE,
+        SEND_APPLIANCE_LOGS_OFFSITE,
+        SEND_CLIENT_LOGS_OFFSITE;
+
+        protected static LogCollectionMode findByRequestOption(String option){
+            switch (option){
+                case "on-site":   return SEND_CLIENT_LOGS_ONSITE;
+                case "appliance": return SEND_APPLIANCE_LOGS_OFFSITE;
+                default:          return SEND_CLIENT_LOGS_OFFSITE;
+            }
+        }
+    }
 
     private SQLThreadLocalTransaction _sqlTrans;
     private UserDatabase _udb;
@@ -97,10 +109,11 @@ public class CollectLogsServlet extends HttpServlet
         l.info("POST");
 
         try {
+            LogCollectionMode mode  = LogCollectionMode.findByRequestOption(
+                    req.getParameter("option"));
             String defectID         = req.getParameter("defectID");
             String version          = req.getParameter("version");
             List<UserID> userIDs    = getUsersIDs(req.getParameterValues("users"));
-            boolean toOnsite        = equal(req.getParameter("option"), OPTION_ONSITE);
             String subject          = req.getParameter("subject");
             String message          = req.getParameter("message");
             long customerID         = Long.parseLong(_license.customerID());
@@ -108,8 +121,8 @@ public class CollectLogsServlet extends HttpServlet
 
             String commandMessage;
 
-            if (toOnsite) {
-                l.info("Send logs to on-site collection facility.");
+            if (mode == LogCollectionMode.SEND_CLIENT_LOGS_ONSITE) {
+                l.info("Send client logs to on-site collection facility.");
 
                 String hostname = req.getParameter("host");
                 int port = Integer.parseInt(req.getParameter("port"));
@@ -118,8 +131,13 @@ public class CollectLogsServlet extends HttpServlet
                         hostname, port, cert);
                 enqueueCommandsForUsers(commandMessage, userIDs);
                 notifyOnSiteSupport(hostname, subject, defectID, userIDs);
+            } else if (mode == LogCollectionMode.SEND_APPLIANCE_LOGS_OFFSITE) {
+                String email = req.getParameter("email");
+                l.info("Send appliance logs to AeroFS support.");
+                emailAeroSupport(customerID, customerName, email, defectID,
+                        version, userIDs, subject, message);
             } else {
-                l.info("Send logs to AeroFS support.");
+                l.info("Send client logs to AeroFS support.");
 
                 String email = req.getParameter("email");
                 commandMessage = createUploadLogsToAeroFSCommandMessage(defectID, getExpiryTime());

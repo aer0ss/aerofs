@@ -27,6 +27,7 @@ routes = [
     'json-gc',
     'json-restore',
     'json-archive-container-logs',
+    'json-upload-container-logs',
     'json-status',
 
     # Bootstrap

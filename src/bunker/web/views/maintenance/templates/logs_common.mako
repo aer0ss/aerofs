@@ -10,16 +10,10 @@
     </%progress_modal:progress_modal>
 </%def>
 
-<%def name="submit_logs_text(open_link_in_new_window)">
-    <strong>We are here to help!</strong> Submit your logs at
-    <a href="https://support.aerofs.com/anonymous_requests/new"
-        %if open_link_in_new_window:
-            target="_blank"
-        %endif
-    >
-    support.aerofs.com</a> with a brief description of the problem. We will
-    get back to you within one to two business days depending on the severity
-    of your issue.
+<%def name="submit_logs_text()">
+    <a href="https://support.aerofs.com/hc/en-us/articles/201439634-AeroFS-Customer-Service-Levels"
+            target="_blank">Contact us</a>
+    with a description of the problem, and include recent appliance logs.
 </%def>
 
 <%def name="scripts()">

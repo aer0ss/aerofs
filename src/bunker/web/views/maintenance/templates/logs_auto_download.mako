@@ -9,7 +9,7 @@
 
 <div class="col-sm-6 col-sm-offset-3">
     <h3>Downloading logs</h3>
-    <p>${common.submit_logs_text(False)}</p>
+    <p>${common.submit_logs_text()}</p>
 </div>
 
 <%common:html/>

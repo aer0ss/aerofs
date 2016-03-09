@@ -15,18 +15,42 @@
         Logs may be helpful when things go wrong, and AeroFS Support often
         requires logs to diagnose any issues that may arise.
     </p>
-    <p>${common.submit_logs_text(True)}</p>
     <hr/>
 </div>
 
-<div class="page-block">
-    <a name="appliance"></a><h4>Appliance logs</h4>
-    <a href="#" class="btn btn-primary"
-            onclick="archiveAndDownloadLogs(); return false;">
-        Download appliance logs
-    </a>
+<form id="appliance-logs-form" role="form" autocomplete="off">
+    ${csrf.token_input()}
+    <div class="page-block">
+        <a name="appliance"></a><h4>Appliance logs</h4>
+        <p>
+            Submit appliance logs directly to AeroFS Support servers with a description of the
+            problem, and we will follow up with you at your appliance's support email address.
+        </p>
+    </div>
+    <div class="form-group">
+        <label for="appliance-subject">Subject:</label>
+        <input id="appliance-subject" name="subject" class="form-control" type="text"
+                placeholder="Subject"
+                value="${subject}"
+                required/>
+        <p></p>
+        <label for="appliance-message">Description:</label>
+        <textarea id="appliance-message" name="message" class="form-control"
+                  placeholder="Message (please describe the problem)"
+                  required>${message}</textarea>
+    </div>
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Submit appliance logs</button>
+    </div>
+    <div class="page-block">
+        <p>
+            Alternatively, you can
+            <a onclick="archiveAndDownloadLogs(); return false;">download appliance logs</a>
+            to your desktop and submit them manually. ${common.submit_logs_text()}</p>
+        </p>
+    </div>
     <hr/>
-</div>
+</form>
 
 <div class="page-block">
     <a name="client"></a><h4>Client logs</h4>
@@ -37,7 +61,7 @@
     </p>
 </div>
 
-<form role="form" autocomplete="off">
+<form id="client-logs-form" role="form" autocomplete="off">
     ${csrf.token_input()}
     <input type="hidden" id="defect_id" name="defect_id" value="${defect_id}">
 
@@ -135,7 +159,7 @@
     </div>
 
     <div class="form-group">
-        <label for="option">Send the logs to:*</label>
+        <label for="option">Send the logs to:</label>
         <select id="option" name="option" class="form-control" required>
             <option value="">
                 --Select the destination--</option>
@@ -159,7 +183,7 @@
              hidden
          %endif
             >
-        <label for="email">Contact Email:*</label>
+        <label for="email">Contact Email:</label>
         <input type="email" id="email" name="email" value="${email}"
                %if option == 'aerofs':
                    required
@@ -173,7 +197,7 @@
          %endif
             >
         <div class="col-md-6">
-            <label for="host">Hostname:*</label>
+            <label for="host">Hostname:</label>
             <input type="text" id="host" name="host" value="${host}"
                    %if option == 'on-site':
                        required
@@ -181,7 +205,7 @@
                    class="form-control on-site-option">
         </div>
         <div class="col-md-2">
-            <label for="port">Port:*</label>
+            <label for="port">Port:</label>
             <input type="number" min="0" step="1" id="port" name="port"
                    %if option == 'on-site':
                        required
@@ -190,7 +214,7 @@
         </div>
         <div class="col-md-4">
             <label for="cert-selector">
-                Certificate:*
+                Certificate:
             </label>
             <input type="file" id="cert-selector"
                    class="form-control on-site-option"
@@ -203,19 +227,17 @@
     </div>
 
     <div class="form-group">
-        <label for="subject">Subject:*</label>
+        <label for="subject">Subject:</label>
         <input id="subject" name="subject" class="form-control" type="text"
                 placeholder="Subject"
                 value="${subject}"
                 required/>
         <p></p>
-        <label for="message">Description:*</label>
+        <label for="message">Description:</label>
         <textarea id="message" name="message" class="form-control"
                   placeholder="Message (please describe the problem)"
                   required>${message}</textarea>
     </div>
-
-    <hr/>
     <button type="submit" class="btn btn-primary">Collect client logs</button>
 </form>
 
@@ -247,11 +269,48 @@
 
             linkFileSelectorToField('#cert-selector', '#cert');
 
-            $('form').on('submit', onSubmit);
+            $('form#client-logs-form').on('submit', onSubmitClientLogs);
+            $('form#appliance-logs-form').on('submit', onSubmitApplianceLogs);
 
             getUsersList();
         });
 
+
+        ## Functions for Uploading Appliance logs
+        function validateApplianceForm() {
+            throwIfMissing('#appliance-subject', 'Please provide a subject.');
+            throwIfMissing('#appliance-message', 'Please provide a message that describes the ' +
+                            'problem.');
+        }
+
+        function onSubmitApplianceLogs() {
+            try {
+                    validateApplianceForm();
+                } catch (e) {
+                    showErrorMessage(e.message);
+                    return false;
+                }
+
+            $('#logs-modal').modal('show');
+            $.post('${request.route_path("json-upload-container-logs")}',
+                    $('form#appliance-logs-form').serialize())
+                .done(function (response) {
+                     hideProgressModal();
+                     ## clear out the form fields
+                     $('form#appliance-logs-form').find("input[type=text], textarea").val("");
+                     showSuccessMessage('Your appliance logs are being sent to AeroFS Support ' +
+                        'servers.');
+                     return false;
+                 }).fail(function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    hideProgressModal();
+                    return false;
+                });
+            return false;
+        }
+
+
+        ## Functions for submitting client logs
         function filterUsersList() {
             var query = $('#search').val().trim().toLocaleLowerCase();
 
@@ -353,7 +412,7 @@
                     selectedOption == 'on-site' && $('#cert').val() == '');
        }
 
-        function onSubmit() {
+        function onSubmitClientLogs() {
             try {
                 validateForm();
             } catch (e) {
@@ -372,7 +431,7 @@
 
         function postForm() {
             $.post("${request.route_path('json_collect_logs')}",
-                    $('form').serialize())
+                    $('form#client-logs-form').serialize())
                     .done(onSuccess)
                     .fail(showErrorMessageFromResponse);
         }
@@ -390,7 +449,7 @@
         function validateForm() {
             throwIfMissing('#option', 'Please select a destination to upload ' +
                     'the client logs to.');
-            throwIfMissing('#subject', 'Please provide a subject');
+            throwIfMissing('#subject', 'Please provide a subject.');
             throwIfMissing('#message', 'Please provide a message that describes ' +
                     'the problem.');
 
@@ -413,6 +472,7 @@
             }
         }
 
+        ## Shared functions - Appliance and Client logs
         function throwIfMissing(element, message) {
             var v = $(element).val();
             if (v == null || v == '') {

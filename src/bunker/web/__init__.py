@@ -8,10 +8,23 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from root_factory import RootFactory
 from auth import get_principals
+from celery import Celery
 import views
 
 log = logging.getLogger(__name__)
 
+# create a Celery worker. This could be configured to use the HA redis endpoints, but
+# the marginal load on redis due to this celery worker isn't worth breaking out if the
+# redis container is going to be present anyway
+celery = Celery(__name__, broker='redis://redis.service', backend='redis://redis.service')
+celery.conf.update(
+    CELERY_TASK_SERIALIZER='json',
+    CELERY_ACCEPT_CONTENT=['json'],
+    CELERY_RESULT_SERIALIZER='json',
+    CELERYD_CONCURRENCY=2,
+    CELERY_ACKS_LATE=True,
+    CELERY_IMPORTS = ('web.tasks')
+)
 
 def main(global_config, **settings):
     """
