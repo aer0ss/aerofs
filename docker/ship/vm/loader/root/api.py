@@ -1,21 +1,33 @@
+import datetime
 import os
-import shutil
-
+import requests
+import subprocess
+import yaml
+from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
+    MODIFIED_YML_PATH, my_container_prefix, my_subdomain
 from flask import Flask, json, jsonify, request, make_response
-from uuid import uuid4
 from os.path import exists
 from os.path import islink
 from os import devnull
-from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
-    MODIFIED_YML_PATH, my_container_prefix, my_subdomain
-import yaml, requests, subprocess
 from traceback import print_exc
+from uuid import uuid4
 
 PREFIX = '/v1'
 CURRENT = 'current'
 GETTY_TAG = '/ship/loader/getty/tag'
 
 BOOT_ID = uuid4().hex
+
+OS_CMD = ["docker", "run", "--rm", "-v", "/:/host", "alpine:3.3", "/bin/sh", "-c"]
+OS_UPDATE_CMD = OS_CMD + ["chroot /host /bin/update_engine_client -update"]
+OS_REBOOT_CMD = OS_CMD + ["chroot /host reboot"]
+OS_TYPE = OS_CMD + ["chroot /host uname -a"]
+UPDATE_FINISHED="UPDATE_STATUS_UPDATED_NEED_REBOOT"
+
+OS_ALREADY_UPDATED = "update failed"
+OS_UPDATE_OUT = '/os_update.out'
+OS_UPDATE_ERR = '/os_update.err'
+TIMEOUT = 600
 
 app = Flask(__name__)
 
@@ -26,6 +38,8 @@ _tag_file = None
 _target_file = None
 _tag = None
 
+_update_proc = None
+_start = None
 
 def start(current_repo, current_target, repo_file, tag_file, target_file, tag):
     global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag
@@ -333,3 +347,66 @@ def create_loader_container(loader_image, tag):
 def internal_error(error):
     print_exc(error)
     return '"An internal server error has occurred. Check logs for more info."', 500
+
+
+@app.route(PREFIX + "/reboot-vm", methods=["POST"])
+def post_reboot_vm():
+    subprocess.Popen(print_args(OS_REBOOT_CMD))
+    return ''
+
+@app.route(PREFIX + "/vm-os", methods=["GET"])
+def get_vm_os():
+    return subprocess.check_output(print_args(OS_TYPE))
+
+
+def _mark_os_update_inactive():
+    os.remove(OS_UPDATE_OUT)
+    os.remove(OS_UPDATE_ERR)
+    _start = None
+    _update_proc = None
+
+
+@app.route(PREFIX + "/update-os", methods=["GET"])
+def get_os_update():
+    if _update_proc is None:
+        return jsonify(status='done', succeeded=False)
+    if _update_proc.poll() is None:
+        # Allow update process to run for 600 secs before killing.
+        if (datetime.datetime.now() - _start).total_seconds() > TIMEOUT:
+            os.kill(process.pid, signal.SIGKILL)
+            os.waitpid(-1, os.WNOHANG)
+            _mark_os_update_inactive()
+            return jsonify(status='done', succeeded=False)
+
+        return jsonify(status='running', succeeded=False)
+
+    on_latest = False
+    with open(OS_UPDATE_ERR, 'r') as f:
+        for line in f:
+            if OS_ALREADY_UPDATED in line.lower():
+                on_latest = True
+                break
+
+    if on_latest:
+        _mark_os_update_inactive()
+        return jsonify(status='error', succeeded=True)
+
+    with open(OS_UPDATE_OUT) as f:
+        content = dict([line.strip().split('=') for line in f])
+
+    _mark_os_update_inactive()
+    return jsonify(status='done', succeeded=(content.get('CURRENT_OP', None) == UPDATE_FINISHED))
+
+
+@app.route(PREFIX + "/update-os", methods=["POST"])
+def post_os_update():
+    if _update_proc is not None and _start is not None:
+        return '"Update is already in progress."', 409
+
+    assert not os.path.exists(OS_UPDATE_OUT) and not os.path.exists(OS_UPDATE_ERR)
+
+    _start = datetime.datetime.now()
+    with open(OS_UPDATE_OUT, 'w') as fout, open(OS_UPDATE_ERR, 'w') as ferr:
+        _update_proc = subprocess.Popen(print_args(OS_UPDATE_CMD), stdout=fout, stderr=ferr)
+    return '"os update started"', 200
+

@@ -6,6 +6,7 @@
 <%namespace file="modal.mako" name="modal"/>
 <%namespace name="loader" file="loader.mako"/>
 
+
 <div class="page-block">
     <h2>Upgrade your AeroFS Appliance</h2>
 
@@ -61,6 +62,7 @@
 </div>
 
 <hr/>
+
 <div class="page-block" id="manual-upgrade" style="display: none;">
 
     <p>Should automatic upgrade fail use the following steps to manually upgrade the appliance to the latest version
@@ -83,6 +85,30 @@
         Put appliance in Maintenance mode and download backup file
     </button>
     <hr/>
+</div>
+
+
+<div class="page-block"
+    %if not os_upgrade_enabled:
+        hidden
+    %endif
+>
+    <h2>Upgrade your AeroFS appliance's host VM</h2>
+    <p>
+        You can upgrade the operating system of the AeroFS appliance host by clicking the button below.
+        <strong>Currently, this is only available for those AeroFS appliances whose host operating system is CoreOS.</strong>
+    </p>
+    <p>
+
+        This is especially useful in case of critical updates to CoreOS. Upgrading the OS should
+        take about fifteen minutes, during which all AeroFS clients in your organization
+        will pause syncing.
+    </p>
+    <button class="btn btn-primary"
+            onclick="osUpgrade(onOSUpgradeSuccess, onOSUpgradeFailure); return false;">
+        Upgrade OS
+    </button>
+<hr/>
 </div>
 
 
@@ -134,6 +160,31 @@
     <%def name="title()">Appliance up to date.</%def>
     <p>
         You are already running the latest AeroFS version.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">wrong-os-modal</%def>
+    <%def name="title()">Cannot Upgrade AeroFS Appliance Host VM.</%def>
+    <p>
+        Your AeroFS is not running on CoreOS. Cannot upgrade.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">os-success-modal</%def>
+    <%def name="title()"><h4 class="text-success">OS Upgrade Succeeded</h4></%def>
+    <p>
+        You have successfully upgraded the operating system of your AeroFS appliance host.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
+    <%def name="id()">os-fail-modal</%def>
+    <%def name="title()"><h4 class="text-error">OS Upgrade Failed</h4></%def>
+    <p>
+        Failed to upgrade the operating system of your AeroFS appliance host. Please try again later.
+        All AeroFS clients in your organization should still be able to resume syncing.
     </p>
 </%modal:modal>
 
@@ -213,6 +264,30 @@
     <p>
         The appliance will now go into Maintenance mode. Depending on your data size,
         backup might take up to fifteen minutes. Please do not navigate away from this page...
+    </p>
+</%progress_modal:progress_modal>
+
+<%modal:modal>
+    <%def name="id()">upgrade-os-modal</%def>
+    <%def name="title()"><h4 class="text-error">Confirm OS upgrade</h4></%def>
+    <p>
+        Upgrading the OS should take about fifteen minutes, during which all AeroFS clients in your organization
+        will pause syncing.
+    </p>
+    <%def name="footer()">
+        <a href="#" id="upgrade-os-cancel-btn" class="btn btn-default" data-dismiss="modal">Cancel</a>
+        <a href="#" id="upgrade-os-btn" class="btn btn-primary" data-dismiss="modal">Upgrade OS</a>
+    </%def>
+</%modal:modal>
+
+<%progress_modal:progress_modal>
+    <%def name="id()">os-upgrade-progress-modal</%def>
+    <%def name="title()"><h4 class="text-error">Upgrading Your OS...</h4></%def>
+    <%def name="no_close()"/>
+
+    <p>
+        Upgrading your OS can take upto fifteen minutes.
+        Please do not navigate away from this page...
     </p>
 </%progress_modal:progress_modal>
 
@@ -301,6 +376,28 @@
             }
         }
 
+        function confirmOSUpgrade(onSucess, onFailure) {
+            var $modal = $('#upgrade-os-modal');
+            $('#upgrade-os-btn').off().on('click', function() {
+                $('#os-upgrade-progress-modal').modal('show');
+                $modal.modal('hide');
+                upgradeOS(onSuccess, onFailure, handleFailed);
+            });
+            $modal.modal('show');
+        }
+
+        function osUpgrade(onSuccess, onFailure) {
+            canUpgradeOS(function(resp) {
+                if (resp['json-can-upgrade-os']) {
+                    console.log("can upgrade os");
+                    confirmOSUpgrade(onSuccess, onFailure);
+                } else {
+                    console.log("cannot upgrade os");
+                    $('#wrong-os-modal').modal('show');
+                }
+            }, handleFailed);
+        }
+
         function confirmUpgrade() {
             var $modal = $('#upgrade-confirm-modal');
             $('#upgrade-confirm-btn').off().on('click', function() {
@@ -308,6 +405,20 @@
                 resumeOrStartNewUpgrade();
             });
             $modal.modal('show');
+        }
+
+        function onOSUpgradeSuccess(target) {
+            reboot(target, function() {
+                $('#os-upgrade-progress-modal').modal('hide');
+                $('#os-success-modal').modal('show');
+            }, handleFailed);
+        }
+
+        function onOSUpgradeFailure(target) {
+            reboot(target, function() {
+                $('#os-upgrade-progress-modal').modal('hide');
+                $('#os-fail-modal').modal('show');
+            }, handleFailed);
         }
 
         function upgradeIfNotLatest() {

@@ -20,6 +20,14 @@
 </%modal:modal>
 
 <%modal:modal>
+    <%def name="id()">on-latest-os-modal</%def>
+    <%def name="title()"><h4 class="text-success">Already On Latest OS</h4></%def>
+    <p>
+        You AeroFS is already hosted on the latest stable CoreOS version.
+    </p>
+</%modal:modal>
+
+<%modal:modal>
     <%def name="id()">pull-fail-modal</%def>
     <%def name="title()"><h4 class="text-error">Download Failed</h4></%def>
     <p>
@@ -77,6 +85,15 @@
         ##          function onFailure(xhr)
         function needsUpgrade(onSuccess, onFailure) {
             $.get("${request.route_path('json-needs-upgrade')}")
+            .done(function(resp) {
+                if (onSuccess) onSuccess(resp);
+            }).fail(function(xhr) {
+                if (onFailure) onFailure(xhr);
+            });
+        }
+
+        function canUpgradeOS(onSuccess, onFailure) {
+            $.get("${request.route_path('json-can-upgrade-os')}")
             .done(function(resp) {
                 if (onSuccess) onSuccess(resp);
             }).fail(function(xhr) {
@@ -295,5 +312,72 @@
             }, 1000);
         }
 
-    </script>
+        function upgradeOS(onSuccess, onFailure, handleFailed) {
+            $.get("${request.route_path('json-get-boot')}")
+            .done(function(resp) {
+                var target = resp['target'];
+                reboot('maintenance', function() {
+                    $.post("${request.route_path('json-update-os')}")
+                    .done(function() {
+                        if (resp["status_code"] == 200 || resp["status_code"] == 409) {
+                            waitForUpgradeOS(target, onSuccess, onFailure, handleFailed);
+                        } else {
+                            showErrorMessage("Failed to upgrade: ".concat(resp["status_code"]));
+                        }
+                    }).fail(handleFailed)
+                }, handleFailed);
+            }).fail(function(xhr) {
+                if (handleFailed) handleFailed(xhr);
+            });
+        }
+
+        function waitForUpgradeOS(target, onSuccess, onFailure, handleFailed) {
+            console.log('Wait for os upgrade');
+            var interval = window.setInterval(function() {
+                $.get("${request.route_path('json-update-os')}")
+                .done(function(resp) {
+                    if (resp['running']) {
+                        console.log('downloading new os version...');
+                    } else if (resp['succeeded']) {
+                        console.log('downloaded new os version');
+                        window.clearInterval(interval);
+                        ## Only reboot if not on latest.
+                        if (!resp['latest']) {
+                            rebootVM(target, onSuccess, handleFailed);
+                        } else {
+                            reboot(target, function() {
+                                $('#os-upgrade-progress-modal').modal('hide');
+                                $('#on-latest-os-modal').modal('show');
+                                }, handleFailed);
+                        }
+                    } else {
+                        console.log('download OS failed');
+                        window.clearInterval(interval);
+                        if (onFailure) onFailure(target);
+                    }
+                }).fail(handleFailed);
+            }, 5000);
+        }
+
+        function rebootVM(target, onSuccess, handleFailed) {
+            $.get("${request.route_path('json-get-boot')}")
+            .done(function(resp) {
+                var bootID = resp['id'];
+                console.log("Reboot to /" + target + ". previous boot id: " + bootID);
+                $.post("${request.route_path('json-reboot-vm')}")
+                .done(function() {
+                    waitForReboot(bootID, function() {
+                        onSuccess(target);
+                    });
+                }).fail(function(xhr, textStatus, errorThrown) {
+                    ## Ignore errors as the server might be killed before replying
+                    console.log("Ignore json-boot failure: " + xhr.status + " " + textStatus + " " + errorThrown);
+                    waitForReboot(bootID, function() {
+                        onSuccess(target);
+                    });
+                });
+            }).fail(handleFailed);
+        }
+
+</script>
 </%def>

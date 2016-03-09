@@ -1,12 +1,13 @@
 import logging
 import os
+import psutil
 
 from pyramid.response import Response
 from pyramid.view import view_config
 from subprocess import Popen
 from web.version import get_private_version
 from web.views.maintenance.logs_view import get_file_download_response, get_download_file_name
-import psutil
+from web.views.maintenance.maintenance_util import get_conf
 from os.path import isfile
 from web.error import expected_error
 from os import unlink
@@ -41,7 +42,9 @@ _REQ_UPGRADE_DF = 10485760
     renderer='backup_and_upgrade.mako'
 )
 def backup_and_upgrade(request):
+    conf = get_conf(request)
     return {
+        'os_upgrade_enabled': conf.get('os.upgrade.enabled', "false") == "true",
         'current_version': get_private_version(request.registry.settings)
     }
 

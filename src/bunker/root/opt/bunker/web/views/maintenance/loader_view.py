@@ -174,3 +174,56 @@ def json_gc_get(request):
         'succeeded': status == "done"
     }
 
+
+@view_config(
+    route_name='json-update-os',
+    permission='maintain',
+    request_method='POST',
+    renderer='json'
+)
+def json_os_upgrade_post(request):
+    r = requests.post("{}/update-os".format(LOADER_URL))
+    r.raise_for_status()
+    return {}
+
+
+@view_config(
+    route_name='json-update-os',
+    permission='maintain',
+    request_method='GET',
+    renderer='json'
+)
+def json_os_upgrade_get(request):
+    r = requests.get("{}/update-os".format(LOADER_URL))
+    r.raise_for_status()
+    res = r.json()
+    return {
+        'running': res.get("status", "error") == "running",
+        'succeeded': res.get("succeeded", False),
+        'latest': (res.get("status", "error") == "error" and res.get("succeeded", False))
+    }
+
+@view_config(
+    route_name='json-can-upgrade-os',
+    permission='maintain',
+    request_method='GET',
+    renderer='json'
+)
+def json_can_upgrade_os_get(request):
+    r = requests.get("{}/vm-os".format(LOADER_URL))
+    r.raise_for_status()
+    return {
+        'can_upgrade_os': 'coreos' in r.text.lower()
+    }
+
+@view_config(
+    route_name='json-reboot-vm',
+    permission='maintain',
+    request_method='POST',
+    renderer='json'
+)
+def json_reboot_vm_post(request):
+    r = requests.post("{}/reboot-vm".format(LOADER_URL))
+    r.raise_for_status()
+    return {}
+
