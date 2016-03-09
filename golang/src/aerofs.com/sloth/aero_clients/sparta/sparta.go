@@ -3,6 +3,7 @@ package sparta
 
 import (
 	"aerofs.com/sloth/httpClientPool"
+	. "aerofs.com/sloth/structs"
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
@@ -170,6 +171,66 @@ func (c *Client) GetAllSharedFolders() (shares []SharedFolder, epoch uint64, err
 
 	epoch, err = getEpochFromResponse(resp.R)
 	return
+}
+
+func (c *Client) CreateUser(user *User) error {
+	code, err := c.userRequest(user, "POST", "/users")
+	if err != nil {
+		return err
+	}
+	if code != 201 {
+		return errors.New(fmt.Sprintf("%v creating user %v\n", code, user))
+	}
+	return nil
+}
+
+func (c *Client) UpdateUser(user *User) error {
+	code, err := c.userRequest(user, "PUT", "/users/"+user.Id)
+	if err != nil {
+		return err
+	}
+	if code != 200 {
+		return errors.New(fmt.Sprintf("%v updating user %v\n", code, user))
+	}
+	return nil
+}
+
+func (c *Client) CreateOrUpdateUser(user *User) error {
+	code, err := c.userRequest(user, "POST", "/users")
+	if err != nil {
+		return err
+	}
+	switch code {
+	case 201:
+		return nil
+	case 409:
+		return c.UpdateUser(user)
+	default:
+		return errors.New(fmt.Sprintf("%v creating user %v\n", code, user))
+	}
+}
+
+func (c *Client) userRequest(user *User, method, path string) (int, error) {
+	url := fmt.Sprint(BASE_URL, path)
+	body, err := json.Marshal(map[string]interface{}{
+		"email":      user.Id,
+		"first_name": user.FirstName,
+		"last_name":  user.LastName,
+	})
+	if err != nil {
+		return 0, err
+	}
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Add("Authorization", getDelegatedAuthHeader(":2", c.deploymentSecret))
+	req.Header.Add("Content-Type", "application/json")
+	resp := <-c.pool.Do(req)
+	if resp.Err != nil {
+		return 0, resp.Err
+	}
+	return resp.R.StatusCode, nil
 }
 
 func NewClient(deploymentSecret string) *Client {

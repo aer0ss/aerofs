@@ -414,19 +414,20 @@ public class UsersResource extends AbstractSpartaResource
         User newUser = _factUser.createFromExternalID(attrs.email);
 
         // We are using "Team Server"-ness as a simple way to distinguish elevated callers.
-        if (newUser.exists()) {
-            return Response.status(Status.CONFLICT)
-                    .entity("User cannot be created")
-                    .build();
-        }
-
         if (!caller.id().isTeamServerID()) {
             return Response.status(Status.FORBIDDEN)
                     .entity("Insufficient admin privilege to create a user")
                     .build();
         }
 
+        if (newUser.exists()) {
+            return Response.status(Status.CONFLICT)
+                    .entity("User cannot be created")
+                    .build();
+        }
+
         newUser.save(new byte[0], new FullName(attrs.firstName, attrs.lastName));
+
         // Admins can only create users in their (the admin's) org:
         newUser.setOrganization(caller.getOrganization(), AuthorizationLevel.USER);
 

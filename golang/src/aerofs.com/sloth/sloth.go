@@ -169,6 +169,7 @@ func main() {
 		pushNotifier,
 		checkUserFilter,
 		updateLastOnlineFilter,
+		spartaClient,
 	))
 	restful.Add(convos.BuildRoutes(
 		db,

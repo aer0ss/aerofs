@@ -1,6 +1,7 @@
 package users
 
 import (
+	"aerofs.com/sloth/aero_clients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
@@ -23,6 +24,7 @@ type context struct {
 	db              *sql.DB
 	lastOnlineTimes *lastOnline.Times
 	pushNotifier    push.Notifier
+	spartaClient    *sparta.Client
 }
 
 //
@@ -36,6 +38,7 @@ func BuildRoutes(
 	pushNotifier push.Notifier,
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
+	spartaClient *sparta.Client,
 
 ) *restful.WebService {
 	ctx := &context{
@@ -43,6 +46,7 @@ func BuildRoutes(
 		db:              db,
 		lastOnlineTimes: lastOnlineTimes,
 		pushNotifier:    pushNotifier,
+		spartaClient:    spartaClient,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
@@ -208,14 +212,6 @@ func getTagId(params *UserWritable) string {
 	}
 }
 
-func insertOrUpdate(tx *sql.Tx, user *User) error {
-	if dao.UserExists(tx, user.Id) {
-		return dao.UpdateUser(tx, user)
-	} else {
-		return dao.InsertUser(tx, user)
-	}
-}
-
 func (ctx *context) updateUser(request *restful.Request, response *restful.Response) {
 	uid := request.PathParameter("uid")
 	params := readUserParams(request)
@@ -233,22 +229,39 @@ func (ctx *context) updateUser(request *restful.Request, response *restful.Respo
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
-	err := insertOrUpdate(tx, newUser)
+	defer tx.Rollback()
+
+	var dbInsertOrUpdate func(*sql.Tx, *User) error
+	userExists := dao.UserExists(tx, uid)
+	if userExists {
+		dbInsertOrUpdate = dao.UpdateUser
+	} else {
+		dbInsertOrUpdate = dao.InsertUser
+	}
+
+	err := dbInsertOrUpdate(tx, newUser)
 	if errors.UniqueConstraintFailed(err) {
 		if newUser.TagId == params.TagId {
 			// tag collision with given tag id
 			response.WriteErrorString(409, "User with tagId "+params.TagId+" already exists")
-			tx.Rollback()
 			return
 		} else {
 			// tag collision with default tag id; append a random 32-bit number
 			newUser.TagId = newUser.TagId + fmt.Sprintf("%v", rand.Uint32())
-			err = insertOrUpdate(tx, newUser)
+			err = dbInsertOrUpdate(tx, newUser)
 			errors.PanicAndRollbackOnErr(err, tx)
 		}
 	} else {
 		errors.PanicAndRollbackOnErr(err, tx)
 	}
+
+	if userExists {
+		err = ctx.spartaClient.UpdateUser(newUser)
+	} else {
+		err = ctx.spartaClient.CreateOrUpdateUser(newUser)
+	}
+	errors.PanicAndRollbackOnErr(err, tx)
+
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(newUser)
