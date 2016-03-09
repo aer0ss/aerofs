@@ -257,7 +257,7 @@ public class FilterFetcher
                 // enough sequence of buffered updates that fine-grained filter application
                 // becomes important.
                 // TODO: schedule change fetcher?
-                l.warn(" {} missing changes {}", from, sidx);
+                l.warn(" {} missing changes {}: {} {}", from, sidx, c, pb.getSenderFilterEpoch());
                 failed.add(sidx);
                 continue;
             }

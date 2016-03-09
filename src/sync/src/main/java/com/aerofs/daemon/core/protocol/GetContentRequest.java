@@ -24,6 +24,7 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
@@ -136,6 +137,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
                     BaseLogUtil.suppress(e,
                             ExUpdateInProgress.class,
                             ExNoResource.class,
+                            ExStreamInvalid.class,
                             ExNoComponentWithSpecifiedVersion.class));
             _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
         }
@@ -205,7 +207,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
 
         PBGetContentRequest.Prefix prefix = msg.pb().getGetContentRequest().getPrefix();
         if (prefix != null) {
-            l.info("recved prefix len {} v {}. local {}",
+            l.info("{} recved prefix for {} len {} v {}. local {}", msg.did(), k,
                     prefix.getLength(), prefix.getVersion(), vLocal);
         }
         if (prefix != null && vLocal != prefix.getVersion()) {
