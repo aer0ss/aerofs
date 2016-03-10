@@ -114,7 +114,7 @@ class CreateHostedDeployment(Form):
     customer_id = StringField("Customer ID", validators=[InputRequired()])
     subdomain = StringField("Subdomain", validators=[
         InputRequired(),
-        Regexp('[a-z0-9][a-z0-9-]*[a-z0-9]',
+        Regexp('^[a-z0-9][a-z0-9-]*[a-z0-9]$',
                message="Only letters, numbers and dashes are allowed for the subdomain, and it can't start or end with a dash.")])
 
 # This form is used to create a new Hosted Private Cloud Server

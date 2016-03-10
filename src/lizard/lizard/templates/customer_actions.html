@@ -68,6 +68,9 @@
         {{ hpc_form.hidden_tag() }}
         {{ render_field(hpc_form.customer_id, with_label=False, hidden=True) }}
         {{ render_field(hpc_form.subdomain) }}
+        <p id="restrictName" data-toggle="tooltip" data-placement="bottom"
+           title="Only lower case letters, numbers and dashes are allowed for the subdomain, and it can't start or end with a dash">
+        </p>
         {{ submit_button("Create") }}
     </form>
 
@@ -113,9 +116,22 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/bootstrap-datepicker.min.js') }}" ></script>
 <script>
-$(document).ready(function() { 
+$(document).ready(function() {
     $('#expiry_date').datepicker({
         format: "yyyy-mm-dd"
+    });
+
+    // This function will disable the keyboard for all characters except lower case letters, numbers and dashes
+    $('#subdomain').keypress(function(key) {
+        // The condition contains the charCodes of all the unacceptable characters
+        if((key.charCode < 97 || key.charCode > 122) && (key.charCode != 45) && (key.charCode < 48 || key.charCode > 57)) {
+            $('#restrictName').tooltip("show");
+            return false;
+        }
+        else
+        {
+            $('#restrictName').tooltip("hide");
+        }
     });
 });
 
