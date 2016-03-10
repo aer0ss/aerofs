@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
@@ -132,13 +133,21 @@ public class LinkStateService
             builder.append(')');
         }
 
+        boolean internalLink = true;
+        for (Enumeration<InetAddress> set = iface.getInetAddresses(); set.hasMoreElements();) {
+            InetAddress addr = set.nextElement();
+            if (!addr.isLinkLocalAddress() && !addr.isMulticastAddress()) {
+                internalLink = false;
+                break;
+            }
+        }
         // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
         // simply removes the interface's IPV4 address. This caused a situation where
         // we would remove IFprev(IPV4, IPV6) and then _readd_ IFnew(IPV6).
         // This caused XMPPMulticast::send to attempt to send packets through this
         // interface even though it wasn't 'active'.
         boolean active = false;
-        if (isUp && !isLoopback && !isVirtual) {
+        if (isUp && !isLoopback && !isVirtual && !internalLink) {
             active = true;
         }
 
