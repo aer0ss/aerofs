@@ -4,46 +4,35 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.base.Loggers;
+import org.apache.tomcat.jdbc.pool.DataSource;
+import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.flywaydb.core.Flyway;
-import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class LocalTestDatabaseConfigurator
 {
-    private static final Logger l = Loggers.getLogger(LocalTestDatabaseConfigurator.class);
-
-    /**
-     * Runs the given bash command.
-     * @return the exit code of the command
-     */
-    private static int runBashCommand(String command)
-            throws IOException, InterruptedException
-    {
-        Runtime runtime = Runtime.getRuntime();
-
-        Process p = runtime.exec(new String[]{"/bin/bash", "-c", command});
-        p.waitFor();
-        l.info("command exitcode:" + p.exitValue());
-        return p.exitValue();
-    }
-
     public static void resetDB(DatabaseParameters params)
-            throws IOException, InterruptedException
+            throws SQLException
     {
-        String reset = String.format(
-                "%s/mysql -u%s -h%s -p%s -e \"delete from mysql.proc where db='%s' and " +
-                        "type='PROCEDURE'; drop schema if exists %s; create database if not exists %s\"",
-                params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(), params.getMySQLPass(),
-                params.getMySQLDatabaseName(), params.getMySQLDatabaseName(), params.getMySQLDatabaseName());
+        String db = params.getMySQLDatabaseName();
 
-        l.info("setting up database schema");
+        PoolProperties p = new PoolProperties();
+        p.setUrl("jdbc:mysql://" + params.getMySQLHost() + "/" + db);
+        p.setUsername(params.getMySQLUser());
+        p.setPassword(params.getMySQLPass());
+        p.setDriverClassName("com.mysql.jdbc.Driver");
 
-        if (runBashCommand(reset) != 0) {
-            throw new RuntimeException("failed to reset db (cmd: " + reset + ")");
+        Connection c = new DataSource(p).getConnection();
+        c.setAutoCommit(true);
+        try (Statement s = c.createStatement()) {
+            s.executeUpdate("drop database if exists " + db);
+            s.executeUpdate("create database " + db);
         }
+        c.close();
     }
 
     /**
