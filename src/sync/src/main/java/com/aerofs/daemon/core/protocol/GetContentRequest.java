@@ -173,7 +173,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
         SOID soid = new SOID(sidx, oid);
 
         Long lcv = _cvdb.getVersion_(sidx, oid);
-        if (lcv == null || lcv < rcv) {
+        if (lcv == null || lcv <= rcv) {
             // avoid sending a permanent error if case the remote peer is racing against a
             // response from polaris
             if (_provider.hasUnacknowledgedLocalChange(soid)) {
