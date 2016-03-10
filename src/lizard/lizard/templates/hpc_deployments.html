@@ -8,10 +8,10 @@
 <script>
     {# TODO (GS):
          - better error handling than just alert()
-         - show progress indicator
     #}
     function remove_deployment(subdomain) {
         if (confirm("Are you sure that you want to remove '"+ subdomain + "' and all associated data?")) {
+            $("#action-column-" + subdomain).html('<img src="{{ url_for('static', filename='img/ajax-loader.gif') }}"/>')
             $.ajax({
                 url: '/hpc_deployments/' + subdomain,
                 type: 'DELETE',
@@ -21,6 +21,10 @@
                 },
                 error: function(result) {
                     alert("Failed! " + result);
+                    var html_code = "<a href='#' onclick='remove_deployment(" + subdomain + "); return false;'>Remove</a> \
+                                <b> or </b> \
+                                <a href='#' onclick='extend_license(" + subdomain + "); return false;'>Extend license</a>"
+                    $("#action-column-" + subdomain).html(html_code)
                 }
             });
          }
@@ -62,7 +66,7 @@
                 <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
                 <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
                 <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}" id="remainingTime"> {{deployment.get_days_until_expiry() }}</a></td>
-                <td>
+                <td id="action-column-{{ deployment.subdomain }}">
                     <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a>
                     <b> or </b>
                     <a href="#" onclick="extend_license('{{ deployment.subdomain }}'); return false;">Extend license</a>
