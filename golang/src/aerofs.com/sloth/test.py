@@ -257,6 +257,14 @@ try:
     assert r.json().get("members") == ["dgray", "jgray"], r.text
     assert r.json().get("createdTime") == created_time, r.text
 
+    # PUT /convos/cid make private -> public
+    r = s.put(BASE_URL + "/convos/" + cid,
+            json.dumps({
+                "isPublic": True,
+            }),
+            headers=JGRAY_AUTH)
+    assert r.status_code == 400, r
+
     # PUT /convos/cid add member
     r = s.put(BASE_URL + "/convos/" + cid,
             json.dumps({
