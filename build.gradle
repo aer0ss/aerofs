@@ -128,14 +128,12 @@ subprojects {
         // have to explicitly specify the system properties
         // that will be propagated to the test jvm
 
-        def mysqlPath = System.getProperty('junit.mysqlPath')
-        if (mysqlPath != null) {
-            systemProperty 'junit.mysqlPath', mysqlPath
-        }
-
-        def enableLogging = System.getProperty('junit.enable_logging')
-        if (enableLogging != null) {
-            systemProperty 'junit.enable_logging', enableLogging
+        for (prop in ['mysqlHost', 'mysqlUser', 'mysqlPass', 'enable_logging']) {
+            def k = 'junit.' + prop
+            def v = System.getProperty(k)
+            if (v != null) {
+                systemProperty k, v
+            }
         }
 
         // tune down the netty 4 buffer pool size
