@@ -80,7 +80,7 @@ public class CommandUtil
     }
 
     public static String createUploadLogsToOnSiteCommandMessage(String defectID, long expiryTime,
-            String host, int port, String cert)
+            String host, int port)
             throws IllegalArgumentException
     {
         throwIfNotValidPort(port);
@@ -90,8 +90,7 @@ public class CommandUtil
                 defectID,
                 String.valueOf(expiryTime),
                 host,
-                String.valueOf(port),
-                cert
+                String.valueOf(port)
         };
 
         return join(fields, ':');
@@ -142,7 +141,7 @@ public class CommandUtil
                     .setDefectId(fields[0])
                     .setExpiryTime(Long.valueOf(fields[1])))
                     .build();
-        case 5:
+        case 4:
             int port = Integer.parseInt(fields[3]);
             throwIfNotValidPort(port);
 
@@ -153,7 +152,7 @@ public class CommandUtil
                     .setDestination(UploadLogsDestination.newBuilder()
                             .setHostname(fields[2])
                             .setPort(port)
-                            .setCert(fields[4])))
+                            .setCert("")))
                     .build();
         default:
             throw new IllegalArgumentException("Expecting either 2 or 5 fields, " +

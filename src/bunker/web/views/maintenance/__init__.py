@@ -81,6 +81,7 @@ routes = [
     'session_management',
     'link_settings',
     'json_set_require_login',
+    'json_save_configuration',
 
     'maintenance_mode',
     'license_expired',

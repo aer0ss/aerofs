@@ -68,3 +68,5 @@ base.log.level={{ log_level }}
 base.custom.ports.enabled={{ enable_custom_daemon_port_range }}
 daemon.port.range.low={{ daemon_port_range_low }}
 daemon.port.range.high={{ daemon_port_range_high }}
+
+base.dryad.cert={{ dryad_cert }}
