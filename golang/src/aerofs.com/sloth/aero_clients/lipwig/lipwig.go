@@ -3,8 +3,8 @@
 package lipwig
 
 import (
-	"aerofs.com/sloth/aero-clients/polaris"
-	"aerofs.com/sloth/aero-clients/sparta"
+	"aerofs.com/sloth/aero_clients/polaris"
+	"aerofs.com/sloth/aero_clients/sparta"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/util/asynccache"
 	"crypto/sha256"

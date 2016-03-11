@@ -1,8 +1,8 @@
 package convos
 
 import (
-	"aerofs.com/sloth/aero-clients/lipwig"
-	"aerofs.com/sloth/aero-clients/sparta"
+	"aerofs.com/sloth/aero_clients/lipwig"
+	"aerofs.com/sloth/aero_clients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"

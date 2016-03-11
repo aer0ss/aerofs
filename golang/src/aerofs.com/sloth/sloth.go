@@ -3,9 +3,9 @@ package main
 import (
 	"aerofs.com/service"
 	"aerofs.com/service/mysql"
-	"aerofs.com/sloth/aero-clients/lipwig"
-	"aerofs.com/sloth/aero-clients/polaris"
-	"aerofs.com/sloth/aero-clients/sparta"
+	"aerofs.com/sloth/aero_clients/lipwig"
+	"aerofs.com/sloth/aero_clients/polaris"
+	"aerofs.com/sloth/aero_clients/sparta"
 	"aerofs.com/sloth/auth"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"

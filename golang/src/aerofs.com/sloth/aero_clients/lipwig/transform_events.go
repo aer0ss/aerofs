@@ -1,7 +1,7 @@
 package lipwig
 
 import (
-	"aerofs.com/sloth/aero-clients/polaris"
+	"aerofs.com/sloth/aero_clients/polaris"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/util/asynccache"
