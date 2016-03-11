@@ -21,7 +21,7 @@ public class LocalTestDatabaseConfigurator
         String db = params.getMySQLDatabaseName();
 
         PoolProperties p = new PoolProperties();
-        p.setUrl("jdbc:mysql://" + params.getMySQLHost() + "/" + db);
+        p.setUrl("jdbc:mysql://" + params.getMySQLHost());
         p.setUsername(params.getMySQLUser());
         p.setPassword(params.getMySQLPass());
         p.setDriverClassName("com.mysql.jdbc.Driver");
