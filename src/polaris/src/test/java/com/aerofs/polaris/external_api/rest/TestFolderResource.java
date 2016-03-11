@@ -9,6 +9,8 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.rest.api.CommonMetadata;
 import com.aerofs.rest.api.Error;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -1092,4 +1094,20 @@ public class TestFolderResource extends AbstractRestTest
                 .delete(getApiFoldersURL() + new RestObject(rootSID, folder).toStringFormal());
     }
 
+    @Test
+    public void shouldGetCORSHeadersInReponse() throws Exception
+    {
+        PolarisHelpers.newFolder(AUTHENTICATED, rootSID, "folder1");
+
+        givenAccess()
+        .expect()
+                .statusCode(200)
+                .header(Names.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                // TODO(AS): This checks if this header is not null. Since its added in the CORS
+                // filter, I believe it is a sufficient check. However, we are not checking the exact
+                // header value.
+                .header(Names.ACCESS_CONTROL_EXPOSE_HEADERS, notNullValue(String.class))
+        .when()
+                .get(getApiFoldersURL() + rootSID.toStringFormal());
+    }
 }

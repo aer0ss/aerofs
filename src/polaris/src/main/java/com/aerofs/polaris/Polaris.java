@@ -27,6 +27,7 @@ import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.external_api.exception_providers.ParamExceptionMapper;
 import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
+import com.aerofs.polaris.external_api.CORSFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionProvider;
 import com.aerofs.polaris.logical.*;
@@ -160,6 +161,8 @@ public class Polaris extends Service<PolarisConfiguration> {
 
         environment.addServiceProvider(VersionFilterDynamicFeature.class);
         environment.addServiceProvider(new VersionProvider());
+
+        environment.addServiceProvider(CORSFilterDynamicFeature.class);
 
         // register root resources
         environment.addResource(BatchResource.class);
