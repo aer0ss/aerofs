@@ -4,33 +4,25 @@
 
 package com.aerofs.servlets.lib.db;
 
-import org.apache.tomcat.jdbc.pool.DataSource;
-import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.flywaydb.core.Flyway;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class LocalTestDatabaseConfigurator
 {
-    public static void resetDB(DatabaseParameters params)
-            throws SQLException
-    {
-        String db = params.getMySQLDatabaseName();
-
-        PoolProperties p = new PoolProperties();
-        p.setUrl("jdbc:mysql://" + params.getMySQLHost());
-        p.setUsername(params.getMySQLUser());
-        p.setPassword(params.getMySQLPass());
-        p.setDriverClassName("com.mysql.jdbc.Driver");
-
-        Connection c = new DataSource(p).getConnection();
+    public static void resetDB(DatabaseParameters params) throws SQLException {
+        try {
+            Class.forName("com.mysql.jdbc.Driver").asSubclass(Driver.class);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        Connection c = DriverManager.getConnection("jdbc:mysql://" + params.getMySQLHost(),
+                params.getMySQLUser(),
+                params.getMySQLPass());
         c.setAutoCommit(true);
         try (Statement s = c.createStatement()) {
-            s.executeUpdate("drop database if exists " + db);
-            s.executeUpdate("create database " + db);
+            s.executeUpdate("drop database if exists " + params.getMySQLDatabaseName());
+            s.executeUpdate("create database " + params.getMySQLDatabaseName());
         }
         c.close();
     }
@@ -41,7 +33,7 @@ public class LocalTestDatabaseConfigurator
      * TODO: in-memory db would be nice...
      */
     public static void initializeLocalDatabase(DatabaseParameters params)
-            throws SQLException, ClassNotFoundException, InterruptedException, IOException {
+            throws SQLException {
         Flyway flyway = new Flyway();
         flyway.setDataSource("jdbc:mysql://" + params.getMySQLHost() + "/" + params.getMySQLDatabaseName(),
                 params.getMySQLUser(), params.getMySQLPass());
