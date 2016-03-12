@@ -7,14 +7,17 @@ package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.ids.*;
+import com.aerofs.ids.DID;
+import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
+import com.aerofs.ids.UserID;
+import com.aerofs.rest.api.SFMember;
 import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.rest.api.SFMember;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
-import com.jayway.restassured.response.Response;
+
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.junit.Test;
 
@@ -23,6 +26,7 @@ import java.util.Random;
 
 import static com.jayway.restassured.RestAssured.expect;
 import static com.jayway.restassured.RestAssured.given;
+
 import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings("unchecked")
@@ -420,6 +424,24 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .statusCode(200)
                 .body("email", equalTo(user.getString()))
                 .body("permissions", hasItems("MANAGE"))
+        .when().log().everything()
+                .put(RESOURCE + "/members/{email}", sid.toStringFormal(), user.getString());
+    }
+
+    @Test
+    public void shouldUpdateMemberWhenAdminRequestsUpdate() throws Exception
+    {
+        SID sid = mkShare("Test", user.getString());
+        addUser(sid, other, Permissions.OWNER);
+
+        givenAdminAccess()
+                .contentType(ContentType.JSON)
+                .content(new SFMember(null, null, null, new String[]{"WRITE"}),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(200)
+                .body("email", equalTo(user.getString()))
+                .body("permissions", hasItems("WRITE"))
         .when().log().everything()
                 .put(RESOURCE + "/members/{email}", sid.toStringFormal(), user.getString());
     }

@@ -9,29 +9,35 @@ import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditClient.AuditableEvent;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.id.RestObject;
-import com.aerofs.ids.ExInvalidID;
-import com.aerofs.rest.auth.*;
-import com.aerofs.base.id.GroupID;
-import com.aerofs.restless.Version;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.RestObject;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
-import com.aerofs.rest.api.*;
+import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.api.Error.Type;
-import com.aerofs.oauth.Scope;
+import com.aerofs.rest.api.SFGroupMember;
+import com.aerofs.rest.api.SFMember;
+import com.aerofs.rest.api.SFPendingMember;
+import com.aerofs.rest.auth.DelegatedUserDeviceToken;
+import com.aerofs.rest.auth.IAuthToken;
+import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
+import com.aerofs.restless.Version;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.*;
+import com.aerofs.sp.server.ACLNotificationPublisher;
+import com.aerofs.sp.server.InvitationHelper;
+import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -53,19 +59,24 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
 import java.net.URI;
-import java.sql.SQLException;
-import java.util.Date;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -125,7 +136,9 @@ public class SharedFolderResource extends AbstractSpartaResource
         requirePermissionOnFolder(scope, token, sf.id());
         if (token instanceof IUserAuthToken) {
             User caller = _factUser.create(((IUserAuthToken)token).user());
-            throwIfNotAMember(sf, caller, "No such shared folder");
+            if (!caller.isAdmin()) {
+                throwIfNotAMember(sf, caller, "No such shared folder");
+            }
             return caller;
         }
         return null;
