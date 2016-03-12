@@ -6,28 +6,6 @@
 {% block content %}
     <h1>Hosted Private Cloud Servers</h1>
 
-<script type="text/javascript">
-    {# TODO (GS):
-         - better error handling than just alert()
-         - show progress indicator
-    #}
-    function remove_server(server_id) {
-        if (confirm("Are you sure that you want to remove this server?")) {
-            $.ajax({
-                url: '/hpc_servers/' + server_id,
-                type: 'DELETE',
-                headers: {"X-CSRFToken": "{{ csrf_token() }}"},
-                success: function(result) {
-                    $("#row-" + server_id).remove();
-                },
-                error: function(result) {
-                    alert("Failed! " + result);
-                }
-            });
-         }
-    }
-</script>
-
     <h4>Add server:</h4>
     <div class="row">
         <div class="col-sm-6">
@@ -61,46 +39,108 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <b> CPU:</b> {{ stats[server.id].cpu_usage_percent }} % <br>
-                    <b> Memory:</b> {{ stats[server.id].mem_usage_percent }} % <br>
-                    <b>Disk:</b> {{ stats[server.id].disk_usage_percent }} %
+                    {% if stats[server.id] %}
+                        <b> CPU:</b> {{ stats[server.id].cpu_usage_percent }} % <br>
+                        <b> Memory:</b> {{ stats[server.id].mem_usage_percent }} % <br>
+                        <b>Disk:</b> {{ stats[server.id].disk_usage_percent }} %
+                    {% else %}
+                        Not available. Please try later.
+                    {% endif %}
                 </td>
-                <td align="center">
-                        {% if status[server.id] | length == 0 %}
-                            <span class="glyphicon glyphicon-ok-sign" style="font-size:1.5em;color:#7CC952" aria-hidden="true"></span>
-                        {% else %}
-                            <div class="alert alert-danger">
-                                <a href="#" data-target="#statusModal" data-toggle="modal">
-                                    {{ status[server.id]|length }} failures
-                                </a>
-                            </div>
-                        {% endif %}
-                </td>
+                <td align="center" id="status{{server.id}}">
+                        <img src="{{ url_for('static', filename='img/ajax-loader.gif') }}"/>
                 <td align="center"><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
             </tr>
+        {% endfor %}
 
-            <div id="statusModal" class="modal fade" role="dialog">
-                <div class="modal-dialog">
+        <div id="statusModal" class="modal fade" role="dialog">
+            <div class="modal-dialog">
                 <!-- Modal content-->
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal">&times;</button>
-                            <h4 class="modal-title">Deployments status</h4>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Deployments status</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p> Issue(s) found with deployment(s):  </p>
+                        <div class="list-group" id="failureList">
                         </div>
-                        <div class="modal-body">
-                            <p> Issue(s) found with deployment(s):   </p>
-                            <div class="list-group">
-                                {% for deployment in status[server.id] %}
-                                    <a href="/hpc_deployments_status?subdomain={{ deployment }}" class="list-group-item" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample"> {{ deployment }} </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
-        {% endfor %}
+        </div>
     </table>
 {% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+
+        // This ajax function's purpose is to get the status of each server
+        $.ajax({
+            url: '/hpc_deployments_status',
+            success: function(result) {
+                status = JSON.stringify(result)
+                display_status(status)
+            },
+            error: function(result) {
+                status = result.responseText
+                display_status(status)
+            }
+        });
+
+        function display_status(status){
+            status = JSON.parse(status)
+
+            // For each server, I display the number of failures, if any.
+            for(var i in status){
+                var id = "#status" + i
+                if (status[i].length != 0){
+                    $(id).html(' <div class="alert alert-danger"><a onclick="launch_modal(`'+ status[i] +'`)">' + status[i].length + ' failures  </a> </div>')
+                }
+                else{
+                    $(id).html('<span class="glyphicon glyphicon-ok-sign" style="font-size:1.5em;color:#7CC952" aria-hidden="true"></span>')
+                }
+            }
+        }
+    });
+
+    {# TODO (GS):
+         - better error handling than just alert()
+         - show progress indicator
+    #}
+
+    function remove_server(server_id) {
+        if (confirm("Are you sure that you want to remove this server?")) {
+            $.ajax({
+                url: '/hpc_servers/' + server_id,
+                type: 'DELETE',
+                headers: {"X-CSRFToken": "{{ csrf_token() }}"},
+                success: function(result) {
+                    $("#row-" + server_id).remove();
+                },
+                error: function(result) {
+                    alert("Failed! " + result);
+                }
+            });
+         }
+    }
+
+    function launch_modal(failure_list) {
+        $('#statusModal').modal('toggle')
+        failure_list = failure_list.split(",")
+
+        //Initialization
+        $('#failureList').html('')
+
+        // List of deployments that are failing
+        for(i=0; i < failure_list.length; i++){
+            $('#failureList').append('<a href="/hpc_deployments_status?subdomain='+failure_list[i]+'" class="list-group-item">'+ failure_list[i] +' </a>')
+        }
+    }
+</script>
+{% endblock %}
+

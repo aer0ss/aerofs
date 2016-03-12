@@ -472,21 +472,19 @@ def hpc_servers():
         db.session.commit()
 
     servers = models.HPCServer.query.all()
-    deployments_status_by_server = {}
     server_sys_stats = {}
 
     for server in servers:
-        # Getting the status of the all deployments in server
-        deployments_status_by_server[server.id] = _server_deployment_status(server.id)
-
         # Getting the system statistics of the server
-        server_sys_stats[server.id] = _get_server_sys_stats(server.docker_url)
+        try:
+            server_sys_stats[server.id] = _get_server_sys_stats(server.docker_url)
+        except requests.ConnectionError:
+            server_sys_stats[server.id] = None
 
     return render_template('hpc_servers.html',
                            servers=servers,
                            form=form,
-                           stats=server_sys_stats,
-                           status=deployments_status_by_server)
+                           stats=server_sys_stats)
 
 
 @blueprint.route("/hpc_servers/<int:server_id>", methods=["DELETE"])
@@ -507,13 +505,22 @@ def hpc_deployments_status():
         return jsonify(subdomain_status)
 
     servers = models.HPCServer.query.all()
+    deployments_status_by_server = {}
+    # if one of the deployment is down, the status_code will be set to 500
+    status_code = 200
 
     for server in servers:
-        if _server_deployment_status(server.id):
-            return Response(status=500)
+        problematic_deployments = _get_problematic_deployments(server.id)
+        if problematic_deployments:
+            deployments_status_by_server[server.id] = problematic_deployments
+            status_code = 500
+        else:
+            deployments_status_by_server[server.id] = []
 
-    # If we have exited the previous loop, it means that all the servers are up
-    return Response(status=200)
+    response = jsonify(deployments_status_by_server)
+    response.status_code = status_code
+    return response
+
 
 
 # This function returns a 200 if all hpc servers's system stats(RAM,CPU, disk)
@@ -550,15 +557,20 @@ def hpc_server_sys_stats():
 # This function gives the status of a subdomain
 def _subdomain_deployment_status(subdomain):
     # Getting the status of the each part of a deployment
-    session = new_authed_session(subdomain)
-    r = session.get('/admin/json-status')
-    subdomain_status = r.json()
+    try:
+        session = new_authed_session(subdomain)
+        r = session.get('/admin/json-status')
+        subdomain_status = r.json()
+    except requests.exceptions.ConnectionError:
+        message = 'Connection error: Max retries exceeded with url: /admin/login'
+        subdomain_status = {'statuses': [{'is_healthy': False,
+                                          'message': message}]}
     return subdomain_status
 
 
 # This function returns a list that is empty if all deployments of the server
 # are up. If not, the list contains the name of the deployments that are down.
-def _server_deployment_status(server_id):
+def _get_problematic_deployments(server_id):
     # we get the status only of the deployments that are in the server which id
     # is given as a parameter
     deployments_list = models.HPCDeployment.query.filter(
