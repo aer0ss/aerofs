@@ -60,7 +60,7 @@ public class AeroOAuthAuthenticator implements Authenticator
             final AuthenticatedPrincipal principal = response == null ? null : response.principal;
             if (principal != null) {
                 AeroOAuthPrincipal ouathPrincipal =
-                        new AeroOAuthPrincipal(principal.getIssuingUserID(),
+                        new AeroOAuthPrincipal(principal.getEffectiveUserID(),
                                 principal.getName(), response.mdid, response.audience, response.scopes);
                 return new AuthenticationResult(AuthenticationResult.Status.SUCCEEDED,
                         new AeroSecurityContext(ouathPrincipal, Roles.USER, AUTHENTICATION_SCHEME));
