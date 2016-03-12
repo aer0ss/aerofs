@@ -2,9 +2,11 @@ package com.aerofs.auth.server.cert;
 
 import com.aerofs.auth.server.AeroOAuthPrincipal;
 import com.aerofs.auth.server.Roles;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.baseline.auth.AuthenticationException;
 import com.aerofs.baseline.auth.AuthenticationResult;
 import com.aerofs.ids.MDID;
+import com.aerofs.ids.UserID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
@@ -29,7 +31,8 @@ public final class TestAeroOAuthAuthenticator
     @Test
     public void shouldAuthenticateWithValidToken() throws Exception
     {
-        AuthenticatedPrincipal testPrincipal = new AuthenticatedPrincipal("batman@gotham.city");
+        AuthenticatedPrincipal testPrincipal = new AuthenticatedPrincipal("batman@gotham.city",
+                UserID.fromExternal("batman@gotham.city"), OrganizationID.PRIVATE_ORGANIZATION);
         VerifyTokenResponse tokenResponse = new VerifyTokenResponse("oauth-test",
                 Sets.newSet("rwtoken"),10L, testPrincipal, DEVICE.toStringFormal());
 
