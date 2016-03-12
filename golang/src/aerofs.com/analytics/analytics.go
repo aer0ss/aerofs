@@ -32,6 +32,17 @@ var (
 	presentFlag = []byte{}
 )
 
+// global time indirection to allow testing
+type clockImpl struct{}
+
+func (c *clockImpl) Now() time.Time {
+	return time.Now()
+}
+
+var clock interface {
+	Now() time.Time
+} = &clockImpl{}
+
 // BoltKV - wrapper around bolt.DB to allow future extensibility
 type BoltKV struct {
 	*bolt.DB
@@ -93,25 +104,6 @@ func getBucketByTime(tx *bolt.Tx, bucketKey []byte, t time.Time,
 	return bucket, nil
 }
 
-func getBucketKeys(db *BoltKV, bucketKey []byte, interval time.Duration) ([][]byte, error) {
-	var keys [][]byte
-
-	// get list of old buckets to send, ignore current
-	err := db.View(func(tx *bolt.Tx) error {
-		eventBucket := tx.Bucket(bucketKey)
-		return eventBucket.ForEach(func(k, v []byte) error {
-			if bytesToTime(k) != time.Now().Truncate(interval) {
-				keys = append(keys, k)
-			}
-			return nil
-		})
-	})
-	if err != nil {
-		return nil, errors.New("Failed to read keys from db bucket: " + err.Error())
-	}
-	return keys, nil
-}
-
 // encoding helper functions
 
 func bytesToTime(b []byte) time.Time {
@@ -148,7 +140,7 @@ func readEventFromRequestBody(req *http.Request) (*Event, error) {
 }
 
 // convert database entries to Events then send
-func sendEvents(eventMap map[string][]byte, t time.Time,
+func sendGeneric(eventMap map[string][]byte, t time.Time,
 	createEvent func(k string, v []byte) (*Event, error)) error {
 
 	// create JSON events for each map entry
@@ -167,6 +159,14 @@ func sendEvents(eventMap map[string][]byte, t time.Time,
 		log.Printf("Sending %s\n", eventJSON)
 	}
 	return nil
+}
+
+func sendEvents(eventMap map[string][]byte, t time.Time) error {
+	return sendGeneric(eventMap, t, createEvent)
+}
+
+func sendUsers(eventMap map[string][]byte, t time.Time) error {
+	return sendGeneric(eventMap, t, createUserEvent)
 }
 
 // helpers for use with sendBucket
@@ -192,6 +192,25 @@ func createUserEvent(key string, value []byte) (*Event, error) {
 	return &event, nil
 }
 
+func getOldBucketKeys(db *BoltKV, bucketKey []byte, interval time.Duration) ([][]byte, error) {
+	var keys [][]byte
+
+	// get list of old buckets to send, ignore current
+	err := db.View(func(tx *bolt.Tx) error {
+		eventBucket := tx.Bucket(bucketKey)
+		return eventBucket.ForEach(func(k, v []byte) error {
+			if bytesToTime(k) != clock.Now().Truncate(interval) {
+				keys = append(keys, k)
+			}
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, errors.New("Failed to read keys from db bucket: " + err.Error())
+	}
+	return keys, nil
+}
+
 // attempts to send all events
 // parameters
 // db: a pointer to the db object
@@ -199,9 +218,9 @@ func createUserEvent(key string, value []byte) (*Event, error) {
 // interval: the proper interval to truncate to for sub-buckets
 // createEvent: a function to create Event objects from db KV pairs
 func sendBucket(db *BoltKV, bucketKey []byte, interval time.Duration,
-	createEvent func(k string, v []byte) (*Event, error)) error {
+	sendFunc func(map[string][]byte, time.Time) error) error {
 
-	keys, err := getBucketKeys(db, bucketKey, interval)
+	keys, err := getOldBucketKeys(db, bucketKey, interval)
 	if err != nil {
 		return errors.New("Failed to read keys from db bucket: " + err.Error())
 	}
@@ -213,7 +232,10 @@ func sendBucket(db *BoltKV, bucketKey []byte, interval time.Duration,
 		if err := db.View(func(tx *bolt.Tx) error {
 			bucket := tx.Bucket(bucketKey)
 			return bucket.Bucket(key).ForEach(func(k, v []byte) error {
-				eventMap[string(k)] = v
+				// copy map because you cannot use the bolt slices
+				tmp := make([]byte, len(v))
+				copy(tmp, v)
+				eventMap[string(k)] = tmp
 				return nil
 			})
 		}); err != nil {
@@ -221,7 +243,7 @@ func sendBucket(db *BoltKV, bucketKey []byte, interval time.Duration,
 		}
 
 		// then try to send
-		err := sendEvents(eventMap, bytesToTime(key), createEvent)
+		err := sendFunc(eventMap, bytesToTime(key))
 		if err != nil {
 			return errors.New("Failed to send events: " + err.Error())
 		}
@@ -242,13 +264,13 @@ func sendLoop(db *BoltKV) {
 	ticker := time.NewTicker(sendInterval)
 
 	for range ticker.C {
-		err := sendBucket(db, eventBucketKey, eventBucketInterval, createEvent)
+		err := sendBucket(db, eventBucketKey, eventBucketInterval, sendEvents)
 		if err != nil {
 			log.Println("Failed to send event bucket(s):", err)
 			continue
 		}
 
-		err = sendBucket(db, userBucketKey, userBucketInterval, createUserEvent)
+		err = sendBucket(db, userBucketKey, userBucketInterval, sendUsers)
 		if err != nil {
 			log.Println("Failed to send user bucket(s):", err)
 			continue
@@ -256,27 +278,8 @@ func sendLoop(db *BoltKV) {
 	}
 }
 
-func main() {
-	var dbFile string
-	flag.StringVar(&dbFile, "db", "/data/analytics/db", "path to database file")
-	flag.Parse()
-
-	err := os.MkdirAll(path.Dir(dbFile), 0600)
-	if err != nil {
-		log.Fatal("Failed to create data dir:", err)
-	}
-
-	// create or open database file
-	db, err := newBoltKV(dbFile, setupDB)
-	if err != nil {
-		log.Fatal("Failed to open boltdb:", err)
-	}
-	defer db.Close()
-
-	go sendLoop(db)
-
-	// handle incoming events
-	http.HandleFunc("/events", func(resp http.ResponseWriter, req *http.Request) {
+func eventHandler(db *BoltKV) http.HandlerFunc {
+	return func(resp http.ResponseWriter, req *http.Request) {
 		// parse event from request
 		event, err := readEventFromRequestBody(req)
 		if err != nil {
@@ -305,7 +308,7 @@ func main() {
 		// increment database event counter
 		err = db.Update(func(tx *bolt.Tx) error {
 			// get current event & user buckets
-			t := time.Now()
+			t := clock.Now()
 			eventBucket, err := getBucketByTime(tx, eventBucketKey, t, eventBucketInterval)
 			if err != nil {
 				return err
@@ -337,7 +340,30 @@ func main() {
 			http.Error(resp, "", http.StatusInternalServerError)
 			return
 		}
-	})
+	}
+}
+
+func main() {
+	var dbFile string
+	flag.StringVar(&dbFile, "db", "/data/analytics/db", "path to database file")
+	flag.Parse()
+
+	err := os.MkdirAll(path.Dir(dbFile), 0600)
+	if err != nil {
+		log.Fatal("Failed to create data dir:", err)
+	}
+
+	// create or open database file
+	db, err := newBoltKV(dbFile, setupDB)
+	if err != nil {
+		log.Fatal("Failed to open boltdb:", err)
+	}
+	defer db.Close()
+
+	go sendLoop(db)
+
+	// handle incoming events
+	http.HandleFunc("/events", eventHandler(db))
 
 	err = http.ListenAndServe(":9400", nil)
 	if err != nil {
