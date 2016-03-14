@@ -232,11 +232,11 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
             if ((_state & STOPPED) != 0) {
                 l.info("{} stopped", _name);
             } else if ((_state & INFLIGHT) != 0) {
-                l.info("{} delayed resched {}", _name, _state);
+                l.debug("{} delayed resched {}", _name, _state);
                 _state |= SCHEDULED;
             } else if (_state == SCHEDULED) {
                 if (_timeout > 0) {
-                    l.info("{} fast resched {}", _name, _delay);
+                    l.debug("{} fast resched {}", _name, _delay);
                     _delayed.remove(this);
                     _timeout = 0;
                     activate_();
@@ -245,7 +245,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
                 }
             } else {
                 checkState(_state == IDLE);
-                l.info("{} imm sched", _name);
+                l.debug("{} imm sched", _name);
                 _state = SCHEDULED;
                 activate_();
             }
