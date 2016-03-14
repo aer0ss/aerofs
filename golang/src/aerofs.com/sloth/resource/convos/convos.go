@@ -204,34 +204,29 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil || !dao.UserExists(tx, uid) {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo or convo is public
 	if !convo.IsPublic && !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 	// exit early if the user is already in the convo
 	if convo.HasMember(uid) {
-		tx.Rollback()
 		return
 	}
 	dao.InsertMember(tx, cid, uid)
 	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
-	var targets []string
-	if !convo.IsPublic {
-		convo.AddMember(uid) // ensure newly-added uid is in the list
-		targets = convo.Members
-	}
-	broadcast.SendConvoEvent(ctx.broadcaster, cid, targets)
-	broadcast.SendMessageEvent(ctx.broadcaster, cid, targets)
+	convo.AddMember(uid) // ensure newly-added uid is in the list
+	broadcastConvo(ctx.broadcaster, convo)
+	broadcastMessage(ctx.broadcaster, convo)
 }
 
 func (ctx *context) removeMember(request *restful.Request, response *restful.Response) {
@@ -240,33 +235,28 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil || !dao.UserExists(tx, uid) {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo or convo is public
 	if !convo.IsPublic && !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 	// exit early if the user is not in the convo
 	if !convo.HasMember(uid) {
-		tx.Rollback()
 		return
 	}
 	dao.RemoveMember(tx, cid, uid)
 	dao.InsertMemberRemovedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
-	var targets []string
-	if !convo.IsPublic {
-		targets = convo.Members
-	}
-	broadcast.SendConvoEvent(ctx.broadcaster, cid, targets)
-	broadcast.SendMessageEvent(ctx.broadcaster, cid, targets)
+	broadcastConvo(ctx.broadcaster, convo)
+	broadcastMessage(ctx.broadcaster, convo)
 }
 
 func (ctx *context) getMessages(request *restful.Request, response *restful.Response) {
@@ -274,16 +264,16 @@ func (ctx *context) getMessages(request *restful.Request, response *restful.Resp
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo or convo is public
 	if !convo.IsPublic && !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 	messages := dao.GetMessages(tx, cid)
@@ -312,17 +302,17 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	callerUser := dao.GetUser(tx, caller, ctx.lastOnlineTimes)
 	if convo == nil {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo
 	if !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 
@@ -350,7 +340,7 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 
 	dao.CommitOrPanic(tx)
 	response.WriteEntity(message)
-	broadcast.SendMessageEvent(ctx.broadcaster, cid, convo.Members)
+	broadcastMessage(ctx.broadcaster, convo)
 	pushRecipients := getPushRecipients(caller, convo.Members, ctx.lastOnlineTimes)
 	go ctx.pushNotifier.NotifyNewMessage(callerUser, pushRecipients)
 }
@@ -360,16 +350,16 @@ func (ctx *context) getReceipts(request *restful.Request, response *restful.Resp
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo or convo is public
 	if !convo.IsPublic && !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 	receipts := dao.GetReceipts(tx, cid)
@@ -390,29 +380,28 @@ func (ctx *context) updateReceipt(request *restful.Request, response *restful.Re
 	}
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	// check that caller is in convo or convo is public
 	if !convo.IsPublic && !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
 	// check that the message exists in the conversation
 	if !dao.MessageExists(tx, params.MessageId, cid) {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	}
 	receipt := dao.SetReceipt(tx, caller, cid, params.MessageId)
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(receipt)
-	broadcast.SendMessageReadEvent(ctx.broadcaster, cid, convo.Members)
+	broadcastMessageRead(ctx.broadcaster, convo)
 }
 
 func getPushRecipients(caller string, members []string, lastOnlineTimes *lastOnline.Times) []string {
@@ -426,4 +415,26 @@ func getPushRecipients(caller string, members []string, lastOnlineTimes *lastOnl
 		}
 	}
 	return rs
+}
+
+func broadcastConvo(bc broadcast.Broadcaster, convo *Convo) {
+	targets := getBroadcastTargets(convo)
+	broadcast.SendConvoEvent(bc, convo.Id, targets)
+}
+
+func broadcastMessage(bc broadcast.Broadcaster, convo *Convo) {
+	targets := getBroadcastTargets(convo)
+	broadcast.SendMessageEvent(bc, convo.Id, targets)
+}
+
+func broadcastMessageRead(bc broadcast.Broadcaster, convo *Convo) {
+	targets := getBroadcastTargets(convo)
+	broadcast.SendMessageReadEvent(bc, convo.Id, targets)
+}
+
+func getBroadcastTargets(convo *Convo) []string {
+	if !convo.IsPublic {
+		return convo.Members
+	}
+	return nil
 }
