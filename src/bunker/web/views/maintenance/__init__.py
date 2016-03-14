@@ -77,7 +77,6 @@ routes = [
     'session_management',
     'link_settings',
     'json_set_require_login',
-    'onsite_log_server',
 
     'maintenance_mode',
     'license_expired',
