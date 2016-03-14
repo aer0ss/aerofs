@@ -228,6 +228,12 @@ def is_linksharing_enabled(settings):
 def is_restricted_external_sharing_enabled(settings):
     return str2bool(get_settings_nonempty(settings, 'sharing_rules.restrict_external_sharing', False))
 
+def is_user_view_enabled_nonadmin(settings):
+    return str2bool(get_settings_nonempty(settings, 'customization.enable_user_view', True))
+
+def is_group_view_enabled_nonadmin(settings):
+    return str2bool(get_settings_nonempty(settings, 'customization.enable_group_view', True))
+
 def add_routes(config, routes):
     """
     Add all the routes specified in routes to the Pyramid config. The URL path

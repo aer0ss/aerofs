@@ -1,7 +1,7 @@
 import logging
 
 import markupsafe
-from pyramid.httpexceptions import HTTPOk, HTTPBadRequest
+from pyramid.httpexceptions import HTTPOk, HTTPBadRequest, HTTPFound
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 from aerofs_sp.gen.common_pb2 import PBException
@@ -11,7 +11,8 @@ from aerofs_common.exception import ExceptionReply
 from web import util
 from web.oauth import get_privileged_bifrost_client
 from web.sp_util import exception2error
-from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_restricted_external_sharing_enabled, HTML_PARSER
+from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_user_view_enabled_nonadmin
+from web.util import is_restricted_external_sharing_enabled, HTML_PARSER
 from web.auth import is_admin
 from web.views.org_groups.org_groups_view import json_list_org_groups
 from aerofs_common.constants import PAGE_LIMIT
@@ -33,11 +34,19 @@ log = logging.getLogger(__name__)
     permission = 'user'
 )
 def org_users(request):
-    return {
-        'admin_level': ADMIN,
-        'user_level': USER,
-        'pagination_limit': PAGE_LIMIT
-    }
+    # determine if the user view should be available to non-admins
+    hide_users_nonadmin = not is_user_view_enabled_nonadmin(request.registry.settings)
+    user_not_admin = not is_admin(request)
+
+    # redirect to files if the user has nothing to do here
+    if hide_users_nonadmin and user_not_admin:
+        return HTTPFound(location=request.route_path('files'))
+    else:
+        return {
+            'admin_level': ADMIN,
+            'user_level': USER,
+            'pagination_limit': PAGE_LIMIT
+        }
 
 @view_config(
     route_name = 'json.list_org_invitees',

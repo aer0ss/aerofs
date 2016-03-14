@@ -1,8 +1,10 @@
 import logging
 from pyramid.view import view_config
-from pyramid.httpexceptions import HTTPOk
+from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
+from web.util import is_group_view_enabled_nonadmin
+from web.auth import is_admin
 from web.sp_util import exception2error
 from aerofs_common.constants import PAGE_LIMIT
 
@@ -14,16 +16,25 @@ log = logging.getLogger(__name__)
     permission = 'user'
 )
 def org_groups(request):
-    sp = util.get_rpc_stub(request)
-    reply = sp.get_org_preferences()
     settings = request.registry.settings
 
-    return {
-        'pagination_limit': PAGE_LIMIT,
-        'member_limit': int(settings.get('sp.max.membership.group', '50')),
-        'groupsyncing_enabled': settings.get('ldap.groupsyncing.enabled', False) and
-            settings.get('lib.authenticator', "").upper() == 'EXTERNAL_CREDENTIAL'
-    }
+    # determine if the groups view should be available to non-admins
+    hide_groups_nonadmin = not is_group_view_enabled_nonadmin(settings)
+    user_not_admin = not is_admin(request)
+
+    # redirect to files if the user has nothing to do here
+    if hide_groups_nonadmin and user_not_admin:
+        return HTTPFound(location=request.route_path('files'))
+    else:
+        sp = util.get_rpc_stub(request)
+        reply = sp.get_org_preferences()
+
+        return {
+            'pagination_limit': PAGE_LIMIT,
+            'member_limit': int(settings.get('sp.max.membership.group', '50')),
+            'groupsyncing_enabled': settings.get('ldap.groupsyncing.enabled', False) and
+                settings.get('lib.authenticator', "").upper() == 'EXTERNAL_CREDENTIAL'
+        }
 
 def _get_members(request, group_id):
     sp = util.get_rpc_stub(request)

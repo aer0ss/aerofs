@@ -124,6 +124,8 @@ sp.max.membership.group=150
 base.bifrost.internal.host=sparta.service
 customization.banner_text={{ customization_banner_text }}
 customization.logo={{ white_label_logo }}
+customization.enable_group_view={{ customization_enable_group_view }}
+customization.enable_user_view={{ customization_enable_user_view }}
 
 messaging.button.url.base={{ messaging_button_url_base }}
 messaging.button.url.registration={{ messaging_button_url_base }}/registration

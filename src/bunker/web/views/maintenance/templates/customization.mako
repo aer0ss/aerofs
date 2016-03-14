@@ -36,6 +36,32 @@ to your organization.</p>
 
         <hr/>
 
+        <h4>Users and Groups Web Pages</h4>
+        <p>
+            Check the boxes below to enable access to the Users and Groups web pages for users
+            without admin privileges.
+        </p>
+        <label class="checkbox">
+            <input type='checkbox' name='customization_enable_user_view'
+                   value='customization_enable_user_view'
+                   %if customization_enable_user_view:
+                       checked
+                   %endif
+            >
+            Show Users
+        </label>
+        <label class="checkbox">
+            <input type='checkbox' name='customization_enable_group_view'
+                   value='customization_enable_group_view'
+                   %if customization_enable_group_view:
+                       checked
+                   %endif
+            >
+            Show Groups
+        </label>
+
+        <hr/>
+
         <h4>White label</h4>
 
         <p>You may optionally upload a custom 144x44 logo for AeroFS. Changes will be reflected on

@@ -7,7 +7,7 @@
 <%!
     from web.auth import is_admin
     from pyramid.security import authenticated_userid
-    from web.util import str2bool
+    from web.util import str2bool, is_user_view_enabled_nonadmin, is_group_view_enabled_nonadmin
     from web.util import get_folder_invitation_count, get_days_until_license_expires
 %>
 
@@ -198,11 +198,23 @@
         <ul>
             ${render_nonadmin_links()}
         </ul>
+        ${render_my_org_for_nonadmin()}
+    </ul>
+</%def>
+
+<%def name="render_my_org_for_nonadmin()">
+    <%
+        settings    = request.registry.settings
+        show_users  = is_user_view_enabled_nonadmin(settings)
+        show_groups = is_group_view_enabled_nonadmin(settings)
+    %>
+
+    %if show_users or show_groups:
         <li class="nav-header">My organization</li>
         <ul>
-            ${render_org_links()}
+            ${render_org_links(show_users, show_groups)}
         </ul>
-    </ul>
+    %endif
 </%def>
 
 <%def name="render_navigation_for_admin()">
@@ -255,12 +267,13 @@
     % endfor
 </%def>
 
-<%def name="render_org_links()">
+<%def name="render_org_links(show_users=True, show_groups=True)">
     <%
-        links = [
-            ('org_users', _("Users")),
-            ('org_groups', _("Groups"))
-        ]
+        links = []
+        if show_users:
+            links.append(('org_users', _("Users")))
+        if show_groups:
+            links.append(('org_groups', _("Groups")))
     %>
     % for link in links:
         ${navigation.link(link)}
