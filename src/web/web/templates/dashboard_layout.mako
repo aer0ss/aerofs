@@ -303,7 +303,7 @@
                         <li><a href="https://www.aerofs.com/careers">Careers</a></li>
                         <li><a href="https://www.aerofs.com/terms">Terms</a></li>
                         <li><a href="http://support.aerofs.com">Support</a></li>
-                        <li class="pull-right">&copy; Air Computing Inc. 2015</li>
+                        <li class="pull-right">&copy; Air Computing Inc. 2016</li>
                     </ul>
                 </div>
             </div>
