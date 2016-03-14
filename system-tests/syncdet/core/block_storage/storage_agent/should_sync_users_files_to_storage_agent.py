@@ -21,7 +21,7 @@ from syncdet.actors import actor_list
 
 FILENAME = "test_" + instance_unique_string()
 CONTENT = "This is sparta"
-
+MAX_ATTEMPTS=10
 
 def storage_agent():
     API_URL = "https://{}/api/v1.2".format(case.local_actor().aero_host)
@@ -29,7 +29,8 @@ def storage_agent():
 
     token = common.get_oauth_token_for_user(actor_list()[1])
 
-    while True:
+    attempts = 0
+    while attempts < MAX_ATTEMPTS:
         r = requests.get(API_URL + "/folders/root/children",
             headers={"Authorization": "Bearer " + token},
             params={"fields": "path,children"})
@@ -37,6 +38,7 @@ def storage_agent():
         if len(r.json()['files']) > 0:
             break;
         time.sleep(param.POLLING_INTERVAL)
+        attempts += 1
 
     match = [f for f in r.json()['files'] if f['name'] == FILENAME]
     file_id = match[0]['id']

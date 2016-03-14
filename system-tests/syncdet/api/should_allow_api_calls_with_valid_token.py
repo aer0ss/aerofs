@@ -7,6 +7,9 @@ from syncdet.case import local_actor
 from lib.files import instance_unique_path
 
 
+MAX_ATTEMPTS=10
+
+
 def main():
     API_URL = "https://{}/api/v0.9".format(local_actor().aero_host)
 
@@ -31,7 +34,8 @@ def main():
 
     # list contents of root anchor
     print 'calling api...'
-    while True:
+    attempts = 0
+    while attempts < MAX_ATTEMPTS:
         r = requests.get(API_URL+"/children/", headers={"Authorization": "Bearer " + token})
         r.raise_for_status()
         print r.json()
@@ -40,6 +44,6 @@ def main():
         if any(f["name"] == filename for f in r.json()["files"]):
             break
         time.sleep(param.POLLING_INTERVAL)
-
+        attempts += 1
 
 spec = {"entries": [main]}

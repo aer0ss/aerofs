@@ -19,13 +19,14 @@ from syncdet.actors import actor_list
 SHARED_NAME = "share_" + instance_unique_string()
 FILENAME = "file_" + instance_unique_string()
 CONTENT = "This is sparta"
-
+MAX_ATTEMPTS=10
 
 def get_child_id(parent, object_name, is_child_folder=True):
     API_URL = "https://{}/api/v1.2".format(case.local_actor().aero_host)
     token = common.get_oauth_token_for_user(actor_list()[1])
 
-    while True:
+    attempts = 0
+    while attempts < MAX_ATTEMPTS :
         r = requests.get(API_URL + "/folders/{}/children".format(parent),
             headers={"Authorization": "Bearer " + token},
             params={"fields": "path,children"})
@@ -34,6 +35,7 @@ def get_child_id(parent, object_name, is_child_folder=True):
         if len(r.json()[object_type]) > 0:
             break;
         time.sleep(param.POLLING_INTERVAL)
+        attempts += 1
 
     match = [f for f in r.json()[object_type] if f['name'] == object_name]
     return match[0]['id']
@@ -49,7 +51,8 @@ def storage_agent():
     folder_id = get_child_id("root", SHARED_NAME)
     file_id = get_child_id(folder_id, FILENAME, False)
 
-    while True:
+    attempts = 0
+    while attempts < MAX_ATTEMPTS:
         r = requests.get(API_URL + "/files/" + file_id + '/content',
             headers={"Route": get_cfg().did().get_hex()},
             params={"token": token})
@@ -61,6 +64,7 @@ def storage_agent():
             continue
         else:
             r.raise_for_status()
+        attempts += 1
 
     assertEqual(str(r.text), CONTENT)
 
