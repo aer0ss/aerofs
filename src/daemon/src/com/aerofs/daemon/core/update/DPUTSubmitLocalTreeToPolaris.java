@@ -393,6 +393,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             if (t instanceof ExNoPerm) {
                 l.warn("exiting submission early of SID {} because of insufficient perms", _sid);
                 completionSignaler.release();
+                return;
             }
             failures++;
             if (failures > MAX_FAILURES) {
