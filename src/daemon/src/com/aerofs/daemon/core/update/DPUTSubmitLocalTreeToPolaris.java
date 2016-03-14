@@ -109,7 +109,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             // skip submitting transforms to stores which we can't edit
             // can't use _acl.check here because it relies on IMapSindex2SID which will not be init'ed yet
             if (allowedToPostOperationsToStore(s)) {
-                submitConversionOperationsForStore(s);
+                convertStoreCatchNoPerm(s);
             }
 
             // create necessary polaris tables for the store
@@ -133,6 +133,18 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
         }
         Permissions permissionsActual = _acl.get_(s).get(me);
         return permissionsActual != null && permissionsActual.covers(Permissions.EDITOR);
+    }
+
+    private void convertStoreCatchNoPerm(SIndex s) throws Exception {
+        try {
+            submitConversionOperationsForStore(s);
+        } catch (Exception e) {
+            if (e.getCause() instanceof ExNoPerm) {
+                l.warn("exiting submission early of sidx {} because of insufficient perms", s);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private void submitConversionOperationsForStore(SIndex s) throws Exception {
@@ -293,7 +305,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
             submit();
             completionSignaler.acquire();
             if (lastError != null) {
-                throw new Exception("persistently failed to submit conversion ops", lastError);
+                throw new Exception("persistent failure to submit conversion ops", lastError);
             }
         }
 
@@ -391,7 +403,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
         @Override
         public void onFailure_(Throwable t) {
             if (t instanceof ExNoPerm) {
-                l.warn("exiting submission early of SID {} because of insufficient perms", _sid);
+                lastError = t;
                 completionSignaler.release();
                 return;
             }
