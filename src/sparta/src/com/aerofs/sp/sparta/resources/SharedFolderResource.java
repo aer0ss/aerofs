@@ -203,16 +203,18 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         Set<UserID> affected = Sets.newHashSet();
         affected.addAll(sf.save(share.name, caller));
-        for (SFMember member : share.members) {
-            if (member.email.equals(caller.id().getString())) {
-                continue;
+        if (share.members != null && share.members.size() > 0) {
+            for (SFMember member : share.members) {
+                if (member.email.equals(caller.id().getString())) {
+                    continue;
+                }
+                User user = _factUser.create(member.email);
+                if (!user.exists()) {
+                    throw new ExNotFound("user not found: " + member.email);
+                }
+                sf.addUserWithGroup(user, null, Permissions.fromArray(member.permissions), caller);
+                affected.add(UserID.fromExternal(member.email));
             }
-            User user = _factUser.create(member.email);
-            if (!user.exists()) {
-                throw new ExNotFound("user not found: " + member.email);
-            }
-            sf.addUserWithGroup(user, null, Permissions.fromArray(member.permissions), caller);
-            affected.add(UserID.fromExternal(member.email));
         }
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
         if (share.isLocked != null && share.isLocked) sf.setLocked();
