@@ -146,19 +146,13 @@ public class ConversionResource {
                             if (folderToShare != null && folderToShare.equals(SID.folderOID2convertedStoreSID(new OID(child)))) {
                                 LOGGER.info("restoring child {} as anchor to be shared", child);
                                 //restore a deleted anchor if necessary so we can share it after
-                                byte [] oldName = dao.children.getChildName(currentParent, child);
-                                UniqueID conflict = dao.children.getActiveChildNamed(currentParent, oldName);
-                                if (notNullAndNotEqual(conflict, child)) {
-                                    // move a conflict out of the way of the restore
-                                    objectStore.performTransform(dao, token, principal.getDevice(), currentParent, new MoveChild(conflict, currentParent, nonConflictingName(dao, currentParent, conflict, oldName)));
-                                }
                                 objectStore.performTransform(dao, token, principal.getDevice(), child, new Restore());
-                                performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
+                                performInsert(dao, token, principal, oid, currentParent, child, ic);
                             } else {
                                 LOGGER.info("discarding op {} on deleted/migrated {}", ic, child);
                             }
                         } else {
-                            result = performInsert(dao, conversion, token, principal, oid, currentParent, child, ic);
+                            result = performInsert(dao, token, principal, oid, currentParent, child, ic);
                         }
                         saveVersion(conversion, child, Conversion.COMPONENT_META, ic.versions);
                     }
@@ -211,24 +205,11 @@ public class ConversionResource {
         });
     }
 
-    @Nullable private OperationResult performInsert(DAO dao, Conversion conversion, ObjectStore.AccessToken token, AeroUserDevicePrincipal principal, UniqueID oid, @Nullable UniqueID currentParent, UniqueID child, InsertChild ic)
+    @Nullable private OperationResult performInsert(DAO dao, ObjectStore.AccessToken token, AeroUserDevicePrincipal principal, UniqueID oid, @Nullable UniqueID currentParent, UniqueID child, InsertChild ic)
     {
         LOGGER.debug("dominating op {} on child {} under {}", ic, child, oid);
-        Operation op;
-        UniqueID conflict = dao.children.getActiveChildNamed(oid, ic.childName);
-        if (conflict != null) {
-            Preconditions.checkState(conflict.equals(child) || !ic.aliases.contains(conflict), "incorrectly resolved aliases leading to avoidable conflict with %s and %s", child, conflict);
-            op = makeOperationWithConflict(dao, conversion, token, principal.getDevice(), oid, currentParent, child, conflict, ic);
-        } else {
-            op = makeOperation(oid, currentParent, child, ic);
-        }
-
-        if (op != null) {
-            LOGGER.debug("performing op {} on {}", op, currentParent != null ? currentParent : oid);
-            return objectStore.performTransform(dao, token, principal.getDevice(), currentParent != null ? currentParent : oid, op);
-        } else {
-            return null;
-        }
+        Operation op = makeOperation(oid, currentParent, child, ic);
+        return objectStore.performTransform(dao, token, principal.getDevice(), currentParent != null ? currentParent : oid, op);
     }
 
     private List<TransformBatchOperation> shareFolder(DAO dao, Conversion conversion, UniqueID rootStore, UniqueID folder, UniqueID store, UniqueID destination, byte[] name)
@@ -331,30 +312,6 @@ public class ConversionResource {
         }
     }
 
-    // returns if the operation should be executed or not, will move a name conflicting object out of the way if necessary
-    @Nullable private Operation makeOperationWithConflict(DAO dao, Conversion conversion, ObjectStore.AccessToken token, DID device, UniqueID parent, @Nullable UniqueID currentParent, UniqueID child, UniqueID conflict, InsertChild ic)
-    {
-        assert ic.versions != null;
-        if (!conflict.equals(child)) {
-            // N.B. cannot just drop operations making a folder because there could be further operations under that folder which will persistently fail
-            // instead, we move them into the tree - meaning one of the objects gets renamed
-            if (newVersionDominates(getDistributedVersion(conflict, Conversion.COMPONENT_META, conversion), ic.versions)) {
-                LOGGER.info("moving name conflict {} with new object {} from under parent {}", conflict, child, parent);
-                objectStore.performTransform(dao, token, device, parent, new MoveChild(conflict, parent, nonConflictingName(dao, parent, conflict, ic.childName)));
-                return makeOperation(parent, currentParent, child, ic);
-            } else {
-                if (currentParent != null) {
-                    return new MoveChild(child, parent, nonConflictingName(dao, parent, child, ic.childName));
-                } else {
-                    return new InsertChild(child, ic.childObjectType, nonConflictingName(dao, parent, child, ic.childName), null, null, null);
-                }
-            }
-        } else {
-            // inserting a child where it already is with the same name, would be a no-op
-            return null;
-        }
-    }
-
     private boolean newVersionDominates(List<Conversion.Tick> oldVersion, Map<DID, Long> newVersion)
     {
         for (Conversion.Tick t : oldVersion) {
@@ -398,48 +355,6 @@ public class ConversionResource {
     private static boolean notNullAndNotEqual(@Nullable Object match, Object target)
     {
         return match != null && !match.equals(target);
-    }
-
-    // FIXME (RD) this method is taken from com.aerofs.lib.Util.java
-    // since the scope of usage was small, i didn't think it was worth splitting lib into a separate module - clean up the dependency if this method is used more
-    private static final Pattern NEXT_NAME_PATTERN =
-            Pattern.compile("(.*)\\(([0-9]+)\\)$");
-
-    private byte[] nonConflictingName(DAO dao, UniqueID parent, UniqueID child, byte[] filename)
-    {
-        Charset UTF8 = Charset.forName("UTF-8");
-        String fn = new String(filename, UTF8);
-        int dot = fn.lastIndexOf(".");
-        String extension = dot <= 0 ? "" : fn.substring(dot);
-        String base = fn.substring(0, fn.length() - extension.length());
-
-        // find the pattern of "(N)" at the end of the main part
-        Matcher m = NEXT_NAME_PATTERN.matcher(base);
-        String prefix;
-        int num;
-        if (m.find()) {
-            prefix = m.group(1);
-            try {
-                num = Integer.valueOf(m.group(2)) + 1;
-            } catch (NumberFormatException e) {
-                // If the number can't be parsed because it's too large, it's probably not us who
-                // generated that number. In this case, add a new number after it.
-                prefix = base + " ";
-                num = 2;
-            }
-        } else {
-            prefix = base + " ";
-            num = 2;
-        }
-
-        String newName = prefix + '(' + num + ')' + extension;
-        UniqueID conflict = dao.children.getActiveChildNamed(parent, newName.getBytes(UTF8));
-        while (conflict != null && !conflict.equals(child)) {
-            num++;
-            newName = prefix + '(' + num + ')' + extension;
-            conflict = dao.children.getActiveChildNamed(parent, newName.getBytes(UTF8));
-        }
-        return newName.getBytes(UTF8);
     }
 
     private List<Conversion.Tick> getDistributedVersion(UniqueID oid, int component, Conversion conversion) {

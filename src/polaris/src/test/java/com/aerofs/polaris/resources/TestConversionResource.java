@@ -15,7 +15,6 @@ import com.aerofs.polaris.api.operation.RemoveChild;
 import com.aerofs.polaris.api.operation.Transforms;
 import com.aerofs.polaris.api.operation.UpdateContent;
 import com.aerofs.polaris.api.types.ObjectType;
-import com.aerofs.polaris.api.types.Transform;
 import com.aerofs.polaris.api.types.TransformType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -211,7 +210,7 @@ public class TestConversionResource {
     }
 
     @Test
-    public void shouldRenameOnNameConflictsWithDominatingVersion() throws Exception
+    public void shouldErrorOnNameConflicts() throws Exception
     {
         SID store = SID.generate();
         OID child = OID.generate(), conflict = OID.generate();
@@ -221,52 +220,19 @@ public class TestConversionResource {
         version.put(device2, 2L);
         TransformBatch batch = new TransformBatch(Lists.newArrayList(
                 new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "object", null, version, null)),
-                // same name under same parent, renames the first object
+                // same name under same parent, cause name conflict
                 new TransformBatchOperation(store, insertChild(conflict, ObjectType.FOLDER, "object", null, version, null))));
 
-        submitBatchSuccessfully(store, batch);
+        TransformBatchResult r = submitBatch(store, batch);
+        assertThat("first operation failed", r.results.get(0).successful);
+        assertThat("second op needs name conflict", r.results.get(1).error.errorCode == PolarisError.NAME_CONFLICT);
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        assertThat(t.maxTransformCount, equalTo(3L));
+        assertThat(t.maxTransformCount, equalTo(1L));
         assertThat(t.transforms.get(0).getOid(), equalTo(store));
         assertThat(t.transforms.get(0).getChild(), equalTo(child));
         assertThat(new String(t.transforms.get(0).getChildName()), equalTo("object"));
-        assertThat(t.transforms.get(1).getOid(), equalTo(store));
-        assertThat(t.transforms.get(1).getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(t.transforms.get(0).getChild(), equalTo(child));
-        assertThat(new String(t.transforms.get(1).getChildName()), not("object"));
-        assertThat(t.transforms.get(2).getOid(), equalTo(store));
-        assertThat(t.transforms.get(2).getChild(), equalTo(conflict));
-        assertThat(new String(t.transforms.get(2).getChildName()), equalTo("object"));
     }
 
-    @Test
-    public void shouldRenameIncomingOnNameConflictsWithNonDominatingVersion() throws Exception
-    {
-        SID store = SID.generate();
-        OID child = OID.generate(), conflict1 = OID.generate(), conflict2 = OID.generate();
-        Map<DID, Long> version = Maps.newHashMap(), conflictVersion = Maps.newHashMap(), nonDomination = Maps.newHashMap();
-        DID device1 = DID.generate(), device2 = DID.generate();
-        version.put(device1, 1L);
-        version.put(device2, 2L);
-        conflictVersion.put(device1, 2L);
-        conflictVersion.put(device2, 1L);
-        TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(child, ObjectType.FOLDER, "object", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, conflictVersion, null)),
-                new TransformBatchOperation(conflict1, insertChild(OID.generate(), ObjectType.FOLDER, "nestedFolder", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, nonDomination, null)),
-                new TransformBatchOperation(conflict2, insertChild(OID.generate(), ObjectType.FOLDER, "nestedFolder", null, version, null))));
-
-        submitBatchSuccessfully(store, batch);
-        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        assertThat(t.maxTransformCount, equalTo(5L));
-        assertThat(t.transforms.get(1).getOid(), equalTo(store));
-        assertThat(t.transforms.get(1).getChild(), equalTo(conflict1));
-        assertThat(new String(t.transforms.get(1).getChildName()), not("object"));
-        assertThat(t.transforms.get(3).getOid(), equalTo(store));
-        assertThat(t.transforms.get(3).getChild(), equalTo(conflict2));
-        assertThat(new String(t.transforms.get(3).getChildName()), not("object"));
-    }
 
     @Test
     public void shouldCreateMovesOnLaterInserts() throws Exception
@@ -603,167 +569,6 @@ public class TestConversionResource {
     }
 
     @Test
-    public void shouldHandleUpdatesToRenamedObjects() throws Exception
-    {
-        SID store = SID.generate();
-        OID original = OID.generate(), conflict1 = OID.generate(), c1child = OID.generate(), conflict2 = OID.generate(), c2child = OID.generate();
-        Map<DID, Long> version = Maps.newHashMap(), conflictVersion = Maps.newHashMap(), dominating = Maps.newHashMap();
-        DID device1 = DID.generate(), device2 = DID.generate();
-        version.put(device1, 1L);
-        version.put(device2, 2L);
-        conflictVersion.put(device1, 2L);
-        conflictVersion.put(device2, 1L);
-        // dominates both versions
-        dominating.put(device1, 3L);
-        dominating.put(device2, 3l);
-
-        TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(original, ObjectType.FOLDER, "object", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, conflictVersion, null)),
-                new TransformBatchOperation(conflict1, insertChild(c1child, ObjectType.FOLDER, "child", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, conflictVersion, null)),
-                new TransformBatchOperation(conflict2, insertChild(c2child, ObjectType.FOLDER, "child", null, version, null))));
-        submitBatchSuccessfully(store, batch);
-
-        batch = new TransformBatch(Lists.newArrayList(
-                // later insertion of the conflicted object in a way that doesn't lead to conflicts or objects getting renamed
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "othername", null, conflictVersion, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, dominating, null))));
-        submitBatchSuccessfully(store, batch);
-
-        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        // N.B. what really matters here is that conflict1 ends up as othername, and conflict2 as object - along with their children
-        assertThat(t.maxTransformCount, equalTo(8L));
-        assertThat(t.transforms.get(2).getTransformType(), equalTo(TransformType.INSERT_CHILD));
-        assertThat(t.transforms.get(2).getChild(), equalTo(c1child));
-        assertThat(t.transforms.get(4).getTransformType(), equalTo(TransformType.INSERT_CHILD));
-        assertThat(t.transforms.get(4).getChild(), equalTo(c2child));
-
-        assertThat(t.transforms.get(5).getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(t.transforms.get(5).getChild(), equalTo(conflict1));
-        assertThat(new String(t.transforms.get(5).getChildName()), equalTo("othername"));
-        assertThat(t.transforms.get(6).getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(t.transforms.get(6).getChild(), equalTo(original));
-        assertThat(new String(t.transforms.get(6).getChildName()), equalTo("object (2)"));
-        assertThat(t.transforms.get(7).getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(t.transforms.get(7).getChild(), equalTo(conflict2));
-        assertThat(new String(t.transforms.get(7).getChildName()), equalTo("object"));
-    }
-
-    @Test
-    public void canMoveExistingObjectIntoNameConflict() throws Exception
-    {
-        SID store = SID.generate();
-        OID conflict1 = OID.generate(), conflict2 = OID.generate();
-        Map<DID, Long> version = Maps.newHashMap(), lowerVersion = Maps.newHashMap();
-        DID device = DID.generate();
-        lowerVersion.put(device, 1L);
-        version.put(device, 2L);
-
-        TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "other name", null, lowerVersion, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, lowerVersion, null))));
-        submitBatchSuccessfully(store, batch);
-
-        // make sure the object can still be operated on
-        batch = new TransformBatch(Lists.newArrayList(
-            new TransformBatchOperation(conflict2, insertChild(OID.generate(), ObjectType.FILE, "file", null, version, null)),
-            new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "new name", null, version, null))));
-        submitBatchSuccessfully(store, batch);
-    }
-
-    @Test
-    public void canHandleCascadingNameConflicts() throws Exception
-    {
-        SID store = SID.generate();
-        OID conflict1 = OID.generate(), conflict2 = OID.generate(), conflict3 = OID.generate();
-        Map<DID, Long> version = Maps.newHashMap();
-        DID device = DID.generate();
-        version.put(device, 1L);
-
-        TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object (2)", null, version, null)),
-                new TransformBatchOperation(store, insertChild(conflict3, ObjectType.FOLDER, "object", null, version, null))));
-        submitBatchSuccessfully(store, batch);
-
-        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
-        assertThat(t.transforms.size(), equalTo(4));
-
-        assertThat(t.transforms.get(2).getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(t.transforms.get(2).getChild(), equalTo(conflict1));
-        assertThat(new String(t.transforms.get(2).getChildName()), equalTo("object (3)"));
-
-        assertThat(t.transforms.get(3).getTransformType(), equalTo(TransformType.INSERT_CHILD));
-        assertThat(t.transforms.get(3).getChild(), equalTo(conflict3));
-        assertThat(new String(t.transforms.get(3).getChildName()), equalTo("object"));
-    }
-
-    @Test
-    public void canHandleSuccessiveDominationsOnNameConflict() throws Exception
-    {
-        SID store = SID.generate();
-        OID conflict1 = OID.generate(), conflict2 = OID.generate(), conflict3 = OID.generate();
-        Map<DID, Long> version1 = Maps.newHashMap(), version2 = Maps.newHashMap(), version3 = Maps.newHashMap();
-        DID device = DID.generate();
-        version1.put(device, 1L);
-        version2.put(device, 2L);
-        version3.put(device, 3L);
-
-        TransformBatch batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, version1, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, version2, null)),
-                new TransformBatchOperation(store, insertChild(conflict3, ObjectType.FOLDER, "object", null, version3, null))));
-        submitBatchSuccessfully(store, batch);
-
-        version1.put(device, 4L);
-        version2.put(device, 5L);
-        // same version as before
-        version3.put(device, 3L);
-        batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object", null, version1, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object", null, version2, null)),
-                new TransformBatchOperation(store, insertChild(conflict3, ObjectType.FOLDER, "object", null, version3, null))));
-        submitBatchSuccessfully(store, batch);
-
-        version1.put(device, 6L);
-        version2.put(device, 7L);
-        // same version as before
-        version3.put(device, 3L);
-        batch = new TransformBatch(Lists.newArrayList(
-                new TransformBatchOperation(store, insertChild(conflict1, ObjectType.FOLDER, "object (2)", null, version1, null)),
-                new TransformBatchOperation(store, insertChild(conflict2, ObjectType.FOLDER, "object (3)", null, version2, null)),
-                new TransformBatchOperation(store, insertChild(conflict3, ObjectType.FOLDER, "object", null, version3, null))));
-        submitBatchSuccessfully(store, batch);
-
-        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 5L, 10);
-        assertThat(t.maxTransformCount, equalTo(13L));
-
-        Transform c1 = null, c2 = null, c3 = null;
-
-        for (Transform transform : t.transforms) {
-            if (transform.getChild().equals(conflict1)) {
-                c1 = transform;
-            } else if (transform.getChild().equals(conflict2)) {
-                c2 = transform;
-            } else if (transform.getChild().equals(conflict3)) {
-                c3 = transform;
-            }
-        }
-
-        assertThat(c1, notNullValue());
-        assertThat(c2, notNullValue());
-        assertThat(c3, notNullValue());
-        assertThat(c1.getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(new String(c1.getChildName()), equalTo("object (2)"));
-        assertThat(c2.getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(new String(c2.getChildName()), equalTo("object (3)"));
-        assertThat(c3.getTransformType(), equalTo(TransformType.RENAME_CHILD));
-        assertThat(new String(c3.getChildName()), equalTo("object"));
-    }
-
-    @Test
     public void shouldAliasFolderToSharedFolder() throws Exception
     {
         SID rootStore = SID.rootSID(USERID), sharedFolder = SID.generate();
@@ -1007,11 +812,7 @@ public class TestConversionResource {
                 new TransformBatchOperation(rootStore, insertChild(anchor, ObjectType.FOLDER, "folder", null, version, null)),
                 new TransformBatchOperation(anchor, insertChild(child, ObjectType.FILE, "file", null, version, null))));
         submitBatchSuccessfully(rootStore, batch);
-
         PolarisHelpers.removeFileOrFolder(AUTHENTICATED, rootStore, anchor);
-        // cause a name conflict
-        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
-        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared folder");
 
         List<TransformBatchOperation> ops = Lists.newArrayList(
                 new TransformBatchOperation(rootStore, insertChild(store, ObjectType.STORE, "shared folder", null, emptyVersion, null)),
@@ -1028,9 +829,9 @@ public class TestConversionResource {
         submitOpsSuccessFullyWithin(store, ops, 10);
 
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
-        assertThat(t.transforms.size(), equalTo(10));
-        assertThat(t.transforms.get(9).getTransformType(), equalTo(TransformType.SHARE));
-        assertThat(t.transforms.get(9).getOid(), equalTo(anchor));
+        assertThat(t.transforms.size(), equalTo(6));
+        assertThat(t.transforms.get(5).getTransformType(), equalTo(TransformType.SHARE));
+        assertThat(t.transforms.get(5).getOid(), equalTo(anchor));
 
         t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
         assertThat(t.transforms.size(), equalTo(4));
@@ -1048,11 +849,7 @@ public class TestConversionResource {
                 new TransformBatchOperation(rootStore, insertChild(anchor, ObjectType.FOLDER, "folder", null, version, null)),
                 new TransformBatchOperation(anchor, insertChild(child, ObjectType.FILE, "file", null, version, null))));
         submitBatchSuccessfully(rootStore, batch);
-
         PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.moveFileOrFolder(AUTHENTICATED, rootStore, store2, anchor, "migrated").jobID, 10);
-        // cause a name conflict
-        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "folder");
-        PolarisHelpers.newFolder(AUTHENTICATED, rootStore, "shared folder");
 
         List<TransformBatchOperation> ops = Lists.newArrayList(
                 new TransformBatchOperation(rootStore, insertChild(store, ObjectType.STORE, "shared folder", null, emptyVersion, null)),
@@ -1069,9 +866,9 @@ public class TestConversionResource {
         submitOpsSuccessFullyWithin(store, ops, 10);
 
         Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, rootStore, 0L, 10);
-        assertThat(t.transforms.size(), equalTo(10));
-        assertThat(t.transforms.get(9).getTransformType(), equalTo(TransformType.SHARE));
-        assertThat(t.transforms.get(9).getOid(), equalTo(anchor));
+        assertThat(t.transforms.size(), equalTo(6));
+        assertThat(t.transforms.get(5).getTransformType(), equalTo(TransformType.SHARE));
+        assertThat(t.transforms.get(5).getOid(), equalTo(anchor));
 
         t = PolarisHelpers.getTransforms(AUTHENTICATED, store, 0L, 10);
         assertThat(t.transforms.size(), equalTo(4));
