@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.polaris.db;
 
-import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.db.AbstractDBIterator;
@@ -103,7 +103,7 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
             f.set(lnk);
         } else {
             Waiter prev = _waiters.putIfAbsent(oid, f);
-            if (prev != null) prev.setException(new ExAborted());
+            if (prev != null) f = prev;
         }
         return f;
     }
@@ -199,8 +199,13 @@ public class RemoteLinkDatabase extends AbstractDatabase implements IStoreDeleti
                 logicalTimestamp));
         Waiter f = _waiters.get(oid);
         if (f != null) {
-            _waiters.remove(oid, f);
-            f.set(new RemoteLink(parent, name, logicalTimestamp));
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committed_() {
+                    _waiters.remove(oid, f);
+                    f.set(new RemoteLink(parent, name, logicalTimestamp));
+                }
+            });
         }
     }
 
