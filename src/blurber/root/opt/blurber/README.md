@@ -9,4 +9,4 @@ Extract summary content from urls for display in Air Computing's messaging clien
 
 `npm stop` to kill the server.
 
-http://localhost:8080/url?id=\<page url to blurbify\>
+http://localhost:8080/url?id=<page url to blurbify\>

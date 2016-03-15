@@ -4,8 +4,11 @@ var cache = require('./cache'),
     mime = require('mime'),
     request = require('request'),
     restify = require('restify'),
-    util = require('util'),
     server = restify.createServer();
+
+// logging
+var log = function (url, message) { console.log(new Date().toISOString(), cache.length, url, message); },
+    error = function (url, message) { console.error(new Date().toISOString(), cache.length, url, message); };
 
 // middleware
 server.use(restify.CORS());
@@ -17,14 +20,17 @@ server.get('/url', function respond(req, res, next) {
     res.header('Content-Disposition', 'inline');
     res.header('Content-Type', 'application/json');
     if (cache.has(url)) {
-        res.send(cache.get(url).blurb);
+        log(url, 'retrieved from cache');
+        res.send(cache.get(url));
     } else {
         og(url, function (err, blurb) {
             if (err) {
-                console.error(err);
-                res.send();
+                cache.set(url, {});
+                error(url, err);
+                res.send({});
             } else {
-                cache.set(url, { blurb: blurb, date: new Date(), url: url });
+                cache.set(url, blurb);
+                log(url, 'retrieved from net');
                 res.send(blurb);
             }
         });
@@ -38,39 +44,49 @@ server.get('/text', function respond(req, res, next) {
     res.header('Content-Disposition', 'inline');
     res.header('Content-Type', contentType);
     if (cache.has(url)) {
-        res.end(cache.get(url).blurb);
+        log(url, 'retrieved from cache');
+        res.send(cache.get(url));
     } else {
         request(url, function (err, requestRes, body) {
             var blurb = (mimeType === 'text/x-markdown') ? markdown.toHTML(body) : body;
             if (err) {
-                console.error(err);
-                res.send();
+                cache.set(url, '');
+                error(url, err);
+                res.send('');
             } else if (requestRes.statusCode !== 200) {
-                res.send();
+                cache.set(url, '');
+                error(url, `${ requestRes.statusCode } status code - returning empty body`);
+                res.send('');
             } else {
-                cache.set(url, { blurb: blurb, date: new Date(), url: url });
-                res.end(blurb);
+                cache.set(url, blurb);
+                log(url, 'retrieved from net');
+                res.send(blurb);
             }
         });
     }
 });
 
 server.get('/gist', function respond(req, res, next) {
-    var url = util.format('https://gist.github.com/%s.json', req.query.id);
+    var url = `https://gist.github.com/${ req.query.id }.json`;
     res.header('Content-Disposition', 'inline');
     res.header('Content-Type', 'application/json');
     if (cache.has(url)) {
-        res.end(cache.get(url).blurb);
+        log(url, 'retrieved from cache');
+        res.send(cache.get(url));
     } else {
         request(url, function (err, requestRes, blurb) {
             if (err) {
-                console.err(err);
-                res.send();
+                cache.set(url, '');
+                error(url, err);
+                res.send('');
             } else if (requestRes.statusCode !== 200) {
-                res.send();
+                cache.set(url, '');
+                error(url, `${ requestRes.statusCode } status code - returning empty body`);
+                res.send('');
             } else {
-                cache.set(url, { blurb: blurb, date: new Date(), url: url });
-                res.end(blurb);
+                cache.set(url, blurb);
+                log(url, 'retrieved from net');
+                res.send(blurb);
             }
         });
     }
