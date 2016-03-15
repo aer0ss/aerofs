@@ -3,14 +3,12 @@ package main
 import (
 	"bytes"
 	"errors"
-	"flag"
 	"github.com/boltdb/bolt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -34,11 +32,14 @@ var mockClock = mockClockImpl{time.Now()}
 var dbFile string
 
 func setupTestStructs() (*BoltKV, *httptest.Server) {
-	_ = os.Remove(dbFile)
-
-	db, err := newBoltKV("./testdb", setupDB)
+	file, err := ioutil.TempFile("", "analyticstestdb")
 	if err != nil {
-		log.Fatal("Failed to create db")
+		log.Fatal("Failed to create temp file:", err)
+	}
+
+	db, err := newBoltKV(file.Name(), setupDB)
+	if err != nil {
+		log.Fatal("Failed to create db:", err)
 	}
 	testServer := httptest.NewServer(http.HandlerFunc(eventHandler(db)))
 
@@ -210,7 +211,7 @@ func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
 	sendBucket(db, eventBucketKey, eventBucketInterval, mockSend)
 
 	if len(tm) != 0 {
-		t.Errorf("Expected # of events sent to be 0. Got: " + string(len(tm)))
+		t.Errorf("Expected # of events sent to be 0. Got: " + strconv.Itoa(len(tm)))
 	}
 
 	tm = make(map[string][]byte)
@@ -312,9 +313,6 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	// start setup
-	flag.StringVar(&dbFile, "dbpath", "/data/analytics/testdb", "path to database file")
-	flag.Parse()
-
 	clock = &mockClock
 
 	if !testing.Verbose() {
@@ -324,15 +322,8 @@ func TestMain(m *testing.M) {
 		log.SetFlags(0)
 	}
 
-	err := os.MkdirAll(path.Dir(dbFile), 0600)
-	if err != nil {
-		log.Fatal("Failed to create data dir:", err)
-	}
-
 	//end setup
 	//run tests
 
-	res := m.Run()
-	_ = os.Remove(dbFile)
-	os.Exit(res)
+	os.Exit(m.Run())
 }
