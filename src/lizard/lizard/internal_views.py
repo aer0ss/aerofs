@@ -396,6 +396,15 @@ def release():
 def delete_customer_account(org_id):
 
     customer = models.Customer.query.get_or_404(org_id)
+
+    for admin in customer.admins:
+        if admin.customer_id == org_id:
+            db.session.delete(admin)
+
+    for license in customer.licenses:
+        if license.customer_id == org_id:
+            db.session.delete(license)
+
     db.session.delete(customer)
     db.session.commit()
     flash(u'Customer account deleted.', 'success')

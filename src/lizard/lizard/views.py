@@ -118,7 +118,7 @@ def request_signup(form):
         if form.promo_code.data is not None and len(form.promo_code.data) > 0:
             notifications.send_account_already_exists_with_promo_email(admin, form.promo_code.data)
         elif not admin.active:
-            notifications.send_account_already_exists_but_inactive(admin)
+            notifications.send_account_already_exists_but_inactive_email(admin)
         else:
             notifications.send_account_already_exists_email(admin)
         return
