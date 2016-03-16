@@ -39,35 +39,6 @@ public abstract class CoreProtocolHandlers
             this.protocolVersion = protocolVersion;
         }
 
-        // TODO (AG): I believe that I can simply store the future and write the header in channelConnected
-
-        @Override
-        public void connectRequested(final ChannelHandlerContext ctx, final ChannelStateEvent event)
-                throws Exception
-        {
-            ChannelFuture future = Channels.future(event.getChannel());
-            future.addListener(new ChannelFutureListener()
-            {
-                @Override
-                public void operationComplete(ChannelFuture future)
-                        throws Exception
-                {
-                    if (future.isSuccess()) {
-                        try {
-                            writeHeader(ctx);
-                        } catch (Exception e) {
-                            event.getFuture().setFailure(e);
-                            throw e;
-                        }
-                        event.getFuture().setSuccess();
-                    } else if (!future.isCancelled() || !event.getFuture().cancel()) {
-                        event.getFuture().setFailure(future.getCause());
-                    }
-                }
-            });
-            Channels.connect(ctx, future, (SocketAddress)event.getValue());
-        }
-
         @Override
         public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
                 throws Exception
