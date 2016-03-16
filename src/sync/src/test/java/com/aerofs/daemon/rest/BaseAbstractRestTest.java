@@ -3,6 +3,7 @@ package com.aerofs.daemon.rest;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.daemon.core.CoreScheduler;
@@ -25,6 +26,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.havre.Havre;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.id.SIndex;
@@ -110,6 +112,7 @@ public class BaseAbstractRestTest extends AbstractTest
 
     private static TempCert ca;
     private static TempCert client;
+    private static TempCert gateway;
 
     protected static final UserID user = UserID.fromInternal("foo@bar.baz");
     protected SID rootSID = SID.rootSID(user);
@@ -228,6 +231,7 @@ public class BaseAbstractRestTest extends AbstractTest
 
         ca = TempCert.generateCA();
         client = TempCert.generateDaemon(user, did, ca);
+        gateway = TempCert.generateDaemon(UserID.DUMMY, new DID(UniqueID.ZERO), ca);
 
         cacert = mock(CfgCACertificateProvider.class);
         when(cacert.getCert()).thenReturn(ca.cert);
@@ -294,7 +298,11 @@ public class BaseAbstractRestTest extends AbstractTest
 
         // start local gateway
         if (useProxy) {
-            havre = new Havre(user, did, kmgr, kmgr, cacert, getGlobalTimer(), tokenVerifier);
+            IPrivateKeyProvider kmgr = mock(IPrivateKeyProvider.class);
+            when(kmgr.getCert()).thenReturn(gateway.cert);
+            when(kmgr.getPrivateKey()).thenReturn(gateway.key);
+            havre = new Havre(UserID.DUMMY, new DID(UniqueID.ZERO), kmgr, kmgr, cacert,
+                    getGlobalTimer(), tokenVerifier);
             havre.start();
 
             prop.setProperty("api.tunnel.port", Integer.toString(havre.getTunnelPort()));
