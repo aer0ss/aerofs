@@ -8,6 +8,7 @@ Topics covered in this guide:
     * Firewall ports
     * Hostname
     * SSL certificate
+    * SMTP server
 * Optional Integrations
     * MobileIron
     * LDAP
@@ -83,6 +84,22 @@ the connection to the site is not secured or trusted, which can be alarming to e
 
 For more information, please refer to our Knowledge Base article on [obtaining a signed
 certificate](https://support.aerofs.com/hc/en-us/articles/205654494-How-Do-I-Obtain-a-Signed-Certificate-and-Key-for-My-AeroFS-Appliance).
+
+### SMTP server
+The AeroFS Appliance needs to be able to send emails to users for various purposes such as 
+email verification during new user signup and folder invitations. In step 3 of the Appliance
+setup, you need to configure your Appliance to use either the Appliance's internal SMTP
+relay or specify an external SMTP relay. We recommend you use an external relay to ensure
+AeroFS emails don't get blocked by existing firewall or SMTP rules. If you decide to use the
+Appliance's internal relay, you may need to whitelist the appliance in order to successfully
+receive AeroFS emails.
+
+In order to configure an external relay, you'll need to provide the following information:
+
+* SMTP server's hostname or IP address
+* port
+* username
+* password
 
 ## Optional Integrations
 
