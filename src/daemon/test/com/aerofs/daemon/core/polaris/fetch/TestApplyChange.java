@@ -16,7 +16,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -992,5 +991,44 @@ public class TestApplyChange extends AbstractTestApplyChange
                 folder("bar", bar,
                         folder("baz", baz,
                                 folder("moved", foo))));
+    }
+
+    @Test
+    public void shouldNotTryToRevertLocalChangeWhenRemoteParentMissing() throws Exception {
+        OID conflict = OID.generate();
+        OID bar = OID.generate();
+        OID baz = OID.generate();
+
+        apply(
+                insert(OID.ROOT, "baz", baz, ObjectType.FOLDER)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        // force buffering of changes
+        addMetaChange(sidx);
+
+        apply(
+                insert(OID.ROOT, "blarg", conflict, ObjectType.FOLDER),
+
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+
+                insert(bar, "baz", baz, ObjectType.FOLDER),
+                remove(OID.ROOT, baz),
+
+                rename(OID.ROOT, "baz", conflict)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        ac.applyBufferedChanges_(sidx, Long.MAX_VALUE);
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+
+        mds.expect(rootSID,
+                folder("bar", bar,
+                        folder("baz", baz)),
+                folder("baz", conflict));
     }
 }

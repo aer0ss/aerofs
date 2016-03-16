@@ -929,7 +929,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 // Ideally we'd simply drop changes to the migrated tree but this is not safe as
                 // object may move in and out of the subtree before it eventually gets shared.
                 // Instead we have to insert the original folder directly inside the trash and
-                // cleanup the subtree once the SHARe op is received.
+                // cleanup the subtree once the SHARE op is received.
                 // NB: this may result in temporary violation of unicity invariant for OIDs (i.e.
                 // a given OID is *NOT* supposed to be in multiple stores at once)
                 // TODO: figure out how to adapt code to cope with that violation
@@ -988,7 +988,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         // e.g. tagging (parent, name) pairs with a logical timestamp to prevent such interleaved
         // submissions and close some races in conflict resolution. A purely client-side solution
         // would however be preferred.
-        if (clnk != null && _ds.getChild_(sidx, clnk.parent, clnk.name) == null) {
+        if (clnk != null && _ds.getChild_(sidx, clnk.parent, clnk.name) == null
+                && _ds.getOANullable_(new SOID(sidx, clnk.parent)) != null) {
             // conflict OID was moved locally and its remote location is free: move it back
             l.info("revert local change: {} -> {}/{}", oaConflict.soid(), clnk.parent, clnk.name);
 
