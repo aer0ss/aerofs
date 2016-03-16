@@ -414,18 +414,20 @@ def delete_customer_account(org_id):
 @blueprint.route("/hpc_deployments", methods=["GET", "POST"])
 def hpc_deployments():
     form = forms.CreateHostedDeployment()
-    if form.validate_on_submit():
-        customer = models.Customer.query.get(form.customer_id.data)
-        if customer is None:
-            flash("No such customer", 'error')
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            customer = models.Customer.query.get(form.customer_id.data)
+            if customer is None:
+                flash("No such customer", 'error')
+            else:
+                try:
+                    hpc.create_deployment(customer, form.subdomain.data)
+                except hpc.DeploymentAlreadyExists:
+                    flash("A deployment with this subdomain already exists", 'error')
         else:
-            try:
-                hpc.create_deployment(customer, form.subdomain.data)
-            except hpc.DeploymentAlreadyExists:
-                flash("A deployment with this subdomain already exists", 'error')
-    else:
-        flash("Only letters, numbers and dashes are allowed for the subdomain,"
-              " and it can't start or end with a dash.", 'error')
+            flash("Only letters, numbers and dashes are allowed for the subdomain,"
+                  " and it can't start or end with a dash.", 'error')
 
     # TODO (GS): filter & order query
     deployments = models.HPCDeployment.query.all()
