@@ -118,6 +118,28 @@ public final class TestTCPUnicast
         return channel;
     }
 
+    @Test
+    public void shouldRejectSelfConnection()
+            throws InterruptedException, ExDeviceUnavailable, ExecutionException, ExTransportUnavailable {
+        when(localDevice.addressResolver.resolve(otherDevice.did))
+                .thenReturn(localDevice.unicast.getListeningAddress());
+
+        // attempt to send out the packet to this unavailable device
+        Waiter waiter = new Waiter();
+        localDevice.unicast.send(otherDevice.did, TransportProtocolUtil.newDatagramPayload(TEST_DATA), waiter);
+
+        // wait...we should get an exception
+        boolean exceptionThrown = false;
+        try {
+            waiter.future.get();
+        } catch (ExecutionException e) {
+            // TODO: ideally we'd be able to check what exception got to ChannelTeardownHandler
+            exceptionThrown = true;
+        }
+
+        assertThat(exceptionThrown, equalTo(true));
+    }
+
     @Ignore
     @Test
     public void shouldNotAcceptIncomingConnectionsIfLinkGoesDown()

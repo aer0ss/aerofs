@@ -138,12 +138,21 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             // Compute the expected cname
             UserID user = UserID.fromInternalThrowIfNotNormalized(verificationInfo.getUser());
             DID did = new DID(BaseUtil.fromPB(verificationInfo.getDid()));
+
+            // reject self-connection
+            if (did.equals(_did)) {
+                l.warn("self-connection {} {} {}", did,
+                        ctx.getChannel().getLocalAddress(), ctx.getChannel().getRemoteAddress());
+                throw new SecurityException("self-connection");
+            }
+
             String expected = BaseSecUtil.getCertificateCName(user, did);
 
             // Compare against the actual cname from the certificate
             String actual = getPeerCName(ctx);
             if (!expected.equals(actual)) {
-                l.warn("cname verification failed. exp:" + expected + " act:" + actual + " usr:" + user + " - " + did.toStringFormal());
+                l.warn("cname verification failed. exp:{} act:{} usr:{} - {}",
+                        expected, actual, user, did.toStringFormal());
                 throw new SecurityException("cname verification failed");
             }
 

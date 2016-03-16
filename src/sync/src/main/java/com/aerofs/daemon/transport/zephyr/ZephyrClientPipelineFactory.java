@@ -118,13 +118,13 @@ final class ZephyrClientPipelineFactory implements ChannelPipelineFactory
         pipeline.addLast("length-decoder", BootstrapFactoryUtil.newFrameDecoder());
         pipeline.addLast("length-encoder", BootstrapFactoryUtil.newLengthFieldPrepender());
 
-        // cname handshake
-        CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
-        pipeline.addLast("cname", verificationHandler);
-
         // core-protocol-version
         pipeline.addLast("version-reader", BootstrapFactoryUtil.newCoreProtocolVersionReader());
         pipeline.addLast("version-writer", BootstrapFactoryUtil.newCoreProtocolVersionWriter());
+
+        // cname handshake
+        CNameVerificationHandler verificationHandler = newCNameVerificationHandler();
+        pipeline.addLast("cname", verificationHandler);
 
         pipeline.addLast("register", registeringChannelHandler);
 

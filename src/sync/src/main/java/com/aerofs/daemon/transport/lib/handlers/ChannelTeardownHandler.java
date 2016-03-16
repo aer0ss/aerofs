@@ -122,6 +122,7 @@ public final class ChannelTeardownHandler extends SimpleChannelUpstreamHandler
                         UnresolvedAddressException.class,
                         IOException.class,
                         SSLException.class,
+                        SecurityException.class,
                         SSLHandshakeException.class), 5));
 
         channel.close();
