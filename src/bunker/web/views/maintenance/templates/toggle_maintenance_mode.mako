@@ -66,16 +66,8 @@
             show: false
         });
 
-        function enterOrExitMaintenance() {
-            $('#toggle-modal').modal('show');
-
-            var target =
-                %if is_maintenance_mode:
-                    'default';
-                %else:
-                    'maintenance';
-                %endif
-
+        ## reboot the appliance into the target mode and handle modals and error messaging
+        function rebootAndRefresh(target) {
             reboot(target, function() {
                 ## reload the page to refresh the value of is_maintenance_mode.
                 location.reload();
@@ -83,6 +75,39 @@
                 $('#toggle-modal').modal('hide');
                 showErrorMessageFromResponse(xhr);
             });
+            return false;
+        }
+
+        ## Reboots the system into the target mode. Validates the current license file before
+        ## booting into the default mode.
+        function enterOrExitMaintenance() {
+            $('#toggle-modal').modal('show');
+            var target =
+                %if is_maintenance_mode:
+                    'default';
+                %else:
+                    'maintenance';
+                %endif
+
+            if (target == 'maintenance') {
+                rebootAndRefresh(target);
+            } else if (target == 'default') {
+                ## validate the current license using the server, so we don't need to worry about
+                ## timezones
+                $.get("${request.route_path('validate_license')}", function(data) {
+                    if (data['license_valid'] == true) {
+                        rebootAndRefresh(target);
+                    } else {
+                        $('#toggle-modal').modal('hide');
+                        showErrorMessage('Your license has expired. To exit maintenance mode, ' +
+                            'first upload a new license file.');
+                    }
+                }, 'json').fail( function(xhr) {
+                    $('#toggle-modal').modal('hide');
+                    showErrorMessageFromResponse(xhr);
+                });
+            }
+            return false;
         }
     </script>
 </%block>

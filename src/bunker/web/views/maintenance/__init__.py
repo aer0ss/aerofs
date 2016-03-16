@@ -69,6 +69,7 @@ routes = [
     'download_backup_script',
     'status',
     'toggle_maintenance_mode',
+    'validate_license',
     'timekeeping',
     'json_set_mobile_device_management',
     'restore_settings',

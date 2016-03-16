@@ -108,9 +108,7 @@ def maintenance_redirect(request):
     if not is_configuration_completed():
         redirect = 'setup'
     else:
-        r = requests.get('http://config.service:5434/is_license_valid')
-        r.raise_for_status()
-        redirect = 'license_expired' if r.text.strip() == '0' else 'maintenance_home'
+        redirect = 'license_expired' if _license_expired() else 'maintenance_home'
 
     return HTTPFound(location=request.route_path(redirect))
 
@@ -126,3 +124,19 @@ def license_expired(request):
     return {
         'support_email': get_conf(request)['base.www.support_email_address']
     }
+
+@view_config(
+    route_name='validate_license',
+    permission='maintain',
+    renderer='json',
+    request_method='GET'
+)
+def validate_license(request):
+    return {
+       'license_valid': not _license_expired()
+    }
+
+def _license_expired():
+    r = requests.get('http://config.service:5434/is_license_valid')
+    r.raise_for_status()
+    return True if r.text.strip() == '0' else False
