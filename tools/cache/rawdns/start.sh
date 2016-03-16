@@ -25,7 +25,8 @@ else
     curl -o $PWD/root/rawdns -sSL "https://github.com/tianon/rawdns/releases/download/1.3/rawdns-amd64"
     chmod +x $PWD/root/rawdns
 
-    docker build -t rawdns $PWD
+    # ensure we get a fresh timestamp or img_fresh will cause repeated rebuild
+    docker build --no-cache=true -t rawdns $PWD
 
     if [[ -n "$(docker ps -aq -f 'name=rawdns')" ]] ; then
         echo "removing stopped rawdns"
