@@ -1,9 +1,11 @@
-from os.path import join
+import os
 import shutil
+import subprocess
+
+from os.path import join
 from sys import argv, stderr
 from os import walk
 from os.path import isfile
-import subprocess
 from common import TAG_PATH, MODIFIED_YML_PATH, call_crane
 from crane_yml import modify_yaml, load_crane_yml
 import loader
@@ -20,8 +22,9 @@ def install_getty(dest):
             shutil.copy2(join(src, f), join(dest, f))
         break
 
-    # Copy /tag & /banner
-    shutil.copy2(TAG_PATH, join(dest, 'tag'))
+    # Symlink /tag to avoid changing multiple destinations.
+    os.symlink(TAG_PATH, join(dest, 'tag'))
+    # Copy banner.
     if isfile('/banner'):
         shutil.copy2('/banner', join(dest, 'banner'))
 
