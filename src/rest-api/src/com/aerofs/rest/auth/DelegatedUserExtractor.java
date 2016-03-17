@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class DelegatedUserExtractor implements AuthTokenExtractor<IAuthToken> {
     private static final Pattern DELEGATED_PATTERN =
-            Pattern.compile("Aero-Delegated-User-Device ([a-zA-Z0-9\\-_]+) ([0-9a-f]{32}) ([a-zA-Z0-9+/]+=*)");
+            Pattern.compile("Aero-Delegated-User ([a-zA-Z0-9\\-_]+) ([0-9a-f]{32}) ([a-zA-Z0-9+/]+=*)");
     private static final Base64.Decoder base64 = Base64.getDecoder();
     private final String secret;
 
@@ -40,7 +40,8 @@ public class DelegatedUserExtractor implements AuthTokenExtractor<IAuthToken> {
         if (headers == null || headers.size() != 1) return null;
 
         Matcher m = DELEGATED_PATTERN.matcher(headers.get(0));
-        if (!m.matches() || !BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
+        if (!m.matches()) return null;
+        if (!BaseSecUtil.constantTimeIsEqual(secret, m.group(2))) {
             throw AuthTokenExtractor.unauthorized("invalid secret", challenge());
         }
 
