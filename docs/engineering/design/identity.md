@@ -1,6 +1,8 @@
 Identity Services: design
 =========================
 
+N.B. the in-progress server code was removed in gerrit change I3c5822553dabc10a35f1ef7bba0a27f87f5520a9
+
 This document describes the in-progress design for an identity system that
 unifies aeroim and aerofs, as well as resolving some technical debt in the
 existing systems.

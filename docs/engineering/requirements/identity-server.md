@@ -4,6 +4,8 @@
     v0.2 2015/03/25 jP Add token-request options; make more OAuth-compatible;
         clarify trusted services.
 
+N.B. the in-progress server code was removed in gerrit change I3c5822553dabc10a35f1ef7bba0a27f87f5520a9
+
 A new microservice that provides a documented, public interface to our backend
 identity systems.
 
