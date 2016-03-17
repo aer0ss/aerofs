@@ -254,6 +254,9 @@ containers:
     image: aerofs/analytics
     run:
       detach: true
+      volume:
+        - /etc/ssl/certs:/etc/ssl/certs:ro
+        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
       volumes-from:
         # For deployment secret
         - data

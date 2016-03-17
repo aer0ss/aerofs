@@ -21,10 +21,13 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
+	"aerofs.com/analytics/segment"
 	"aerofs.com/service"
 	"aerofs.com/service/auth"
+	"aerofs.com/service/config"
 	"github.com/aerofs/httprouter"
 	"github.com/boltdb/bolt"
 	"github.com/robfig/cron"
@@ -42,11 +45,19 @@ const (
 
 // const arrays are not possible in Go
 var (
+	companyID string
+
 	EventBucketKey = []byte("events")
 	UserBucketKey  = []byte("users")
 
 	PresentFlag = []byte{}
 )
+
+var segmentClient = segment.Client{
+	Client: http.DefaultClient,
+	//Endpoint: "https://api.segment.io",
+	Token: "",
+}
 
 // global time indirection to allow testing
 type clockImpl struct{}
@@ -157,7 +168,18 @@ func readEventFromRequestBody(req *http.Request) (*Event, error) {
 
 // convert database entries to Events then send
 func sendGeneric(eventMap map[string][]byte, t time.Time,
-	createEvent func(k string, v []byte) (*Event, error)) error {
+	createEvent func(k string, v []byte) (*segment.Track, error)) error {
+
+	batch := &segment.Batch{
+		Messages: []interface{}{},
+		Message: segment.Message{
+			Context: map[string]interface{}{
+				"library": map[string]string{
+					"name": "analytics-go",
+				},
+			},
+		},
+	}
 
 	// create JSON events for each map entry
 	for k, v := range eventMap {
@@ -166,13 +188,15 @@ func sendGeneric(eventMap map[string][]byte, t time.Time,
 			return errors.New("Failed to create event object: " + err.Error())
 		}
 		event.Timestamp = &t
-		event.CustomerID = "Customer-ID"
 
-		eventJSON, err := json.Marshal(event)
-		if err != nil {
-			return err
-		}
-		log.Printf("Sending %s\n", eventJSON)
+		batch.Track(event)
+	}
+
+	// send to segment
+	// TODO: make this more robust/fail-proof wrt delete
+	err := segmentClient.Batch(batch)
+	if err != nil {
+		return errors.New("Failed to track event with segment: " + err.Error())
 	}
 	return nil
 }
@@ -187,23 +211,27 @@ func sendUsers(eventMap map[string][]byte, t time.Time) error {
 
 // helpers for use with sendBucket
 
-func createEvent(key string, value []byte) (*Event, error) {
+func createEvent(key string, value []byte) (*segment.Track, error) {
 	event, err := lookupEvent(key)
 	if err != nil {
 		return nil, errors.New("Failed to create event: " + err.Error())
 	}
-	event.Value = decodeUint64(value)
+
+	event.AnonymousID = companyID
+	event.Properties["Value"] = decodeUint64(value)
 
 	return &event, nil
 }
 
-func createUserEvent(key string, value []byte) (*Event, error) {
+func createUserEvent(key string, value []byte) (*segment.Track, error) {
 	au := "ACTIVE_USER"
 	event, err := lookupEvent(au)
 	if err != nil {
 		return nil, errors.New("Failed to create event: " + err.Error())
 	}
-	event.UserID = key
+
+	event.AnonymousID = key
+	event.Properties["Company Name"] = companyID
 
 	return &event, nil
 }
@@ -368,40 +396,79 @@ func eventHandler(db *BoltKV) auth.Handle {
 }
 
 func main() {
-	var dbFile string
-	flag.StringVar(&dbFile, "db", "/data/analytics/db", "path to database file")
-	flag.Parse()
-
-	err := os.MkdirAll(path.Dir(dbFile), 0600)
-	if err != nil {
-		log.Fatal("Failed to create data dir:", err)
-	}
-
-	// create or open database file
-	db, err := NewBoltKV(dbFile, setupDB)
-	if err != nil {
-		log.Fatal("Failed to open boltdb:", err)
-	}
-	defer db.Close()
-
-	secret := service.ReadDeploymentSecret()
-
-	// set up daily event sending
-	httpClient := NewServiceHTTPClient("analytics", secret)
-	job := func() {
-		getAndSendDailyMetrics(httpClient)
-	}
-
-	cronRunner := cron.New()
-	cronRunner.AddFunc(DailyMetricsCronExp, job)
-	cronRunner.Start()
-
-	go sendLoop(db)
+	log.Println("waiting for deps")
+	service.ServiceBarrier()
 
 	router := httprouter.New()
-	// handle incoming events
-	router.POST("/events", auth.Auth(eventHandler(db),
-		auth.NewServiceSharedSecretExtractor(secret)))
+
+	// check if analytics is enabled
+	config := config.NewClient("analytics")
+	c, err := config.Get()
+	if err != nil {
+		log.Fatal("Failed to fetch config:", err)
+	}
+
+	if strings.EqualFold("true", c["analytics.enabled"]) {
+		// retrieve company name from license
+		companyID := c["license_company"]
+		if companyID == "" {
+			companyID = c["customer_id"]
+		}
+		if companyID == "" {
+			log.Fatal("Failed to read non-empty company name")
+		}
+
+		// read db file location flag
+		var dbFile string
+		flag.StringVar(&dbFile, "db", "/data/analytics/db", "path to database file")
+		flag.Parse()
+
+		err = os.MkdirAll(path.Dir(dbFile), 0600)
+		if err != nil {
+			log.Fatal("Failed to create data dir:", err)
+		}
+
+		// create or open database file
+		db, err := NewBoltKV(dbFile, setupDB)
+		if err != nil {
+			log.Fatal("Failed to open boltdb:", err)
+		}
+		defer db.Close()
+
+		secret := service.ReadDeploymentSecret()
+
+		// set up daily event sending
+		httpClient := NewServiceHTTPClient("analytics", secret)
+		job := func() {
+			getAndSendDailyMetrics(httpClient)
+		}
+
+		cronRunner := cron.New()
+		cronRunner.AddFunc(DailyMetricsCronExp, job)
+		cronRunner.Start()
+
+		// identify company by its name for Mixpanel people
+		err = segmentClient.Identify(&segment.Identify{
+			AnonymousID: companyID,
+			Traits: map[string]interface{}{
+				"Company Name": companyID,
+			},
+		})
+		if err != nil {
+			log.Println("Failed to send identify message:", err)
+		}
+
+		go sendLoop(db)
+
+		// handle incoming events
+		router.POST("/events", auth.Auth(eventHandler(db),
+			auth.NewServiceSharedSecretExtractor(secret)))
+	} else {
+		router.POST("/",
+			auth.OptionalAuth(func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
+				http.Error(resp, "Service disabled", http.StatusServiceUnavailable)
+			}))
+	}
 
 	err = http.ListenAndServe(":9400", service.Log(router))
 	if err != nil {
