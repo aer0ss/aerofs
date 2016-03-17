@@ -18,6 +18,7 @@ package main
 
 import (
 	"aerofs.com/service"
+	"aerofs.com/service/config"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -251,15 +252,15 @@ func main() {
 	service.ServiceBarrier()
 
 	log.Println("getting config...")
-	config, err := service.NewConfigClient("trifrost").Get()
+	cfg, err := config.NewClient("trifrost").Get()
 	if err != nil {
 		log.Panic(err)
 	}
 
 	mailChan := make(chan EmailCodePair, MAIL_QUEUE_SIZE)
-	mailClient := getSMTPClient(config)
+	mailClient := getSMTPClient(cfg)
 
-	go sendEmailLoop(mailClient, mailChan, config)
+	go sendEmailLoop(mailClient, mailChan, cfg)
 
 	deploymentSecret := service.ReadDeploymentSecret()
 	clientSecret, err := getOAuthClientSecret(deploymentSecret, OAUTH_CLIENT_ID)

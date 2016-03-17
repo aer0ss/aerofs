@@ -3,6 +3,7 @@ package main
 import (
 	"aerofs.com/service"
 	"aerofs.com/service/auth"
+	"aerofs.com/service/config"
 	"encoding/json"
 	"fmt"
 	"github.com/aerofs/httprouter"
@@ -57,8 +58,7 @@ func main() {
 	fmt.Println("waiting for deps")
 	service.ServiceBarrier()
 
-	config := service.NewConfigClient("auditor")
-	c, err := config.Get()
+	c, err := config.NewClient("auditor").Get()
 	if err != nil {
 		panic(err)
 	}

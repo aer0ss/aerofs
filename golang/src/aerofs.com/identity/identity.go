@@ -1,8 +1,9 @@
 package main
 
 import (
-	"aerofs.com/service"
+	"aerofs.com/service/config"
 	"aerofs.com/service/mysql"
+	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/emicklei/go-restful"
@@ -10,11 +11,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"database/sql"
 )
 
-type Consts struct  {
-
+type Consts struct {
 }
 
 type ProblemDetails struct {
@@ -22,9 +21,8 @@ type ProblemDetails struct {
 	Detail string `json:"detail,omitempty" description="An human readable explanation specific to this occurrence of the problem."`
 }
 
-func GetDbUrl() (string) {
-	config := service.NewConfigClient("identity")
-	c, err := config.Get()
+func GetDbUrl() string {
+	c, err := config.NewClient("identity").Get()
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +59,6 @@ func CreateServer(db *sql.DB, host string, port int, swaggerPath string) *http.S
 	server := &http.Server{Addr: portStr, Handler: restful.DefaultContainer}
 	return server
 }
-
 
 func main() {
 	var useConfig bool

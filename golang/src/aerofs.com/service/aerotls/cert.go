@@ -1,4 +1,4 @@
-package service
+package aerotls
 
 import (
 	"bytes"
@@ -15,26 +15,26 @@ import (
 	"time"
 )
 
-func SetupCert(cn, file string) (*rsa.PrivateKey, *x509.Certificate, error) {
-	priv, cert, err := LoadCert(file)
+func setupCert(cn, file string) (*rsa.PrivateKey, *x509.Certificate, error) {
+	priv, cert, err := loadCert(file)
 	if err != nil {
 		fmt.Println("generating fresh key/cert")
-		priv, cert, err = GenerateCert(cn)
+		priv, cert, err = generateCert(cn)
 		if err != nil {
 			return nil, nil, err
 		}
-		if err = SaveCert(priv, cert, file); err != nil {
+		if err = saveCert(priv, cert, file); err != nil {
 			return nil, nil, err
 		}
 	} else {
 		fmt.Println("loaded key/cert")
 	}
-	if ShouldRecertify(cn, cert) {
+	if shouldRecertify(cn, cert) {
 		fmt.Println("requesting fresh cert with same private key")
-		if cert, err = Certify(priv, cn); err != nil {
+		if cert, err = certify(priv, cn); err != nil {
 			return nil, nil, err
 		}
-		if err = SaveCert(priv, cert, file); err != nil {
+		if err = saveCert(priv, cert, file); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -44,12 +44,12 @@ func SetupCert(cn, file string) (*rsa.PrivateKey, *x509.Certificate, error) {
 // automatically re-certify if
 //  - CN changed
 //  - cert is halfway through its lifespan
-func ShouldRecertify(cn string, cert *x509.Certificate) bool {
+func shouldRecertify(cn string, cert *x509.Certificate) bool {
 	return cert.Subject.CommonName != cn ||
 		cert.NotAfter.Sub(time.Now()) < cert.NotAfter.Sub(cert.NotBefore)/2
 }
 
-func LoadCert(file string) (*rsa.PrivateKey, *x509.Certificate, error) {
+func loadCert(file string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	d, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, nil, err
@@ -96,7 +96,7 @@ func LoadCert(file string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	return priv, cert, nil
 }
 
-func SaveCert(priv *rsa.PrivateKey, cert *x509.Certificate, file string) error {
+func saveCert(priv *rsa.PrivateKey, cert *x509.Certificate, file string) error {
 	err := os.MkdirAll(path.Dir(file), 0600)
 	if err != nil {
 		return err
@@ -117,7 +117,7 @@ func SaveCert(priv *rsa.PrivateKey, cert *x509.Certificate, file string) error {
 	return nil
 }
 
-func GenerateCert(cn string) (*rsa.PrivateKey, *x509.Certificate, error) {
+func generateCert(cn string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +129,7 @@ func GenerateCert(cn string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	return priv, cert, nil
 }
 
-func Certify(priv *rsa.PrivateKey, cn string) (*x509.Certificate, error) {
+func certify(priv *rsa.PrivateKey, cn string) (*x509.Certificate, error) {
 	csr, err := x509.CreateCertificateRequest(rand.Reader, &x509.CertificateRequest{
 		Subject: pkix.Name{
 			Country:      []string{"US"},

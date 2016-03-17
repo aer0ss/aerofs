@@ -2,6 +2,7 @@ package main
 
 import (
 	"aerofs.com/service"
+	"aerofs.com/service/config"
 	"aerofs.com/service/mysql"
 	"aerofs.com/sloth/aeroclients/lipwig"
 	"aerofs.com/sloth/aeroclients/polaris"
@@ -47,13 +48,13 @@ const MAX_OPEN_DB_CONNS = 30
 //
 
 func getTlsConfig() *tls.Config {
-	config, err := service.NewConfigClient("sloth").Get()
+	cfg, err := config.NewClient("sloth").Get()
 	errors.PanicOnErr(err)
-	rawCacert, ok := config["config.loader.base_ca_certificate"]
+	rawCacert, ok := cfg["config.loader.base_ca_certificate"]
 	if !ok {
 		panic("missing ca cert config")
 	}
-	hostname, ok := config["base.host.unified"]
+	hostname, ok := cfg["base.host.unified"]
 	if !ok {
 		panic("missing hostname config")
 	}
@@ -113,13 +114,13 @@ func main() {
 	var pushNotifier push.Notifier
 	if pushEnabled {
 		// connect to config
-		config, err := service.NewConfigClient("sloth").Get()
+		cfg, err := config.NewClient("sloth").Get()
 		errors.PanicOnErr(err)
 
 		// grab button config and initialize push notifier
-		buttonAuthUser, userOk := config["messaging.button.auth.user"]
-		buttonAuthPass, passOk := config["messaging.button.auth.pass"]
-		buttonBaseUrl, urlOk := config["messaging.button.url.base"]
+		buttonAuthUser, userOk := cfg["messaging.button.auth.user"]
+		buttonAuthPass, passOk := cfg["messaging.button.auth.pass"]
+		buttonBaseUrl, urlOk := cfg["messaging.button.url.base"]
 		if !userOk || !passOk || !urlOk {
 			panic("missing button config")
 		}

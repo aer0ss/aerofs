@@ -7,6 +7,7 @@ package cfg
 
 import (
 	"aerofs.com/service"
+	"aerofs.com/service/aerotls"
 	"crypto/tls"
 	"fmt"
 )
@@ -19,5 +20,5 @@ func InitConfig() {
 }
 
 func TLSConfig() *tls.Config {
-	return service.NewConfig("lipwig")
+	return aerotls.NewConfig("lipwig")
 }

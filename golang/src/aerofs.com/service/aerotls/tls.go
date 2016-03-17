@@ -1,6 +1,7 @@
-package service
+package aerotls
 
 import (
+	"aerofs.com/service/config"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
@@ -10,8 +11,7 @@ import (
 )
 
 func NewConfig(name string) *tls.Config {
-	config := NewConfigClient(name)
-	c, err := config.Get()
+	c, err := config.NewClient(name).Get()
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +27,7 @@ func NewConfig(name string) *tls.Config {
 		panic(err)
 	}
 
-	key, cert, err := SetupCert(host, "/data/"+name+"/cert.pem")
+	key, cert, err := setupCert(host, "/data/"+name+"/cert.pem")
 	if err != nil {
 		panic(err)
 	}

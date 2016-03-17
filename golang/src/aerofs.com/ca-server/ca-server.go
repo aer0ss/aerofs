@@ -4,6 +4,7 @@ import (
 	"aerofs.com/ca-server/cert"
 	"aerofs.com/service"
 	"aerofs.com/service/auth"
+	"aerofs.com/service/config"
 	"aerofs.com/service/mysql"
 	"bytes"
 	"crypto/rsa"
@@ -136,8 +137,8 @@ func main() {
 	fmt.Println("waiting for deps")
 	service.ServiceBarrier()
 
-	config := service.NewConfigClient("ca-server")
-	c, err := config.Get()
+	cfg := config.NewClient("ca-server")
+	c, err := cfg.Get()
 	if err != nil {
 		panic(err)
 	}
@@ -153,7 +154,7 @@ func main() {
 	fmt.Println("updating config")
 	buf := &bytes.Buffer{}
 	cert.WritePEM(signer.CertDER, buf)
-	err = config.Set("base_ca_cert", string(buf.Bytes()))
+	err = cfg.Set("base_ca_cert", string(buf.Bytes()))
 	if err != nil {
 		panic(err)
 	}
