@@ -129,8 +129,9 @@ def main():
 
     start = datetime.datetime.today()
 
-    p = subprocess.Popen(make_args, stdout=open('build.log', 'w'),
-                         cwd=GIT_ROOT)
+    p = subprocess.Popen(
+        make_args, stdout=open(os.path.join(GIT_ROOT, 'build.log'), 'w'),
+        cwd=GIT_ROOT)
     p.wait()
     if p.returncode != 0:
         print 'Task failed.'
