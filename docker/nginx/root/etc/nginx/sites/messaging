@@ -1,10 +1,10 @@
 # All trifrost functions (signin, register devices):
-location ~ /messaging/(auth|invite|devices) {
+location ~ /messaging/auth/ {
     include /etc/nginx/cors.conf;
     add_header Access-Control-Allow-Origin * always;
     # strip request cookies, which may be huge and cause baseline to choke
     proxy_set_header Cookie "";
-    rewrite /messaging/(.+) /$1 break;
+    rewrite /messaging/auth/(.+) /$1 break;
     proxy_pass http://trifrost.service:8888;
 }
 

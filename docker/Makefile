@@ -28,7 +28,7 @@ IMAGES:= \
 	../golang/src/aerofs.com/sloth \
 	../src/sparta \
 	../src/spsv \
-	../src/trifrost \
+	../golang/src/aerofs.com/trifrost \
 	../golang/src/aerofs.com/ts-probe \
 	../golang/src/aerofs.com/valkyrie \
 	../src/web \

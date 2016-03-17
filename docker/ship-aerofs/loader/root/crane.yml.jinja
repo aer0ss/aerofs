@@ -297,14 +297,16 @@ containers:
         - sparta:sparta.service
 
   trifrost:
-    image: aerofs/trifrost
+    image: aeroim/trifrost
     run:
       detach: true
+      volume:
+        - /etc/ssl/certs:/etc/ssl/certs:ro
+        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
       volumes-from:
         - data
       link:
         - config:config.service
-        - mysql:mysql.service
         - sparta:sparta.service
 
   aeroimweb:
