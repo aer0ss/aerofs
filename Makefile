@@ -215,7 +215,7 @@ _package:
 ifeq ($(SIGNED),)
 	$(error "SIGNED must be defined to run package_clients or package_sa.")
 endif
-	$(eval SIGNED_ARG := $(shell [ $(SIGNED) == true ] && echo "SIGNED" || echo "UNSIGNED"))
+	$(eval SIGNED_ARG := $(shell [ $(SIGNED) = true ] && echo "SIGNED" || echo "UNSIGNED"))
 	$(GIT_ROOT)/tools/build/bootstrap package $(PKG_PRODUCT) $(VERSION) $(SIGNED_ARG) --build-all
 
 _prepare_syncdet:
@@ -243,7 +243,7 @@ _prepare_syncdet_storage_agent:
 	make _prepare_syncdet PS_PREFIX=aerofs-storage-agent-installer PS_EXT=tgz
 
 _syncdet:
-	$(eval TEAM_CITY_ARG := $(shell [ $(TEAM_CITY) == true ] && echo "--team-city" || echo ""))
+	$(eval TEAM_CITY_ARG := $(shell [ $(TEAM_CITY) = true ] && echo "--team-city" || echo ""))
 	$(SYNCDET_EXECUTABLE) $(ARG) \
 			$(TEAM_CITY_ARG) \
 			--purge-log \
