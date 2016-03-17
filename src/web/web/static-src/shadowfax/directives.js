@@ -132,12 +132,11 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                         .then(function (response) {
                             if ($scope.folder.sid || response) {
                                 $scope.folder.sid = $scope.folder.sid || response.data.sid;
-                                var permissions =  getJsonPermissions(permissions);
-       
+                                permissions = getJsonPermissions(permissions);
                                 if (entity.is_group) {
-                                  return API.sfgroupmember.add($scope.folder.sid, data.id, permissions);
+                                  return API.sfgroupmember.add($scope.folder.sid, entity.id, permissions);
                                 } else {
-                                  return API.sfpendingmember.invite($scope.folder.sid, data.email, permissions);
+                                  return API.sfpendingmember.invite($scope.folder.sid, entity.email, permissions);
                                 }
                             }
                         })
@@ -153,7 +152,6 @@ shadowfaxDirectives.directive('aeroSharedFolderManager',['$modal','$log', '$q', 
                                 newMember.first_name = entity.first_name;
                                 newMember.last_name = entity.last_name;
                             }
-                            $scope.folder.is_shared = true;
                             $scope.folder.is_shared = true;
                             setEntityPermissions(newMember, permissions);
                             $scope.folder.people.push(newMember);

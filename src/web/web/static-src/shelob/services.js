@@ -122,7 +122,7 @@ shelobServices.factory('API', ['$log', '$q', 'Token', 'API_LOCATION',
             },
 
             shareExistingFolder : function(sid) {
-                return $q.when(aero.client.put('/shares/' + sid + '/is_shared'));
+                return $q.when(aero.client.put('/folders/' + sid + '/is_shared'));
             },
 
             config : aero.config

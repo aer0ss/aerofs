@@ -73,6 +73,7 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
     $scope.allShares = [];
     $scope.managedShares = [];
 
+    // Determine if a given folder is managed by the current user
     $scope.isManagedObject = function (object) {
         var sid = $scope.derefAnchor(object).substring(0, 32);
         for (var i = 0; i < $scope.managedShares.length; i++) {
@@ -447,6 +448,8 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
                         name: response.data.name,
                         last_modified: FOLDER_LAST_MODIFIED,
                         is_shared: response.data.is_shared,
+                        people: [],
+                        is_privileged: $scope.isManagedObject(response.data),
                         links: []
                     });
                 })
@@ -715,6 +718,7 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
         $scope.links = links;
     }
 
+    // Set appropriate privileges, permissions, members for regular and shares folders
     function _populateShares () {
         var allSharesById = $scope.allShares.length ? $filter('groupBy')($scope.allShares, 'id') : {};
         $scope.objects.forEach(function (object) {
