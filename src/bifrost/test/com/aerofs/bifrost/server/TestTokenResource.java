@@ -457,7 +457,7 @@ public class TestTokenResource extends BifrostTest
         expect()
                 .statusCode(200)
                 .given()
-                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .header("Authorization", "Aero-Delegated-User testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
                 .formParam("client_id", CLIENTID)
                 .formParam("client_secret", CLIENTSECRET)
                 .formParam("grant_type", "delegated")
@@ -468,7 +468,7 @@ public class TestTokenResource extends BifrostTest
     @Test
     public void shouldProvideDelegatedPrincipal() throws Exception {
         String token = given()
-                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .header("Authorization", "Aero-Delegated-User testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
                 .formParam("client_id", CLIENTID)
                 .formParam("client_secret", CLIENTSECRET)
                 .formParam("grant_type", "delegated")
@@ -491,7 +491,7 @@ public class TestTokenResource extends BifrostTest
         expect()
                 .statusCode(400)
             .given()
-                .header("Authorization", "Aero-Delegated-User-Device testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
+                .header("Authorization", "Aero-Delegated-User testing 3c561ee35982c3b0c562b45d3cca9b3d am9uQGFlcm9mcy5jb20=")
                 .formParam("client_id", CLIENTID)
                 .formParam("client_secret", CLIENTSECRET)
                 .formParam("grant_type", "delegated")
