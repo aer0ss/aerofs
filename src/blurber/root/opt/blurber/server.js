@@ -16,13 +16,13 @@ let sendFromCache = (res, url) => {
         res.send(cache.get(url));
     },
     sendFromNet = (res, url, blurb) => {
-        console.log(new Date().toISOString(), cache.length, url, 'retrieved from net');
         cache.set(url, blurb);
+        console.log(new Date().toISOString(), cache.length, url, 'retrieved from net');
         res.send(blurb);
     },
     sendError = (res, url, err, blurb) => {
-        console.error(new Date().toISOString(), cache.length, url, err)
         cache.set(url, blurb);
+        console.error(new Date().toISOString(), cache.length, url, err)
         res.send(blurb);
     };
 
@@ -67,7 +67,7 @@ server.get('/text', function respond(req, res, next) {
             url: url,
             method: 'GET',
             timeout: TIMEOUT
-        }).on('response', (err, requestRes, body) => {
+        }, (err, requestRes, body) => {
             if (err) {
                 sendError(res, url, err, '');
             } else if (requestRes.statusCode !== 200) {
