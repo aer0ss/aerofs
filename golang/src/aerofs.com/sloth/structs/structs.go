@@ -157,5 +157,5 @@ type Event struct {
 	Id string `json:"id"`
 
 	// Optional payload for transmitting additional info
-	Payload string `json:"payload,omitempty"`
+	Payload map[string]interface{} `json:"payload,omitempty"`
 }

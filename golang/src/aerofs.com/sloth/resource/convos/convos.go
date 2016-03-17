@@ -433,7 +433,7 @@ func (ctx *context) updateReceipt(request *restful.Request, response *restful.Re
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(receipt)
-	broadcastMessageRead(ctx.broadcaster, convo)
+	broadcastMessageRead(ctx.broadcaster, convo, caller, params.MessageId)
 }
 
 func getPushRecipients(caller string, members []string, lastOnlineTimes *lastOnline.Times) []string {
@@ -459,9 +459,9 @@ func broadcastMessage(bc broadcast.Broadcaster, convo *Convo) {
 	broadcast.SendMessageEvent(bc, convo.Id, targets)
 }
 
-func broadcastMessageRead(bc broadcast.Broadcaster, convo *Convo) {
+func broadcastMessageRead(bc broadcast.Broadcaster, convo *Convo, uid string, mid int64) {
 	targets := getBroadcastTargets(convo)
-	broadcast.SendMessageReadEvent(bc, convo.Id, targets)
+	broadcast.SendMessageReadEvent(bc, convo.Id, uid, mid, targets)
 }
 
 func getBroadcastTargets(convo *Convo) []string {

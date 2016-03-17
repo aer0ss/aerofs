@@ -30,8 +30,9 @@ func SendMessageEvent(b Broadcaster, cid string, members []string) {
 	multicastSimpleEvent(b, "MESSAGE", cid, members)
 }
 
-func SendMessageReadEvent(b Broadcaster, cid string, members []string) {
-	multicastSimpleEvent(b, "MESSAGE_READ", cid, members)
+func SendMessageReadEvent(b Broadcaster, cid, uid string, mid int64, members []string) {
+	payload := map[string]interface{}{uid: mid}
+	multicastEventWithPayload(b, "MESSAGE_READ", cid, payload, members)
 }
 
 func SendBotEvent(b Broadcaster, bid string) {
@@ -39,7 +40,8 @@ func SendBotEvent(b Broadcaster, bid string) {
 }
 
 func SendTypingEvent(b Broadcaster, uid string, cid string, members []string) {
-	multicastEventWithPayload(b, "TYPING", uid, cid, members)
+	payload := map[string]interface{}{"cid": cid}
+	multicastEventWithPayload(b, "TYPING", uid, payload, members)
 }
 
 func SendLastOnlineEvent(b Broadcaster, uid string) {
@@ -47,11 +49,13 @@ func SendLastOnlineEvent(b Broadcaster, uid string) {
 }
 
 func SendPinEvent(b Broadcaster, uid, cid string) {
-	multicastEventWithPayload(b, "PIN", uid, cid, []string{uid})
+	payload := map[string]interface{}{"cid": cid}
+	multicastEventWithPayload(b, "PIN", uid, payload, []string{uid})
 }
 
 func SendUnpinEvent(b Broadcaster, uid, cid string) {
-	multicastEventWithPayload(b, "UNPIN", uid, cid, []string{uid})
+	payload := map[string]interface{}{"cid": cid}
+	multicastEventWithPayload(b, "UNPIN", uid, payload, []string{uid})
 }
 
 //
@@ -76,7 +80,7 @@ func multicastSimpleEvent(b Broadcaster, resource, id string, targets []string) 
 	b.Multicast(bytes, targets)
 }
 
-func multicastEventWithPayload(b Broadcaster, resource, id, payload string, targets []string) {
+func multicastEventWithPayload(b Broadcaster, resource, id string, payload map[string]interface{}, targets []string) {
 	bytes, err := json.Marshal(Event{
 		Resource: resource,
 		Id:       id,
