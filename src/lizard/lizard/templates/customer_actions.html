@@ -124,10 +124,11 @@ $(document).ready(function() {
     // This function will disable the keyboard for all characters except lower case letters, numbers and dashes
     $('#subdomain').keypress(function(key) {
         // The condition contains the charCodes of all the unacceptable characters
-        if((key.charCode < 97 || key.charCode > 122) && (key.charCode != 45) && (key.charCode < 48 || key.charCode > 57)) {
-            $('#restrictName').tooltip("show");
-            return false;
-        }
+        if((key.charCode < 97 || key.charCode > 122) && (key.charCode != 45) &&
+           (key.charCode < 48 || key.charCode > 57) && (key.charCode != 13)) {
+                $('#restrictName').tooltip("show");
+                return false;
+            }
         else
         {
             $('#restrictName').tooltip("hide");
