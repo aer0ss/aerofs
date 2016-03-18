@@ -25,6 +25,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -88,7 +89,7 @@ public final class LocationBatchResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public LocationStatusBatchResult batchStatusCheck(@Context final AeroUserDevicePrincipal principal, LocationStatusBatch batch) {
-        boolean[] results = new boolean[batch.operations.size()];
+        List<Boolean> results = new ArrayList<>(batch.operations.size());
 
         long currentTimeMillis = System.currentTimeMillis();
         if(currentTimeMillis - storageAgentDIDsUpdatedTimestamp > DELAY) {
@@ -97,14 +98,9 @@ public final class LocationBatchResource {
             storageAgentDIDsUpdatedTimestamp = currentTimeMillis;
         }
 
-        int index = 0;
         for (LocationStatusBatchOperation operation : batch.operations) {
             List<DID> locations = objectStore.getLocations(principal.getUser(), operation.oid, operation.version);
-            if (locations.stream().filter((did) -> storageAgentDIDs.contains(did)).findFirst().isPresent()) {
-                results[index++] = true;
-            } else {
-                results[index++] = false;
-            }
+            results.add(locations.stream().filter((did) -> storageAgentDIDs.contains(did)).findAny().isPresent());
         }
 
         return new LocationStatusBatchResult(results);

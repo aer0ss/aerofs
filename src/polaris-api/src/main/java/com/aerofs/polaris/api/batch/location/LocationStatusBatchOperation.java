@@ -1,6 +1,6 @@
 package com.aerofs.polaris.api.batch.location;
 
-import com.aerofs.ids.OID;
+import com.aerofs.ids.UniqueID;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
@@ -11,12 +11,12 @@ import javax.validation.constraints.NotNull;
 
 public class LocationStatusBatchOperation
 {
-    @NotNull public final OID oid;
+    @NotNull public final UniqueID oid;
 
     @Min(0) public final long version;
 
     @JsonCreator
-    public LocationStatusBatchOperation(@JsonProperty("oid") OID oid,
+    public LocationStatusBatchOperation(@JsonProperty("oid") UniqueID oid,
             @JsonProperty("version") long version) {
         this.oid = oid;
         this.version = version;

@@ -9,15 +9,17 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
+import java.util.List;
+
 public final class LocationStatusBatchResult {
 
     @NotNull
     @Size(min = 1)
     @Valid
-    public final boolean[] results;
+    public final List<Boolean> results;
 
     @JsonCreator
-    public LocationStatusBatchResult(@JsonProperty("results") boolean[] results) {
+    public LocationStatusBatchResult(@JsonProperty("results") List<Boolean> results) {
         this.results = results;
     }
 
