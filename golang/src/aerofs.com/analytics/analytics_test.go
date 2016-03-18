@@ -1,8 +1,10 @@
 package main
 
 import (
+	"aerofs.com/service/auth"
 	"bytes"
 	"errors"
+	"github.com/aerofs/httprouter"
 	"github.com/boltdb/bolt"
 	"io/ioutil"
 	"log"
@@ -37,11 +39,13 @@ func setupTestStructs() (*BoltKV, *httptest.Server) {
 		log.Fatal("Failed to create temp file:", err)
 	}
 
-	db, err := newBoltKV(file.Name(), setupDB)
+	db, err := NewBoltKV(file.Name(), setupDB)
 	if err != nil {
 		log.Fatal("Failed to create db:", err)
 	}
-	testServer := httptest.NewServer(http.HandlerFunc(eventHandler(db)))
+	router := httprouter.New()
+	router.Handle("POST", "/", auth.OptionalAuth(eventHandler(db)))
+	testServer := httptest.NewServer(router)
 
 	return db, testServer
 }
@@ -76,7 +80,7 @@ func TestAnalytics_Send_invalid_event_should_return_400(t *testing.T) {
 		res, _ := http.Post(testServer.URL, "application/json", bytes.NewBuffer(reqBody))
 		if res.StatusCode != http.StatusBadRequest {
 			t.Errorf("Expected response status code to be " +
-				string(http.StatusBadRequest) + ". Got: " + string(res.StatusCode))
+				strconv.Itoa(http.StatusBadRequest) + ". Got: " + strconv.Itoa(res.StatusCode))
 		}
 
 		if testing.Verbose() {
@@ -109,18 +113,18 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 		res, _ := http.Post(testServer.URL, "application/json", bytes.NewBuffer(req))
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected response status code to be " +
-				string(http.StatusOK) + ". Got: " + string(res.StatusCode))
+				strconv.Itoa(http.StatusOK) + ". Got: " + strconv.Itoa(res.StatusCode))
 		}
 
 		// advance time before sending the final request
 		if i == 2 {
-			mockClock.PassTime(eventBucketInterval)
+			mockClock.PassTime(EventBucketInterval)
 		}
 	}
 
 	var count int
 	db.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket(eventBucketKey).Stats().BucketN
+		count = tx.Bucket(EventBucketKey).Stats().BucketN
 		return nil
 	})
 	// top level bucket + 2 sub-buckets = 3
@@ -131,7 +135,7 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 	var testCount1, testCount2, testCount3 uint64
 	var userBucketSize int
 	err := db.View(func(tx *bolt.Tx) error {
-		c := tx.Bucket(eventBucketKey).Cursor()
+		c := tx.Bucket(EventBucketKey).Cursor()
 		k1, _ := c.Last()
 		if k1 == nil {
 			return errors.New("Nil key k1")
@@ -140,8 +144,8 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 		if k2 == nil {
 			return errors.New("Nil key k2")
 		}
-		b1 := tx.Bucket(eventBucketKey).Bucket(k1)
-		b2 := tx.Bucket(eventBucketKey).Bucket(k2)
+		b1 := tx.Bucket(EventBucketKey).Bucket(k1)
+		b2 := tx.Bucket(EventBucketKey).Bucket(k2)
 		if v := b2.Get(testKey1_1); v != nil {
 			testCount1 = decodeUint64(v)
 		}
@@ -152,8 +156,8 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 			testCount3 = decodeUint64(v)
 		}
 
-		k1, _ = tx.Bucket(userBucketKey).Cursor().Last()
-		b1 = tx.Bucket(userBucketKey).Bucket(k1)
+		k1, _ = tx.Bucket(UserBucketKey).Cursor().Last()
+		b1 = tx.Bucket(UserBucketKey).Bucket(k1)
 		userBucketSize = b1.Stats().KeyN
 		return nil
 	})
@@ -189,13 +193,13 @@ func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
 	defer db.Close()
 	defer testServer.Close()
 
-	tse := timeToBytes(clock.Now().Truncate(eventBucketInterval))
-	tsu := timeToBytes(clock.Now().Truncate(userBucketInterval))
+	tse := timeToBytes(clock.Now().Truncate(EventBucketInterval))
+	tsu := timeToBytes(clock.Now().Truncate(UserBucketInterval))
 	err := db.Update(func(tx *bolt.Tx) error {
-		tx.Bucket(eventBucketKey).CreateBucket(tse)
-		tx.Bucket(eventBucketKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
-		tx.Bucket(userBucketKey).CreateBucket(tsu)
-		tx.Bucket(userBucketKey).Bucket(tsu).Put([]byte(testHash2_1), presentFlag)
+		tx.Bucket(EventBucketKey).CreateBucket(tse)
+		tx.Bucket(EventBucketKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
+		tx.Bucket(UserBucketKey).CreateBucket(tsu)
+		tx.Bucket(UserBucketKey).Bucket(tsu).Put([]byte(testHash2_1), PresentFlag)
 		return nil
 	})
 	if err != nil {
@@ -208,14 +212,14 @@ func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
 		return nil
 	}
 
-	sendBucket(db, eventBucketKey, eventBucketInterval, mockSend)
+	sendBucket(db, EventBucketKey, EventBucketInterval, mockSend)
 
 	if len(tm) != 0 {
 		t.Errorf("Expected # of events sent to be 0. Got: " + strconv.Itoa(len(tm)))
 	}
 
 	tm = make(map[string][]byte)
-	sendBucket(db, userBucketKey, userBucketInterval, mockSend)
+	sendBucket(db, UserBucketKey, UserBucketInterval, mockSend)
 
 	if len(tm) != 0 {
 		t.Errorf("Expected # of users sent to be 0. Got: " + strconv.Itoa(len(tm)))
@@ -224,8 +228,8 @@ func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
 	// ensure buckets were not deleted
 	var eventSubbucketCount, userSubbucketCount int
 	err = db.View(func(tx *bolt.Tx) error {
-		eventSubbucketCount = tx.Bucket(eventBucketKey).Stats().BucketN - 1
-		userSubbucketCount = tx.Bucket(userBucketKey).Stats().BucketN - 1
+		eventSubbucketCount = tx.Bucket(EventBucketKey).Stats().BucketN - 1
+		userSubbucketCount = tx.Bucket(UserBucketKey).Stats().BucketN - 1
 		return nil
 	})
 
@@ -245,19 +249,19 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	defer db.Close()
 	defer testServer.Close()
 
-	tse := timeToBytes(clock.Now().Truncate(eventBucketInterval))
-	tsu := timeToBytes(clock.Now().Truncate(userBucketInterval))
+	tse := timeToBytes(clock.Now().Truncate(EventBucketInterval))
+	tsu := timeToBytes(clock.Now().Truncate(UserBucketInterval))
 	err := db.Update(func(tx *bolt.Tx) error {
-		tx.Bucket(eventBucketKey).CreateBucket(tse)
-		tx.Bucket(eventBucketKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
-		tx.Bucket(userBucketKey).CreateBucket(tsu)
-		tx.Bucket(userBucketKey).Bucket(tsu).Put([]byte(testHash2_1), presentFlag)
+		tx.Bucket(EventBucketKey).CreateBucket(tse)
+		tx.Bucket(EventBucketKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
+		tx.Bucket(UserBucketKey).CreateBucket(tsu)
+		tx.Bucket(UserBucketKey).Bucket(tsu).Put([]byte(testHash2_1), PresentFlag)
 
 		// create a second bucket
-		mockClock.PassTime(eventBucketInterval)
-		tse = timeToBytes(clock.Now().Truncate(eventBucketInterval))
-		tx.Bucket(eventBucketKey).CreateBucket(tse)
-		tx.Bucket(eventBucketKey).Bucket(tse).Put([]byte(testKey2_2), encodeUint64(testVal2_2))
+		mockClock.PassTime(EventBucketInterval)
+		tse = timeToBytes(clock.Now().Truncate(EventBucketInterval))
+		tx.Bucket(EventBucketKey).CreateBucket(tse)
+		tx.Bucket(EventBucketKey).Bucket(tse).Put([]byte(testKey2_2), encodeUint64(testVal2_2))
 		return nil
 	})
 	if err != nil {
@@ -265,7 +269,7 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	}
 
 	// ensure that enough time passes to trigger send for both cases
-	mockClock.PassTime(eventBucketInterval + userBucketInterval)
+	mockClock.PassTime(EventBucketInterval + UserBucketInterval)
 
 	var tm = make(map[string][]byte)
 	var mockSend = func(testMap map[string][]byte, t time.Time) error {
@@ -279,7 +283,7 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 		return nil
 	}
 
-	sendBucket(db, eventBucketKey, eventBucketInterval, mockSend)
+	sendBucket(db, EventBucketKey, EventBucketInterval, mockSend)
 	if v, ok := tm[testKey2_1]; !ok || testVal2_1 != decodeUint64(v) {
 		log.Println(decodeUint64(v))
 		t.Errorf("Expected value not found for key: " + testKey2_1)
@@ -290,7 +294,7 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	}
 
 	tm = make(map[string][]byte)
-	sendBucket(db, userBucketKey, userBucketInterval, mockSend)
+	sendBucket(db, UserBucketKey, UserBucketInterval, mockSend)
 	if _, ok := tm[testHash2_1]; !ok {
 		t.Errorf("Expected user key not found: " + testHash2_1)
 	}
@@ -298,8 +302,8 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	// ensure buckets were not deleted
 	var eventSubbucketCount, userSubbucketCount int
 	err = db.View(func(tx *bolt.Tx) error {
-		eventSubbucketCount = tx.Bucket(eventBucketKey).Stats().BucketN - 1
-		userSubbucketCount = tx.Bucket(userBucketKey).Stats().BucketN - 1
+		eventSubbucketCount = tx.Bucket(EventBucketKey).Stats().BucketN - 1
+		userSubbucketCount = tx.Bucket(UserBucketKey).Stats().BucketN - 1
 		return nil
 	})
 

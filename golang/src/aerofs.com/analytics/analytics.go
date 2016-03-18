@@ -1,5 +1,14 @@
 package main
 
+/*
+   Analytics container
+   Listens for events sent from other services, and aggregates them in boltDB
+   Usage events are aggregated across 2-hour intervals, and sent periodically
+   Daily active users are also stored in boltDB, similarly to usage events
+   Other metrics are queried from other containers on a regular (daily) basis
+   These events/metrics are sent to Segment, which forwards to Mixpanel
+*/
+
 import (
 	"crypto/sha256"
 	"encoding/binary"
@@ -14,22 +23,29 @@ import (
 	"path"
 	"time"
 
+	"aerofs.com/service"
+	"aerofs.com/service/auth"
+	"github.com/aerofs/httprouter"
 	"github.com/boltdb/bolt"
+	"github.com/robfig/cron"
 )
 
-//TODO change to permanent values
+//TODO change from testing values
+//Frequency values here are more frequent than the eventual permanent values
+//Values governing the frequency at which events are sent/queried
 const (
-	eventBucketInterval = time.Second * 8
-	userBucketInterval  = time.Second * 10
-	sendInterval        = time.Second * 8
+	EventBucketInterval = time.Second * 8
+	UserBucketInterval  = time.Second * 10
+	SendInterval        = time.Second * 8
+	DailyMetricsCronExp = "@every 10s"
 )
 
 // const arrays are not possible in Go
 var (
-	eventBucketKey = []byte("events")
-	userBucketKey  = []byte("users")
+	EventBucketKey = []byte("events")
+	UserBucketKey  = []byte("users")
 
-	presentFlag = []byte{}
+	PresentFlag = []byte{}
 )
 
 // global time indirection to allow testing
@@ -48,8 +64,8 @@ type BoltKV struct {
 	*bolt.DB
 }
 
-// create or open a new Bolt database & call setup function
-func newBoltKV(filename string, setup func(*BoltKV) error) (*BoltKV, error) {
+// NewBoltKV create or open a new Bolt database & call setup function
+func NewBoltKV(filename string, setup func(*BoltKV) error) (*BoltKV, error) {
 	db, err := bolt.Open(filename, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -68,11 +84,11 @@ func newBoltKV(filename string, setup func(*BoltKV) error) (*BoltKV, error) {
 // initialize Bolt database
 func setupDB(db *BoltKV) error {
 	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(eventBucketKey)
+		_, err := tx.CreateBucketIfNotExists(EventBucketKey)
 		if err != nil {
 			return err
 		}
-		_, err = tx.CreateBucketIfNotExists(userBucketKey)
+		_, err = tx.CreateBucketIfNotExists(UserBucketKey)
 		if err != nil {
 			return err
 		}
@@ -261,16 +277,16 @@ func sendBucket(db *BoltKV, bucketKey []byte, interval time.Duration,
 }
 
 func sendLoop(db *BoltKV) {
-	ticker := time.NewTicker(sendInterval)
+	ticker := time.NewTicker(SendInterval)
 
 	for range ticker.C {
-		err := sendBucket(db, eventBucketKey, eventBucketInterval, sendEvents)
+		err := sendBucket(db, EventBucketKey, EventBucketInterval, sendEvents)
 		if err != nil {
 			log.Println("Failed to send event bucket(s):", err)
 			continue
 		}
 
-		err = sendBucket(db, userBucketKey, userBucketInterval, sendUsers)
+		err = sendBucket(db, UserBucketKey, UserBucketInterval, sendUsers)
 		if err != nil {
 			log.Println("Failed to send user bucket(s):", err)
 			continue
@@ -278,8 +294,13 @@ func sendLoop(db *BoltKV) {
 	}
 }
 
-func eventHandler(db *BoltKV) http.HandlerFunc {
-	return func(resp http.ResponseWriter, req *http.Request) {
+// stub method for collecting and sending "daily" metrics
+func getAndSendDailyMetrics(httpClient *ServiceHTTPClient) {
+	//log.Println("Sending daily events")
+}
+
+func eventHandler(db *BoltKV) auth.Handle {
+	return func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
 		// parse event from request
 		event, err := readEventFromRequestBody(req)
 		if err != nil {
@@ -309,7 +330,7 @@ func eventHandler(db *BoltKV) http.HandlerFunc {
 		err = db.Update(func(tx *bolt.Tx) error {
 			// get current event & user buckets
 			t := clock.Now()
-			eventBucket, err := getBucketByTime(tx, eventBucketKey, t, eventBucketInterval)
+			eventBucket, err := getBucketByTime(tx, EventBucketKey, t, EventBucketInterval)
 			if err != nil {
 				return err
 			}
@@ -327,11 +348,11 @@ func eventHandler(db *BoltKV) http.HandlerFunc {
 
 			// record that user is active
 			if userid != nil {
-				userBucket, err := getBucketByTime(tx, userBucketKey, t, userBucketInterval)
+				userBucket, err := getBucketByTime(tx, UserBucketKey, t, UserBucketInterval)
 				if err != nil {
 					return err
 				}
-				return userBucket.Put(userid, presentFlag)
+				return userBucket.Put(userid, PresentFlag)
 			}
 			return nil
 		})
@@ -340,6 +361,9 @@ func eventHandler(db *BoltKV) http.HandlerFunc {
 			http.Error(resp, "", http.StatusInternalServerError)
 			return
 		}
+
+		http.Error(resp, "", http.StatusOK)
+		return
 	}
 }
 
@@ -354,18 +378,32 @@ func main() {
 	}
 
 	// create or open database file
-	db, err := newBoltKV(dbFile, setupDB)
+	db, err := NewBoltKV(dbFile, setupDB)
 	if err != nil {
 		log.Fatal("Failed to open boltdb:", err)
 	}
 	defer db.Close()
 
+	secret := service.ReadDeploymentSecret()
+
+	// set up daily event sending
+	httpClient := NewServiceHTTPClient("analytics", secret)
+	job := func() {
+		getAndSendDailyMetrics(httpClient)
+	}
+
+	cronRunner := cron.New()
+	cronRunner.AddFunc(DailyMetricsCronExp, job)
+	cronRunner.Start()
+
 	go sendLoop(db)
 
+	router := httprouter.New()
 	// handle incoming events
-	http.HandleFunc("/events", eventHandler(db))
+	router.POST("/events", auth.Auth(eventHandler(db),
+		auth.NewServiceSharedSecretExtractor(secret)))
 
-	err = http.ListenAndServe(":9400", nil)
+	err = http.ListenAndServe(":9400", service.Log(router))
 	if err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
