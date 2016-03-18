@@ -107,7 +107,7 @@ def configure_deployment(self, subdomain):
     except Exception as e:
         # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
         # Wait 30s and retry
-        raise self.retry(exc=e, countdown=30, max_retries=40)
+        raise self.retry(exc=e, countdown=30, max_retries=10)
 
 
 @celery.task(bind=True)
@@ -148,7 +148,7 @@ def reboot(self, subdomain):
             time.sleep(2)
 
     except Exception as e:
-        raise self.retry(exc=e, countdown=40, max_retries=20)
+        raise self.retry(exc=e, countdown=40, max_retries=10)
 
 
 def get_boot_id(session):
@@ -173,6 +173,7 @@ def repackage(self, subdomain):
         # Consider the appliance set up and running
         session.deployment.appliance_setup_date = datetime.today()
         session.deployment.set_days_until_expiry(30)
+        session.deployment.setup_status = models.HPCDeployment.status.UP
         db.session.commit()
 
         #Let them know they have an appliance

@@ -31,7 +31,7 @@ def get_docker_client(deployment):
     return Client(base_url=deployment.server.docker_url, tls=tls_config, version='auto', timeout=5)
 
 
-def create_deployment(customer, subdomain):
+def create_deployment(customer, subdomain, delay=0):
     """
     Create a new deployment for a given customer at a given subdomain.
     """
@@ -45,6 +45,7 @@ def create_deployment(customer, subdomain):
     deployment.subdomain = subdomain
     deployment.server = server
     deployment.set_days_until_expiry(30)
+    deployment.setup_status = HPCDeployment.status.IN_PROGRESS
 
     db.session.add(deployment)
 
@@ -67,7 +68,14 @@ def create_deployment(customer, subdomain):
         reboot.si(subdomain) |
         repackage.si(subdomain)
 
-    ).apply_async()
+    ).apply_async(link_error=save_error.si(subdomain), countdown=delay)
+
+
+@celery.task()
+def save_error(subdomain):
+    deployment = HPCDeployment.query.get(subdomain)
+    deployment.setup_status = HPCDeployment.status.DOWN
+    db.session.commit()
 
 
 def create_route53_change(deployment, delete=False):
@@ -142,9 +150,9 @@ def sail(subdomain):
     container_id = container.get('Id')
     docker.start(container=container_id)
 
-    # Wait up to an hour for hpc-sail to finish. It can take that long if hpc-sail needs to pull new images.
+    # Wait up to 10 minutes for hpc-sail to finish.
     try:
-        exit_code = docker.wait(container_id, 3600)
+        exit_code = docker.wait(container_id, 600)
     except requests.exceptions.ReadTimeout:
         current_app.logger.warn("hpc-sail timed out for subdomain {}".format(subdomain))
         exit_code = -2
@@ -193,12 +201,15 @@ def delete_deployment(deployment):
         # Just ignore any errors for now. In the future we might want to ask the user.
         delete_containers(deployment)
     except Exception as ex:
-        current_app.logger.warn("Ignoring exception while deleting deployment: %s", ex)
+        current_app.logger.warn("Deleting deployment: Ignoring exception %s \
+                while deleting containers. ", ex)
+        return False
 
     delete_subdomain(deployment)
 
     db.session.delete(deployment)
     db.session.commit()
+    return True
 
 
 def pick_server():

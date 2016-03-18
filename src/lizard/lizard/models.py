@@ -308,6 +308,13 @@ class Domain(db.Model, TimeStampedMixin):
 class HPCDeployment(db.Model, TimeStampedMixin):
     __tablename__ = "hpc_deployment"
 
+    # The state of the setup.
+    class DeploymentStatus(object):
+        DOWN = 0
+        UP = 1
+        IN_PROGRESS = 2
+    status = DeploymentStatus()
+
     # Subdomain on which this deployment is available
     # ie: <subdomain>.aerofs.com
     # Letters, numbers and dashes only. Can't start or end with a dash.
@@ -321,6 +328,9 @@ class HPCDeployment(db.Model, TimeStampedMixin):
 
     # When the appliance was set up
     appliance_setup_date = db.Column(db.DateTime, nullable=True)
+
+    # The state of the setup. It can be either DOWN, UP or IN_PROGRESS
+    setup_status = db.Column(db.Integer)
 
     # Returns the full host name for this deployment. E.g.: 'foobar.aerofs.com'
     def full_hostname(self):

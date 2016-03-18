@@ -431,8 +431,35 @@ def hpc_deployments():
 
     # TODO (GS): filter & order query
     deployments = models.HPCDeployment.query.all()
-    return render_template('hpc_deployments.html', deployments=deployments)
 
+    down_deployments = [deployment for deployment in deployments if
+                        deployment.setup_status == models.HPCDeployment.status.DOWN]
+    up_deployments = [deployment for deployment in deployments if
+                      deployment.setup_status == models.HPCDeployment.status.UP]
+    progress_deployments = [deployment for deployment in deployments if
+                            deployment.setup_status == models.HPCDeployment.status.IN_PROGRESS]
+
+    return render_template('hpc_deployments.html',
+                           up_deployments=up_deployments,
+                           down_deployments=down_deployments,
+                           progress_deployments=progress_deployments)
+
+
+@blueprint.route("/hpc_recreate_deployment/<string:subdomain>", methods=["POST"])
+def hpc_recreate_deployment(subdomain):
+    # Deleting the deployment and starting it again
+    deployment = models.HPCDeployment.query.get_or_404(subdomain)
+    if deployment.setup_status == models.HPCDeployment.status.DOWN:
+        customer = deployment.customer
+        deleted = hpc.delete_deployment(deployment)
+        if not deleted:
+            return Response('Failed ', status=500)
+        # Give 30 seconds for container/deployment deletion.
+        hpc.create_deployment(customer, subdomain, 30)
+    else:
+        Response('The deployment you are trying to delete is not down', status=500)
+
+    return Response(status=200)
 
 @blueprint.route("/hpc_deployments/<string:subdomain>", methods=["GET"])
 def hpc_deployment(subdomain):
@@ -585,7 +612,8 @@ def _get_problematic_deployments(server_id):
     # we get the status only of the deployments that are in the server which id
     # is given as a parameter
     deployments_list = models.HPCDeployment.query.filter(
-        models.HPCDeployment.server_id == server_id).all()
+        models.HPCDeployment.server_id == server_id,
+        models.HPCDeployment.setup_status != models.HPCDeployment.status.IN_PROGRESS).all()
 
     problematic_deployments = []
 

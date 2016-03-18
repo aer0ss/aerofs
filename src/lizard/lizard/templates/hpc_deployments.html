@@ -30,6 +30,29 @@
          }
     }
 
+    function recreate_deployment(subdomain) {
+        if (confirm("Are you sure that you want to recreate '"+ subdomain + "' and all associated data?")){
+            $("#action-column-" + subdomain).html('<img src="{{ url_for('static', filename='img/ajax-loader.gif') }}"/>')
+            $.ajax({
+                url: '/hpc_recreate_deployment/' + subdomain,
+                method: 'POST',
+                success: function(result) {
+                    window.location.href = '/hpc_deployments'
+                },
+                error: function(result) {
+                    alert("Failed!" + result);
+                    var html_code = " <a href='#' onclick='recreate_deployment(" + subdomain + "); return false;'> \
+                                <span class='glyphicon glyphicon-repeat'></span> Re-create \
+                            </a> \
+                            <a href='#' onclick='remove_deployment(" + subdomain + "); return false;'> \
+                                <span class='glyphicon glyphicon-remove'></span>Remove \
+                            </a>"
+                    $("#action-column-" + subdomain).html(html_code)
+                }
+            });
+        }
+    }
+
     function extend_license(subdomain) {
         duration = prompt("How many days would you like to add to the license?")
         newDuration = +$("#remainingTime").text() + +duration;
@@ -54,24 +77,113 @@
     }
 
 </script>
-    <table class="table">
-        <tr>
-            <th>Customer</th>
-            <th>Subdomain</th>
-            <th>Remaining days</th>
-            <th>Action</th>
+
+{% if down_deployments %}
+
+<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#downDeploymentsModal">
+  Deployments failed setup
+</button>
+
+<div class="modal fade" id="downDeploymentsModal" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Deployments that failed to setup</h4>
+      </div>
+      <div class="modal-body">
+        <div class="panel panel-danger">
+            <div class="panel-heading">Deployments that failed to setup</div>
+             <table class="table">
+                <tr>
+                    <th>Customer</th>
+                    <th>Subdomain</th>
+                    <th>Comment</th>
+                    <th>Action </th>
+                </tr>
+                {% for deployment in down_deployments %}
+                    <tr id="row-{{ deployment.subdomain }}">
+                        <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
+                        <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
+                        <td>One of the task failed during the creation of the deployment. </td>
+                        <td id="action-column-{{ deployment.subdomain }}">
+                            <a href="#" onclick="recreate_deployment('{{ deployment.subdomain }}'); return false;">
+                                <span class="glyphicon glyphicon-repeat"></span> Re-create
+                            </a>
+                            <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">
+                                <span class="glyphicon glyphicon-remove"></span>Remove
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if progress_deployments %}
+
+<button type="button" class="btn btn-info" data-toggle="modal" data-target="#progressDeploymentsModal">
+  Deployments being setup
+</button>
+
+<div class="modal fade" id="progressDeploymentsModal" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Deployments that are being setup</h4>
+      </div>
+      <div class="modal-body">
+        <div class="panel panel-info">
+            <div class="panel-heading">Deployments that are being setup</div>
+             <table class="table">
+                <tr>
+                    <th>Customer</th>
+                    <th>Subdomain</th>
+                    <th>Action</th>
+                </tr>
+                {% for deployment in progress_deployments %}
+                    <tr id="row-{{ deployment.subdomain }}">
+                        <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
+                        <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
+                        <td id="action-column-{{ deployment.subdomain }}">
+                            <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<br><br>
+
+<table class="table">
+    <tr>
+        <th>Customer</th>
+        <th>Subdomain</th>
+        <th>Remaining days</th>
+        <th>Action</th>
+    </tr>
+    {% for deployment in up_deployments %}
+
+        <tr id="row-{{ deployment.subdomain }}">
+            <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
+            <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
+            <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}" id="remainingTime"> {{deployment.get_days_until_expiry() }}</a></td>
+            <td id="action-column-{{ deployment.subdomain }}">
+                <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a>
+                <b> or </b>
+                <a href="#" onclick="extend_license('{{ deployment.subdomain }}'); return false;">Extend license</a>
+            </td>
         </tr>
-        {% for deployment in deployments %}
-            <tr id="row-{{ deployment.subdomain }}">
-                <td><a href="{{ url_for('.customer_actions', org_id=deployment.customer_id) }}">{{ deployment.customer.name }}</a></td>
-                <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}">{{ deployment.subdomain }}</a></td>
-                <td><a href="{{ url_for('.hpc_deployment', subdomain=deployment.subdomain) }}" id="remainingTime"> {{deployment.get_days_until_expiry() }}</a></td>
-                <td id="action-column-{{ deployment.subdomain }}">
-                    <a href="#" onclick="remove_deployment('{{ deployment.subdomain }}'); return false;">Remove</a>
-                    <b> or </b>
-                    <a href="#" onclick="extend_license('{{ deployment.subdomain }}'); return false;">Extend license</a>
-                </td>
-            </tr>
-        {% endfor %}
-    </table>
+    {% endfor %}
+</table></div>
 {% endblock %}
