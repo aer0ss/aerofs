@@ -57,7 +57,6 @@ def login_page():
         else:
             # Successful login.
             login_success = login_helper.login_user(admin)
-            # TODO: handle inactive users more clearly?  not sure what UX to expose in that case.
             if login_success:
                 analytics_client.track(admin.customer_id, "Logged In", {
                     'email': markupsafe.escape(admin.email)
