@@ -29,17 +29,12 @@ in step 5 below.
    little unlock button and enter the keychain password (which is _not_ the same as the mount
    password). For this, also ask Matt.
 
-3. Make and push Eyja javascript/images for iOS, Android and web. To do this, run
-the following commands:
+3. Make and push Eyja javascript/images for iOS, Android and web; package the Eyja
+installers. To do this, run the following commands:
 
        git pull
-       ~/repos/aeroim-client/bin/aero build
+       ~/repos/aeroim-client/bin/aero build <appliance_version_to_build>
        ~/repos/aeroim-client/bin/aero web publish
-
-
-4. Package the AeroIM installers into the appliance by running:
-
-       ~/repos/aeroim-client/bin/aero desktop build <appliance_version_to_build>
 
 5. Build using:
 
