@@ -692,6 +692,16 @@ try:
     assert r.json()['messages'][4]['time'] == r.json()['messages'][5]['time']
     assert json.loads(r.json()['messages'][4]['body'])['type'] != json.loads(r.json()['messages'][5]['body'])['type'] # one added, one removed
 
+    # GET /messages?since
+    r = s.get("{}/convos/{}/messages".format(BASE_URL, cid), headers=DGRAY_AUTH)
+    assert r.ok, r
+    length = len(r.json()['messages'])
+    assert length > 0
+    first_msg_id = r.json()['messages'][0]['id']
+    r = s.get("{}/convos/{}/messages?since={}".format(BASE_URL, cid, first_msg_id), headers=DGRAY_AUTH)
+    assert r.ok, r
+    assert len(r.json()['messages']) == length - 1
+
     # POST  /commands
     data = {
       "command": "diablo2asd",

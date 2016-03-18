@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emicklei/go-restful"
+	"strconv"
 	"time"
 )
 
@@ -144,6 +145,7 @@ func BuildRoutes(
 	ws.Route(ws.GET("/{cid}/messages").To(ctx.getMessages).
 		Doc("Get all messages exchanged in a convo").
 		Param(ws.PathParameter("cid", "Convo id").DataType("string")).
+		Param(ws.QueryParameter("since", "Id of last message received").DataType("int")).
 		Returns(200, "A list of messages exchanged", MessageList{}).
 		Returns(401, "Invalid Authorization", nil).
 		Returns(403, "Forbidden", nil).
@@ -293,6 +295,7 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 
 func (ctx *context) getMessages(request *restful.Request, response *restful.Response) {
 	cid := request.PathParameter("cid")
+	since := request.QueryParameter("since")
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
@@ -308,7 +311,18 @@ func (ctx *context) getMessages(request *restful.Request, response *restful.Resp
 		response.WriteErrorString(403, "Forbidden")
 		return
 	}
-	messages := dao.GetMessages(tx, cid)
+
+	var messages []Message
+	if since == "" {
+		messages = dao.GetMessages(tx, cid)
+	} else {
+		mid, err := strconv.Atoi(since)
+		if err != nil {
+			response.WriteErrorString(400, "\"since\" param must be a message id")
+			return
+		}
+		messages = dao.GetMessagesSince(tx, cid, mid)
+	}
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(MessageList{Messages: messages})

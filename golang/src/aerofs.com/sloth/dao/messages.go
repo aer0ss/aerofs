@@ -8,7 +8,11 @@ import (
 )
 
 func GetMessages(tx *sql.Tx, cid string) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? ORDER BY time", cid)
+	return GetMessagesSince(tx, cid, -1)
+}
+
+func GetMessagesSince(tx *sql.Tx, cid string, since int) []Message {
+	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? AND id > ? ORDER BY id", cid, since)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseMessageRows(tx, rows)
 }
