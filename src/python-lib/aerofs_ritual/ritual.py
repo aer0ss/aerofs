@@ -317,7 +317,7 @@ class _RitualServiceWrapper(object):
 
     def get_path_status(self, path):
         pbpath = convert.absolute_to_pbpath(path)
-        return self._service.get_path_status(pbpath)
+        return self._service.get_path_status([pbpath])
 
     def relocate(self, absolute_path, sid=None):
         self._service.relocate(absolute_path, sid)

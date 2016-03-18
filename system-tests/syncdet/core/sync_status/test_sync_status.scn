@@ -1,0 +1,8 @@
+:include test_sync_status_group.scn
+
+:scn,nofail sync_status_group_test
+    :serial
+        sync_status_group()
+
+:serial
+    sync_status_group_test()
