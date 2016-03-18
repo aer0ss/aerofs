@@ -64,7 +64,7 @@ SCREEN_SHOTS="$(cd "${SCREEN_SHOTS}" && pwd)"
     docker run --rm --name "${CONTAINER_NAME}" \
         -v "${SCREEN_SHOTS}":/screenshots \
         ${EXTRA_DOCKER_ARGS:-} \
-        "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS}
+        "${IMAGE_NAME}" python -u main.py ${HOST} ${EXTRA_PYTHON_ARGS:-}
 
     EXIT_CODE=$?
 

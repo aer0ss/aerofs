@@ -191,8 +191,9 @@ endif
 	make _test_python PYPROJECT=bunker
 	$(call success,"test_python")
 
-test_system: syncdet
+test_system:
 	make _syncdet ARG="--case=lib.cases.clean_install" SYNCDET_ARGS="--case-arg=--transport=$(SYNCDET_TRANSPORT)"
+	make syncdet
 	$(call success,"test_system")
 
 test_system_archive:
