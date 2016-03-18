@@ -438,7 +438,7 @@ public class MetadataBuilder
             Version version, boolean isFile)
     {
         Preconditions.checkArgument(parent != null, "Parent is null.");
-        Preconditions.checkArgument(name != null, "No object name given.");
+        Preconditions.checkArgument(name != null && !name.isEmpty(), "No object name given.");
 
         RestObject restParent = RestObject.fromString(parent);
         UniqueID parentOID = restObject2OID(principal, restParent);
@@ -495,7 +495,7 @@ public class MetadataBuilder
 
     public Response move(AeroOAuthPrincipal principal, RestObject object, String parent, String name, EntityTagSet ifmatch) {
         Preconditions.checkArgument(parent != null, "Destination is null.");
-        Preconditions.checkArgument(name != null, "No object name given.");
+        Preconditions.checkArgument(name != null && !name.isEmpty(), "No object name given.");
 
         UniqueID oid = restObject2OID(principal, object);
         UniqueID toParent = restObject2OID(principal, RestObject.fromString(parent));
