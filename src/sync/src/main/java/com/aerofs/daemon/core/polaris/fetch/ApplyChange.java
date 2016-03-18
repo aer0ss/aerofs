@@ -265,6 +265,8 @@ public class ApplyChange
             long mergeBoundary, Trans t)
             throws Exception
     {
+        if (name == null || name.isEmpty()) throw new ExProtocolError();
+
         RemoteLink lnk = _rpdb.getParent_(parent.sidx(), oidChild);
         if (lnk == null) {
             l.warn("ignore rename for deleted {} {}/{}", oidChild, parent, name);
@@ -285,6 +287,8 @@ public class ApplyChange
     private void insertChild(SOID parent, RemoteChange c, long mergeBoundary, Trans t)
             throws Exception
     {
+        if (c.childName == null || c.childName.isEmpty()) throw new ExProtocolError();
+
         SIndex sidx = parent.sidx();
         OID oidChild = c.child;
 
