@@ -191,9 +191,7 @@ endif
 	make _test_python PYPROJECT=bunker
 	$(call success,"test_python")
 
-test_system:
-	make _syncdet ARG="--case=lib.cases.clean_install" SYNCDET_ARGS="--case-arg=--transport=$(SYNCDET_TRANSPORT)"
-	make syncdet
+test_system: _syncdet_clean_install syncdet
 	$(call success,"test_system")
 
 test_system_archive:
@@ -257,6 +255,9 @@ _syncdet:
 			$(GIT_ROOT)/src/python-lib/./aerofs_sp \
 			$(GIT_ROOT)/src/python-lib/./aerofs_ritual \
 			$(GIT_ROOT)/resource/templates/client/linux/storage-agent/./setup_storage_agent.py
+
+_syncdet_clean_install:
+	make _syncdet ARG="--case=lib.cases.clean_install" SYNCDET_ARGS="--case-arg=--transport=$(SYNCDET_TRANSPORT)"
 
 _test_python:
 	$(GIT_ROOT)/env/bin/pip install -r $(GIT_ROOT)/src/$(PYPROJECT)/requirements.txt
