@@ -2,17 +2,15 @@
 set -eu
 
 die_usage() {
-    (set +x
-        echo "Usage: $0 <output_formats> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> ['nopush']"
-        echo "       <output_formats> is a comma separated list of output formats. Only 'cloudinit' and 'preloaded' are supported."
-        echo "                Example: 'preloaded,cloudinit'"
-        echo "       <path_to_extra_files> The path to a folder that holds files to be copied to the root of the target host."
-        echo "                The files are added to the cloud-config file so you may expect consistent results across all"
-        echo "                output formats. Specify an empty string if no extra files are needed."
-        echo "       'nopush' to skip pushing docker images to the local preload registry. Useful if the images are already"
-        echo "                pushed and unchanged since the last build."
-        exit 11
-    )
+    echo >&2 "Usage: $0 <output_formats> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> ['nopush']"
+    echo >&2 "       <output_formats> is a comma separated list of output formats. Only 'cloudinit' and 'preloaded' are supported."
+    echo >&2 "                Example: 'preloaded,cloudinit'"
+    echo >&2 "       <path_to_extra_files> The path to a folder that holds files to be copied to the root of the target host."
+    echo >&2 "                The files are added to the cloud-config file so you may expect consistent results across all"
+    echo >&2 "                output formats. Specify an empty string if no extra files are needed."
+    echo >&2 "       'nopush' to skip pushing docker images to the local preload registry. Useful if the images are already"
+    echo >&2 "                pushed and unchanged since the last build."
+    exit 11
 }
 
 if [ $# != 5 ] && [ $# != 4 ]; then
@@ -51,9 +49,7 @@ CYAN='0;36'
 YELLOW='1;33'
 RED='0;31'
 cecho() {
-    (set +x
-        echo -e "\033[$1m$2\033[0m"
-    )
+    echo >&2 -e "\033[$1m$2\033[0m"
 }
 
 # Use this global variable to pass data back to main()
@@ -82,7 +78,7 @@ setup_preload_registry() {
         sleep 3
         local RUNNING=$(docker inspect -f '{{ .State.Running }}' ${REPO_CONTAINER})
         [[ "${RUNNING}" = 'true' ]] && break
-        echo "WARNING: ${REPO_CONTAINER} failed to start. Try again."
+        echo >&2 "WARNING: ${REPO_CONTAINER} failed to start. Try again."
     done
 
     # Find the registry's hostname.
@@ -97,7 +93,7 @@ setup_preload_registry() {
         REPO_HOST=$(ip addr show ${IFACE} | grep '^ *inet ' | head -1 | tr / ' ' | awk '{print $2}')
     fi
     if [ -z "${REPO_HOST}" ]; then
-        echo "ERROR: can't identify the registry's IP address" >&2
+        echo >&2 "ERROR: can't identify the registry's IP address" >&2
         exit 22
     fi
 
@@ -229,10 +225,8 @@ preload() {
     chmod -f 400 "${KEY_FILE}"
 
     # Wait for ssh readiness
-    (set +x
-        echo "Waiting for VM to launch..."
-        while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
-    )
+    echo "Waiting for VM to launch..."
+    while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
 
     # Copy preload script to VM. Note:
     # 1. Don't save the script to /tmp. For some reason CoreOS may delete it while it's running.
@@ -241,13 +235,11 @@ preload() {
     ssh ${SSH_ARGS} "cat > ${PRELOAD_SCRIPT} && chmod u+x ${PRELOAD_SCRIPT}" < "${THIS_DIR}/preload-guest.sh"
     local START=$(date +%s)
 
-    (set +x
-        echo
-        cecho ${CYAN} ">>> About to enter VM ($(date +%T)). You may access it from another terminal via:"
-        echo
-        cecho ${CYAN} "    ssh ${SSH_ARGS}"
-        echo
-    )
+    echo
+    cecho ${CYAN} ">>> About to enter VM ($(date +%T)). You may access it from another terminal via:"
+    echo
+    cecho ${CYAN} "    ssh ${SSH_ARGS}"
+    echo
 
     # Run preload script in VM. This step can take a while, and some times for some reason ssh may
     # disconnect in the middle. So we retry a few times.
@@ -270,22 +262,18 @@ preload() {
         fi
     done
 
-    (set +x
-        echo
-        cecho ${CYAN} "<<< Exited from VM"
-        echo
-        cecho ${CYAN} "Preloading took $(expr \( $(date +%s) - ${START} \) / 60) minutes."
-        echo
-    )
+    echo
+    cecho ${CYAN} "<<< Exited from VM"
+    echo
+    cecho ${CYAN} "Preloading took $(expr \( $(date +%s) - ${START} \) / 60) minutes."
+    echo
 
     # Overwrite cloud-config.yml, disable ssh, & shut down
     ssh ${SSH_ARGS} 'cat > tmp && sudo mv -f tmp /usr/share/oem/cloud-config.yml' < "${OUTPUT}/cloud-config.yml"
     ssh ${SSH_ARGS} "rm -rf ~core/.ssh && sudo systemd-run shutdown"
 
-    (set +x
-        echo "Wait for VM to shutdown..."
-        while [ $(is_vm_powered_off ${VM}) = 0 ]; do sleep 1; done
-    )
+    echo "Wait for VM to shutdown..."
+    while [ $(is_vm_powered_off ${VM}) = 0 ]; do sleep 1; done
 }
 
 update_nic() {
@@ -385,17 +373,15 @@ main() {
         build_preloaded ${LOADER_IMAGE} "${VM_BASE_DIR}" "${VM_IMAGE_NAME}" "${OVA}"
     fi
 
-    (set +x
-        echo
-        cecho ${GREEN} "Build is complete."
-        if [ ${OF_CLOUDINIT} = 1 ]; then
-            cecho ${GREEN} "    VM cloud-config: ${OUTPUT}/cloud-config.yml"
-        fi
-        if [ ${OF_PRELOADED} = 1 ]; then
-            cecho ${GREEN} "    VM preloaded:    $(du -h ${OVA})"
-        fi
-        echo
-    )
+    echo
+    cecho ${GREEN} "Build is complete."
+    if [ ${OF_CLOUDINIT} = 1 ]; then
+        cecho ${GREEN} "    VM cloud-config: ${OUTPUT}/cloud-config.yml"
+    fi
+    if [ ${OF_PRELOADED} = 1 ]; then
+        cecho ${GREEN} "    VM preloaded:    $(du -h ${OVA})"
+    fi
+    echo
 }
 
 main
