@@ -7,14 +7,12 @@ from common import call_crane, my_container_id, my_container_name, my_full_image
     MODIFIED_YML_PATH, my_container_prefix, my_subdomain
 from flask import Flask, json, jsonify, request, make_response
 from os.path import exists
-from os.path import islink
 from os import devnull
 from traceback import print_exc
 from uuid import uuid4
 
 PREFIX = '/v1'
 CURRENT = 'current'
-GETTY_TAG = '/ship/loader/getty/tag'
 
 BOOT_ID = uuid4().hex
 
@@ -48,10 +46,6 @@ def start(current_repo, current_target, repo_file, tag_file, target_file, tag):
     _current_target = current_target
     _repo_file = repo_file
     _tag_file = tag_file
-
-    if exists(GETTY_TAG) and not islink(GETTY_TAG):
-        shutil.rmtree(GETTY_TAG)
-        os.symlink(_tag_file, GETTY_TAG)
 
     _target_file = target_file
     _tag = tag

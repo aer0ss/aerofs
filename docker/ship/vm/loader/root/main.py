@@ -22,9 +22,8 @@ def install_getty(dest):
             shutil.copy2(join(src, f), join(dest, f))
         break
 
-    # Symlink /tag to avoid changing multiple destinations.
-    os.symlink(TAG_PATH, join(dest, 'tag'))
-    # Copy banner.
+    # Copy /tag & /banner
+    shutil.copy2(TAG_PATH, join(dest, 'tag'))
     if isfile('/banner'):
         shutil.copy2('/banner', join(dest, 'banner'))
 
