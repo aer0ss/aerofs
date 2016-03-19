@@ -4,15 +4,10 @@
 
 package com.aerofs.defects;
 
-import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.defects.Defect.Priority;
 import com.aerofs.defects.DryadClient.FileUploadListener;
-import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ClientParam;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.configuration.ClientConfigurationLoader;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.UploadLogsArgs;
 import com.aerofs.proto.Cmd.UploadLogsDestination;
@@ -21,7 +16,8 @@ import com.google.common.collect.Queues;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.util.Properties;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.DiscardOldestPolicy;
@@ -35,16 +31,6 @@ import static com.google.common.base.Preconditions.*;
 public class CommandDefect
 {
     private static final Logger l = Loggers.getLogger(CommandDefect.class);
-
-    private static final int CONNECTION_TIMEOUT = (int)(3 * C.SEC);
-    private static final int READ_TIMEOUT = (int)(3 * C.SEC);
-
-    private static final String PROPERTY_CONFIG_SERVICE_URL
-            = "config.loader.configuration_service_url";
-    private static final String PROPERTY_BASE_CA_CERT
-            = "config.loader.base_ca_certificate";
-    private static final String DRYAD_CERT
-            = "base.dryad.cert";
 
     private final String _defectID;
     private final DryadClient _dryad;
@@ -113,29 +99,16 @@ public class CommandDefect
         }
 
         private DryadClient createDryadClient(UploadLogsArgs args)
-                throws Exception
+                throws IOException, GeneralSecurityException
         {
             if (args.hasDestination()) {
                 UploadLogsDestination destination = args.getDestination();
                 return createPrivateDryadClient(destination.getHostname(),
                         destination.getPort(),
-                        getDryadCertificate());
+                        destination.getCert());
             } else {
                 return createPublicDryadClient();
             }
-        }
-
-        // Dryad Certificate are stored on config service. Since we cache config value on client startup,
-        // we will need to connect to config service to retrieve the certificate to authenticate Dryad.
-        private String getDryadCertificate()
-                throws Exception
-        {
-            ClientConfigurationLoader loader =
-                    new ClientConfigurationLoader(AppRoot.abs(), Cfg.absRTRoot(), new PropertiesRenderer());
-
-            Properties prop = loader.loadConfiguration();
-
-            return prop.getProperty(DRYAD_CERT);
         }
 
         private FileUploadListener createListener()

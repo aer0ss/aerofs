@@ -5,8 +5,6 @@
 <%namespace name="modal" file="modal.mako"/>
 <%namespace name="common" file="logs_common.mako"/>
 
-<%! from web.views.maintenance.maintenance_util import format_pem %>
-
 <%
     support_url = 'https://support.aerofs.com/hc/en-us/articles/204593134'
 %>
@@ -193,38 +191,38 @@
                class="form-control aerofs-option">
     </div>
 
-    <div id="on-site-options" class="form-group"
+    <div id="on-site-options" class="form-group row"
          %if option != 'on-site':
              hidden
          %endif
             >
-        <div class ="form-group row">
-            <div class="col-md-8">
-                <label for="host">Hostname:</label>
-                <input type="text" id="host" name="host" value="${host}"
-                       %if option == 'on-site':
-                           required
-                       %endif
-                       class="form-control on-site-option">
-            </div>
-            <div class="col-md-4">
-                <label for="port">Port:</label>
-                <input type="number" min="0" step="1" id="port" name="port"
-                       %if option == 'on-site':
-                           required
-                       %endif
-                       value="${port}" class="form-control on-site-option">
-            </div>
+        <div class="col-md-6">
+            <label for="host">Hostname:</label>
+            <input type="text" id="host" name="host" value="${host}"
+                   %if option == 'on-site':
+                       required
+                   %endif
+                   class="form-control on-site-option">
         </div>
-        <div class="form-group row">
-            <div class="col-md-12">
-                <label for="cert">Certificate:</label>
-                <textarea id="cert" name="cert" class="form-control" placeholder="Server Certificate"
-                    %if option == 'on-site':
-                        required
-                    %endif
-                >${cert}</textarea>
-            </div>
+        <div class="col-md-2">
+            <label for="port">Port:</label>
+            <input type="number" min="0" step="1" id="port" name="port"
+                   %if option == 'on-site':
+                       required
+                   %endif
+                   value="${port}" class="form-control on-site-option">
+        </div>
+        <div class="col-md-4">
+            <label for="cert-selector">
+                Certificate:
+            </label>
+            <input type="file" id="cert-selector"
+                   class="form-control on-site-option"
+                   %if option == 'on-site' and cert == '':
+                       required
+                   %endif
+                    >
+            <input type="hidden" id="cert" name="cert" value="${cert}">
         </div>
     </div>
 
@@ -432,16 +430,10 @@
         }
 
         function postForm() {
-
-            var route = '${request.route_path('json_collect_logs')}';
-            if (validateFieldChanges()) {
-                route = '${request.route_path('json_save_configuration')}';
-            }
-
-            $.post(route,
-                $('form#client-logs-form').serialize())
-                .done(onSuccess)
-                .fail(showErrorMessageFromResponse);
+            $.post("${request.route_path('json_collect_logs')}",
+                    $('form#client-logs-form').serialize())
+                    .done(onSuccess)
+                    .fail(showErrorMessageFromResponse);
         }
 
         function onSuccess() {
@@ -487,22 +479,5 @@
                 throw new Error(message);
             }
         }
-
-        function fieldChanged(element, saved) {
-            var v = $(element).val();
-
-            return v != saved;
-        }
-
-        function validateFieldChanges() {
-            var option = "${option}"
-            var host = "${host}";
-            var port = "${port}";
-            var cert = "${format_pem(cert)}";
-
-            return fieldChanged('#host', host) || fieldChanged('#port', port) || fieldChanged('#cert', cert) ||
-                fieldChanged('#option', option);
-        }
-
     </script>
 </%block>

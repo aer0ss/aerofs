@@ -151,9 +151,9 @@ def json_get_users(request):
     request_method='POST',
 )
 def json_collect_logs(request):
-    _validate_collect_logs_options(request.params)
-
     url = _collect_logs_url(request)
+
+    _validate_collect_logs_options(request.params)
 
     payload = {
         'defectID': request.params.get(_FORM_PARAM_DEFECT_ID,
@@ -165,13 +165,25 @@ def json_collect_logs(request):
         'email':    request.params[_FORM_PARAM_EMAIL],
         'host':     request.params[_FORM_PARAM_HOST],
         'port':     request.params[_FORM_PARAM_PORT],
+        'cert':     request.params[_FORM_PARAM_CERT],
         'subject':  request.params[_FORM_PARAM_SUBJECT],
         'message':  request.params[_FORM_PARAM_MESSAGE],
     }
 
     r = requests.post(url, data=payload)
 
-    if r.status_code != 200:
+    # Only persist settings if the post was successful.
+    if r.status_code == 200:
+        conf = get_conf_client(request)
+        conf.set_external_property(_DRYAD_OPTION_EXTERNAL_PROP,
+                                   request.params[_FORM_PARAM_OPTION])
+        conf.set_external_property(_DRYAD_HOST_EXTERNAL_PROP,
+                                   request.params[_FORM_PARAM_HOST])
+        conf.set_external_property(_DRYAD_PORT_EXTERNAL_PROP,
+                                   request.params[_FORM_PARAM_PORT])
+        conf.set_external_property(_DRYAD_CERT_EXTERNAL_PROP,
+                                   format_pem(request.params[_FORM_PARAM_CERT]))
+    else:
         unexpected_error('AeroFS was unable to issue commands to collect logs. Please '
               'try again later.')
 
@@ -236,36 +248,3 @@ def _validate_certificate(certificate):
     except UnicodeEncodeError:
         # this error indicates bad unicode in the cert => bad cert
         expected_error(msg)
-
-def _validate_onsite_server(request):
-    url = "https://" + request.params[_FORM_PARAM_HOST] + ":" + request.params[_FORM_PARAM_PORT] + "/v1.0/status"
-
-    try:
-        r = requests.get(url, verify=False)
-        return r.status_code
-    except requests.exceptions.RequestException as e:
-        log.error(e)
-        unexpected_error('AeroFS was unable to collect logs. Please check your inputs and '
-                         'try again later.')
-
-@view_config(
-    route_name='json_save_configuration',
-    permission='maintain',
-    renderer='json',
-    request_method='POST',
-)
-def json_save_configuration(request):
-
-    conf_client = get_conf_client(request)
-
-    if request.params[_FORM_PARAM_OPTION] == _OPTION_AEROFS:
-        conf_client.set_external_property(_DRYAD_OPTION_EXTERNAL_PROP, request.params[_FORM_PARAM_OPTION])
-        json_collect_logs(request)
-    elif request.params[_FORM_PARAM_OPTION] == _OPTION_ON_SITE and _validate_onsite_server(request) == 200:
-        conf_client.set_external_property(_DRYAD_OPTION_EXTERNAL_PROP, request.params[_FORM_PARAM_OPTION])
-        conf_client.set_external_property(_DRYAD_HOST_EXTERNAL_PROP, request.params[_FORM_PARAM_HOST])
-        conf_client.set_external_property(_DRYAD_PORT_EXTERNAL_PROP, request.params[_FORM_PARAM_PORT])
-        conf_client.set_external_property(_DRYAD_CERT_EXTERNAL_PROP, format_pem(request.params[_FORM_PARAM_CERT]))
-        json_collect_logs(request)
-    else:
-        unexpected_error('Unable to connect to server. Please check your inputs and try again later.')
