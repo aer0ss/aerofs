@@ -19,22 +19,17 @@ package main
 import (
 	"aerofs.com/service"
 	"aerofs.com/service/config"
-	"crypto/tls"
-	"crypto/x509"
+	"aerofs.com/trifrost/mailer"
 	"encoding/json"
 	"fmt"
 	"github.com/aerofs/httprouter"
 	"log"
 	"net/http"
-	"net/smtp"
 )
 
 const (
 	// default port on which to listen
 	PORT = 8888
-
-	// buffer size for email chan
-	MAIL_QUEUE_SIZE = 1000
 
 	// OAuth Client Id for trifrost
 	OAUTH_CLIENT_ID = "aerofs-trifrost"
@@ -56,20 +51,14 @@ type tokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-// Pretty self-explanatory
-type EmailCodePair struct {
-	Email string
-	Code  int
-}
-
 // context contains data required by the handlers
 type context struct {
 
 	// stores (email, auth code) pairs
 	codeMap CodeMap
 
-	// emails are sent for each value passed through this chan
-	mail chan<- EmailCodePair
+	// call mail.Mail(email, code) to send mail asynchronously
+	mail mailer.Mailer
 
 	// call tokenCreator#CreateToken to create access tokens
 	tokenCreator *TokenCreator
@@ -96,10 +85,7 @@ func (ctx *context) handleAuthCode(w http.ResponseWriter, req *http.Request, _ h
 	authCode := ctx.codeMap.GetCode(body.Email)
 	log.Printf("got code %v for %v\n", authCode, body.Email)
 
-	ctx.mail <- EmailCodePair{
-		Email: body.Email,
-		Code:  authCode,
-	}
+	ctx.mail.Mail(body.Email, authCode)
 }
 
 func (ctx *context) handleToken(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
@@ -147,107 +133,6 @@ func (ctx *context) getOAuthToken(email string) (string, error) {
 	return ctx.tokenCreator.CreateToken(email)
 }
 
-func getTLSConfig(config map[string]string) *tls.Config {
-	cert := config["email.sender.public_cert"]
-	host := config["email.sender.public_host"]
-	if cert == "" {
-		return &tls.Config{
-			ServerName: host,
-		}
-	}
-	certPool := x509.NewCertPool()
-	if !certPool.AppendCertsFromPEM([]byte(cert)) {
-		log.Panic("unable to parse cert")
-	}
-	return &tls.Config{
-		ServerName: host,
-		RootCAs:    certPool,
-	}
-
-}
-
-func getSMTPClient(config map[string]string) *smtp.Client {
-	applianceHost := config["base.host.unified"]
-	host := config["email.sender.public_host"]
-	port := config["email.sender.public_port"]
-	user := config["email.sender.public_username"]
-	pass := config["email.sender.public_password"]
-	enableTls := config["email.sender.public_enable_tls"]
-	log.Print("smtp host: ", host)
-	log.Print("smtp port: ", port)
-	log.Print("smtp user: ", user)
-	log.Print("smtp pass: ", pass)
-	log.Print("smtp enable TLS: ", enableTls)
-
-	addr := fmt.Sprint(host, ":", port)
-
-	log.Print("smtp: connecting to ", addr)
-	client, err := smtp.Dial(addr)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	log.Println("smtp: saying HELO...")
-	if err := client.Hello(applianceHost); err != nil {
-		log.Panic(err)
-	}
-
-	if enableTls == "False" {
-		log.Println("smtp: skipping tls upgrade...")
-	} else {
-		log.Println("smtp: upgrading to tls...")
-		if err := client.StartTLS(getTLSConfig(config)); err != nil {
-			log.Panic(err)
-		}
-	}
-
-	if user != "" && pass != "" {
-		log.Println("smtp: authenticating...")
-		auth := smtp.PlainAuth("", user, pass, host)
-		if err := client.Auth(auth); err != nil {
-			log.Panic(err)
-		}
-	}
-
-	return client
-}
-
-func sendEmailLoop(client *smtp.Client, ch <-chan EmailCodePair, config map[string]string) {
-	defer client.Quit()
-	sender := config["base.www.support_email_address"]
-	for {
-		p := <-ch
-		log.Printf("sending code %v to %v\n", p.Code, p.Email)
-		if err := client.Mail(sender); err != nil {
-			log.Print("err in client.Mail: ", err)
-			continue
-		}
-		if err := client.Rcpt(p.Email); err != nil {
-			log.Print("err in client.Rcpt: ", err)
-			continue
-		}
-		wc, err := client.Data()
-		if err != nil {
-			log.Print("err in client.Data: ", err)
-			continue
-		}
-		body := fmt.Sprint(
-			"From: AeroFS <", sender, ">\r\n",
-			"To: ", p.Email, "\r\n",
-			"Subject: Your Eyja Authorization Code: ", p.Code, "\r\n",
-			"Enter this authorization code to access Eyja: ", p.Code, "\r\n",
-		)
-		if _, err := wc.Write([]byte(body)); err != nil {
-			log.Print("err writing email body: ", err)
-			continue
-		}
-		if err := wc.Close(); err != nil {
-			log.Print("err closing email body: ", err)
-			continue
-		}
-	}
-}
-
 func main() {
 	service.ServiceBarrier()
 
@@ -257,10 +142,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	mailChan := make(chan EmailCodePair, MAIL_QUEUE_SIZE)
-	mailClient := getSMTPClient(cfg)
-
-	go sendEmailLoop(mailClient, mailChan, cfg)
+	mail := mailer.FromConfig(cfg)
 
 	deploymentSecret := service.ReadDeploymentSecret()
 	clientSecret, err := getOAuthClientSecret(deploymentSecret, OAUTH_CLIENT_ID)
@@ -270,7 +152,7 @@ func main() {
 
 	ctx := &context{
 		codeMap: NewCodeMap(),
-		mail:    mailChan,
+		mail:    mail,
 		tokenCreator: &TokenCreator{
 			clientId:         OAUTH_CLIENT_ID,
 			clientSecret:     clientSecret,
