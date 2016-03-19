@@ -11,7 +11,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.LibParam.REDIS;
-import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.AbstractEmailSender;
 import com.aerofs.servlets.lib.AsyncEmailSender;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
@@ -33,7 +32,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -126,9 +124,8 @@ public class CollectLogsServlet extends HttpServlet
 
                 String hostname = req.getParameter("host");
                 int port = Integer.parseInt(req.getParameter("port"));
-                String cert = req.getParameter("cert");
                 commandMessage = createUploadLogsToOnSiteCommandMessage(defectID, getExpiryTime(),
-                        hostname, port, cert);
+                        hostname, port);
                 enqueueCommandsForUsers(commandMessage, userIDs);
                 notifyOnSiteSupport(hostname, subject, defectID, userIDs);
             } else if (mode == LogCollectionMode.SEND_APPLIANCE_LOGS_OFFSITE) {

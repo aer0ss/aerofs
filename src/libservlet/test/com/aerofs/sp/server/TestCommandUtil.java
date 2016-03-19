@@ -121,29 +121,9 @@ public class TestCommandUtil
                 "-----END CERTIFICATE-----\n";
         long expiry = 0L;
         String expectedMessage = "10:9001deadbeef0000deadbeef12345678:0:" +
-                "logs.example.com:443:" +
-                "-----BEGIN CERTIFICATE-----\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "0000000000000000000000000000000000000000000000000000000000000000\n" +
-                "000=\n" +
-                "-----END CERTIFICATE-----\n";
+                "logs.example.com:443";
 
-        String message = createUploadLogsToOnSiteCommandMessage(defectID, expiry, host, port, cert);
+        String message = createUploadLogsToOnSiteCommandMessage(defectID, expiry, host, port);
         assertEquals(expectedMessage, message);
 
         Command command = createCommandFromMessage(message, 0);
@@ -156,7 +136,6 @@ public class TestCommandUtil
         UploadLogsDestination destination = command.getUploadLogsArgs().getDestination();
         assertEquals(host, destination.getHostname());
         assertEquals(port, destination.getPort());
-        assertEquals(cert, destination.getCert());
     }
 
     @Test
@@ -190,7 +169,7 @@ public class TestCommandUtil
 
         for (int invalidPort : invalidPorts) {
             try {
-                createUploadLogsToOnSiteCommandMessage(defectID, expiry, host, invalidPort, cert);
+                createUploadLogsToOnSiteCommandMessage(defectID, expiry, host, invalidPort);
                 // unexpected
                 fail();
             } catch (IllegalArgumentException e) {
