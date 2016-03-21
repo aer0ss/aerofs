@@ -1,12 +1,13 @@
+import codecs
 import glob
 import json
 import requests
 import uuid
+import zipfile
 from tempfile import NamedTemporaryFile
 from os.path import dirname, exists, basename, splitext
 from pyramid.view import view_config
 from os import makedirs, unlink
-from zipfile import ZipFile
 from logs_view import LOG_ARCHIVE_PATH
 from docker import Client
 from web.error import expected_error, unexpected_error
@@ -33,21 +34,21 @@ def archive_container_logs(request):
     cli = Client(base_url='unix://var/run/docker.sock', version='1.17')
 
     # Move it to a separate, background process if archiving takes too long.
-    with ZipFile(LOG_ARCHIVE_PATH, 'w') as z:
+    with zipfile.ZipFile(LOG_ARCHIVE_PATH, 'w', zipfile.ZIP_DEFLATED, True) as z:
         logfiles = glob.glob('/var/lib/docker/containers/*/*.log*')
         for path in logfiles:
-            with open(path) as logfile, NamedTemporaryFile() as formatted_logs:
+            with codecs.open(path, encoding="utf-8") as log, codecs.open("formatted", mode='wb', encoding="utf-8") as formatted:
                 print 'Archiving log at {}...'.format(path)
                 container_id = basename(dirname(path))
                 container_name = cli.inspect_container(container_id)['Name'].strip().replace("/", "")
 
-                for line in logfile.readlines():
+                for line in log.readlines():
                     # some docker log files have null bytes left over
                     logObject = json.loads(line.strip('\0'))
-                    formatted_logs.write("{}:{}".format(logObject["time"], logObject["log"]))
+                    formatted.write(u"{}:{}".format(logObject["time"], logObject["log"]))
 
-                formatted_logs.flush()
-                z.write(formatted_logs.name, "".join(tuple(container_name) + splitext(basename(path))[1:]))
+                formatted.flush()
+                z.write(formatted.name, "".join(tuple(container_name) + splitext(basename(path))[1:]))
 
     print 'Log archiving done.'
 
