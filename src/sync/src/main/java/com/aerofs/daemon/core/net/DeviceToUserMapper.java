@@ -146,6 +146,7 @@ public class DeviceToUserMapper
         // if the resolution succeeds then both
         // _mappingStore and _mappingCache have been refreshed
         UserID userID = _mappingCache.get_(did);
+        // FIXME: race + cache eviction can cause failure here
         checkState(userID != null);
         return userID;
     }

@@ -33,10 +33,11 @@ import java.net.URI;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.GeneralSecurityException;
-import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
@@ -108,7 +109,10 @@ public class AsyncHttpClient
 
     private static class Handler extends IdleStateAwareChannelHandler
     {
-        private Queue<SettableFuture<HttpResponse>> _requests = new ArrayDeque<>();
+        // NB: use atomics because SslHandler's handshake lock makes it tricky to use a single lock
+        // to synchronize upstream and downstream handlers without risking deadlocks
+        private final AtomicBoolean _done = new AtomicBoolean();
+        private final Queue<SettableFuture<HttpResponse>> _requests = new ConcurrentLinkedDeque<>();
 
         @Override
         public void writeRequested(ChannelHandlerContext ctx, MessageEvent ev)
@@ -116,14 +120,14 @@ public class AsyncHttpClient
             Object request = ev.getMessage();
             if (request instanceof Request) {
                 Request r = (Request)request;
+                if (_done.get()) {
+                    ev.getFuture().setFailure(new ClosedChannelException());
+                    return;
+                }
+                // NB: it's important that the request be added to the queue and sent downstream
+                // atomically, otherwise responses may be mapped to the wrong callback, which might
+                // cause a crash or corrupted state.
                 synchronized (this) {
-                    if (_requests == null) {
-                        ev.getFuture().setFailure(new ClosedChannelException());
-                        return;
-                    }
-                    // NB: it's important that the request be added to the queue and sent
-                    // downstream atomically, otherwise responses may be mapped to the wrong
-                    // callback, which might cause crash or corrupted state.
                     _requests.add(r.f);
                     ctx.sendDownstream(new DownstreamMessageEvent(ev.getChannel(), ev.getFuture(),
                             r.http, ev.getRemoteAddress()));
@@ -147,12 +151,10 @@ public class AsyncHttpClient
             if (l.isDebugEnabled()) {
                 l.debug("{}", r.getContent().toString(BaseUtil.CHARSET_UTF));
             }
-            synchronized (this) {
-                if (_requests != null) {
-                    _requests.poll().set(r);
-                } else {
-                    l.warn("already closed");
-                }
+            if (!_done.get()) {
+                _requests.poll().set(r);
+            } else {
+                l.warn("already closed");
             }
         }
 
@@ -187,12 +189,8 @@ public class AsyncHttpClient
         private void failRequests()
         {
             SettableFuture<HttpResponse> f;
-            Queue<SettableFuture<HttpResponse>> q;
-            synchronized (this) {
-                if ((q = _requests) == null) return;
-                _requests = null;
-            }
-            while ((f = q.poll()) != null) {
+            if (!_done.compareAndSet(false, true)) return;
+            while ((f = _requests.poll()) != null) {
                 l.info("fail remaining req");
                 f.setException(new ClosedChannelException());
             }
