@@ -36,8 +36,8 @@ IMAGES:= \
 
 SA_IMAGES:= \
 	../src/storage-agent \
-	storage-agent-setup \
-	ship-aerofs/sa_loader
+	../src/storage-agent-setup \
+	ship-aerofs/sa-loader
 
 
 all:
@@ -46,7 +46,7 @@ images: $(IMAGES)
 	make -C ship-aerofs/loader verify
 	make clean_docker
 sa_images: $(SA_IMAGES)
-	make -C ship-aerofs/sa_loader verify
+	make -C ship-aerofs/sa-loader verify
 	make clean_docker
 
 

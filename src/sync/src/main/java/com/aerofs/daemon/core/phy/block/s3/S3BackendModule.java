@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.block.s3;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
 import com.aerofs.daemon.core.phy.block.IBlockStorageInitable;
 import com.aerofs.lib.cfg.CfgDatabase;
+import com.aerofs.lib.cfg.ICfgStore;
 import com.aerofs.lib.guice.GuiceUtil;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -31,21 +32,21 @@ public class S3BackendModule extends AbstractBackendModule
     }
 
     @Provides
-    public AWSCredentials provideAWSCredentials(CfgDatabase db)
+    public AWSCredentials provideAWSCredentials(ICfgStore store)
     {
         return new BasicAWSCredentials(
-                db.get(S3_ACCESS_KEY),
-                db.get(S3_SECRET_KEY));
+                store.get(S3_ACCESS_KEY),
+                store.get(S3_SECRET_KEY));
     }
 
     @Provides
-    public S3Config.EncryptionPasswordConfig provideS3EncryptionPasswordConfig(CfgDatabase db)
+    public S3Config.EncryptionPasswordConfig provideS3EncryptionPasswordConfig(ICfgStore store)
     {
-        return new S3Config.EncryptionPasswordConfig.EncryptionPasswordFromDB(db);
+        return new S3Config.EncryptionPasswordConfig.EncryptionPasswordFromDB(store);
     }
 
     @Provides
-    public AmazonS3 provideS3Client(AWSCredentials creds, CfgDatabase db)
+    public AmazonS3 provideS3Client(AWSCredentials creds, ICfgStore store)
     {
         AmazonS3 s3 = new AmazonS3Client(creds);
 
@@ -56,7 +57,7 @@ public class S3BackendModule extends AbstractBackendModule
 
         // Null testing is for old Team Servers that don't have the endpoint field populated.
         // The default end point is S3 US East region.
-        @Nullable String endpoint = db.getNullable(S3_ENDPOINT);
+        @Nullable String endpoint = store.getNullable(S3_ENDPOINT);
         if (endpoint != null) s3.setEndpoint(endpoint);
         return s3;
     }
