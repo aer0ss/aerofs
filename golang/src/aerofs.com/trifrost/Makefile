@@ -4,14 +4,13 @@ export GO15VENDOREXPERIMENT = 1
 
 include ../../Makefile.base
 
-IMAGE_NAME    = aeroim/trifrost
-PACKAGE_NAME   = aerofs.com/trifrost
+IMAGE_NAME = aeroim/trifrost
+PACKAGE_NAME = aerofs.com/trifrost
 
-GOCKERIZE_CTX = ../../
+GOCKERIZE_CTX = ../..
 
-trifrost: *.go
+trifrost: **/*.go
 	go build
 
 clean:
 	rm -f ./trifrost
-
