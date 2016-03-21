@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"aerofs.com/service"
 	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -202,4 +203,8 @@ func (e *serviceExtractor) Extract(params []string, r *http.Request) AuthToken {
 		return &serviceToken{name: params[0]}
 	}
 	return nil
+}
+
+func AuthHeader(name string) string {
+	return ServiceSharedSecret + " " + name + " " + service.ReadDeploymentSecret()
 }

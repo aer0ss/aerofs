@@ -2,7 +2,7 @@
 package config
 
 import (
-	"aerofs.com/service"
+	"aerofs.com/service/auth"
 	"bytes"
 	"fmt"
 	"io"
@@ -26,13 +26,9 @@ type httpClient struct {
 
 func NewClient(name string) Client {
 	return &httpClient{
-		Auth:   authHeader(name),
+		Auth:   auth.AuthHeader(name),
 		Client: &http.Client{},
 	}
-}
-
-func authHeader(name string) string {
-	return "Aero-Service-Shared-Secret " + name + " " + service.ReadDeploymentSecret()
 }
 
 func (c *httpClient) Get() (map[string]string, error) {

@@ -1,6 +1,7 @@
 package aerotls
 
 import (
+	"aerofs.com/service/auth"
 	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
@@ -122,7 +123,7 @@ func generateCert(cn string) (*rsa.PrivateKey, *x509.Certificate, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	cert, err := Certify(priv, cn)
+	cert, err := certify(priv, cn)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -153,7 +154,7 @@ func certify(priv *rsa.PrivateKey, cn string) (*x509.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", authHeader("crt-create"))
+	req.Header.Add("Authorization", auth.AuthHeader("crt-create"))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	defer resp.Body.Close()
