@@ -116,6 +116,7 @@ func (ctx *context) handleToken(w http.ResponseWriter, req *http.Request, _ http
 	if err != nil {
 		log.Panic(err)
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(bytes)
 }
 
