@@ -105,6 +105,8 @@ def convert_flags(args):
 
 def main():
     parser = argparse.ArgumentParser(prog='invoke')
+
+    # Pass-through to makefile
     parser.add_argument('--approot', action='store', default=os.path.join(GIT_ROOT, 'approot'))
     parser.add_argument('--product', action='store', choices=['CLIENT', 'TEAM_SERVER', 'STORAGE_AGENT'])
     parser.add_argument('--release-version', action='store')
@@ -121,6 +123,11 @@ def main():
     parser.add_argument('--target-os', action='store', choices=['win', 'osx', 'linux/i386', 'linux/amd64'])
     parser.add_argument('--team-city', action='store_true')
     parser.add_argument('commands', nargs='+', choices=commands)
+
+    # Local args
+    parser.add_argument('--verbose', action='store_const', dest='verbose', const=True)
+    parser.add_argument('--quiet', action='store_const', dest='verbose', const=False)
+
     args = parser.parse_args(sys.argv[1:])
 
     make_args = ['make']
@@ -129,9 +136,11 @@ def main():
 
     start = datetime.datetime.today()
 
-    p = subprocess.Popen(
-        make_args, stdout=open(os.path.join(GIT_ROOT, 'build.log'), 'w'),
-        cwd=GIT_ROOT)
+    output = None
+    if not args.verbose:
+        output = open(os.path.join(GIT_ROOT, 'build.log'), 'w')
+
+    p = subprocess.Popen(make_args, stdout=output, cwd=GIT_ROOT)
     p.wait()
     if p.returncode != 0:
         print 'Task failed.'
