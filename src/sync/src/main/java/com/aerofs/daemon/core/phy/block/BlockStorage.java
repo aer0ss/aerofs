@@ -514,7 +514,9 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
                         _bsb.putBlock(k, in, f.length());
                     }
                     // FIXME: delay removal until last reader is closed
-                    _uploadDir.newChild(c).deleteIgnoreError();
+                    if (!f.deleteIgnoreError()) {
+                        l.warn("failed to remove block after upload {}", c);
+                    }
                     _pi.incrementMonotonicProgress();
                 }
             } finally {

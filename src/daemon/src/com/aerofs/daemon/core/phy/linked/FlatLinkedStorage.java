@@ -129,7 +129,7 @@ public class FlatLinkedStorage extends LinkedStorage
     public void createStore_(SIndex sidx, SID sid, String name, Trans t)
             throws IOException, SQLException
     {
-        // when the user explictly links an external root (as opposed to implictly when the daemon
+        // when the user explicitly links an external root (as opposed to implicitly when the daemon
         // auto-joins a folder) the linking will already be done by the time this method is called
         // and we couldn't do it here anyway because we wouldn't know the correct full path...
         if (_lrm.absRootAnchor_(sid) != null) {

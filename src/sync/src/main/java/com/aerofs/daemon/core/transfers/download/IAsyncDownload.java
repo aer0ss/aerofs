@@ -73,7 +73,7 @@ public interface IAsyncDownload
             // we don't want the catch-all block to swallow runtime exceptions
             SystemUtil.fatal(e);
         } catch (final Exception e) {
-            logger.warn("{} :", soid, BaseLogUtil.suppress(e, ExNoPerm.class));
+            logger.warn("{} :", soid, BaseLogUtil.suppress(e, ExNoPerm.class, ExAborted.class));
             notifyListeners_(listener -> listener.onGeneralError_(soid, e), listeners);
         } finally {
             tk.reclaim_();

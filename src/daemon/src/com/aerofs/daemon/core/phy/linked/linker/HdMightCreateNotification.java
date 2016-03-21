@@ -48,11 +48,10 @@ class HdMightCreateNotification implements IEventHandler<EIMightCreateNotificati
 
     private boolean existsCaseSensitive(String absPath) {
         InjectableFile f = _factFile.create(absPath);
+        if (!f.exists()) return false;
         InjectableFile p = f.getParentFile();
         String[] siblings = p.list();
-        if (siblings == null) {
-            return false;
-        }
+        if (siblings == null) return false;
         String n = f.getName();
         for (String c : siblings) {
             if (c.equals(n)) return true;

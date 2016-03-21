@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExNoResource;
@@ -202,7 +203,13 @@ public class ContentReceiver
         Thread prefixCloser = new Thread(() -> {
             try { prefixStream.close(); } catch (IOException e) {}
         }, "closer");
-        Runtime.getRuntime().addShutdownHook(prefixCloser);
+        try {
+            Runtime.getRuntime().addShutdownHook(prefixCloser);
+        } catch (Exception e) {
+            // trying to add a shutdown hook during shutdown causes an exception
+            // however there is no way to tell that shutdown has been initiated...
+            l.info("failed to add shutdown hook", BaseLogUtil.suppress(e));
+        }
 
         try {
             // TODO: block storage could efficiently leverage a copy() primitive
@@ -276,7 +283,7 @@ public class ContentReceiver
                 // sigh, this is so damn stupid...
                 // removing a hook after shutdown is started throws an exception but of course
                 // there is no way to tell if a shutdown has been initiated...
-                l.info("failed to remove shutdown hook", e);
+                l.info("failed to remove shutdown hook", BaseLogUtil.suppress(e));
             }
         }
         return prefixStream.digest();
