@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 [[ $# -ge 1 ]] || ( echo "Usage: $0 <ip> [<userid> [<passwd>]]"; exit 11 )
 
@@ -14,7 +14,7 @@ docker rm -vf ${CONTAINER} 2>/dev/null || true
 docker run --name ${CONTAINER} -d -P ${IMAGE}
 
 # Find downstream's IP. TODO (WW) use docker-machine for both CI and dev environment
-if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
+if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then
     # Use the hostname specified in DOCKER_HOST environment variable
     DOWNSTREAM_IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
 else

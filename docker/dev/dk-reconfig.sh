@@ -50,7 +50,7 @@ THIS_DIR="$(dirname "$0")"
 "${THIS_DIR}"/emulate-ship.sh maintenance
 
 # Find the appliance's IP
-if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
+if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then
     # Use the docker daemon's IP
     IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
 else

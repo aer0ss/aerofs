@@ -84,7 +84,7 @@ setup_preload_registry() {
     # Find the registry's hostname.
     # TODO use docker-machine for both CI and dev environment.
     local REPO_HOST
-    if [ "$(grep '^tcp://' <<< "${DOCKER_HOST}")" ]; then
+    if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then
         # Use the hostname specified in DOCKER_HOST environment variable
         REPO_HOST=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
     else
