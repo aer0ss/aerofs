@@ -426,5 +426,8 @@ public class ClientParam
 
         public static int PORT_RANGE_HIGH =
                 getIntegerProperty("daemon.port.range.high", 0);
+
+        public static int PORT_RANGE_FORCE =
+                getIntegerProperty("daemon.sa.port.force", 0);
     }
 }

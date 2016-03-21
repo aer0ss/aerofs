@@ -351,6 +351,11 @@ public class TCP implements ITransport, ILinkStateListener
 
         static PortRange loadFromConfiguration()
         {
+            int force = ClientParam.Daemon.PORT_RANGE_FORCE;
+            if (force != 0) {
+                l.info("forcing port {}", force);
+                return new PortRange(force, force);
+            }
             int low = ClientParam.Daemon.PORT_RANGE_LOW, high = ClientParam.Daemon.PORT_RANGE_HIGH;
             if (low > high) {
                 l.warn("invalid range of ports for daemon to use: {}-{}, defaulting to any port", low, high);

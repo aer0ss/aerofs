@@ -62,6 +62,7 @@ public abstract class ICfgStore {
     public static final CfgKey STORAGE_ENCRYPTION_PASSWORD =
             new CfgKey("remote_storage_encryption_password", null);
 
+    public static final CfgKey TCP_FORCE_PORT = new CfgKey("force_port", "0");
 
     Map<CfgKey, String> _map = Maps.newHashMap();
 

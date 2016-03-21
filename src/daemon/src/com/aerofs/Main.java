@@ -59,7 +59,7 @@ public class Main
 
         String appRoot = AppRoot.abs();
         MainUtil.setLibraryPathToApproot(appRoot);
-        MainUtil.initializeConfigurationSystem(appRoot, rtRoot);
+        MainUtil.initializeConfigurationSystem(appRoot, rtRoot, null);
 
         if (InitErrors.hasErrorMessages()) {
             // N.B. this block does not return once entered.

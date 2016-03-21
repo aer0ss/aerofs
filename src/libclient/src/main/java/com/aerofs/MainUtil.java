@@ -5,7 +5,6 @@ import com.aerofs.base.config.ConfigurationProperties;
 import com.aerofs.base.config.PropertiesRenderer;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.ex.Exceptions;
-import com.aerofs.defects.Defects;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.InitErrors;
@@ -30,11 +29,14 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import static com.aerofs.defects.Defects.newDefect;
@@ -108,13 +110,17 @@ public class MainUtil
         }
     }
 
-    public static void initializeConfigurationSystem(String appRoot, String rtroot)
+    public static void initializeConfigurationSystem(String appRoot, String rtroot, @Nullable Map<String, String> additionalProps)
     {
         try {
             ClientConfigurationLoader loader =
                     new ClientConfigurationLoader(appRoot, rtroot, new PropertiesRenderer());
 
-            ConfigurationProperties.setProperties(loader.loadConfiguration());
+            Properties p = loader.loadConfiguration();
+            if (additionalProps != null) {
+                additionalProps.forEach(p::setProperty);
+            }
+            ConfigurationProperties.setProperties(p);
             l.debug("Client configuration initialized");
         } catch (SiteConfigException e) {
             // site config should be properly provisioned by the installation, so any error in

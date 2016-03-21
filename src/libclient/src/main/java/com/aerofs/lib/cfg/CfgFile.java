@@ -24,6 +24,11 @@ public class CfgFile extends ICfgStore {
                 Util.join(cfgAbsRTRoot.get(), ClientParam.SA_CFG_FILE));
     }
 
+    public CfgFile(String rtRoot) throws IOException
+    {
+        readFromConfFile(Util.join(rtRoot, ClientParam.SA_CFG_FILE));
+    }
+
     public void readFromConfFile(String confFile) throws IOException
     {
         BufferedReader br = new BufferedReader(new FileReader(confFile));
