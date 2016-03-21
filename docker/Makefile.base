@@ -9,6 +9,9 @@ TAG = latest
 
 RSYNC = rsync -a --copy-unsafe-links --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
 
+PACKAGING_DEBS_SRC = $(GIT_ROOT)/packaging/debs
+
+DRYAD_SRC = $(PACKAGING_DEBS_SRC)/aerofs-dryad.deb
 LICENSING_SRC = $(GIT_ROOT)/src/licensing/
 PACKAGES_SRC = $(GIT_ROOT)/out.gradle/packages/
 PROTO_SRC = $(GIT_ROOT)/out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java/
@@ -24,6 +27,9 @@ buildroot:
 
 dist: $(PROTO_SRC)
 	gradle --daemon dist
+
+$(DRYAD_SRC):
+	make -C $(GIT_ROOT)/packaging dryad
 
 $(LICENSING_SRC):
 	make -C $(LICENSING_SRC)
