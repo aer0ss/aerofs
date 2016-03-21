@@ -66,7 +66,7 @@ cache:
 	$(GIT_ROOT)/tools/cache/start.sh
 
 clean_docker:
-	docker rmi `docker images --no-trunc | grep '^<none>' | awk '{print $3}'` 2>/dev/null ||:
+	docker rmi `docker images --no-trunc | grep '^<none>' | awk '{print $$3}'` 2>/dev/null ||:
 
 
 clean:
