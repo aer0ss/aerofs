@@ -18,10 +18,7 @@ import com.aerofs.base.ex.*;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.ExInvalidID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.OpenId;
@@ -1110,7 +1107,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<RegisterDeviceReply> registerDevice(ByteString deviceId, ByteString csr,
-            String osFamily, String osName, String deviceName, List<Interface> interfaces)
+            String osFamily, String osName, String deviceName, List<Interface> interfaces, @Nullable String ignored)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1246,7 +1243,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<RegisterDeviceReply> registerTeamServerDevice(ByteString deviceId,
             ByteString csr, String osFamily, String osName, String deviceName,
-            List<Interface> interfaces)
+            List<Interface> interfaces, @Nullable String ignored)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1855,6 +1852,44 @@ public class SPService implements ISPService
                 .publish();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<RegisterDeviceReply> registerStorageAgent(ByteString deviceId,
+            ByteString csr, String osFamily, String osName, String deviceName,
+            List<Interface> interfaces, String token)
+            throws Exception
+    {
+        _sqlTrans.begin();
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+        UniqueID saToken = new UniqueID(token);
+        if (!org.hasToken(saToken)) {
+            throw new ExBadCredential();
+        }
+        Device device = _factDevice.create(deviceId);
+        User saUser = org.getTeamServerUser();
+        _sqlTrans.commit();
+
+        CertificationResult cert = device.certify(new PKCS10CertificationRequest(csr.toByteArray()),
+                saUser);
+
+        _sqlTrans.begin();
+        RegisterDeviceReply reply = saveDeviceAndCertificate(device, saUser, osFamily, osName,
+                deviceName, cert);
+        org.deleteToken(saToken);
+        _sqlTrans.commit();
+
+        _auditClient.event(AuditTopic.DEVICE, "device.certify")
+                // TODO (RD) need to tie to an actual admin?
+                .add("user", saUser.id())
+                .add("device_id", device.id().toStringFormal())
+                .add("device_type", "Storage Agent")
+                .add("device_name", deviceName)
+                .add("os_family", osFamily)
+                .add("os_name", osName)
+                .publish();
+
+        return createReply(reply);
     }
 
     @Override

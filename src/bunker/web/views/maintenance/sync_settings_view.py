@@ -1,10 +1,7 @@
 import logging
-import os
 from pyramid.view import view_config
 from web.util import str2bool, get_settings_nonempty
-from maintenance_util import write_pem_to_file, \
-    is_certificate_formatted_correctly, format_pem, get_conf, \
-    get_conf_client, unformat_pem
+from maintenance_util import get_conf, get_conf_client
 from web.error import expected_error
 
 log = logging.getLogger(__name__)

@@ -131,7 +131,7 @@
 <div class="page-block">
     <p>
         <button class="btn btn-primary"
-                onclick="backup(maintenanceExit, $('#backup-only-progress-modal')); return false;">
+                onclick="backupAndRestoreToCurrentTarget(); return false;">
             Download backup file
         </button>
     </p>
@@ -520,11 +520,26 @@
             progressModal.modal('hide');
         }
 
-        function maintenanceExit(onSuccess, onFailure) {
-            reboot('default', onSuccess, function(xhr) {
-                showErrorMessageFromResponse(xhr);
-                onFailure();
+        function backupAndRestoreToCurrentTarget() {
+            $.get("${request.route_path('json-get-boot')}")
+            .done(function(resp) {
+                var target = resp['id'];
+                console.log("will reboot to " + target);
+                backup(rebootToTargetFunction(target), $('#backup-only-progress-modal'));
+            }).fail(function () {
+                console.log("get boot ID req failed");
+                showErrorMessage("Could not backup and restore, please check logs.");
             });
+        }
+
+        function rebootToTargetFunction(target) {
+            var ret = function(onSuccess, onFailure) {
+                reboot(target, onSuccess, function(xhr) {
+                    showErrorMessageFromResponse(xhr);
+                    onFailure();
+                });
+            }
+            return ret;
         }
 
         function promptShutdown(onSuccess) {

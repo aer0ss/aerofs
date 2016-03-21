@@ -141,9 +141,9 @@ loader, and the setup container that has the web portal for admins
 - Bunker will be modified to also contain the storage agent setup flow used when
 the appliance has an onboard SA
 - The setup container and storage agent container will both use the same volume
-`/aerofs-sa` to pass data between the two. Also means that data in this volume
-persists across upgrades. Volume will need to be accessed by bunker to make a
-backup file.
+`/aerofs-storage` to pass data between the two. Also means that data in this 
+volume persists across upgrades. Volume will need to be accessed by bunker to 
+make a backup file.
 - Successful completion of setup will create the following two directories in
 the volume:
     - `/aerofs-storage/AeroFS` - This is the root AeroFS directory where all the data

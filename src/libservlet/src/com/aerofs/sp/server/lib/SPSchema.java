@@ -138,6 +138,9 @@ public final class SPSchema
             T_ACU                           = "sp_autocomplete_users",
             C_ACU_EMAIL                     = "acu_email",
             C_ACU_FULLNAME                  = "acu_fullname",
-            C_ACU_LASTNAME                  = "acu_lastname";
+            C_ACU_LASTNAME                  = "acu_lastname",
+
+            T_SAT                           = "sp_sa_tokens",
+            C_SAT_TOKEN                     = "sat_token";
 
 }

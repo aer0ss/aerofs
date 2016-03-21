@@ -42,7 +42,7 @@ public class CredentialUtil
         return certifyAndSaveDeviceKeysImpl(certUserId, (did, csr) -> {
             IOSUtil osu = OSUtil.get();
             return sp.registerTeamServerDevice(did, csr, osu.getOSFamily().getString(),
-                    osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces());
+                    osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces(), null);
         });
     }
 
@@ -57,7 +57,7 @@ public class CredentialUtil
         return certifyAndSaveDeviceKeysImpl(certUserId, (did, csr)  -> {
             IOSUtil osu = OSUtil.get();
             return sp.registerDevice(did, csr, osu.getOSFamily().getString(),
-                    osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces());
+                    osu.getFullOSName(), deviceName, InterfacesUtil.getSystemInterfaces(), null);
         });
     }
 

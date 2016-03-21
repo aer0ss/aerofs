@@ -126,7 +126,7 @@
     ${common.render_next_prev_buttons()}
 </form>
 
-<div id="verify-modal-email-input" class="modal tabindex="-1" role="dialog">
+<div id="verify-modal-email-input" class="modal" tabindex="-1" role="dialog">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">

@@ -43,7 +43,7 @@
     <script>
         $(document).ready(function() {
             initializeProgressModal();
-            ## Disalbe esaping from all modals
+            ## Disable esaping from all modals
             disableEscapingFromModal($('div.modal'));
         });
 

@@ -906,7 +906,16 @@ service SPService {
     // Required Auth Level: User
     rpc GetAccessCode(Void) returns (MobileAccessCode);
 
-
+    // Register a storage agent
+    //
+    // Required Auth Level: admin and storage agent token
+    // Throws:
+    //   ExNoPerm if current user isn't admin
+    //   ExNotFound if token isn't known to appliance
+    //
+    // To pass the token along with this call, RegisterDeviceCall has an optional param
+    // could also refactor into a new type of Call but protobuf doesn't support inheritance
+    rpc RegisterStorageAgent(RegisterDeviceCall) returns (RegisterDeviceReply);
 }
 
 message SetDeviceOSFamilyAndNameCall {
@@ -1130,6 +1139,8 @@ message RegisterDeviceCall {
     // The list of interfaces on the machine. Required for validation with the system authorization
     // endpoint (see docs/design/device_authorization.md).
     repeated Interface interfaces = 6;
+
+    optional string token = 7;
 }
 
 message RegisterDeviceReply {

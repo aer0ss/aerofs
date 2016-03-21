@@ -38,6 +38,7 @@ public class SPDatabaseParams extends DatabaseParameters
             "acl", "cert", "device", "sharing_group_members", "sharing_group_shares",
             "sharing_groups", "url_sharing", "shared_folder_names",
             "shared_folder", "two_factor_secret", "two_factor_recovery",
-            "user", "organization_invite", "organization", "signup_code", "settings_token"
+            "user", "organization_invite", "organization", "signup_code", "settings_token",
+            "sa_tokens"
     };
 }

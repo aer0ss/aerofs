@@ -155,9 +155,6 @@ def example_backup_download_file_name():
     """
     return get_download_file_name(_DOWNLOAD_FILE_PREFIX, _DOWNLOAD_FILE_SUFFIX)
 
-    route_name='download_backup_file',
-    permission='maintain',
-    request_method='GET'
 
 @view_config(
     route_name='download_backup_script',

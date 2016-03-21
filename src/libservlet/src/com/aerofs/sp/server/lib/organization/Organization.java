@@ -7,6 +7,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -376,6 +377,24 @@ public class Organization
             externalStrings.add(new String(externalBytes));
         }
         return externalStrings;
+    }
+
+    public UniqueID generateStorageAgentToken()
+            throws SQLException, ExAlreadyExist
+    {
+        return  _f._odb.createToken();
+    }
+
+    public boolean hasToken(UniqueID token)
+            throws SQLException, ExNotFound
+    {
+        return _f._odb.hasToken(token);
+    }
+
+    public void deleteToken(UniqueID token)
+            throws SQLException, ExNotFound
+    {
+        _f._odb.deleteToken(token);
     }
 
 }

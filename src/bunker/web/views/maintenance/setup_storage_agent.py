@@ -1,0 +1,1 @@
+../../../../storage-agent-setup/root/opt/storage-agent-setup/setup_storage_agent.py

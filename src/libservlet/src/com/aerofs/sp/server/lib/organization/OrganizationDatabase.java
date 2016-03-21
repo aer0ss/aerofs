@@ -9,6 +9,7 @@ import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
@@ -558,6 +559,45 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 builder.add(new OrganizationID(rs.getInt(1)));
             }
             return builder.build();
+        }
+    }
+
+    public UniqueID createToken()
+            throws SQLException, ExAlreadyExist
+    {
+        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_SAT, C_SAT_TOKEN))) {
+            UniqueID token = UniqueID.generate();
+            ps.setString(1, token.toStringFormal());
+            ps.executeUpdate();
+            return token;
+        } catch (SQLException e) {
+            throwOnConstraintViolation(e, "token creation collision");
+            throw e;
+        }
+    }
+
+    public boolean hasToken(UniqueID token)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_SAT, C_SAT_TOKEN + "=?", "count(*)")))
+        {
+            ps.setString(1, token.toStringFormal());
+            try (ResultSet rs = ps.executeQuery()) {
+                return binaryCount(rs);
+            }
+        }
+    }
+
+    public void deleteToken(UniqueID token)
+            throws SQLException, ExNotFound
+    {
+        try (PreparedStatement ps = prepareStatement(deleteWhere(T_SAT, C_SAT_TOKEN + "=?")))
+        {
+            ps.setString(1, token.toStringFormal());
+            int deleted = ps.executeUpdate();
+            if (deleted != 1) {
+                throw new ExNotFound("no such token");
+            }
         }
     }
 }

@@ -83,6 +83,13 @@ routes = [
     'json_set_require_login',
     'onsite_log_server',
     'json_save_configuration',
+    'storage_agent_setup',
+    'enable_onboard_sa',
+    'config_onboard_sa',
+    'make_config_bundle',
+    'download_config_bundle',
+    'clear_stored_data',
+
     'maintenance_mode',
     'license_expired',
     'redirect'

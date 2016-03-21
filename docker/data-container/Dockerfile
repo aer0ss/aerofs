@@ -27,6 +27,9 @@ VOLUME /var/lib/mysql
 # TODO (WW) remove this.
 VOLUME /opt/bootstrap/public
 
+# Used by onboard SA
+VOLUME /aerofs-storage
+
 CMD [ "/run.sh" ]
 
 COPY root /
