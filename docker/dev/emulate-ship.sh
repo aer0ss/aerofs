@@ -1,9 +1,16 @@
 #!/bin/bash
 set -eu
 
+if [ $# != 2 ]; then
+    echo "Usage: $0 <loader-image> <boot target>"
+    exit 1
+fi
+LOADER=$1
+TARGET=$2
+
 THIS_DIR="$(dirname $0)"
 
-SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh" aerofs/loader)"
+SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh" $LOADER)"
 
 abspath() {
     (cd "$1" && pwd)
@@ -22,5 +29,6 @@ cecho() {
 cecho ${CYAN} "Running Ship Emulator in the background..."
 echo "See ${LOG} for logs."
 
-nohup "${THIS_DIR}/../ship/emulate.sh" "${SHIP_YML}" $@ >>"${LOG}" 2>&1 &
+LOADER_CONTAINER=$(basename $LOADER)
+nohup "${THIS_DIR}/../ship/emulate.sh" "${SHIP_YML}" $TARGET $LOADER_CONTAINER >>"${LOG}" 2>&1 &
 disown

@@ -47,7 +47,7 @@ THIS_DIR="$(dirname "$0")"
 
 "${THIS_DIR}"/../ci/modify-appliance.sh
 
-"${THIS_DIR}"/emulate-ship.sh maintenance
+"${THIS_DIR}"/emulate-ship.sh aerofs/loader maintenance
 
 # Find the appliance's IP
 if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then

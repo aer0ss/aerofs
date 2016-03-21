@@ -4,7 +4,7 @@ Description=EmulateShip
 [Service]
 TimeoutStartSec=0
 ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment SHIP_YAML=$(/home/core/repos/aerofs/docker/ship-aerofs/render-ship-yml.sh aerofs/loader)"
-ExecStart=/home/core/repos/aerofs/docker/ship/emulate.sh ${SHIP_YAML} maintenance
+ExecStart=/home/core/repos/aerofs/docker/ship/emulate.sh ${SHIP_YAML} maintenance aerofs/loader
 
 [Install]
 WantedBy=multi-user.target

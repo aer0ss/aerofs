@@ -4,8 +4,8 @@
 #
 set -e
 
-if [ $# != 1 ]; then
-    echo "Usage: $0 <path-to-ship.yml>"
+if [ $# != 1 ] && [ $# != 2 ] ; then
+    echo "Usage: $0 <path-to-ship.yml> <loader-container=loader>"
     exit 11
 fi
 SHIP_YML="$1"
@@ -16,8 +16,8 @@ yml() {
 
 LOADER_IMAGE=$(yml 'loader')
 
-# Container name must be identical to the name defined in emulate.sh
-CONTAINER=loader
+# Container name must be identical to the name used in emulate.sh
+CONTAINER=${2:-loader}
 
 echo "Getting container list ..."
 for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} containers) ${CONTAINER}; do

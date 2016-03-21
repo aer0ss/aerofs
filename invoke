@@ -37,7 +37,7 @@ commands = [
     'build_client',
     'build_cloud_config',
     'build_docker_images',
-    'build_docker_sa_images',
+    'build_sa_images',
     'build_protoc_plugins',
     'build_sa',
     'build_sa_vm',

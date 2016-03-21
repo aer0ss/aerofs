@@ -1,5 +1,5 @@
 containers:
-  sa-loader:
+  loader:
     image: aerofs/sa-loader
 
   storage-agent-setup:
@@ -11,7 +11,7 @@ containers:
       volume:
         - /aerofs-storage:/aerofs-storage
       link:
-        - sa-loader:loader.service
+        - loader:loader.service
 
   storage-agent:
     image: aerofs/storage-agent

@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 
-if [ $# != 2 ]; then
-    echo "Usage: $0 <path-to-ship.yml> <boot-target>"
+if [ $# != 2 ] && [ $# != 3 ]; then
+    echo "Usage: $0 <path-to-ship.yml> <boot-target> <loader-container=loader>"
     exit 11
 fi
 SHIP_YML="$1"
 TARGET="$2"
+CONTAINER=${3:-loader}
+
 
 echo "=============== PID $$, $(date) ==============="
 
@@ -16,7 +18,6 @@ yml() {
 }
 
 while true; do
-    CONTAINER=loader
 
     # List running containers, which is the last column of 'docker ps' output
     for i in $(docker ps | awk '{print $NF}'); do

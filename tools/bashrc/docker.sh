@@ -44,7 +44,7 @@ function dk-start()
 {
     if [[ $# -eq 0 ]]
     then
-        dk-start-vm && ${DEV_DIR}/emulate-ship.sh default
+        dk-start-vm && ${DEV_DIR}/emulate-ship.sh aerofs/loader default
     else
         echo "dk-start takes no arguments"
         return 1
@@ -70,9 +70,9 @@ function dk-destroy-vm()
     then
         # find name of hostonly adapter used by docker-machine
         adapter=$(VBoxManage showvminfo --machinereadable docker-dev | grep hostonlyadapter | cut -d '"' -f 2)
-        
+
         docker-machine rm -f ${VM}
-        
+
         # cleanup hostonlyif and attached DHCP server to ensure the next dk-create
         # gets the correct IP (192.168.99.100) instead of a successor
         VBoxManage dhcpserver remove --ifname $adapter
@@ -90,7 +90,7 @@ function dk-halt()
 {
     if [[ $# -eq 0 ]]
     then
-        ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance
+        ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance && ${DEV_DIR}/dk-crane.sh kill -dall onboard
     else
         echo "dk-halt takes no arguments"
         return 1
@@ -156,6 +156,64 @@ function dk-restart()
         dk-halt && dk-start
     else
         echo "dk-restart takes no arguments"
+        return 1
+    fi
+}
+function sa-crane()
+{
+    ${DEV_DIR}/gen-sa-crane-yml.sh
+    crane $@ -c ${DEV_DIR}/../sa-crane.yml
+}
+function sa-start()
+{
+    if [[ $# -eq 0 ]]
+    then
+        dk-start-vm && ${DEV_DIR}/emulate-ship.sh aerofs/sa-loader default
+    else
+        echo "dk-start takes no arguments"
+        return 1
+    fi
+}
+function sa-halt()
+{
+    if [[ $# -eq 0 ]]
+    then
+        sa-crane kill -dall && sa-crane kill -dall maintenance
+    else
+        echo "sa-halt takes no arguments"
+        return 1
+    fi
+}
+
+function sa-reload()
+{
+    if [[ $# -eq 0 ]]
+    then
+        echo "sa-reload takes at least 1 container name"
+        return 1
+    else
+        sa-crane run --recreate -aall $@
+    fi
+}
+function sa-create()
+{
+    # order is important here, sa-destroy is also used to modify the sa-loader image to have a dev-compatibile crane file
+    # thus, we have to build the sa-loader before we call sa-destroy, lest the modified image be rewritten
+    if [[ $# -eq 0 ]]
+    then
+        dk-start-vm && ${DEV_DIR}/../../invoke --unsigned build_sa_images && sa-destroy && ${DEV_DIR}/emulate-ship.sh aerofs/sa-loader maintenance
+    else
+        echo "sa-create takes no arguments"
+        return 1
+    fi
+}
+function sa-destroy()
+{
+    if [[ $# -eq 0 ]]
+    then
+        ${DEV_DIR}/sa-destroy.sh
+    else
+        echo "dk-destroy takes no arguments"
         return 1
     fi
 }

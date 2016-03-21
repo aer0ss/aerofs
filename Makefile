@@ -45,9 +45,9 @@ build_docker_images:
 	make -C $(GIT_ROOT)/docker images
 	$(call success,"build_docker_images")
 
-build_docker_sa_images:
+build_sa_images:
 	make -C $(GIT_ROOT)/docker sa_images
-	$(call success,"build_docker_sa_images")
+	$(call success,"build_sa_images")
 
 build_protoc_plugins: _clean_protobuf
 	make out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java
@@ -58,6 +58,8 @@ build_sa: proto
 	$(call success,"build_sa")
 
 build_sa_vm:
+	# make sure we don't use a modified dev version of the loader
+	make -C $(GIT_ROOT)/docker/ship-aerofs/sa-loader
 	$(GIT_ROOT)/docker/ship-aerofs/build-vm.sh aerofs/sa-loader
 	$(call success,"build_sa_vm")
 
