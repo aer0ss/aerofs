@@ -52,8 +52,6 @@ type bifrostTokenVerifier struct {
 
 // Verify if a token is authentic and has a corresponding UID
 func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
-	// check cache
-	log.Printf("verify token against bifrost: %v\n", token)
 	tokenChannel := v.cache.Get(token)
 	future := <-tokenChannel
 
@@ -61,6 +59,8 @@ func (v *bifrostTokenVerifier) VerifyToken(token string) (string, error) {
 }
 
 func requestVerify(token string) (string, error) {
+	log.Print("verify token against bifrost: ", token)
+
 	// compose request
 	url := BIFROST_VERIFY_URL + "?access_token=" + token
 	req, err := http.NewRequest("GET", url, nil)
