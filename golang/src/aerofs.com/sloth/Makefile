@@ -7,10 +7,10 @@ include ../../Makefile.base
 IMAGE_NAME = aeroim/sloth
 PACKAGE_NAME = aerofs.com/sloth
 
-GOCKERIZE_CTX = ../..
+GOCKERIZE_CTX = ../../..
 
-sloth: **/*.go
-	go build
+sloth: $(shell find . -name '*.go')
+	GOPATH=$(abspath $(GOCKERIZE_CTX)) go build
 
 clean:
 	rm -f ./sloth

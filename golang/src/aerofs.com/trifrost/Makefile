@@ -7,10 +7,10 @@ include ../../Makefile.base
 IMAGE_NAME = aeroim/trifrost
 PACKAGE_NAME = aerofs.com/trifrost
 
-GOCKERIZE_CTX = ../..
+GOCKERIZE_CTX = ../../..
 
-trifrost: **/*.go
-	go build
+trifrost: $(shell find . -name '*.go')
+	GOPATH=$(abspath $(GOCKERIZE_CTX)) go build
 
 clean:
 	rm -f ./trifrost
