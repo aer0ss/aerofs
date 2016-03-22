@@ -670,12 +670,24 @@ public class TestConversionResource {
         List<TransformBatchOperation> ops = Lists.newArrayList(
             new TransformBatchOperation(rootStore, insertChild(folder, ObjectType.FOLDER, "shared_folder", null, version, null)),
             new TransformBatchOperation(folder, insertChild(child, ObjectType.FILE, "child", null, version, null)),
-            new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)),
-            new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)));
-
+            new TransformBatchOperation(rootStore, insertChild(sharedFolder, ObjectType.STORE, "shared_folder", null, emptyVersion, null)));
         submitOpsSuccessFullyWithin(rootStore, ops, 10);
 
-        Transforms t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        // wait until the sharing of the folder completes
+        int tries = 0;
+        Transforms t;
+        do {
+            tries++;
+            t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
+        } while (tries < 5 && t.maxTransformCount < 4);
+        if (tries == 5) {
+            throw new Exception("took too long to share folder");
+        }
+
+        ops = Lists.newArrayList(new TransformBatchOperation(child, new UpdateContent(0L, hash, 100L, 1024L, version)));
+        submitOpsSuccessFullyWithin(rootStore, ops, 10);
+
+        t = PolarisHelpers.getTransforms(AUTHENTICATED, sharedFolder, 0L, 10);
         assertThat(t.maxTransformCount, equalTo(5L));
         assertThat(t.transforms.size(), equalTo(2));
         assertThat(t.transforms.get(0).getOid(), equalTo(sharedFolder));
