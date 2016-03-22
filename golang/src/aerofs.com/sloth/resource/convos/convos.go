@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emicklei/go-restful"
+	"log"
 	"strconv"
 	"time"
 )
@@ -521,8 +522,10 @@ func getConvo(db *sql.DB, cid string) *Convo {
 }
 
 func setConvoSid(db *sql.DB, cid, sid string) {
+	log.Print("set ", cid, " sid = ", sid)
 	tx := dao.BeginOrPanic(db)
 	defer tx.Rollback()
 
 	dao.SetConvoSid(tx, cid, sid)
+	dao.CommitOrPanic(tx)
 }
