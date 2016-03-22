@@ -99,11 +99,14 @@
       </div>
 
       <div class="my-row row"
-        ng-if="!objects.length && outstandingRequests === 0">
+        ng-if="!objects.length">
         <div class="col-sm-12 object dir-status">
           <div ng-hide="error.status == 503 && !(currentShare.isSingleObject)">
             <div class='icon'>&nbsp;</div>
-            <div class="name">No files found</div>
+            <div class="name"
+              ng-show="isListRequestDone">No files found</div>
+            <div class="name"
+              ng-hide="isListRequestDone">Loading file list</div>
           </div>
           <div class="name"
             ng-show="error.status == 503 && !(currentShare.isSingleObject)">

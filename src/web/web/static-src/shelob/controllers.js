@@ -37,6 +37,7 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
     // $scope.objects contains all folder/file data.
     // $scope.links contains all link data. Added to $scope.objects by _populateLinks().
     $scope.objects, $scope.links;
+    $scope.isListRequestDone = false;
 
     // See if linksharing has been turned off
     $scope.enableLinksharing = enableLinksharing;
@@ -136,6 +137,9 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
                 if ($scope.links) {
                     _populateLinks();
                 }
+
+                $scope.isListRequestDone = true;
+
                 return $q.all({
                   rootSid: MyStores.getRoot(),
                   shares: MyStores.getShares()
@@ -155,11 +159,14 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
                               $scope.currentShare.isAdmin = isOwned;
                           });
                           $scope.objects = [$scope.currentShare.file];
+                          $scope.isListRequestDone = true;
                       })
                       .catch(function(response) {
+                           $scope.isListRequestDone = true;
                            throw $q.reject(response);
                       });
               } else {
+                $scope.isListRequestDone = true;
                 $q.reject(response);
               }
             }).then(function(r) {
@@ -277,6 +284,7 @@ $window, $modal, $sce, $q, $filter, API, Token, MyStores, API_LOCATION, IS_PRIVA
             } else {
                 showErrorMessageFromResponse(response);
             }
+            $scope.isListRequestDone = true;
         }
     };
 
