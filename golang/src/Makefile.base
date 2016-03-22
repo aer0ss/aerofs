@@ -16,7 +16,7 @@ image:
 	$(GOCKERIZE_ARGS) $(GOCKERIZE_BIN) $(IMAGE_NAME) $(PACKAGE_NAME) $(GOCKERIZE_CTX)
 	$(call success,"- build $(IMAGE_NAME)")
 
-.PHONY: push
+.PHONY: push image
 push: image
 	docker tag -f $(IMAGE_NAME) $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 	docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG)
