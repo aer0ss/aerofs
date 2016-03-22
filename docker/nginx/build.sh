@@ -4,6 +4,7 @@
 # to workaround docker's misguided refusal to make the build context
 # available to RUN statements
 #
+set -eu
 
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
