@@ -388,7 +388,7 @@
 
         function osUpgrade(onSuccess, onFailure) {
             canUpgradeOS(function(resp) {
-                if (resp['json-can-upgrade-os']) {
+                if (resp['can_upgrade_os']) {
                     console.log("can upgrade os");
                     confirmOSUpgrade(onSuccess, onFailure);
                 } else {
