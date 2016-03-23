@@ -233,10 +233,13 @@ func (ctx *context) createShare(request *restful.Request, response *restful.Resp
 	r := <-ctx.sidMap.Get(cid)
 	PanicOnErr(r.Error)
 
+	convo = getConvo(ctx.db, cid)
 	var targets []string
 	if !convo.IsPublic {
 		targets = convo.Members
 	}
+
+	response.WriteEntity(convo)
 	broadcast.SendConvoEvent(ctx.broadcaster, cid, targets)
 }
 
