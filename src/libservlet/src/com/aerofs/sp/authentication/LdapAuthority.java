@@ -7,6 +7,9 @@ package com.aerofs.sp.authentication;
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
 import com.aerofs.audit.client.AuditorFactory;
+import com.aerofs.base.analytics.AnalyticsClient;
+import com.aerofs.base.analytics.AnalyticsEvent;
+import com.aerofs.base.analytics.IAnalyticsClient;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExExternalServiceUnavailable;
@@ -63,17 +66,20 @@ public class LdapAuthority implements IAuthority
         _connector = new LdapConnector(_cfg);
         _auditClient = new AuditClient();
         _auditClient.setAuditorClient(AuditorFactory.createNoopClient());
+        _analyticsClient = new AnalyticsClient();
     }
 
     /**
      * Initialize this authenticator with a provisioning strategy.
      */
-    public LdapAuthority(LdapConfiguration cfg, ACLNotificationPublisher aclPublisher, AuditClient auditClient)
+    public LdapAuthority(LdapConfiguration cfg, ACLNotificationPublisher aclPublisher, AuditClient auditClient,
+                         IAnalyticsClient analyticsClient)
     {
         _cfg = cfg;
         _connector = new LdapConnector(_cfg);
         _aclPublisher = aclPublisher;
         _auditClient = auditClient;
+        _analyticsClient = analyticsClient;
     }
 
     @Override
@@ -113,6 +119,8 @@ public class LdapAuthority implements IAuthority
                     .add("authority", this)
                     .publish();
             user.save(new byte[0], fullName);
+
+            _analyticsClient.track(AnalyticsEvent.USER_SIGNUP);
 
             // notify TS of user creation (for root store auto-join)
             _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
@@ -249,4 +257,5 @@ public class LdapAuthority implements IAuthority
     protected LdapConfiguration         _cfg;
     private AuditClient                 _auditClient;
     private LdapConnector               _connector;
+    private IAnalyticsClient             _analyticsClient;
 }
