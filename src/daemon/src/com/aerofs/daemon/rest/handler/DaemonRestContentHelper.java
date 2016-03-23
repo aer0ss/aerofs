@@ -46,7 +46,7 @@ public class DaemonRestContentHelper extends RestContentHelper
             } else if (!_csdb.isCollectingContent_(oa.soid().sidx())) {
                 message = "Quota exceeded";
             } else {
-                message = "Content not yet available on this device: " + soid.toString();
+                message = "Content not yet available on this device";
             }
             throw new ExNotFound(message);
         }
