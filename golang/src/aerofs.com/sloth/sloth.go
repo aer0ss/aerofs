@@ -150,7 +150,8 @@ func main() {
 	var lipwigClient *lipwig.Client
 	if fileUpdatesEnabled {
 		tlsConfig := getTlsConfig()
-		lipwigClient = lipwig.Start(tlsConfig, db, deploymentSecret, polarisClient, spartaClient)
+		lipwigClient = lipwig.Start(tlsConfig, db, deploymentSecret, polarisClient, spartaClient,
+			broadcaster)
 	}
 
 	// intitialize shared filters

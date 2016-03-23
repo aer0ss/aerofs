@@ -67,17 +67,16 @@ func (c *Client) GetDeviceOwner(did string) (string, error) {
 	return spartaResponse.Owner, nil
 }
 
-func (c *Client) CreateSharedFolder(uids []string, name string) (string, error) {
-	return c.createSharedFolder(uids, name, false)
+func (c *Client) CreateSharedFolder(uids []string, owner, name string) (string, error) {
+	return c.createSharedFolder(uids, owner, name, false)
 }
 
-func (c *Client) CreateLockedSharedFolder(uids []string, name string) (string, error) {
-	return c.createSharedFolder(uids, name, true)
+func (c *Client) CreateLockedSharedFolder(uids []string, owner, name string) (string, error) {
+	return c.createSharedFolder(uids, owner, name, true)
 }
 
 // createSharedFolder returns the SID of the newly-created shared folder
-func (c *Client) createSharedFolder(uids []string, name string, isLocked bool) (string, error) {
-	owner := uids[0]
+func (c *Client) createSharedFolder(uids []string, owner, name string, isLocked bool) (string, error) {
 	url := BASE_URL + "/shares"
 	members := make([]map[string]interface{}, 0, len(uids))
 	for _, uid := range uids {
@@ -94,6 +93,9 @@ func (c *Client) createSharedFolder(uids []string, name string, isLocked bool) (
 	if err != nil {
 		return "", err
 	}
+
+	log.Printf("New shared folder body : %v", string(body))
+	log.Printf("Owner is %v", owner)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
 	if err != nil {
 		return "", err

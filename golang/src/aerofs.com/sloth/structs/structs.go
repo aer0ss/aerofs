@@ -91,6 +91,13 @@ type GroupConvoWritable struct {
 	IsPublic *bool    `json:"isPublic"`
 }
 
+type FileConvoWritable struct {
+	FileId   string `json:"fileId"`
+	Name     string `json:"name"`
+	RootSid  string `json:"rootFolderId"`
+	IsPublic bool   `json:"isPublic"`
+}
+
 type MessageWritable struct {
 	Body string `json:"body"`
 }

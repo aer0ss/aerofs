@@ -2,6 +2,7 @@ package lipwig
 
 import (
 	"aerofs.com/sloth/aeroclients/polaris"
+	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/util/asynccache"
@@ -16,6 +17,7 @@ func (h *eventHandler) syncTransformsLoop() {
 }
 
 func (h *eventHandler) syncTransforms(sid string) {
+	defer errors.RecoverAndLog()
 	transforms := h.fetchNewTransforms(sid)
 	if len(transforms) == 0 {
 		return
@@ -32,6 +34,12 @@ func (h *eventHandler) syncTransforms(sid string) {
 		}
 		log.Printf("insert file update %v for sid %v\n", t.LogicalTimestamp, sid)
 		dao.InsertFileUpdateMessage(tx, sid, t.Uid, t.Raw)
+
+		// TODO: Increase perf. by only using one call
+		cid := dao.GetCidForSid(tx, sid)
+		convo := dao.GetConvo(tx, cid, t.Uid)
+		log.Printf("sending file update notifications to convo %v for %v", cid, convo.Members)
+		broadcast.SendMessageEvent(h.broadcaster, cid, convo.Members)
 	}
 	lastLogicalTimestamp := transforms[len(transforms)-1].LogicalTimestamp
 	dao.SetLastLogicalTimestamp(tx, sid, lastLogicalTimestamp)

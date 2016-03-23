@@ -17,7 +17,9 @@ import (
 	"fmt"
 	"github.com/emicklei/go-restful"
 	"log"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -221,6 +223,7 @@ func (ctx *context) getById(request *restful.Request, response *restful.Response
 }
 
 func (ctx *context) createShare(request *restful.Request, response *restful.Response) {
+	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 	cid := request.PathParameter("cid")
 
 	// Determine if convo exists
@@ -229,8 +232,8 @@ func (ctx *context) createShare(request *restful.Request, response *restful.Resp
 		response.WriteHeader(404)
 		return
 	}
-
-	r := <-ctx.sidMap.Get(cid)
+	log.Printf("Creating a shared folder for convo %v and caller %v", cid, caller)
+	r := <-ctx.sidMap.Get(cid, caller)
 	PanicOnErr(r.Error)
 
 	convo = getConvo(ctx.db, cid)
@@ -266,7 +269,17 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 		return
 	}
 
-	dao.InsertMember(tx, cid, uid)
+	convo.AddMember(uid) // ensure newly-added uid is in the list
+
+	// NOTE: Casted to GroupConvoWritable to reuse the current update functionality
+	updatedConvo := &GroupConvoWritable{
+		Members:  append(convo.Members, uid),
+		Name:     &convo.Name,
+		IsPublic: &convo.IsPublic,
+	}
+	convo, dependentConvos := dao.UpdateConvo(tx, convo, updatedConvo, caller)
+
+	// Only insert membership mesage to Root convo
 	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
@@ -281,7 +294,18 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	}
 
 	convo.AddMember(uid) // ensure newly-added uid is in the list
-	broadcastConvo(ctx.broadcaster, convo)
+
+	// Insert added message to Root folder
+	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
+	dao.CommitOrPanic(tx)
+
+	// Notify all dependent convos of new member
+	// Notify just the root convo of the new message
+	for _, cid := range dependentConvos {
+		convo := dao.GetConvo(tx, cid, caller)
+		dao.CommitOrPanic(tx)
+		broadcastConvo(ctx.broadcaster, convo)
+	}
 	broadcastMessage(ctx.broadcaster, convo)
 }
 
@@ -307,7 +331,25 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	if !convo.HasMember(uid) {
 		return
 	}
-	dao.RemoveMember(tx, cid, uid)
+
+	// Get updated members
+	var newMembers []string
+	for i, member := range convo.Members {
+		if member == uid {
+			newMembers = append(convo.Members[:i], convo.Members[i+1:]...)
+			break
+		}
+	}
+
+	// NOTE: Casted to GroupConvoWritable to reuse the current update functionality
+	updatedConvo := &GroupConvoWritable{
+		Members:  newMembers,
+		Name:     &convo.Name,
+		IsPublic: &convo.IsPublic,
+	}
+	convo, dependentConvos := dao.UpdateConvo(tx, convo, updatedConvo, caller)
+
+	// Only root folder gets removed message
 	dao.InsertMemberRemovedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
 
@@ -321,7 +363,13 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 		}()
 	}
 
-	broadcastConvo(ctx.broadcaster, convo)
+	// Notify dependents of convo update
+	// Notify root if new message
+	for _, cid := range dependentConvos {
+		depConvo := dao.GetConvo(tx, cid, caller)
+		dao.CommitOrPanic(tx)
+		broadcastConvo(ctx.broadcaster, depConvo)
+	}
 	broadcastMessage(ctx.broadcaster, convo)
 }
 
@@ -517,8 +565,13 @@ func getBroadcastTargets(convo *Convo) []string {
 	return nil
 }
 
-func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClient *lipwig.Client) func(string) (string, error) {
-	return func(cid string) (string, error) {
+func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClient *lipwig.Client) func(string, ...interface{}) (string, error) {
+	return func(cid string, args ...interface{}) (string, error) {
+		log.Printf("CreateSharedFolder %v", args)
+		owner, ok := args[0].(string)
+		if !ok {
+			return "", errors.New("The owner argument for the new shared folder is not a string")
+		}
 		c := getConvo(db, cid)
 		if c == nil {
 			return "", errors.New("Convo not found: " + cid)
@@ -531,11 +584,13 @@ func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClien
 		log.Print("creating share for ", cid)
 		var err error
 		var sid string
+
 		switch c.Type {
 		case "CHANNEL":
-			sid, err = spartaClient.CreateSharedFolder(c.Members, c.Name)
+			sid, err = spartaClient.CreateSharedFolder(c.Members, owner, c.Name)
 		case "DIRECT":
-			sid, err = spartaClient.CreateLockedSharedFolder(c.Members, c.Name)
+			sharedFolderName := getSharedFolderName(db, cid)
+			sid, err = spartaClient.CreateLockedSharedFolder(c.Members, owner, sharedFolderName)
 		default:
 			return "", errors.New("cannot create shared folder for convo type " + c.Type)
 		}
@@ -563,4 +618,14 @@ func setConvoSid(db *sql.DB, cid, sid string) {
 
 	dao.SetConvoSid(tx, cid, sid)
 	dao.CommitOrPanic(tx)
+}
+
+// Return a name for a new shared folder
+// It concatenates the names of all participants, delimited by commas
+func getSharedFolderName(db *sql.DB, cid string) string {
+	tx := dao.BeginOrPanic(db)
+	defer tx.Rollback()
+	firstNames := dao.GetMembersFirstNames(tx, cid)
+	sort.Strings(firstNames)
+	return strings.Join(firstNames, ", ")
 }

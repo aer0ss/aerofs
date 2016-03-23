@@ -60,7 +60,18 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 			convo = dao.CreateDirectConvo(tx, p)
 		}
 		dao.CommitOrPanic(tx)
+	case "FILE":
+		p := new(FileConvoWritable)
+		err := request.ReadEntity(p)
+		errors.PanicOnErr(err)
 
+		tx := dao.BeginOrPanic(ctx.db)
+		defer tx.Rollback()
+		convo = dao.GetFileConvo(tx, p.FileId, caller)
+		if convo == nil {
+			convo = dao.CreateFileConvo(tx, p)
+		}
+		dao.CommitOrPanic(tx)
 	default:
 		response.WriteErrorString(400, "Invalid convo type")
 		return

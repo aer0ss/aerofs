@@ -5,6 +5,7 @@ package lipwig
 import (
 	"aerofs.com/sloth/aeroclients/polaris"
 	"aerofs.com/sloth/aeroclients/sparta"
+	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/util/asynccache"
 	"crypto/sha256"
@@ -58,12 +59,12 @@ func Start(
 	deploymentSecret string,
 	polarisClient *polaris.Client,
 	spartaClient *sparta.Client,
-
+	broadcaster broadcast.Broadcaster,
 ) *Client {
 
 	conn := getConn(tlsConfig)
 	sids := getSidsToFollow(db)
-	handler := newEventHandler(db, polarisClient, spartaClient)
+	handler := newEventHandler(db, polarisClient, spartaClient, broadcaster)
 
 	client := &Client{
 		client: lipwig.NewClient(conn, handler),
@@ -125,6 +126,7 @@ type eventHandler struct {
 	didOwners     asynccache.Map // map of DID -> UID
 	polarisClient *polaris.Client
 	spartaClient  *sparta.Client
+	broadcaster   broadcast.Broadcaster
 	sidsToSync    chan string
 	aclEpoch      uint64
 }
@@ -153,14 +155,15 @@ func newEventHandler(
 	db *sql.DB,
 	polarisClient *polaris.Client,
 	spartaClient *sparta.Client,
-
+	broadcaster broadcast.Broadcaster,
 ) *eventHandler {
 
 	return &eventHandler{
 		db:            db,
-		didOwners:     asynccache.New(spartaClient.GetDeviceOwner),
+		didOwners:     asynccache.New(getDeviceOwnerFunc(spartaClient)),
 		polarisClient: polarisClient,
 		spartaClient:  spartaClient,
+		broadcaster:   broadcaster,
 		sidsToSync:    make(chan string, SID_CHAN_BUFFER_SIZE),
 	}
 }
@@ -168,6 +171,12 @@ func newEventHandler(
 //
 // Utility methods
 //
+
+func getDeviceOwnerFunc(spartaClient *sparta.Client) func(string, ...interface{}) (string, error) {
+	return func(did string, _ ...interface{}) (string, error) {
+		return spartaClient.GetDeviceOwner(did)
+	}
+}
 
 func getConn(cfg *tls.Config) *tls.Conn {
 	log.Print("ssmp: connecting to ", LIPWIG_ADDR)

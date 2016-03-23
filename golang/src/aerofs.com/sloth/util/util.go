@@ -31,3 +31,8 @@ func GenerateDirectConvoId(members []string) string {
 	hash := md5.Sum([]byte(strings.Join(members, " ")))
 	return "1" + hex.EncodeToString(hash[:])[1:]
 }
+
+func GenerateFileConvoId(fileId string) string {
+	hash := md5.Sum([]byte(fileId))
+	return "2" + hex.EncodeToString(hash[:])[1:]
+}

@@ -27,7 +27,8 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 		response.WriteErrorString(403, "Forbidden")
 		return
 	}
-	if c.Type == "DIRECT" {
+
+	if c.Type == "DIRECT" || c.Type == "FILE" {
 		response.WriteErrorString(400, "Cannot modify a direct convo")
 		return
 	}
@@ -41,7 +42,8 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 		return
 	}
 
-	updated := dao.UpdateConvo(tx, c, p, caller)
+	// Retrieve a list of all convos dependent on this update
+	updated, dependentConvos := dao.UpdateConvo(tx, c, p, caller)
 	dao.CommitOrPanic(tx)
 
 	if c.Sid != "" {
@@ -64,9 +66,13 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 			}
 		}()
 	}
-
 	response.WriteEntity(updated)
 
-	broadcast.SendConvoEvent(ctx.broadcaster, c.Id, updated.Members)
-	broadcast.SendMessageEvent(ctx.broadcaster, c.Id, updated.Members)
+	// Broadcast message to the given convo
+	broadcast.SendMessageEvent(ctx.broadcaster, cid, updated.Members)
+
+	// Broadcast membership change to all dependent convos
+	for _, dependentConvo := range dependentConvos {
+		broadcast.SendConvoEvent(ctx.broadcaster, dependentConvo, updated.Members)
+	}
 }

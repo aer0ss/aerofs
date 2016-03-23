@@ -20,7 +20,7 @@ type Map interface {
 	// Get returns a channel on which the result will be sent. The result is
 	// sent instantly if the key is present in the cache; otherwise, the cache
 	// miss function is executed and the result is sent after it completes.
-	Get(key string) <-chan Result
+	Get(key string, args ...interface{}) <-chan Result
 }
 
 // impl implements this package's Map interface
@@ -28,10 +28,10 @@ type impl struct {
 	vals      map[string]string
 	waiting   map[string][]chan Result
 	lock      sync.Mutex
-	cacheMiss func(key string) (string, error)
+	cacheMiss func(key string, args ...interface{}) (string, error)
 }
 
-func (i *impl) Get(key string) <-chan Result {
+func (i *impl) Get(key string, args ...interface{}) <-chan Result {
 	res := make(chan Result, 1)
 
 	i.lock.Lock()
@@ -45,7 +45,7 @@ func (i *impl) Get(key string) <-chan Result {
 		waiting := i.waiting[key]
 		if waiting == nil {
 			// first request for this key; call cacheMiss()
-			go i.onCacheMiss(key)
+			go i.onCacheMiss(key, args...)
 		}
 		// wait for result
 		waiting = append(waiting, res)
@@ -55,10 +55,10 @@ func (i *impl) Get(key string) <-chan Result {
 	return res
 }
 
-func (i *impl) onCacheMiss(key string) {
+func (i *impl) onCacheMiss(key string, args ...interface{}) {
 	// execute cache miss behaviour
 	var r Result
-	r.Val, r.Error = i.cacheMiss(key)
+	r.Val, r.Error = i.cacheMiss(key, args...)
 
 	i.lock.Lock()
 	defer i.lock.Unlock()
@@ -80,7 +80,7 @@ func (i *impl) onCacheMiss(key string) {
 }
 
 // New returns a new Map with the given cache miss behaviour
-func New(cacheMiss func(string) (string, error)) Map {
+func New(cacheMiss func(string, ...interface{}) (string, error)) Map {
 	return &impl{
 		vals:      make(map[string]string),
 		waiting:   make(map[string][]chan Result),

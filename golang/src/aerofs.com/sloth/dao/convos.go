@@ -12,10 +12,12 @@ import (
 	"time"
 )
 
-const CHANNEL = 1
-const DIRECT = 2
-
-const CONVO_QUERY_COLS = "id, type, name, sid, is_public, created_time"
+const (
+	CHANNEL          = 1
+	DIRECT           = 2
+	FILE             = 3
+	CONVO_QUERY_COLS = "id, type, name, sid, is_public, created_time"
+)
 
 //
 // Public
@@ -27,6 +29,10 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 	convos := make(map[string]Convo)
 
 	// query convos table
+	// Retrieve the following:
+	// - public convos,
+	// - joined convos,
+	// - child convos of joined & public convos
 	rows, err := tx.Query(fmt.Sprint(
 		"SELECT ", CONVO_QUERY_COLS, " FROM convos WHERE ",
 		"id IN (SELECT id FROM convos WHERE is_public=1) OR ",
@@ -53,6 +59,8 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 	rows.Close()
 
 	// query members table
+	// Note that file conversations have no linked membership set and are
+	// deduced on the frontend
 	rows, err = tx.Query(fmt.Sprint(
 		"SELECT user_id, convo_id FROM convo_members WHERE convo_id IN ",
 		"(SELECT convo_id FROM convo_members WHERE user_id=?)",
@@ -182,38 +190,90 @@ func CreateDirectConvo(tx *sql.Tx, p *DirectConvoWritable) *Convo {
 	return c
 }
 
-func UpdateConvo(tx *sql.Tx, c *Convo, p *GroupConvoWritable, caller string) *Convo {
+func GetFileConvo(tx *sql.Tx, fileId, caller string) *Convo {
+	cid := util.GenerateFileConvoId(fileId)
+	return GetConvo(tx, cid, caller)
+}
+
+func CreateFileConvo(tx *sql.Tx, p *FileConvoWritable) *Convo {
+	members := GetParentConversationMembers(tx, p.RootSid)
+	c := &Convo{
+		Id:          util.GenerateFileConvoId(p.FileId),
+		Type:        "FILE",
+		Name:        p.Name,
+		IsPublic:    p.IsPublic,
+		Members:     members,
+		CreatedTime: time.Now(),
+		Sid:         p.RootSid,
+	}
+
+	insertNewConvo(tx, c, FILE)
+	for _, uid := range c.Members {
+		InsertMember(tx, c.Id, uid)
+	}
+
+	return c
+}
+
+// Update conversation membership set, name or privacy setting
+// If convo has a sharedFolder and children, cascade membership, privacy settings to children
+func UpdateConvo(tx *sql.Tx, c *Convo, p *GroupConvoWritable, caller string) (*Convo, []string) {
 	var updated Convo = *c
+
+	// Update name
 	if p.Name != nil && c.Name != *p.Name {
 		updated.Name = *p.Name
 		_, err := tx.Exec("UPDATE convos SET name=? WHERE id=?", *p.Name, c.Id)
 		errors.PanicAndRollbackOnErr(err, tx)
 	}
-	if p.IsPublic != nil && c.IsPublic != *p.IsPublic {
+
+	// Update privacy settings
+	newPrivacySettings := p.IsPublic != nil && c.IsPublic != *p.IsPublic
+	if newPrivacySettings {
 		updated.IsPublic = *p.IsPublic
 		_, err := tx.Exec("UPDATE convos SET is_public=? WHERE id=?", *p.IsPublic, c.Id)
 		errors.PanicAndRollbackOnErr(err, tx)
 	}
 
-	// early exit if no changes to membership
-	if p.Members == nil {
-		return &updated
+	// early exit if no changes to membership or privacy settings
+	if p.Members == nil && !newPrivacySettings {
+		return &updated, []string{}
 	}
+
+	// Update membership set for convo and any child conversations
 	updated.Members = p.Members
 	oldMembers := set.From(c.Members)
 	newMembers := set.From(p.Members)
 	added := newMembers.Diff(oldMembers)
 	removed := oldMembers.Diff(newMembers)
 	now := time.Now()
+
+	// Retrieve all conversations that depend on the settings of this channel
+	dependentConvos := GetDependentConvos(tx, c)
+
+	// Root conversation receives message updates
 	for uid := range removed {
-		RemoveMember(tx, c.Id, uid)
 		InsertMemberRemovedMessage(tx, c.Id, uid, caller, now)
 	}
 	for uid := range added {
-		InsertMember(tx, c.Id, uid)
 		InsertMemberAddedMessage(tx, c.Id, uid, caller, now)
 	}
-	return &updated
+
+	// Update membership set for parent, child conversations
+	for _, convoId := range dependentConvos {
+		if newPrivacySettings {
+			_, err := tx.Exec("UPDATE convos SET is_public=? WHERE id=?", *p.IsPublic, convoId)
+			errors.PanicAndRollbackOnErr(err, tx)
+		}
+		for uid := range removed {
+			RemoveMember(tx, convoId, uid)
+		}
+		for uid := range added {
+			InsertMember(tx, convoId, uid)
+		}
+	}
+
+	return &updated, dependentConvos
 }
 
 // GetAllStoreMembership returns a map of SID -> Set<UID> for all store-bound
@@ -258,6 +318,24 @@ func GetMembers(tx *sql.Tx, cid string) []string {
 		err := rows.Scan(&uid)
 		errors.PanicAndRollbackOnErr(err, tx)
 		members = append(members, uid)
+	}
+	return members
+}
+
+func GetMembersFirstNames(tx *sql.Tx, cid string) []string {
+	rows, err := tx.Query(fmt.Sprint(
+		"SELECT first_name FROM users INNER JOIN convo_members ",
+		"ON  users.id = convo_members.user_id ",
+		"WHERE convo_members.convo_id = ?"), cid)
+	errors.PanicAndRollbackOnErr(err, tx)
+	defer rows.Close()
+
+	var members []string
+	for rows.Next() {
+		var firstName string
+		err := rows.Scan(&firstName)
+		errors.PanicAndRollbackOnErr(err, tx)
+		members = append(members, firstName)
 	}
 	return members
 }
@@ -308,10 +386,59 @@ func GetCidForSid(tx *sql.Tx, sid string) string {
 	return cid
 }
 
+// Set the Sid for a convo
 func SetConvoSid(tx *sql.Tx, cid, sid string) {
 	bytes := hexDecode(tx, sid)
 	_, err := tx.Exec("UPDATE convos SET sid=? WHERE id=?", bytes, cid)
 	errors.PanicAndRollbackOnErr(err, tx)
+}
+
+// For a convo, return all dependent conversations
+// A convo is dependent on another if it is a child file conversation
+//   of a {Channel,Direct Conversation}
+// NOTE: A convo is dependent on itself
+func GetDependentConvos(tx *sql.Tx, convo *Convo) []string {
+	dependentConvos := []string{convo.Id}
+	if convo.Sid == "" {
+		return dependentConvos
+	}
+
+	rows, err := tx.Query("SELECT id from convos WHERE HEX(sid) = ? AND id != ?",
+		convo.Sid, convo.Id)
+	if err == sql.ErrNoRows {
+		return dependentConvos
+	}
+	errors.PanicAndRollbackOnErr(err, tx)
+	for rows.Next() {
+		var user string
+		err := rows.Scan(&user)
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		errors.PanicAndRollbackOnErr(err, tx)
+		dependentConvos = append(dependentConvos, user)
+	}
+
+	return dependentConvos
+}
+
+// Return a convo's members given an SID
+func GetParentConversationMembers(tx *sql.Tx, sid string) []string {
+	rows, err := tx.Query(fmt.Sprint(
+		"SELECT user_id ",
+		"FROM convo_members INNER JOIN convos ",
+		"ON id=convo_id WHERE HEX(sid)=?"),
+		sid)
+	errors.PanicAndRollbackOnErr(err, tx)
+
+	var members []string
+	for rows.Next() {
+		var user string
+		err := rows.Scan(&user)
+		errors.PanicAndRollbackOnErr(err, tx)
+		members = append(members, user)
+	}
+	return members
 }
 
 //
@@ -391,6 +518,8 @@ func toTypeString(ctype int) string {
 		return "CHANNEL"
 	case DIRECT:
 		return "DIRECT"
+	case FILE:
+		return "FILE"
 	default:
 		panic("unknown convo type: " + string(ctype))
 	}
