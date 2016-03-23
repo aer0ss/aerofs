@@ -222,10 +222,17 @@ func (ctx *context) getById(request *restful.Request, response *restful.Response
 
 func (ctx *context) createShare(request *restful.Request, response *restful.Response) {
 	cid := request.PathParameter("cid")
+
+	// Determine if convo exists
+	convo := getConvo(ctx.db, cid)
+	if convo == nil {
+		response.WriteHeader(404)
+		return
+	}
+
 	r := <-ctx.sidMap.Get(cid)
 	PanicOnErr(r.Error)
 
-	convo := getConvo(ctx.db, cid)
 	var targets []string
 	if !convo.IsPublic {
 		targets = convo.Members
