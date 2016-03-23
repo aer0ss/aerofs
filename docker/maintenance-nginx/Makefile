@@ -8,9 +8,6 @@ FILES = run-common.sh \
 		etc/nginx/sites/config \
 		etc/nginx/sites/bunker
 
-build:
-	../nginx/build.sh
-
 buildroot: clean
 	for f in $(FILES) ; do \
 		mkdir -p buildroot/$$(dirname $$f) ; \
