@@ -35,7 +35,7 @@
                 <td>
                     <p>
                         {{ server.deployments | length }} deployments
-                        <a href="#deploymentsListModal" data-toggle="modal" style="color: inherit">
+                        <a href="#deploymentsListModal{{server.id}}" data-toggle="modal" style="color: inherit">
                             <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
                         </a>
                     </p>
@@ -54,7 +54,7 @@
                 <td align="center"><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
             </tr>
 
-            <div id="deploymentsListModal" class="modal fade" role="dialog">
+            <div id="deploymentsListModal{{server.id}}" class="modal fade" role="dialog">
                 <div class="modal-dialog">
                     <!-- Modal content-->
                     <div class="modal-content">
