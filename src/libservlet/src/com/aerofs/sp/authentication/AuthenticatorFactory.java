@@ -5,7 +5,6 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.base.analytics.IAnalyticsClient;
 import com.aerofs.base.ParamFactory;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.sp.server.ACLNotificationPublisher;
@@ -19,14 +18,12 @@ public class AuthenticatorFactory
 {
     ACLNotificationPublisher _aclPublisher;
     AuditClient _auditClient;
-    IAnalyticsClient _analyticsClient;
 
     @Inject
-    public AuthenticatorFactory(ACLNotificationPublisher aclPublisher, AuditClient auditClient, IAnalyticsClient analyticsClient)
+    public AuthenticatorFactory(ACLNotificationPublisher aclPublisher, AuditClient auditClient)
     {
         _aclPublisher = aclPublisher;
         _auditClient = auditClient;
-        _analyticsClient = analyticsClient;
     }
 
     public Authenticator create()
@@ -34,7 +31,7 @@ public class AuthenticatorFactory
         IAuthority[] authorities;
         if (Identity.AUTHENTICATOR == Identity.Authenticator.EXTERNAL_CREDENTIAL) {
             authorities = new IAuthority[] {
-                    new LdapAuthority(new LdapConfiguration(), _aclPublisher, _auditClient, _analyticsClient),
+                    new LdapAuthority(new LdapConfiguration(), _aclPublisher, _auditClient),
                     new LocalAuthority(),
             };
         } else if (Identity.AUTHENTICATOR == Identity.Authenticator.OPENID) {
