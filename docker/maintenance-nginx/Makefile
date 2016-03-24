@@ -13,3 +13,6 @@ buildroot: clean
 		mkdir -p buildroot/$$(dirname $$f) ; \
 		cp -a ../nginx/root/$$f buildroot/$$f ;\
 	done
+
+build:
+	docker build -t aerofs/nginx -f ../base/base/Dockerfile.nginx ../base/base

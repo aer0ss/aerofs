@@ -1,0 +1,16 @@
+FROM alpine:edge
+
+RUN apk --update --upgrade add \
+        bash \
+        curl \
+        nginx \
+        openssl &&\
+    rm -rf /var/cache/apk/*
+
+RUN mkdir -p /run/nginx &&\
+    ln -sf /dev/stdout /var/lib/nginx/logs/access.log &&\
+    ln -sf /dev/stderr /var/lib/nginx/logs/error.log
+
+ENTRYPOINT [ "/container-scripts/service-barrier" ]
+
+COPY root /
