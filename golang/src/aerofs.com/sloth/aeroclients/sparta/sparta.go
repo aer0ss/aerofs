@@ -139,6 +139,23 @@ func (c *Client) AddSharedFolderMember(sid, uid string) error {
 	return nil
 }
 
+func (c *Client) RemoveSharedFolderMember(sid, uid string) error {
+	url := fmt.Sprint(BASE_URL, "/shares/", sid, "/members/", uid)
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", getDelegatedAuthHeader(uid, c.deploymentSecret))
+	resp := <-c.pool.Do(req)
+	if resp.Err != nil {
+		return resp.Err
+	}
+	if resp.R.StatusCode != 200 {
+		return errors.New(fmt.Sprint(resp.R.StatusCode, " removing ", uid, " from ", sid))
+	}
+	return nil
+}
+
 func (c *Client) GetSharedFolderMembers(sid string) ([]string, error) {
 	log.Print("fetch members for ", sid)
 	url := fmt.Sprint(BASE_URL, "/shares/", sid, "/members")

@@ -6,7 +6,9 @@ import (
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
 	. "aerofs.com/sloth/structs"
+	"aerofs.com/sloth/util/set"
 	"github.com/emicklei/go-restful"
+	"log"
 )
 
 func (ctx *context) updateConvo(request *restful.Request, response *restful.Response) {
@@ -41,6 +43,27 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 
 	updated := dao.UpdateConvo(tx, c, p, caller)
 	dao.CommitOrPanic(tx)
+
+	if c.Sid != "" {
+		go func() {
+			oldMembers := set.From(c.Members)
+			newMembers := set.From(p.Members)
+			added := newMembers.Diff(oldMembers)
+			removed := oldMembers.Diff(newMembers)
+			for uid := range added {
+				err := ctx.spartaClient.AddSharedFolderMember(c.Sid, uid)
+				if err != nil {
+					log.Printf("err adding %v to %v: %v\n", uid, c.Sid, err)
+				}
+			}
+			for uid := range removed {
+				err := ctx.spartaClient.RemoveSharedFolderMember(c.Sid, uid)
+				if err != nil {
+					log.Printf("err removing %v from %v: %v\n", uid, c.Sid, err)
+				}
+			}
+		}()
+	}
 
 	response.WriteEntity(updated)
 

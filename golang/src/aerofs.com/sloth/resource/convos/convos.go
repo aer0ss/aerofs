@@ -265,9 +265,20 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	if convo.HasMember(uid) {
 		return
 	}
+
 	dao.InsertMember(tx, cid, uid)
 	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
+
+	if convo.Sid != "" {
+		go func() {
+			log.Printf("adding %v to %v on sparta\n", uid, convo.Sid)
+			err := ctx.spartaClient.AddSharedFolderMember(convo.Sid, uid)
+			if err != nil {
+				log.Printf("err adding %v to sid %v: %v\n", uid, convo.Sid, err)
+			}
+		}()
+	}
 
 	convo.AddMember(uid) // ensure newly-added uid is in the list
 	broadcastConvo(ctx.broadcaster, convo)
@@ -299,6 +310,16 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	dao.RemoveMember(tx, cid, uid)
 	dao.InsertMemberRemovedMessage(tx, cid, uid, caller, time.Now())
 	dao.CommitOrPanic(tx)
+
+	if convo.Sid != "" {
+		go func() {
+			log.Printf("removing %v from %v on sparta\n", uid, convo.Sid)
+			err := ctx.spartaClient.RemoveSharedFolderMember(convo.Sid, uid)
+			if err != nil {
+				log.Printf("err removing %v from sid %v: %v\n", uid, convo.Sid, err)
+			}
+		}()
+	}
 
 	broadcastConvo(ctx.broadcaster, convo)
 	broadcastMessage(ctx.broadcaster, convo)
@@ -502,9 +523,12 @@ func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClien
 		if c == nil {
 			return "", errors.New("Convo not found: " + cid)
 		}
+		log.Print("maybe create share for ", cid)
 		if c.Sid != "" {
+			log.Printf("found sid %v for %v\n", c.Sid, cid)
 			return c.Sid, nil
 		}
+		log.Print("creating share for ", cid)
 		var err error
 		var sid string
 		switch c.Type {
@@ -518,6 +542,7 @@ func createSharedFolderFunc(db *sql.DB, spartaClient *sparta.Client, lipwigClien
 		if err != nil {
 			return "", err
 		}
+		log.Printf("created share %v for %v\n", sid, cid)
 		lipwigClient.SubscribeAndHandlePolaris(sid)
 		setConvoSid(db, cid, sid)
 		return sid, nil
