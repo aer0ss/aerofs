@@ -38,7 +38,7 @@ packagelist: debs
 	@# build/<packagename> should now look like a raw-extracted .deb package,
 	@# with a DEBIAN folder and all the other files to be packaged.
 	@# Fetch the .ver, patch the DEBIAN/control, and build the .deb
-	@./tools/deb-build.sh ${@:.deb=} $(TARGET_REPOSITORY)
+	@./tools/deb-build-wrap.sh ${@:.deb=} $(TARGET_REPOSITORY)
 	@mkdir -p debs
 
 upload:

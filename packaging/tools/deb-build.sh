@@ -129,7 +129,6 @@ function add_version_to_deb_control_file() {
 
 function rm_docker_files() {
     rm -rf $DEBNAME/Dockerfile $DEBNAME/Makefile $DEBNAME/root $DEBNAME/buildroot
-    find $DEBNAME | grep 'docker\.patch$' | xargs rm
 }
 
 # Creates a debian control file

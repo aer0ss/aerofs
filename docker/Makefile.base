@@ -29,7 +29,7 @@ dist: $(PROTO_SRC)
 	gradle --daemon dist
 
 $(DRYAD_SRC):
-	make -C $(GIT_ROOT)/packaging dryad
+	make -C $(GIT_ROOT)/packaging BIN=PRIVATE dryad
 
 $(LICENSING_SRC):
 	make -C $(LICENSING_SRC)
