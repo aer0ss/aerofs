@@ -20,3 +20,8 @@ buildroot: $(VERSION_SRC) $(WEB_SRC)
 .PHONY: $(WEB_SRC)
 $(WEB_SRC):
 	make -C ../web/web
+
+image: build buildroot
+	docker build --no-cache -t $(IMAGE_NAME) $(IMAGE_CTX)
+	$(call success,"- build $(IMAGE_NAME)")
+
