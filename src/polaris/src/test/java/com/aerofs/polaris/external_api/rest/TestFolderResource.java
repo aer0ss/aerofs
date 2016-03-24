@@ -9,8 +9,6 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.rest.api.CommonMetadata;
 import com.aerofs.rest.api.Error;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
@@ -312,7 +310,7 @@ public class TestFolderResource extends AbstractRestTest
         OID folder11 = PolarisHelpers.newFolder(AUTHENTICATED, folder1, "folder11");
         OID folder2 = PolarisHelpers.newFolder(AUTHENTICATED, folder11, "folder2");
 
-        PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder11);
+        PolarisHelpers.waitForJobCompletion(AUTHENTICATED, PolarisHelpers.shareFolder(AUTHENTICATED, folder1, folder11).jobID, 10);
         SID sid11 = SID.folderOID2convertedStoreSID(folder11);
 
         RestObject restShared11 = new RestObject(rootSID, SID.folderOID2convertedAnchorOID(folder11));
