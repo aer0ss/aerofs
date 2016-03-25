@@ -16,7 +16,7 @@ else
 endif
 endif
 endif
-# CLIENT, TEAM_SERVER, or STORAGE_AGENT
+# CLIENT, TEAM_SERVER
 PRODUCT =
 SIGNED =
 SYNCDET_ARGS =
@@ -53,10 +53,6 @@ build_protoc_plugins: _clean_protobuf
 	make out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java
 	$(call success,"build_protoc_plugins")
 
-build_sa: proto
-	gradle src/storage-agent:dist
-	$(call success,"build_sa")
-
 build_sa_vm:
 	# make sure we don't use a modified dev version of the loader
 	make -C $(GIT_ROOT)/docker/ship-aerofs/sa-loader
@@ -85,9 +81,6 @@ markdown_watch:
 	$(call success,"markdown_watch")
 
 package_clients: _clean_packages
-ifeq ($(PRODUCT),STORAGE_AGENT)
-	$(error "Use package_sa to package the STORAGE_AGENT.")
-endif
 ifeq ($(PRODUCT),)
 	make _package PKG_PRODUCT=CLIENT
 	make _package PKG_PRODUCT=TEAM_SERVER
@@ -96,19 +89,7 @@ else
 endif
 	$(call success,"package_clients")
 
-package_sa: _clean_packages
-	$(eval PKG_PRODUCT := $(shell [ -z $(PRODUCT) ] && echo "STORAGE_AGENT" || echo $(PRODUCT)))
-	@if [ $(PKG_PRODUCT) != "STORAGE_AGENT" ]; then \
-		echo "\033[31merror: \033[0mUse package_client to package the CLIENT or TEAM_SERVER."; \
-		exit 1; \
-	fi
-	make _package PKG_PRODUCT=$(PKG_PRODUCT)
-	$(call success,"package_sa")
-
 prepare_syncdet:
-ifeq ($(PRODUCT),STORAGE_AGENT)
-	make _prepare_syncdet_storage_agent PRODUCT=STORAGE_AGENT
-else
 ifeq ($(PRODUCT),TEAM_SERVER)
 	make _prepare_syncdet_team_server PRODUCT=TEAM_SERVER
 else
@@ -130,9 +111,9 @@ push_docker_images:
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/loader
 	$(call success,"push_docker_images")
 
-push_docker_sa_images:
+push_sa_images:
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader
-	$(call success,"push_docker_sa_images")
+	$(call success,"push_sa_images")
 
 push_sa_vm:
 	$(GIT_ROOT)/tools/build/bootstrap push_vm aerofs/sa-loader
@@ -214,7 +195,7 @@ _clean_protobuf:
 
 _package:
 ifeq ($(SIGNED),)
-	$(error "SIGNED must be defined to run package_clients or package_sa.")
+	$(error "SIGNED must be defined to run package_clients.")
 endif
 	$(eval SIGNED_ARG := $(shell [ $(SIGNED) = true ] && echo "SIGNED" || echo "UNSIGNED"))
 	$(GIT_ROOT)/tools/build/bootstrap package $(PKG_PRODUCT) $(VERSION) $(SIGNED_ARG) --build-all
@@ -240,9 +221,6 @@ _prepare_syncdet_team_server:
 	make _prepare_syncdet PS_PREFIX=aerofsts-osx PS_EXT=zip
 	make _prepare_syncdet PS_PREFIX=aerofsts-installer PS_EXT=tgz
 
-_prepare_syncdet_storage_agent:
-	make _prepare_syncdet PS_PREFIX=aerofs-storage-agent-installer PS_EXT=tgz
-
 _syncdet:
 	$(eval TEAM_CITY_ARG := $(shell [ $(TEAM_CITY) = true ] && echo "--team-city" || echo ""))
 	$(SYNCDET_EXECUTABLE) $(ARG) \
@@ -256,7 +234,6 @@ _syncdet:
 			$(GIT_ROOT)/src/python-lib/./aerofs_common \
 			$(GIT_ROOT)/src/python-lib/./aerofs_sp \
 			$(GIT_ROOT)/src/python-lib/./aerofs_ritual \
-			$(GIT_ROOT)/resource/templates/client/linux/storage-agent/./setup_storage_agent.py
 
 _syncdet_clean_install:
 	make _syncdet ARG="--case=lib.cases.clean_install" SYNCDET_ARGS="--case-arg=--transport=$(SYNCDET_TRANSPORT)"
