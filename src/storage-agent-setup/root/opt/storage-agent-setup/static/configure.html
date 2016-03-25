@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" type="text/css" href="/static/style.css">
+        <title>Upload Storage Server Configuration</title>
+    </head>
+    <body>
+        <h2>Upload Configuration</h2>
+        <p>This Storage Server has not been configured yet, please download a configuration 
+            file from your Application Server management portal under "Storage Servers". Each
+            Storage Server you set up will need a new configuration file to be set up.</p>
+        <form action="/upload" method=post onsubmit="upload(); return false;" enctype=multipart/form-data>
+            <div>
+                <input id="config-file" type="file" name="file" required>
+            </div>
+            <div>
+                <button type="submit" id="restore-button" class="form-control">
+                    Configure Server
+                </button>
+            </div>
+            <div class="help-block">
+                Configuration files are named like <em>{{ example_config_file_name }}</em>
+            </div>
+        </form>
+    </body>
+
+    <script type="text/javascript">
+        function upload() {
+            var formData = new FormData(document.querySelector("form"));
+            var request = new XMLHttpRequest();
+            request.open("POST", "/upload", true);
+
+            request.onload = function() {
+                if (request.status === 200) {
+                    switchToDefaultMode();
+                } else if (request.status == 409) {
+                    alert("This storage server has already been configured, and cannot be re-configured");
+                } else if (request.status == 400) {
+                    alert("No file provided to upload");
+                } else {
+                    alert("Configuration failed unexpectedly, please try again later. If this issue persists please contact us at support@aerofs.com");
+                }
+            };
+
+            request.onerror = function() {
+                alert("Could not upload configuration, please try again later. If this issue persists please contact us at support@aerofs.com");
+            }
+            request.send(formData);
+        }
+
+        function switchToDefaultMode() {
+            var request = new XMLHttpRequest();
+            request.open("POST", "/json-boot", true);
+            request.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+            request.onload = function() {
+                if (request.status === 200) {
+                    waitForReboot();
+                } else {
+                    console.log("failed to set boot target, status " + request.status);
+                    alert("Could not finish configuration, please try again later. If this issue persists please contact us at support@aerofs.com");
+                }
+            };
+
+            request.onerror = function() {
+                console.log("ignoring error in set-boot, since server is restarting");
+                waitForReboot();
+            }
+            request.send(JSON.stringify({target:"default"}));
+        }
+
+        function waitForReboot() {
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-get-boot", true);
+
+            request.onload = function() {
+                if (request.status === 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.target === "default") {
+                        location.reload();
+                        return;
+                    } else {
+                        console.log("did not restart server, recv " + request.responseText);
+                        alert("Storage server failed to restart, please try again later. If this issue persists please contact us at support@aerofs.com");
+                    }
+                }
+                console.log("failed to get boot target, status " + request.status);
+                alert("Storage server failed to restart, please try again later. If this issue persists please contact us at support@aerofs.com");
+            };
+
+            request.onerror = function() {
+                console.log("ignoring connectivity error while getting boot");
+                setTimeout(function() {
+                    request.open("GET", "/json-get-boot", true);
+                    request.send();
+                }, 1000);
+            }
+            request.send();
+        }
+    </script>
+</html>

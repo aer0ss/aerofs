@@ -4,15 +4,15 @@ import requests
 from datetime import datetime
 from OpenSSL import crypto
 from setup_storage_agent import setup_storage_agent
-from flask import Flask, request, abort, flash, render_template
+from flask import Flask, request, abort, flash, render_template, jsonify
 
 SERVER_FILES_DIR = "/aerofs-storage/server"
 SERVER_KEY_LOCATION = "/aerofs-storage/server/server.key"
 SERVER_CERT_LOCATION = "/aerofs-storage/server/server.crt"
 SERVER_SETUP_LOCATION = "/aerofs-storage/server/setup-completed"
 STORAGE_BUNDLE_LOCATION = "/aerofs-storage/configbundle"
-
-app = Flask("storage server", static_folder="/opt/storage-agent-setup", template_folder="/opt/storage-agent-setup")
+STATIC_LOC = "/opt/storage-agent-setup/static"
+app = Flask("storage server", static_folder=STATIC_LOC, template_folder=STATIC_LOC)
 
 @app.route('/', methods=["GET"])
 def root():
@@ -30,10 +30,14 @@ def upload():
     if os.path.exists(SERVER_SETUP_LOCATION):
         # cannot re-configure a running storage agent
         flash("Server Already Setup", category='error')
+        print("setup flag file already exists")
         abort(409)
     f = request.files.get("file", None)
     if not f:
         flash("No File Uploaded", category='error')
+        print("no file found in request")
+        print request.files
+        print request
         abort(400)
     f.save(STORAGE_BUNDLE_LOCATION)
     flash("Uploaded Configuration")
@@ -52,7 +56,7 @@ def boot_to_target():
     target = request.get_json().get("target", None)
     if not target or target not in ["default", "maintenance"]:
         abort(400)
-    r = requests.post("http://loader.service/v1/boot/default")
+    r = requests.post("http://loader.service/v1/boot/{}".format(target))
     r.raise_for_status()
 
 boot_mode_cached = None
@@ -62,8 +66,8 @@ def get_boot():
     if boot_mode_cached is None:
         r = requests.get("http://loader.service/v1/boot")
         r.raise_for_status()
-        boot_mode_cached = r.json()
-    return boot_mode_cached
+        boot_mode_cached = r.json()["target"]
+    return jsonify(target=boot_mode_cached)
 
 def setup_key_cert():
     if os.path.exists(SERVER_CERT_LOCATION) and os.path.exists(SERVER_KEY_LOCATION):
