@@ -148,7 +148,9 @@ func BuildRoutes(
 	ws.Route(ws.GET("/{cid}/messages").To(ctx.getMessages).
 		Doc("Get all messages exchanged in a convo").
 		Param(ws.PathParameter("cid", "Convo id").DataType("string")).
-		Param(ws.QueryParameter("since", "Id of last message received").DataType("int")).
+		Param(ws.QueryParameter("after", "Message ID").DataType("int")).
+		Param(ws.QueryParameter("before", "Message ID").DataType("int")).
+		Param(ws.QueryParameter("limit", "Message ID").DataType("int")).
 		Returns(200, "A list of messages exchanged", MessageList{}).
 		Returns(401, "Invalid Authorization", nil).
 		Returns(403, "Forbidden", nil).
@@ -374,9 +376,38 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 }
 
 func (ctx *context) getMessages(request *restful.Request, response *restful.Response) {
-	cid := request.PathParameter("cid")
-	since := request.QueryParameter("since")
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
+	cid := request.PathParameter("cid")
+	afterParam := request.QueryParameter("after")
+	beforeParam := request.QueryParameter("before")
+	limitParam := request.QueryParameter("limit")
+
+	var after, before, limit int
+	var err error
+	if afterParam != "" {
+		after, err = strconv.Atoi(afterParam)
+		if err != nil {
+			log.Print(err)
+			response.WriteErrorString(400, "\"after\" param must be a message id")
+			return
+		}
+	}
+	if beforeParam != "" {
+		before, err = strconv.Atoi(beforeParam)
+		if err != nil {
+			log.Print(err)
+			response.WriteErrorString(400, "\"before\" param must be a message id")
+			return
+		}
+	}
+	if limitParam != "" {
+		limit, err = strconv.Atoi(limitParam)
+		if err != nil || limit < 1 {
+			log.Print(err)
+			response.WriteErrorString(400, "\"limit\" param must be a positive integer")
+			return
+		}
+	}
 
 	tx := dao.BeginOrPanic(ctx.db)
 	defer tx.Rollback()
@@ -392,17 +423,7 @@ func (ctx *context) getMessages(request *restful.Request, response *restful.Resp
 		return
 	}
 
-	var messages []Message
-	if since == "" {
-		messages = dao.GetMessages(tx, cid)
-	} else {
-		mid, err := strconv.Atoi(since)
-		if err != nil {
-			response.WriteErrorString(400, "\"since\" param must be a message id")
-			return
-		}
-		messages = dao.GetMessagesSince(tx, cid, mid)
-	}
+	messages := dao.GetMessages(tx, cid, before, after, limit)
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(MessageList{Messages: messages})

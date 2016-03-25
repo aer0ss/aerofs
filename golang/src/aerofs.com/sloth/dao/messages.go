@@ -4,15 +4,38 @@ import (
 	"aerofs.com/sloth/errors"
 	. "aerofs.com/sloth/structs"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
-func GetMessages(tx *sql.Tx, cid string) []Message {
-	return GetMessagesSince(tx, cid, -1)
-}
+func GetMessages(tx *sql.Tx, cid string, before, after, limit int) []Message {
+	var limitClause, beforeClause, afterClause, order string
+	queryArgs := []interface{}{cid}
 
-func GetMessagesSince(tx *sql.Tx, cid string, since int) []Message {
-	rows, err := tx.Query("SELECT id,time,body,from_id,to_id,is_data FROM messages WHERE to_id=? AND id > ? ORDER BY id", cid, since)
+	if limit > 0 {
+		limitClause = fmt.Sprint("LIMIT ", limit)
+	}
+	if after > 0 {
+		afterClause = " AND id > ? "
+		queryArgs = append(queryArgs, after)
+		order = " ASC "
+	} else {
+		order = " DESC "
+	}
+	if before > 0 {
+		beforeClause = " AND id < ? "
+		queryArgs = append(queryArgs, before)
+	}
+
+	query := fmt.Sprint(
+		"(SELECT id, time, body, from_id, to_id, is_data",
+		" FROM messages",
+		" WHERE to_id=?", beforeClause, afterClause,
+		" ORDER BY id", order,
+		limitClause,
+		") ORDER BY id ASC",
+	)
+	rows, err := tx.Query(query, queryArgs...)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return parseMessageRows(tx, rows)
 }
