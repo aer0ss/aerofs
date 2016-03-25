@@ -71,6 +71,7 @@ public class TestContentAvailabilityListener extends AbstractTest
         dbcw.init_();
         try (Statement s = dbcw.getConnection().createStatement()) {
             new PolarisSchema().create_(s, dbcw);
+            PolarisSchema.createAvailableContentTable(s, dbcw);
         }
 
         tm = new TransManager(new Trans.Factory(dbcw));

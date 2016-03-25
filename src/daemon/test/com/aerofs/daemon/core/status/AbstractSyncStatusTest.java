@@ -18,6 +18,8 @@ import com.aerofs.daemon.core.status.db.SyncStatusRequests;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
+import com.aerofs.daemon.core.update.DPUTUtil;
+import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
@@ -109,6 +111,9 @@ public class AbstractSyncStatusTest extends AbstractTest
 
         dbcw = new InMemoryCoreDBCW();
         dbcw.init_();
+        DPUTUtil.runDatabaseOperationAtomically_(dbcw, s -> {
+            CoreSchema.createOutOfSyncFilesTable(s, dbcw);
+        });
         transManager = new TransManager(new Trans.Factory(dbcw));
         sco = new StoreCreationOperators();
         metaDatabase = new MetaDatabase(dbcw, sco);
