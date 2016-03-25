@@ -50,7 +50,7 @@ public class TestSP_LDAP extends AbstractSPTest
 
         _server.resetConfig(_cfg);
         authenticator = spy(
-                new Authenticator(new IAuthority[] { new LdapAuthority(_cfg, aclNotificationPublisher, auditClient) })
+                new Authenticator(new IAuthority[] { new LdapAuthority(_cfg, aclNotificationPublisher, auditClient, analyticsClient) })
         );
         rebuildSPService();
     }

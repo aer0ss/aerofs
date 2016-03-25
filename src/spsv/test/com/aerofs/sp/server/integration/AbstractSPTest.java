@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.audit.client.MockAuditClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.base.analytics.AnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
@@ -135,6 +136,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // this is only spied because of @InjectMocks.
     @Spy protected MockAuditClient auditClient = new MockAuditClient(System.out::println);
 
+    @Spy protected AnalyticsClient analyticsClient = mock(AnalyticsClient.class);
+
     protected SPActiveUserSessionTracker userSessionTracker =
             new SPActiveUserSessionTracker();
     protected SPActiveTomcatSessionTracker tomcatSessionTracker =
@@ -203,7 +206,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
 
     @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, ssmp);
 
-    @Spy protected Authenticator authenticator = spy(new AuthenticatorFactory(aclNotificationPublisher, auditClient).create());
+    @Spy protected Authenticator authenticator = spy(new AuthenticatorFactory(aclNotificationPublisher, auditClient, analyticsClient).create());
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
             mock(PasswordResetEmailer.class), authenticator);
     @Spy DeviceRegistrationEmailer _deviceRegistrationEmailer = mock(DeviceRegistrationEmailer.class);
@@ -341,7 +344,8 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 auditClient,
                 aclNotificationPublisher,
                 zelda,
-                accessCodeProvider);
+                accessCodeProvider,
+                analyticsClient);
         wireSPService();
     }
 

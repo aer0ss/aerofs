@@ -115,7 +115,7 @@ public class TestLDAP_Groups extends AbstractSPTest
         _server.resetConfig(_cfg);
         _syncer = new LdapGroupSynchronizer(_cfg, factUser, factGroup, _invitationHelper);
         authenticator = new Authenticator(new IAuthority[] {
-                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient)
+                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient, analyticsClient)
         });
         rebuildSPService();
         sqlTrans.begin();

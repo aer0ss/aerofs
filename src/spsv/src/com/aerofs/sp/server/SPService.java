@@ -11,6 +11,8 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
+import com.aerofs.base.analytics.AnalyticsEvent;
+import com.aerofs.base.analytics.IAnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.*;
 import com.aerofs.base.id.GroupID;
@@ -205,6 +207,8 @@ public class SPService implements ISPService
     private final Zelda _zelda;
     private final AccessCodeProvider _accessCodeProvider;
 
+    private final IAnalyticsClient _analyticsClient;
+
     @Inject
     public SPService(SPDatabase db,
             SQLThreadLocalTransaction sqlTrans,
@@ -238,7 +242,8 @@ public class SPService implements ISPService
             AuditClient auditClient,
             ACLNotificationPublisher aclPublisher,
             Zelda zelda,
-            AccessCodeProvider accessCodeProvider)
+            AccessCodeProvider accessCodeProvider,
+            IAnalyticsClient analyticsClient)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -284,6 +289,8 @@ public class SPService implements ISPService
 
         _zelda = zelda;
         _accessCodeProvider = accessCodeProvider;
+
+        _analyticsClient = analyticsClient;
 
         startPeriodicSyncing(scheduledExecutor, () -> {
             try {
@@ -482,6 +489,8 @@ public class SPService implements ISPService
         _factUserSettingsToken.create(user).delete();
 
         _sqlTrans.commit();
+
+        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_UNLINK);
 
         return createVoidReply();
     }
@@ -1139,6 +1148,8 @@ public class SPService implements ISPService
                 .add("device_name", deviceName)
                 .publish();
 
+        _analyticsClient.track(AnalyticsEvent.DESKTOP_CLIENT_INSTALL);
+
         return createReply(reply);
     }
 
@@ -1384,6 +1395,9 @@ public class SPService implements ISPService
                 events.add(auditSharing(sf, sharer, "folder.invite")
                         .add("target", sharee.id())
                         .embed("role", actualPermissions.toArray()));
+
+                _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, sharer.id());
+
             } else if (srp._subject instanceof GroupID) {
                 Group group = _factGroup.create((GroupID)srp._subject);
 
@@ -1404,7 +1418,10 @@ public class SPService implements ISPService
                     events.add(auditSharing(sf, sharer, "folder.invite")
                             .add("target", sharee.id())
                             .embed("role", permissions.toArray()));
+
+                    _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, sharer.id());
                 }
+
             } else {
                 String msg = "The subject permissions list contains an invalid subject";
                 l.warn("{}: {}", msg, srp._subject);
@@ -1474,6 +1491,8 @@ public class SPService implements ISPService
                 .embed("role", perm == null ? "" : perm.toArray())
                 .publish();
         _sqlTrans.commit();
+
+        _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_ACCEPT, user.id());
 
         return createVoidReply();
     }
@@ -1736,6 +1755,9 @@ public class SPService implements ISPService
                 .add("key", link.getKey())
                 .add("soid", restObject.toStringFormal())
                 .publish();
+
+        //TODO: Need to separate link share events for desktop and web. But for now will just have all link shares as web link share event.
+        _analyticsClient.track(AnalyticsEvent.LINK_CREATED_WEB, requester.id());
 
         return createReply(CreateUrlReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
@@ -2426,6 +2448,8 @@ public class SPService implements ISPService
                 .add("email", emailAddress)
                 .publish();
 
+        _analyticsClient.track(AnalyticsEvent.USER_INVITATION_SEND, user.id());
+
         return createVoidReply();
     }
 
@@ -2492,6 +2516,8 @@ public class SPService implements ISPService
                 .add("inviter", inviter.id())
                 .add("invitee", invitee.id())
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.USER_INVITATION_SEND, inviter.id());
 
         return _factInvitationEmailer.createOrganizationInvitationEmailer(inviter, invitee);
     }
@@ -2917,6 +2943,9 @@ public class SPService implements ISPService
                 .add("is_admin", !joinExistingOrg) // TODO: this is incorrect if the user already exists
                 .publish();
 
+        _analyticsClient.track(AnalyticsEvent.USER_INVITATION_ACCEPT);
+        _analyticsClient.track(AnalyticsEvent.USER_SIGNUP);
+
         return createReply(SignUpWithCodeReply.newBuilder()
                 .setOrgId(orgID.toHexString())
                 .setExistingTeam(joinExistingOrg)
@@ -3324,6 +3353,9 @@ public class SPService implements ISPService
 //                .add("os_family", "unknown")  // FIXME: Get this from somewhere?
 //                .add("os_name", "unknown")    // FIXME: Get this from somewhere?
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_INSTALL);
+
         return reply;
     }
 
@@ -3443,6 +3475,8 @@ public class SPService implements ISPService
                 .add("owner", device.getOwner().id())
                 .publish();
         _sqlTrans.commit();
+
+        _analyticsClient.track(AnalyticsEvent.DESKTOP_CLIENT_UNLINK);
 
         return createVoidReply();
     }

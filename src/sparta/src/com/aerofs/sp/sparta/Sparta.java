@@ -10,6 +10,8 @@ import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.C;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.analytics.AnalyticsClient;
+import com.aerofs.base.analytics.IAnalyticsClient;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -262,6 +264,7 @@ public class Sparta extends Service
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
+                bind(IAnalyticsClient.class).to(AnalyticsClient.class);
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
                         getStringProperty("sparta.oauth.id"),
                         getStringProperty("sparta.oauth.secret"),

@@ -38,7 +38,7 @@ public class TestSP_SSLConnectionLDAP extends AbstractSPTest
         _cfg.SERVER_SECURITY = SecurityType.SSL;
         _cfg.SERVER_CA_CERT = _server.getCertString();
         authenticator = new Authenticator(new IAuthority[] {
-                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient)
+                new LdapAuthority(_cfg, aclNotificationPublisher, auditClient, analyticsClient)
         });
         rebuildSPService();
     }

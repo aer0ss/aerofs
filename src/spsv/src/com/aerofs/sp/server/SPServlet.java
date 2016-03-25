@@ -5,6 +5,8 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
+import com.aerofs.base.analytics.AnalyticsClient;
+import com.aerofs.base.analytics.IAnalyticsClient;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
@@ -173,6 +175,8 @@ public class SPServlet extends HttpServlet
     private final Zelda _zelda;
     private final AccessCodeProvider _accessCodeProvider;
 
+    private final IAnalyticsClient _analyticsClient;
+
     public SPServlet()
     {
         _sqlConProvider = new PooledSQLConnectionProvider();
@@ -212,10 +216,12 @@ public class SPServlet extends HttpServlet
         String deploymentSecret = AeroService.loadDeploymentSecret();
         _ssmpConnection = createSSMPConnection(deploymentSecret, URLBasedCertificateProvider.server());
         _auditClient = createAuditClient(deploymentSecret);
+        _analyticsClient = new AnalyticsClient();
         _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection);
         _authenticator = new AuthenticatorFactory(
                 _aclNotificationPublisher,
-                _auditClient
+                _auditClient,
+                _analyticsClient
         ).create();
         _passwordManagement = new PasswordManagement(_db, _factUser, new PasswordResetEmailer(), _authenticator);
         _deviceRegistrationEmailer = new DeviceRegistrationEmailer();
@@ -284,7 +290,8 @@ public class SPServlet extends HttpServlet
                 _auditClient,
                 _aclNotificationPublisher,
                 _zelda,
-                _accessCodeProvider);
+                _accessCodeProvider,
+                _analyticsClient);
         _reactor = new SPServiceReactor(_service);
         _postDelegate = new DoPostDelegate(SP_POST_PARAM_PROTOCOL, SP_POST_PARAM_DATA);
     }
