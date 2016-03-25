@@ -100,7 +100,6 @@ else
 	make _prepare_syncdet_team_server PRODUCT=TEAM_SERVER
 endif
 endif
-endif
 	$(call success,"prepare_syncdet")
 
 proto: out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java out.shell/protobuf-rpc/gen_rpc_objc/protoc-gen-rpc-objc out.shell/protobuf-rpc/gen_rpc_python/protoc-gen-rpc-python
