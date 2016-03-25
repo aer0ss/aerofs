@@ -256,6 +256,6 @@ public class TestContentAvailabilityListener extends AbstractTest
 
     private void pause() {
         long currentTimeMillis = System.currentTimeMillis();
-        while (System.currentTimeMillis() - currentTimeMillis < 500);
+        while (System.currentTimeMillis() - currentTimeMillis < 2500);
     }
 }
