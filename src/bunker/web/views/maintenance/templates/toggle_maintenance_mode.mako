@@ -84,10 +84,11 @@
             $('#toggle-modal').modal('show');
             var target =
                 %if is_maintenance_mode:
-                    %if onboard_storage:
+                    %if onboard_storage_enabled:
                         'onboard';
                     %else:
                         'default';
+                    %endif
                 %else:
                     'maintenance';
                 %endif

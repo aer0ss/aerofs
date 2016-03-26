@@ -29,7 +29,7 @@ while true; do
     done
 
     # Create the loader container as needed
-    [[ "$(docker ps -a | awk '{print $NF}' | grep ${CONTAINER})" ]] || {
+    [[ "$(docker ps -a | awk '{print $NF}' | grep -x ${CONTAINER})" ]] || {
         echo "Creating container ${CONTAINER} ..."
         LOADER_IMAGE=$(yml 'loader')
         # Emulation doesn't allow changing of repo or tag and hence /dev/null
