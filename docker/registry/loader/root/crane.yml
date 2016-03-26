@@ -17,8 +17,8 @@ containers:
         # For read/write access, limited to AeroFS VPN.
         - "5050:5050"
       volume:
-        - ${KEYS_DIR}/https.crt:/host/https.crt
-        - ${KEYS_DIR}/https.key:/host/https.key
+        - ${KEYS_DIR}/aerofs.com.key:/host/aerofs.com.key
+        - ${KEYS_DIR}/aerofs.com.crt:/host/aerofs.com.crt
       link:
         - registry:registry.service
 

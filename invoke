@@ -95,6 +95,8 @@ def convert_flags(args):
         cmdline.append('SYNCDET_SYNC_TIMEOUT={}'.format(args.syncdet_sync_timeout))
     if args.syncdet_transport:
         cmdline.append('SYNCDET_TRANSPORT={}'.format(args.syncdet_transport))
+    if args.push_repo:
+        cmdline.append('PUSH_REPO={}'.format(args.push_repo))
     cmdline.append('TEAM_CITY={}'.format('true' if args.team_city else 'false'))
 
     return cmdline
@@ -106,6 +108,7 @@ def main():
     # Pass-through to makefile
     parser.add_argument('--approot', action='store', default=os.path.join(GIT_ROOT, 'approot'))
     parser.add_argument('--product', action='store', choices=['CLIENT', 'TEAM_SERVER'])
+    parser.add_argument('--push-repo', action='store', choices=['private-registry.aerofs.com', 'registry.aerofs.com'])
     parser.add_argument('--release-version', action='store')
     parser.add_argument('--signed', action='store_const', dest='signed', const=True)
     parser.add_argument('--unsigned', action='store_const', dest='signed', const=False)

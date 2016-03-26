@@ -4,7 +4,7 @@ set -ex
 THIS_DIR="$(dirname $0)"
 
 # Build Loader base image
-make -C "${THIS_DIR}/../ship/vm/loader"
+${THIS_DIR}/../ship/vm/loader/build.sh
 
 # Build all containers
 for i in loader nginx registry; do

@@ -1,7 +1,8 @@
-FROM registry:0.9.1
+FROM registry:2
 
 MAINTAINER AeroFS "support@aerofs.com"
 
-CMD [ "/run.sh" ]
+ENTRYPOINT [ "/run.sh" ]
 
 COPY root /
+

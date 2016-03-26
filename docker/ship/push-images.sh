@@ -43,13 +43,22 @@ push() {
     )
 }
 
+# Add repo name only when pushing to aerofs registry. For pushing images
+# to docker hub adding repo name(registry.hub.docker.com) complains of
+# "unauthorized: access to the requested resource is not authorized".
+if [[ $PUSH_REPO == *"aerofs"* ]]; then
+    PUSH_IMAGE_PREFIX="${PUSH_REPO}/"
+else
+    PUSH_IMAGE_PREFIX=""
+fi
+
 for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
     echo "============================================================"
     echo " Pushing ${i}:${TAG} to ${PUSH_REPO}..."
     echo "============================================================"
-    PUSH_IMAGE="${PUSH_REPO}/${i}:${TAG}"
+    PUSH_IMAGE="${PUSH_IMAGE_PREFIX}${i}:${TAG}"
     docker tag -f "${i}" "${PUSH_IMAGE}"
-    docker tag -f "${i}" "${PUSH_REPO}/${i}:latest"
+    docker tag -f "${i}" "${PUSH_IMAGE_PREFIX}${i}:latest"
     push "${PUSH_IMAGE}"
     docker rmi "${PUSH_IMAGE}"
 done
@@ -57,7 +66,7 @@ done
 echo "============================================================"
 echo " Pushing ${LOADER_IMAGE}:latest to ${PUSH_REPO}..."
 echo "============================================================"
-LOADER_PUSH_IMAGE=${PUSH_REPO}/${LOADER_IMAGE}
+LOADER_PUSH_IMAGE=$PUSH_IMAGE_PREFIX${LOADER_IMAGE}
 docker tag -f ${LOADER_IMAGE} ${LOADER_PUSH_IMAGE}
 push ${LOADER_PUSH_IMAGE}
 docker rmi ${LOADER_PUSH_IMAGE}
