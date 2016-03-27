@@ -134,6 +134,12 @@ if [ -d aerofs-db-backup/charlie ] ; then
     cp -a aerofs-db-backup/charlie /data/charlie
 fi
 
+# Restore onboard storage data if found in the backup file
+if [ -d aerofs-db-backup/aerofs-storage ]; then
+    rm -rf /aerofs-storage
+    cp -a aerofs-db-backup/aerofs-storage /aerofs-storage
+fi
+
 popd 1>/dev/null 2>/dev/null
 
 echo ">>> AeroFS databases successfully restored."
