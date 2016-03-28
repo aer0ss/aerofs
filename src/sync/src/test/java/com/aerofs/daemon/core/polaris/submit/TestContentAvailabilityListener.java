@@ -145,7 +145,7 @@ public class TestContentAvailabilityListener extends AbstractTest
             t.commit_();
         }
 
-        pause();
+        pause(50, 2);
 
         int count = 0;
         IDBIterator<AvailableContent> list = acdb.listContent_();
@@ -178,7 +178,7 @@ public class TestContentAvailabilityListener extends AbstractTest
         t.commit_();
         t.end_();
 
-        pause();
+        pause(50, 4);
 
         count = 0;
         list = acdb.listContent_();
@@ -213,7 +213,13 @@ public class TestContentAvailabilityListener extends AbstractTest
             }
         });
 
-        pause();
+        int total = 0;
+        for (int i = 0; i < 50 && total != 200 + calls.size() - 1; i++) {
+            pause();
+            total = 0;
+            for (Integer call : calls)
+                total += call;
+        }
 
         int count = 0;
         IDBIterator<AvailableContent> list = acdb.listContent_();
@@ -225,7 +231,7 @@ public class TestContentAvailabilityListener extends AbstractTest
         l.trace("availability count: {}", count);
         l.trace("calls: {}", calls.size());
 
-        int total = 0;
+        total = 0;
         for (Integer call : calls)
             total += call;
 
@@ -257,5 +263,10 @@ public class TestContentAvailabilityListener extends AbstractTest
     private void pause() {
         long currentTimeMillis = System.currentTimeMillis();
         while (System.currentTimeMillis() - currentTimeMillis < 2500);
+    }
+
+    private void pause(int times, int numCalls) {
+        for (int i = 0; i < times && calls.size() < numCalls; i++)
+            pause();
     }
 }
