@@ -6,9 +6,9 @@
     </head>
     <body>
         <h2>Upload Configuration</h2>
-        <p>This Storage Server has not been configured yet, please download a configuration 
-            file from your Application Server management portal under "Storage Servers". Each
-            Storage Server you set up will need a new configuration file to be set up.</p>
+        <p>This Storage Server has not been configured yet. Please upload a configuration file to set up this server.
+        You can find your configuration file on the Application Server management portal under "Storage Servers". </p>
+        <p>Each Storage Server you set up will need a new configuration file.</p>
         <form action="/upload" method=post onsubmit="upload(); return false;" enctype=multipart/form-data>
             <div>
                 <input id="config-file" type="file" name="file" required>
