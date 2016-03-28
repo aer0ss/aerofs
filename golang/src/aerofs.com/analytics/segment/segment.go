@@ -95,6 +95,11 @@ func (c *Client) Batch(b *Batch) error {
 
 // Send - send a segmentio message to client's endpoint
 func (c *Client) send(message interface{}, route string) error {
+	// empty endpoint from config = event send disabled (for CI/local builds)
+	if c.Endpoint == "" {
+		return nil
+	}
+
 	content, err := json.Marshal(message)
 	if err != nil {
 		return errors.New("Failed to marshal segment message: " + err.Error())

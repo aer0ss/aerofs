@@ -7,22 +7,28 @@ import (
 	"net/http"
 )
 
-// ServiceHTTPClient - for sending requests to other AeroFS services
-type ServiceHTTPClient struct {
+// ServiceHTTPClient - an interface for an HTTP client
+type ServiceHTTPClient interface {
+	NewRequest(method, url string, body io.Reader) (*http.Request, error)
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// DefaultServiceHTTPClient - for sending requests to other AeroFS services
+type DefaultServiceHTTPClient struct {
 	Auth   string
 	Client *http.Client
 }
 
-// NewServiceHTTPClient - create a new ServiceHTTPClient to communicate with AeroFS services
-func NewServiceHTTPClient(name, secret string) *ServiceHTTPClient {
-	return &ServiceHTTPClient{
+// NewDefaultServiceHTTPClient - create a new ServiceHTTPClient to communicate with AeroFS services
+func NewDefaultServiceHTTPClient(name, secret string) ServiceHTTPClient {
+	return &DefaultServiceHTTPClient{
 		Auth:   "Aero-Service-Shared-Secret " + name + " " + secret,
 		Client: http.DefaultClient,
 	}
 }
 
 // NewRequest - wrapper around http.NewRequest providing aerofs auth header
-func (c *ServiceHTTPClient) NewRequest(method, url string, body io.Reader) (*http.Request, error) {
+func (c *DefaultServiceHTTPClient) NewRequest(method, url string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
@@ -32,7 +38,7 @@ func (c *ServiceHTTPClient) NewRequest(method, url string, body io.Reader) (*htt
 }
 
 // Do - wrapper around http.Client.Do, returns error on non-200 status codes
-func (c *ServiceHTTPClient) Do(req *http.Request) (*http.Response, error) {
+func (c *DefaultServiceHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
