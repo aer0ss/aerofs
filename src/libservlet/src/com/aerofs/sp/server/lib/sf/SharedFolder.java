@@ -5,39 +5,36 @@
 package com.aerofs.sp.server.lib.sf;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ParamFactory;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
-import com.aerofs.ids.SID;
 import com.aerofs.ids.ExInvalidID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.OAuthRequestFilter;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.base.ParamFactory;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
 import com.aerofs.sp.server.lib.group.GroupSharesDatabase.GroupIDAndRole;
-import com.aerofs.sp.server.lib.sf.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.sf.SharedFolderDatabase.UserIDRoleAndState;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.*;
 import com.google.common.collect.ImmutableList.Builder;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.sun.jersey.api.core.HttpContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
@@ -147,6 +144,24 @@ public class SharedFolder
             throws ExNotFound, SQLException
     {
         return _f._db.getName(_sid, user == null ? null : user.id());
+    }
+
+    /**
+     * Set the public name of this shared folder for a given user.
+     *
+     * @param name name of this shared folder. Cannot be empty.
+     *
+     * @throws ExNotFound if this shared folder doesn't exist.
+     * @throws IllegalArgumentException if name is an empty string.
+     * @throws SQLException
+     */
+    public void setPublicName(String name)
+            throws SQLException, ExNotFound
+    {
+        if (!exists()) throw new ExNotFound("shared folder " + _sid);
+        checkArgument(!name.isEmpty(), "name cannot be emtpy");
+
+        _f._db.setPublicName(_sid, name);
     }
 
     /**

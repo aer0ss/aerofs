@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.specification.RequestSpecification;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -26,22 +27,27 @@ import org.junit.rules.RuleChain;
 import org.mockito.ArgumentMatcher;
 
 import javax.ws.rs.core.Response;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public final class TestObjectResource {
 
@@ -50,8 +56,11 @@ public final class TestObjectResource {
     }
 
     private static final UserID USERID = UserID.fromInternal("test@aerofs.com");
+    private static final UserID USERID2 = UserID.fromInternal("test2@aerofs.com");
     private static final DID DEVICE = DID.generate();
+    private static final DID DEVICE2 = DID.generate();
     private static final RequestSpecification AUTHENTICATED = PolarisHelpers.newAuthedAeroUserReqSpec(USERID, DEVICE);
+    private static final RequestSpecification AUTHENTICATED2 = PolarisHelpers.newAuthedAeroUserReqSpec(USERID2, DEVICE2);
 
     public static MySQLDatabase database = new MySQLDatabase("test");
     public static PolarisTestServer polaris = new PolarisTestServer();
@@ -63,6 +72,7 @@ public final class TestObjectResource {
     public void beforeTest() throws Exception
     {
         doReturn(USERID).when(polaris.getDeviceResolver()).getDeviceOwner(eq(DEVICE));
+        doReturn(USERID2).when(polaris.getDeviceResolver()).getDeviceOwner(eq(DEVICE2));
     }
 
     @After
@@ -899,6 +909,63 @@ public final class TestObjectResource {
             .statusCode(409);
     }
 
+    @Test
+    public void shouldRenameAllStoresWithMatchingPriorNames() throws Exception
+    {
+        SID root1 = SID.rootSID(USERID);
+        SID root2 = SID.rootSID(USERID2);
+        SID store = SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, root1, store, "old store name", ObjectType.STORE)
+                .assertThat().statusCode(SC_OK);
+        PolarisHelpers.newObject(AUTHENTICATED2, root2, store, "old store name", ObjectType.STORE)
+                .assertThat().statusCode(SC_OK);
+
+        AtomicBoolean called = new AtomicBoolean();
+        when(polaris.getStoreRenamer().renameStore(any(), any(), any()))
+                .thenReturn(called.compareAndSet(false, true));
+
+        PolarisHelpers.renameStore(AUTHENTICATED, store, "old store name", "new store name");
+
+        PolarisHelpers
+                .newObject(AUTHENTICATED, root1, OID.generate(), "new store name", ObjectType.FILE)
+                .and()
+                .assertThat().statusCode(SC_CONFLICT);
+        PolarisHelpers
+                .newObject(AUTHENTICATED2, root2, OID.generate(), "new store name", ObjectType.FILE)
+                .and()
+                .assertThat().statusCode(SC_CONFLICT);
+        assertTrue(called.get());
+    }
+
+    @Test
+    public void shouldNotRenameStoresWithoutMatchingPriorNames() throws Exception
+    {
+        SID root1 = SID.rootSID(USERID);
+        SID root2 = SID.rootSID(USERID2);
+        SID store = SID.generate();
+        PolarisHelpers.newObject(AUTHENTICATED, root1, store, "different old store name",
+                ObjectType .STORE)
+                    .assertThat().statusCode(SC_OK);
+        PolarisHelpers.newObject(AUTHENTICATED2, root2, store, "old store name", ObjectType.STORE)
+                    .assertThat().statusCode(SC_OK);
+
+        AtomicBoolean called = new AtomicBoolean();
+        when(polaris.getStoreRenamer().renameStore(any(), any(), any()))
+                .thenReturn(called.compareAndSet(false, true));
+
+        PolarisHelpers.renameStore(AUTHENTICATED, store, "old store name", "new store name");
+
+        PolarisHelpers
+                .newObject(AUTHENTICATED, root1, OID.generate(), "new store name", ObjectType.FILE)
+                .and()
+                .assertThat().statusCode(SC_OK);
+        PolarisHelpers
+                .newObject(AUTHENTICATED2, root2, OID.generate(), "new store name", ObjectType.FILE)
+                .and()
+                .assertThat().statusCode(SC_CONFLICT);
+        assertTrue(called.get());
+    }
+
     private void checkTreeState(UniqueID store, String json) throws IOException {
         JsonNode actual = getActualTree(store);
         JsonNode wanted = getWantedTree(store, json);
@@ -923,6 +990,7 @@ public final class TestObjectResource {
             this.match = match;
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         public boolean matches(Object collection) {
             for (UniqueID id : (Collection<UniqueID>) collection) {

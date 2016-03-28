@@ -430,6 +430,23 @@ public final class ObjectStore {
                 }
                 break;
             }
+            case RENAME_STORE: {
+                Preconditions.checkArgument(ObjectType.STORE.equals(dao.objectTypes.get(oid)));
+                RenameStore renameStore = (RenameStore) operation;
+                try (ResultIterator<UniqueID> parents = dao.mountPoints.listMountPointParents(oid)) {
+                    while (parents.hasNext()) {
+                        UniqueID parent = parents.next();
+                        if (!Arrays.equals(renameStore.oldName, dao.children.getChildName(parent, oid))) continue;
+
+                        try {
+                            updated.add(renameChild(dao, device, parent, oid, renameStore.newName));
+                        } catch (NameConflictException e) {
+                            LOGGER.warn("Name conflict on store rename, continuing.");
+                        }
+                    }
+                }
+                break;
+            }
             default:
                 throw new IllegalArgumentException("unsupported operation " + operation.type);
         }

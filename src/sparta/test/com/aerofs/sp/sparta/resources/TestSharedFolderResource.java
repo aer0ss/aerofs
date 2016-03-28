@@ -15,6 +15,7 @@ import com.aerofs.rest.api.SFMember;
 import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
 
@@ -1141,5 +1142,37 @@ public class TestSharedFolderResource extends AbstractResourceTest
             .post(RESOURCE + "/pending", sid.toStringFormal());
 
         prop.setProperty("signup_restriction", "");
+    }
+
+    @Test
+    public void shouldPatchSharedFolder() throws Exception
+    {
+        SID share = mkShare("Test Folder", user.getString());
+        addUser(share, other, Permissions.VIEWER);
+
+        givenWriteAccess()
+                .contentType(ContentType.JSON)
+                .body(ImmutableMap.of("public_name", "new name"),
+                        ObjectMapperType.GSON)
+        .expect()
+                .statusCode(204)
+        .when().log().everything()
+                .patch("/v1.4/shares/{sid}", share.toStringFormal());
+    }
+
+    @Test
+    public void shouldReturn403WhenViewerPatchesSharedFolder() throws Exception
+    {
+        SID share = mkShare("Test Folder", user.getString());
+        addUser(share, other, Permissions.VIEWER);
+
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(ImmutableMap.of("public_name", "new name"),
+                        ObjectMapperType.GSON)
+                .expect()
+                .statusCode(403)
+                .when().log().everything()
+                .patch("/v1.4/shares/{sid}", share.toStringFormal());
     }
 }

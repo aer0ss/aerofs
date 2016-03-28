@@ -17,7 +17,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_UNLINKED;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_SF_ORIGINAL_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_SF_PUBLIC_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_CODE;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_SIGNUP_CODE_TS;
@@ -616,8 +616,8 @@ public class UserDatabase extends AbstractSQLDatabase
                 + " on " + C_AC_STORE_ID + " = " + C_SF_ID,
                 C_AC_USER_ID + "=?",
                 C_AC_STORE_ID)
-                + " order by " + C_SF_ORIGINAL_NAME + ", binary("
-                + C_SF_ORIGINAL_NAME + ") ASC")) {
+                + " order by " + C_SF_PUBLIC_NAME + ", binary("
+                + C_SF_PUBLIC_NAME + ") ASC")) {
 
             ps.setString(1, userId.getString());
 

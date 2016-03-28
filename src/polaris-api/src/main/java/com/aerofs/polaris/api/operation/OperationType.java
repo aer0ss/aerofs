@@ -12,5 +12,7 @@ public enum OperationType {
 
     SHARE,
 
-    RESTORE,;
+    RESTORE,
+
+    RENAME_STORE;
 }

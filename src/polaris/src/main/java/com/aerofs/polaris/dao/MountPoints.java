@@ -2,6 +2,7 @@ package com.aerofs.polaris.dao;
 
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
+
 import org.skife.jdbi.v2.ResultIterator;
 import org.skife.jdbi.v2.sqlobject.Bind;
 import org.skife.jdbi.v2.sqlobject.SqlQuery;
@@ -20,6 +21,10 @@ public interface MountPoints {
     @RegisterMapper(OneColumnUniqueIDMapper.class)
     @SqlQuery("select mount_parent from user_mount_points where user_root = :user_root")
     ResultIterator<UniqueID> listUserMountPointParents(@Bind("user_root") UniqueID rootStore);
+
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
+    @SqlQuery("select mount_parent from user_mount_points where mount_point = :mount_point")
+    ResultIterator<UniqueID> listMountPointParents(@Bind("mount_point") UniqueID mountPoint);
 
     @Nullable
     @RegisterMapper(OneColumnUniqueIDMapper.class)

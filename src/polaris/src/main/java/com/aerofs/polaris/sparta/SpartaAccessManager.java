@@ -2,6 +2,7 @@ package com.aerofs.polaris.sparta;
 
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.auth.server.AeroOAuthPrincipal;
+import com.aerofs.auth.server.AeroUserDevicePrincipal;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
@@ -12,6 +13,7 @@ import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.DeviceResolver;
 import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.logical.NotFoundException;
+import com.aerofs.polaris.logical.StoreRenamer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
@@ -25,6 +27,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.entity.StringEntity;
@@ -54,7 +57,7 @@ import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
 // TODO(AS): This class has more responsibilities than a super hero. Change its name.
 @Singleton
-public final class SpartaAccessManager implements ManagedAccessManager, DeviceResolver, FolderSharer {
+public final class SpartaAccessManager implements ManagedAccessManager, DeviceResolver, FolderSharer, StoreRenamer {
 
     private static final String SPARTA_API_VERSION = "v1.3";
     private static final long CONNECTION_ACQUIRE_TIMEOUT = TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS);
@@ -237,6 +240,30 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
             }
         } catch (IOException e) {
             LOGGER.warn("Failed to share folder {}", e);
+            return false;
+        }
+    }
+
+
+    @Override
+    public boolean renameStore(AeroUserDevicePrincipal principal, UniqueID oid, String name) {
+        HttpPatch patch = new HttpPatch(spartaUrl + String.format("/%s/shares/" + oid.toStringFormal(), SPARTA_API_VERSION));
+        patch.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        patch.addHeader(HttpHeaders.AUTHORIZATION, getHeaderValue(serviceName, deploymentSecret,
+                principal.getUser().getString(), principal.getDevice().toStringFormal()));
+
+        Map<String,String> map = Maps.newHashMap();
+        map.put("public_name", name);
+
+        try {
+            patch.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(map)));
+            try (CloseableHttpResponse response = client.execute(patch)) {
+                int sc = response.getStatusLine().getStatusCode();
+                LOGGER.warn("Result of renaming shared folder from sparta: {}", sc);
+                return sc == 204;
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Failed to rename shared folder", e);
             return false;
         }
     }

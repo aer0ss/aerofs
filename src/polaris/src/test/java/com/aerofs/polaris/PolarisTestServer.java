@@ -14,6 +14,7 @@ import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.DeviceResolver;
 import com.aerofs.polaris.logical.FolderSharer;
+import com.aerofs.polaris.logical.StoreRenamer;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
@@ -109,6 +110,7 @@ public final class PolarisTestServer extends ExternalResource {
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
         private final DeviceResolver deviceResolver = Mockito.mock(DeviceResolver.class);
         private final FolderSharer folderSharer = Mockito.mock(FolderSharer.class);
+        private final StoreRenamer storeRenamer = Mockito.mock(StoreRenamer.class);
 
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
@@ -122,6 +124,7 @@ public final class PolarisTestServer extends ExternalResource {
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
                     bind(deviceResolver).to(DeviceResolver.class).ranked(1);
                     bind(folderSharer).to(FolderSharer.class).ranked(1);
+                    bind(storeRenamer).to(StoreRenamer.class).ranked(1);
                 }
             });
         }
@@ -162,6 +165,11 @@ public final class PolarisTestServer extends ExternalResource {
     public FolderSharer getFolderSharer()
     {
         return server.folderSharer;
+    }
+
+    public StoreRenamer getStoreRenamer()
+    {
+        return server.storeRenamer;
     }
 
     @Override

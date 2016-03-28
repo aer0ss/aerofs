@@ -2,11 +2,7 @@ package com.aerofs.polaris;
 
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.auth.server.cert.AeroDeviceCert;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.OID;
-import com.aerofs.ids.SID;
-import com.aerofs.ids.UniqueID;
-import com.aerofs.ids.UserID;
+import com.aerofs.ids.*;
 import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.JobStatus;
@@ -23,12 +19,14 @@ import com.jayway.restassured.config.ObjectMapperConfig;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.response.ValidatableResponse;
 import com.jayway.restassured.specification.RequestSpecification;
+
 import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.Response;
+
 import java.io.InputStream;
 
-import static com.aerofs.auth.client.cert.AeroDeviceCert.*;
+import static com.aerofs.auth.client.cert.AeroDeviceCert.getHeaderValue;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_DNAME_HEADER;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_VERIFY_HEADER;
 import static com.aerofs.auth.server.cert.AeroDeviceCert.AERO_VERIFY_SUCCEEDED_HEADER_VALUE;
@@ -39,9 +37,11 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.internal.mapper.ObjectMapperType.JACKSON_2;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_OK;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public abstract class PolarisHelpers {
 
@@ -184,6 +184,16 @@ public abstract class PolarisHelpers {
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new MoveChild(child, newParent, newChildName))
                 .and()
                 .when().post(PolarisTestServer.getObjectURL(currentParent))
+                .then();
+    }
+
+    public static ValidatableResponse renameStore(RequestSpecification authenticated, UniqueID oid, String oldName, String newName) {
+        return given()
+                .spec(authenticated)
+                .and()
+                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new RenameStore(oldName, newName))
+                .and()
+                .when().post(PolarisTestServer.getObjectURL(oid))
                 .then();
     }
 

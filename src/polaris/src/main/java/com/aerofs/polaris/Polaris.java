@@ -6,6 +6,8 @@ import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
 import com.aerofs.auth.server.cert.AeroDeviceCertPrincipalBinder;
 import com.aerofs.auth.server.cert.AeroOAuthAuthenticator;
 import com.aerofs.auth.server.cert.AeroOAuthPrincipalBinder;
+import com.aerofs.auth.server.delegated.AeroDelegatedUserDeviceAuthenticator;
+import com.aerofs.auth.server.delegated.AeroDelegatedUserDevicePrincipalBinder;
 import com.aerofs.auth.server.shared.AeroService;
 import com.aerofs.auth.server.shared.AeroServiceSharedSecretAuthenticator;
 import com.aerofs.auth.server.shared.AeroServiceSharedSecretPrincipalBinder;
@@ -25,9 +27,9 @@ import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.api.PolarisModule;
 import com.aerofs.polaris.dao.types.*;
+import com.aerofs.polaris.external_api.CORSFilterDynamicFeature;
 import com.aerofs.polaris.external_api.exception_providers.ParamExceptionMapper;
 import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
-import com.aerofs.polaris.external_api.CORSFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionProvider;
 import com.aerofs.polaris.logical.*;
@@ -117,7 +119,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).
                     to(BinaryPublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
-                        .to(DeviceResolver.class).to(FolderSharer.class).in(Singleton.class);
+                        .to(DeviceResolver.class).to(FolderSharer.class).to(StoreRenamer.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);
@@ -135,15 +137,18 @@ public class Polaris extends Service<PolarisConfiguration> {
         // setup resource authorization
         environment.addAuthenticator(new AeroOAuthAuthenticator(tokenVerifier()));
         environment.addAuthenticator(new AeroDeviceCertAuthenticator());
+        environment.addAuthenticator(new AeroDelegatedUserDeviceAuthenticator(new SharedSecret(deploymentSecret)));
         environment.addAuthenticator(new AeroServiceSharedSecretAuthenticator(new SharedSecret(deploymentSecret)));
         environment.addAdminProvider(new AeroDeviceCertPrincipalBinder());
         environment.addAdminProvider(new AeroOAuthPrincipalBinder());
         environment.addAdminProvider(new AeroUserDevicePrincipalBinder());
         environment.addAdminProvider(new AeroServiceSharedSecretPrincipalBinder());
+        environment.addAdminProvider(new AeroDelegatedUserDevicePrincipalBinder());
         environment.addServiceProvider(new AeroDeviceCertPrincipalBinder());
         environment.addServiceProvider(new AeroUserDevicePrincipalBinder());
         environment.addServiceProvider(new AeroOAuthPrincipalBinder());
         environment.addServiceProvider(new AeroServiceSharedSecretPrincipalBinder());
+        environment.addServiceProvider(new AeroDelegatedUserDevicePrincipalBinder());
 
         // register singleton providers
         environment.addAdminProvider(DBIExceptionMapper.class);

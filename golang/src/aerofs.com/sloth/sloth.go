@@ -181,6 +181,7 @@ func main() {
 		checkUserFilter,
 		updateLastOnlineFilter,
 		spartaClient,
+		polarisClient,
 		lipwigClient,
 	))
 	restful.Add(keepalive.BuildRoutes(

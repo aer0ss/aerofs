@@ -64,6 +64,8 @@ public final class OperationDeserializer extends StdDeserializer<Operation> {
                 return Share.class;
             case RESTORE:
                 return Restore.class;
+            case RENAME_STORE:
+                return RenameStore.class;
             default:
                 throw new IllegalArgumentException("unrecognized operation type " + operationType);
         }

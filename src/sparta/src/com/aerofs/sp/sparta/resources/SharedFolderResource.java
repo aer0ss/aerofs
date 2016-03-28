@@ -29,10 +29,7 @@ import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.auth.DelegatedUserDeviceToken;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
-import com.aerofs.restless.Auth;
-import com.aerofs.restless.Service;
-import com.aerofs.restless.Since;
-import com.aerofs.restless.Version;
+import com.aerofs.restless.*;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
@@ -73,10 +70,7 @@ import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -863,6 +857,24 @@ public class SharedFolderResource extends AbstractSpartaResource
         return Response.ok()
                 .entity(ImmutableMap.of("urls", urls))
                 .build();
+    }
+
+    @Since("1.4")
+    @PATCH
+    @Path("/{id}")
+    // TODO update EntityTag based on public_name?
+    public Response partialUpdateShare(@Auth IUserAuthToken token,
+            @PathParam("id") SharedFolder sf,
+            Map<String, String> patch)
+            throws Exception
+    {
+        l.trace("enter updateShare: {}", patch);
+        validateAuth(token, Scope.WRITE_ACL, sf);
+        checkArgument(patch.size() == 1 && patch.containsKey("public_name"));
+
+        sf.setPublicName(patch.get("public_name"));
+
+        return Response.noContent().build();
     }
 
     /**

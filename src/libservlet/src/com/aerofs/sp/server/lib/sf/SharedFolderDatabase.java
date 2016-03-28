@@ -9,7 +9,6 @@ import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
-import static com.aerofs.base.id.GroupID.NULL_GROUP;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.Util;
@@ -25,21 +24,13 @@ import com.google.common.collect.ImmutableMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Types;
 
-import static com.aerofs.lib.db.DBUtil.binaryCount;
-import static com.aerofs.lib.db.DBUtil.count;
-import static com.aerofs.lib.db.DBUtil.deleteWhere;
-import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
-import static com.aerofs.lib.db.DBUtil.insertedOrUpdatedOneRow;
-import static com.aerofs.lib.db.DBUtil.selectDistinctWhere;
-import static com.aerofs.lib.db.DBUtil.selectWhere;
-import static com.aerofs.lib.db.DBUtil.updateWhere;
+import java.sql.*;
+
+import static com.aerofs.base.id.GroupID.NULL_GROUP;
+import static com.aerofs.lib.db.DBUtil.*;
 import static com.aerofs.sp.server.lib.SPSchema.*;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * N.B. only User.java may refer to this class
@@ -69,7 +60,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public void insert(SID sid, String name)
             throws SQLException, ExAlreadyExist
     {
-        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_SF, C_SF_ID, C_SF_ORIGINAL_NAME))) {
+        try (PreparedStatement ps = prepareStatement(DBUtil.insert(T_SF, C_SF_ID, C_SF_PUBLIC_NAME))) {
 
             ps.setBytes(1, sid.getBytes());
             ps.setString(2, name);
@@ -499,7 +490,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (name != null) return name;
 
         // Otherwise, return the original name
-        try (PreparedStatement ps = querySharedFolder(sid, C_SF_ORIGINAL_NAME);
+        try (PreparedStatement ps = querySharedFolder(sid, C_SF_PUBLIC_NAME);
              ResultSet rs = ps.executeQuery()) {
             throwIfEmptyResultSet(rs, sid);
             return rs.getString(1);
@@ -519,6 +510,20 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
             int result = ps.executeUpdate();
             Util.verify(insertedOrUpdatedOneRow(result));
+        }
+    }
+
+    public void setPublicName(SID sid, String name)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(updateWhere(T_SF, C_SF_ID + "=?",
+                C_SF_PUBLIC_NAME))) {
+
+            ps.setString(1, name);
+            ps.setBytes(2, sid.getBytes());
+
+            int result = ps.executeUpdate();
+            checkState(insertedOrUpdatedOneRow(result));
         }
     }
 

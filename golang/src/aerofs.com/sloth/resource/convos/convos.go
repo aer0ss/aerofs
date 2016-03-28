@@ -3,6 +3,7 @@ package convos
 import (
 	"aerofs.com/sloth/aeroclients/lipwig"
 	"aerofs.com/sloth/aeroclients/sparta"
+	"aerofs.com/sloth/aeroclients/polaris"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"
@@ -31,6 +32,7 @@ type context struct {
 	pushNotifier    push.Notifier
 	commandHandler  *commands.Handler
 	spartaClient    *sparta.Client
+	polarisClient   *polaris.Client
 	lipwigClient    *lipwig.Client
 	sidMap          asynccache.Map
 }
@@ -47,6 +49,7 @@ func BuildRoutes(
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
 	spartaClient *sparta.Client,
+	polarisClient *polaris.Client,
 	lipwigClient *lipwig.Client,
 
 ) *restful.WebService {
@@ -58,6 +61,7 @@ func BuildRoutes(
 		commandHandler:  commands.NewHandler(db),
 		spartaClient:    spartaClient,
 		lipwigClient:    lipwigClient,
+		polarisClient:   polarisClient,
 		sidMap:          asynccache.New(createSharedFolderFunc(db, spartaClient, lipwigClient)),
 	}
 	ws := new(restful.WebService)

@@ -48,6 +48,15 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 
 	if c.Sid != "" {
 		go func() {
+			if p.Name != nil && c.Name != *(p.Name) {
+				err := ctx.polarisClient.UpdateSharedFolderName(
+					c.Sid, c.Name, *(p.Name), caller)
+				if err != nil {
+					log.Printf("polaris: err renaming %v to %v: %v\n",
+						c.Name, *(p.Name), err)
+				}
+			}
+
 			oldMembers := set.From(c.Members)
 			newMembers := set.From(p.Members)
 			added := newMembers.Diff(oldMembers)

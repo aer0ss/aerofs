@@ -2,17 +2,23 @@
 package polaris
 
 import (
-	"aerofs.com/sloth/errors"
+	myErrors "aerofs.com/sloth/errors"
 	"aerofs.com/sloth/httpClientPool"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
+	"encoding/base64"
 )
 
 const (
 	HTTP_CLIENT_POOL_SIZE = 10
+	OBJECTS_BASE_URL      = "http://polaris.service:8086/objects/"
 	TRANSFORMS_BASE_URL   = "http://polaris.service:8086/transforms/"
+	DUMMY_DID             = "00000000000000000000000000000000"
 )
 
 // Client has helpful methods which wrap the Sparta API
@@ -44,17 +50,17 @@ type transformsResponse struct {
 func (c *Client) GetTransforms(sid string, since int64) []*Transform {
 	url := fmt.Sprint(TRANSFORMS_BASE_URL, sid, "?count=50&since=", since)
 	req, err := http.NewRequest("GET", url, nil)
-	errors.PanicOnErr(err)
+	myErrors.PanicOnErr(err)
 	req.Header.Add("Authorization", "Aero-Service-Shared-Secret sloth "+c.deploymentSecret)
 	resp := <-c.pool.Do(req)
-	errors.PanicOnErr(resp.Err)
+	myErrors.PanicOnErr(resp.Err)
 	if resp.R.StatusCode != 200 {
 		log.Panicf("%v %v\n", resp.R.StatusCode, string(resp.Body))
 	}
 
 	var responseData transformsResponse
 	err = json.Unmarshal(resp.Body, &responseData)
-	errors.PanicOnErr(err)
+	myErrors.PanicOnErr(err)
 
 	// unmarshal only the fields in the transform struct, and attach the entire
 	// json blob to the struct for storage in the db
@@ -62,11 +68,48 @@ func (c *Client) GetTransforms(sid string, since int64) []*Transform {
 	for _, raw := range responseData.Transforms {
 		var t = new(Transform)
 		err := json.Unmarshal(raw, t)
-		errors.PanicOnErr(err)
+		myErrors.PanicOnErr(err)
 		t.Raw = string(raw)
 		transforms = append(transforms, t)
 	}
 	return transforms
+}
+
+// calls polaris to update the convo members' shared folder name
+func (c *Client) UpdateSharedFolderName(sid, oldName string, newName string, uid string) (error) {
+	url := OBJECTS_BASE_URL + sid
+	body, err := json.Marshal(map[string]interface{}{
+		"type"    : "RENAME_STORE",
+		"old_name" : oldName,
+		"new_name" : newName,
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", getDelegatedAuthHeader(uid, c.deploymentSecret))
+	req.Header.Add("Content-Type", "application/json")
+	resp := <-c.pool.Do(req)
+	if resp.Err != nil {
+		return resp.Err
+	}
+	if resp.R.StatusCode != 200 {
+		return errors.New(fmt.Sprint(resp.R.StatusCode, " updating shared folder name"))
+	}
+	return nil
+}
+
+func getDelegatedAuthHeader(uid, secret string) string {
+	return strings.Join([]string{
+		"Aero-Delegated-User-Device",
+		"sloth",
+		secret,
+		base64.StdEncoding.EncodeToString([]byte(uid)),
+		DUMMY_DID,
+	}, " ")
 }
 
 func NewClient(deploymentSecret string) *Client {
