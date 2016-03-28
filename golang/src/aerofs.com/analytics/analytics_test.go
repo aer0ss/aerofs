@@ -141,11 +141,19 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 			return errors.New("Nil key k1")
 		}
 		k2, _ := c.Prev()
+		if testing.Verbose() {
+			log.Println("k1:", bytesToTime(k1))
+			log.Println("k2:", bytesToTime(k2))
+		}
 		if k2 == nil {
 			return errors.New("Nil key k2")
 		}
 		b1 := tx.Bucket(EventBucketKey).Bucket(k1)
 		b2 := tx.Bucket(EventBucketKey).Bucket(k2)
+		if testing.Verbose() {
+			log.Println("bucket1 count:", b1.Stats().KeyN)
+			log.Println("bucket2 count:", b2.Stats().KeyN)
+		}
 		if v := b2.Get(testKey1_1); v != nil {
 			testCount1 = decodeUint64(v)
 		}
@@ -319,12 +327,8 @@ func TestMain(m *testing.M) {
 	// start setup
 	clock = &mockClock
 
-	if !testing.Verbose() {
-		log.SetOutput(ioutil.Discard)
-	} else {
-		// remove timestamp
-		log.SetFlags(0)
-	}
+	// remove timestamp
+	log.SetFlags(0)
 
 	//end setup
 	//run tests
