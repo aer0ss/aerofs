@@ -5,6 +5,8 @@ from datetime import datetime
 from OpenSSL import crypto
 from setup_storage_agent import setup_storage_agent
 from flask import Flask, request, abort, flash, render_template, jsonify
+from aerofs_sp.gen.common_pb2 import PBException
+from aerofs_common.exception import ExceptionReply
 
 SERVER_FILES_DIR = "/aerofs-storage/server"
 SERVER_KEY_LOCATION = "/aerofs-storage/server/server.key"
@@ -36,13 +38,19 @@ def upload():
     if not f:
         flash("No File Uploaded", category='error')
         print("no file found in request")
-        print request.files
-        print request
         abort(400)
     f.save(STORAGE_BUNDLE_LOCATION)
     flash("Uploaded Configuration")
 
-    setup_storage_agent(STORAGE_BUNDLE_LOCATION)
+    try:
+        setup_storage_agent(STORAGE_BUNDLE_LOCATION)
+    except ExceptionReply as e:
+        if e.get_type() == PBException.BAD_CREDENTIAL:
+            print("Signin token already used")
+            abort(403)
+        else:
+            raise e
+
     flash("Configured Storage Server")
     # mark server as setup
     with open(SERVER_SETUP_LOCATION, 'w') as _:
@@ -123,4 +131,4 @@ def write_cert_to_file(cert, file):
 if __name__ == "__main__":
     setup_key_cert()
     app.secret_key = "secretkey"
-    app.run("0.0.0.0", 443, ssl_context=(SERVER_CERT_LOCATION, SERVER_KEY_LOCATION))
+    app.run("0.0.0.0", 443, debug=True, ssl_context=(SERVER_CERT_LOCATION, SERVER_KEY_LOCATION))

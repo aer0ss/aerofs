@@ -35,6 +35,8 @@
                     switchToDefaultMode();
                 } else if (request.status == 409) {
                     alert("This storage server has already been configured, and cannot be re-configured");
+                } else if (request.status == 403) {
+                    alert("This configuration file has already been used, you must configure this server with a newly generated file");
                 } else if (request.status == 400) {
                     alert("No file provided to upload");
                 } else {

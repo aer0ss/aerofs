@@ -18,9 +18,10 @@ import uuid
 from OpenSSL import crypto
 from aerofs_sa.config import SITE_CONFIG_FILENAME, bundle_reader
 from aerofs_sp.connection import SyncConnectionService
-from aerofs_sp.gen.sp_pb2 import RegisterDeviceCall
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
+from aerofs_sp.gen.sp_pb2 import RegisterDeviceCall, SPServiceRpcStub
+from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.param import SP_PROTO_VERSION
+from aerofs_common.exception import ExceptionReply
 
 owner_uid = os.getuid()
 
@@ -117,18 +118,10 @@ def _create_sa_conf_file(root_anchor, did, sa_user_id, contact_email, storage_di
         cfg_data['force_port'] = port
     cfg_data.update(storage_dict)
 
-    try:
-        with open(os.path.join(sa_conf_dir, "storage_agent.conf"), 'w') as f:
-            for key, val in cfg_data.items():
-                f.write(key + " " + val)
-                f.write("\n")
-    except IOError as e:
-        if e.errno == 13:
-            print ("Looks like you trying to create the storage-agent configuration file under {0},\
-                    however you don't have the necessary permissions to write to {0}".format(sa_conf_dir))
-            sys.exit()
-        else:
-            raise e
+    with open(os.path.join(sa_conf_dir, "storage_agent.conf"), 'w') as f:
+        for key, val in cfg_data.items():
+            f.write(key + " " + val)
+            f.write("\n")
 
 
 def _sanitize_required_folder_locations(folder):
