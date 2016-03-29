@@ -1,4 +1,4 @@
-package com.aerofs.base.analytics;
+package com.aerofs.servlets.lib.analytics;
 
 public enum AnalyticsEvent {
     USER_SIGNUP,

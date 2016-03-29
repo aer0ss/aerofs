@@ -11,8 +11,8 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
-import com.aerofs.base.analytics.AnalyticsEvent;
-import com.aerofs.base.analytics.IAnalyticsClient;
+import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.*;
 import com.aerofs.base.id.GroupID;
@@ -129,7 +129,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getNonEmptyStringProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;

@@ -5,8 +5,7 @@
 package com.aerofs.sp.authentication;
 
 import com.aerofs.audit.client.AuditClient;
-import com.aerofs.base.analytics.IAnalyticsClient;
-import com.aerofs.base.ParamFactory;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 

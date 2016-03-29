@@ -1,4 +1,4 @@
-package com.aerofs.base.analytics;
+package com.aerofs.servlets.lib.analytics;
 
 import com.aerofs.ids.UserID;
 

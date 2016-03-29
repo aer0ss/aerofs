@@ -1,8 +1,9 @@
-package com.aerofs.base.analytics;
+package com.aerofs.servlets.lib.analytics;
 
 import static com.aerofs.base.config.ConfigurationProperties.*;
 import static java.net.HttpURLConnection.HTTP_OK;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.C;
 import com.aerofs.ids.UserID;
 import com.google.common.collect.Maps;
@@ -30,6 +31,8 @@ public class AnalyticsClient implements IAnalyticsClient {
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
             .create();
+
+    private static final String ServiceName = "analytics";
 
     private final ExecutorService _executor;
     private final boolean _enabled;
@@ -107,6 +110,8 @@ public class AnalyticsClient implements IAnalyticsClient {
         conn.setConnectTimeout(10 * (int) C.SEC);
         conn.setReadTimeout(10 * (int)C.SEC);
         conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
+        String authHeader = AeroService.getHeaderValue(ServiceName, AeroService.loadDeploymentSecret());
+        conn.addRequestProperty(HttpHeaders.AUTHORIZATION, authHeader);
         conn.setDoOutput(true);
         conn.connect();
 

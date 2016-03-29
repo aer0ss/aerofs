@@ -7,7 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.audit.client.MockAuditClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
-import com.aerofs.base.analytics.AnalyticsClient;
+import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ids.DID;
