@@ -1,4 +1,9 @@
 containers:
+  sa-data:
+    image: aerofs/sa-data
+    run:
+      detach: true
+
   loader:
     image: aerofs/sa-loader
 
@@ -8,8 +13,8 @@ containers:
       detach: true
       publish:
         - "443:443"
-      volume:
-        - /aerofs-storage:/aerofs-storage
+      volumes-from:
+        - sa-data
       link:
         - loader:loader.service
 
@@ -18,8 +23,8 @@ containers:
     run:
       detach: true
       net: host
-      volume:
-        - /aerofs-storage:/aerofs-storage
+      volumes-from:
+        - sa-data
 
 groups:
   default:

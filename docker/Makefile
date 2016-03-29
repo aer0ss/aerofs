@@ -36,6 +36,7 @@ IMAGES:= \
 	ship-aerofs/loader
 
 SA_IMAGES:= \
+	sa-data-container \
 	../src/storage-agent \
 	../src/storage-agent-setup \
 	ship-aerofs/sa-loader
