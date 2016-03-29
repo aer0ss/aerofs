@@ -14,6 +14,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
@@ -30,6 +31,11 @@ import com.aerofs.rest.auth.DelegatedUserDeviceToken;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.*;
+import com.aerofs.rest.auth.PrivilegedServiceToken;
+import com.aerofs.restless.Auth;
+import com.aerofs.restless.Service;
+import com.aerofs.restless.Since;
+import com.aerofs.restless.Version;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
@@ -41,6 +47,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
 import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
@@ -95,13 +102,14 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final ACLNotificationPublisher _aclNotifier;
     private final AuditClient _audit;
     private final UrlShareResource _urlShare;
+    private final Organization.Factory _factOrg;
 
     @Inject
     public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF, Group.Factory factGroup,
             UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
             InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
             SharedFolderNotificationEmailer sfnEmailer, AuditClient audit,
-            UrlShareResource urlShare)
+            UrlShareResource urlShare, Organization.Factory factOrg)
     {
         _factUser = factUser;
         _factGroup = factGroup;
@@ -113,6 +121,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         _sfnEmailer = sfnEmailer;
         _audit = audit;
         _urlShare = urlShare;
+        _factOrg = factOrg;
     }
 
     private AuditableEvent audit(SharedFolder sf, User caller, IUserAuthToken token, String event)
@@ -231,6 +240,21 @@ public class SharedFolderResource extends AbstractSpartaResource
                         version.compareTo(GroupResource.FIRST_GROUP_API_VERSION) >= 0 ? groups : null,
                         pending, sf.isExternal(caller), Permissions.OWNER.toArray(), sf.isLocked()))
                 .tag(etag)
+                .build();
+    }
+
+    /**
+     * Retrieves a count of the total number of shared folders in the org
+     */
+    @Since("1.4")
+    @GET
+    @Path("/count")
+    public Response count(@Auth PrivilegedServiceToken token) throws SQLException, ExNotFound
+    {
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+
+        return Response.ok()
+                .entity(org.countSharedFolders())
                 .build();
     }
 

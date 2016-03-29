@@ -1,5 +1,7 @@
 package com.aerofs.sp.server.lib;
 
+import com.sun.prism.shader.Texture_Color_AlphaTest_Loader;
+
 public final class SPSchema
 {
     /*
@@ -141,6 +143,18 @@ public final class SPSchema
             C_ACU_LASTNAME                  = "acu_lastname",
 
             T_SAT                           = "sp_sa_tokens",
-            C_SAT_TOKEN                     = "sat_token";
+            C_SAT_TOKEN                     = "sat_token",
 
+            T_AT                            = "accesstoken",
+            C_AT_ID                         = "id",
+            C_AT_CREATION_DATE              = "creationDate",
+            C_AT_MODIFICATION_DATE          = "modificationDate",
+            C_AT_ENCODED_PRINCIPAL          = "encodedPrincipal",
+            C_AT_EXPIRES                    = "expires",
+            C_AT_REFRESH_TOKEN              = "refreshToken",
+            C_AT_RESOURCE_OWNER_ID          = "resourceOwnerId",
+            C_AT_TOKEN                      = "token",
+            C_AT_CLIENT_ID                  = "client_id",
+            C_AT_OWNER_                     = "owner",
+            C_AT_MDID                       = "mdid";
 }

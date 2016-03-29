@@ -362,7 +362,54 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    /**
+    public int countClientDevicesByOS(String desktopOS)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE,
+                C_DEVICE_OS_FAMILY + "=? and " + C_DEVICE_OWNER_ID + " not like ? ", "count(*)"))) {
+            ps.setString(1, desktopOS);
+            ps.setString(2, UserID.TEAM_SERVER_PREFIX + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
+
+    public int countMobileDevicesByOS(String osFamily)
+            throws SQLException
+    {
+        int iOSClientID = 999991;
+        int androidClientID = 999992;
+
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_AT,
+                C_AT_CLIENT_ID + "=?", "count(*)"))) {
+
+            if (osFamily.equals("iOS")) {
+                ps.setInt(1, iOSClientID);
+            }
+            else if (osFamily.equals("Android")) {
+                ps.setInt(1, androidClientID);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
+
+    public int countTeamServers()
+        throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE,
+                C_DEVICE_OWNER_ID + " like ? and " + C_DEVICE_UNLINKED + "=0", "count(*)"))) {
+
+            ps.setString(1, UserID.TEAM_SERVER_PREFIX + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
+
+     /**
      * @param orgId ID of the organization.
      * @param searchString search string to match user count on
      * @return Number of users in the organization {@code orgId}.
@@ -404,6 +451,19 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
             ps.setInt(1, orgId.getInt());
 
+            try (ResultSet rs = ps.executeQuery()) {
+                return count(rs);
+            }
+        }
+    }
+
+    public int countLdapUsers(OrganizationID orgId)
+            throws SQLException
+    {
+        try (PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ORG_ID + "=? and " + C_USER_CREDS + " ='' and " + activeNonTeamServerUser(), "count(*)"))) {
+
+            ps.setInt(1, orgId.getInt());
             try (ResultSet rs = ps.executeQuery()) {
                 return count(rs);
             }

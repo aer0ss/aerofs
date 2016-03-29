@@ -12,6 +12,8 @@ import com.aerofs.ids.UserID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.proto.Sp.PBTwoFactorEnforcementLevel;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.GroupDatabase;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
@@ -216,6 +218,23 @@ public class Organization
         return _f._odb.countUsers(_id);
     }
 
+    public int countClientDevicesByOS(String desktopOS)
+            throws SQLException, ExNotFound
+    {
+        return _f._odb.countClientDevicesByOS(desktopOS);
+    }
+
+    public int countMobileDevicesByOS(String osFamily)
+            throws SQLException, ExNotFound
+    {
+        return _f._odb.countMobileDevicesByOS(osFamily);
+    }
+
+    public int countTeamServers() throws SQLException
+    {
+        return _f._odb.countTeamServers();
+    }
+
     public int countInternalUsers() throws SQLException
     {
         return _f._odb.countInternalUsers(_id);
@@ -224,6 +243,16 @@ public class Organization
     public int countExternalUsers() throws SQLException
     {
         return countUsers() - countInternalUsers();
+    }
+
+    public int countLdapUsers() throws SQLException
+    {
+        return _f._odb.countLdapUsers(_id);
+    }
+
+    public int countLocalUsers() throws SQLException
+    {
+        return countUsers() - countLdapUsers();
     }
 
     public int countUsersWithSearchString(String searchPrefix) throws SQLException

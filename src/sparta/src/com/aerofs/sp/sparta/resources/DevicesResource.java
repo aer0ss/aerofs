@@ -5,14 +5,18 @@
 package com.aerofs.sp.sparta.resources;
 
 import com.aerofs.base.ex.ExNotFound;
+import com.aerofs.base.id.OrganizationID;
+import com.aerofs.ids.ExInvalidID;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
+import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Transactional;
 import com.google.common.net.HttpHeaders;
@@ -53,6 +57,8 @@ public class DevicesResource extends AbstractSpartaResource
 
     private final User.Factory _factUser;
 
+    private final Organization.Factory _factOrg;
+
     // This value must be larger than the charlie check-in interval.
     public static final Integer ALLOWED_OFFLINE_SECONDS = 300;
 
@@ -70,9 +76,10 @@ public class DevicesResource extends AbstractSpartaResource
     };
 
     @Inject
-    public DevicesResource(User.Factory factUser)
+    public DevicesResource(User.Factory factUser, Organization.Factory factOrg)
     {
         _factUser = factUser;
+        _factOrg = factOrg;
     }
 
     private @Nullable User validateAuth(IAuthToken token, Scope scope, User user)
@@ -164,5 +171,51 @@ public class DevicesResource extends AbstractSpartaResource
             l.error("Error getting device status: {}", e);
             return Response.status(Status.SERVICE_UNAVAILABLE).build();
         }
+    }
+
+    /**
+     * Retrieves a count of number of devices in the org
+     *
+     * @param deviceOS specifies the type of devices to get a count for.
+     */
+    @Since("1.4")
+    @GET
+    @Path("/count")
+    public Response count(@Auth PrivilegedServiceToken token, @QueryParam("device_os") String deviceOS)
+            throws ExNotFound, SQLException, ExInvalidID
+    {
+        checkArgument((deviceOS.equals("Windows") || deviceOS.equals("Mac OS X") || deviceOS.equals("Linux") ||
+                deviceOS.equals("iOS") || deviceOS.equals("Android")), "Invalid query parameter specified");
+
+        int count = 0;
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+
+        if (deviceOS.equals("Windows") || deviceOS.equals("Mac OS X") || deviceOS.equals("Linux"))
+        {
+            count = org.countClientDevicesByOS(deviceOS);
+        }
+        else if (deviceOS.equals("iOS") || deviceOS.equals("Android")) {
+            count = org.countMobileDevicesByOS(deviceOS);
+        }
+
+        return Response.ok()
+                .entity(count)
+                .build();
+    }
+
+    /**
+     * Retrieves a count of the number of team servers in the org
+     */
+    @Since("1.4")
+    @GET
+    @Path("/count/teamservers")
+    public Response countStorageAgents(@Auth PrivilegedServiceToken token)
+            throws ExNotFound, SQLException, ExInvalidID
+    {
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+
+        return Response.ok()
+                .entity(org.countTeamServers())
+                .build();
     }
 }

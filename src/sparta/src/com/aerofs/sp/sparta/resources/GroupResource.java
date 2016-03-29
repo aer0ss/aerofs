@@ -14,6 +14,7 @@ import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.GroupMember;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
+import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
@@ -135,8 +136,8 @@ public class GroupResource extends AbstractSpartaResource
             throws SQLException, ExNotFound
     {
         Preconditions.checkArgument(offset >= 0, "Offset cannot be negative");
-        Preconditions.checkArgument(results>= 0, "Number of results returned cannot be negative");
-        Preconditions.checkArgument(results<= MAX_RESULTS_RETURNED, "Number of results returned must be less than " + MAX_RESULTS_RETURNED);
+        Preconditions.checkArgument(results >= 0, "Number of results returned cannot be negative");
+        Preconditions.checkArgument(results <= MAX_RESULTS_RETURNED, "Number of results returned must be less than " + MAX_RESULTS_RETURNED);
 
         requirePermission(Scope.READ_GROUPS, token);
         User caller = userFromAuthToken(token);
@@ -149,6 +150,22 @@ public class GroupResource extends AbstractSpartaResource
 
         return Response.ok()
                 .entity(groups.build())
+                .build();
+    }
+
+    /**
+     * Retrieves a count of total number of groups in the org
+     */
+    @Since("1.4")
+    @GET
+    @Path("/count")
+    public Response count(@Auth PrivilegedServiceToken token)
+            throws SQLException, ExNotFound
+    {
+        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
+
+        return Response.ok()
+                .entity(org.countGroups())
                 .build();
     }
 

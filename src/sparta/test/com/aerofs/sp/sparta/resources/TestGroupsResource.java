@@ -27,6 +27,7 @@ public class TestGroupsResource extends AbstractResourceTest
     private final String MEMBER_BASE_RESOURCE = RESOURCE + "/members";
     private final String MEMBER_RESOURCE = MEMBER_BASE_RESOURCE + "/{email}";
     private final String SHARES_BASE_RESOURCE = RESOURCE + "/shares";
+    private final String COUNT_RESOURCE = "/v1.4/groups/count";
     private GroupID _groupID;
     private SID _sid;
 
@@ -361,5 +362,40 @@ public class TestGroupsResource extends AbstractResourceTest
                 .body("members[0].email", equalTo(user.getString()))
         .when()
                 .get(BASE_RESOURCE);
+    }
+
+    @Test
+    public void count_shouldReturn401ForNonPrivilegedServiceToken() throws Exception
+    {
+        givenAdminAccess()
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(COUNT_RESOURCE);
+
+        givenAdminAccess()
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(COUNT_RESOURCE);
+
+        givenAccess("thisisnotavalidtoken")
+        .expect()
+                .statusCode(401)
+                .body("type", equalTo("UNAUTHORIZED"))
+        .when().log().everything()
+                .get(COUNT_RESOURCE);
+    }
+
+    @Test
+    public void count_shouldReturn200ForValidPrivilegedServiceToken() throws Exception
+    {
+        givenSecret("analytics", deploymentSecret)
+        .expect()
+                .statusCode(200)
+        .when().log().everything()
+                .get(COUNT_RESOURCE);
     }
 }
