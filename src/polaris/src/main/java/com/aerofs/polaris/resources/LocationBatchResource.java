@@ -99,8 +99,12 @@ public final class LocationBatchResource {
         }
 
         for (LocationStatusBatchOperation operation : batch.operations) {
-            List<DID> locations = objectStore.getLocations(principal.getUser(), operation.oid, operation.version);
-            results.add(locations.stream().filter((did) -> storageAgentDIDs.contains(did)).findAny().isPresent());
+            try {
+                List<DID> locations = objectStore.getLocations(principal.getUser(), operation.oid, operation.version);
+                results.add(locations.stream().filter((did) -> storageAgentDIDs.contains(did)).findAny().isPresent());
+            } catch (Exception e) {
+                results.add(false);
+            }
         }
 
         return new LocationStatusBatchResult(results);
