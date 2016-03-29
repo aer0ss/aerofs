@@ -35,13 +35,8 @@ public class SyncStatusBatchStatusChecker
             AsyncTaskCallback callback,
             Function<LocationStatusBatchResult, Boolean, Exception> responseFunction) {
         byte[] content = string2utf(GSON.toJson(locationStatusBatch));
-        DefaultHttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
-                "/batch/locations/status");
-        request.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
-        request.headers().add(Names.CONTENT_LENGTH, content.length);
-        request.setContent(ChannelBuffers.wrappedBuffer(content));
 
-        new RetryableStatusCheck(request, callback,
+        new RetryableStatusCheck("/batch/locations/status", content, callback,
                 response -> parseResponse(response, locationStatusBatch, responseFunction)).send();
     }
 
@@ -66,14 +61,16 @@ public class SyncStatusBatchStatusChecker
 
     private class RetryableStatusCheck implements AsyncTaskCallback
     {
-        HttpRequest request;
+        String uri;
+        byte[] content;
         AsyncTaskCallback callback;
         Function<HttpResponse, Boolean, Exception> function;
         int retries = 10;
 
-        public RetryableStatusCheck(HttpRequest request, AsyncTaskCallback callback,
+        public RetryableStatusCheck(String uri, byte[] content, AsyncTaskCallback callback,
                 Function<HttpResponse, Boolean, Exception> function) {
-            this.request = request;
+            this.uri = uri;
+            this.content = content;
             this.callback = callback;
             this.function = function;
         }
@@ -96,6 +93,11 @@ public class SyncStatusBatchStatusChecker
         }
 
         public void send() {
+            DefaultHttpRequest request = new DefaultHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST,
+                    uri);
+            request.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
+            request.headers().add(Names.CONTENT_LENGTH, content.length);
+            request.setContent(ChannelBuffers.wrappedBuffer(content));
             _polarisClient.send(request, this, function);
         }
     }
