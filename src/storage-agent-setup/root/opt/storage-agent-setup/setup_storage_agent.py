@@ -19,9 +19,7 @@ from OpenSSL import crypto
 from aerofs_sa.config import SITE_CONFIG_FILENAME, bundle_reader
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_sp.gen.sp_pb2 import RegisterDeviceCall, SPServiceRpcStub
-from aerofs_sp.gen.common_pb2 import PBException
 from aerofs_sp.param import SP_PROTO_VERSION
-from aerofs_common.exception import ExceptionReply
 
 owner_uid = os.getuid()
 
