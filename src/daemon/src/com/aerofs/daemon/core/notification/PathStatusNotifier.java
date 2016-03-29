@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgSyncStatusEnabled;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
@@ -48,24 +49,26 @@ public class PathStatusNotifier implements IConflictStateListener, ISnapshotable
 
     @Inject
     public PathStatusNotifier(RitualNotificationServer rns, DirectoryService ds, PathStatus ps,
-            ISyncStatusPropagator ssp, SyncStatusOnline sso, DownloadState dls,
+            ISyncStatusPropagator ssp, SyncStatusOnline sso, CfgSyncStatusEnabled sse, DownloadState dls,
             UploadState uls) {
         _ps = ps;
         _ds = ds;
         _rns = rns;
 
-        ssp.addListener((updates) -> {
-            Map<Path, PBPathStatus> pathStatuses = Maps.newHashMapWithExpectedSize(updates.size());
-            for (Entry<Path, Sync> update : updates.entrySet()) {
-                try {
-                    pathStatuses.put(update.getKey(), _ps.getStatus_(update.getKey(), update.getValue()));
-                } catch (Exception e) {
-                    // Swallow exception to minimize front-end inaccuracy
-                    l.warn("error sending notification", e);
+        if (sse.get()) {
+            ssp.addListener((updates) -> {
+                Map<Path, PBPathStatus> pathStatuses = Maps.newHashMapWithExpectedSize(updates.size());
+                for (Entry<Path, Sync> update : updates.entrySet()) {
+                    try {
+                        pathStatuses.put(update.getKey(), _ps.getStatus_(update.getKey(), update.getValue()));
+                    } catch (Exception e) {
+                        // Swallow exception to minimize front-end inaccuracy
+                        l.warn("error sending notification", e);
+                    }
                 }
-            }
-            sendPathStatusNotification_(pathStatuses);
-        });
+                sendPathStatusNotification_(pathStatuses);
+            });
+        }
 
         // TODO re-add this after shellexts handle it correctly
         // sso.addListener((online) -> _rns.getRitualNotifier()

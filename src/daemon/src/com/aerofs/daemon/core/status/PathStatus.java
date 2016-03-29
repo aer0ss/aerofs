@@ -29,25 +29,28 @@ public class PathStatus
 {
     private final PathFlagAggregator _tsa;
     private final ISyncStatusPropagator _syncStatusPropagator;
+    private final SyncStatusOnline _syncStatusOnline;
 
     @Inject
-    public PathStatus(PathFlagAggregator tsa, ISyncStatusPropagator syncStatusPropagator)
+    public PathStatus(PathFlagAggregator tsa, ISyncStatusPropagator syncStatusPropagator, SyncStatusOnline syncStatusOnline)
     {
         _tsa = tsa;
         _syncStatusPropagator = syncStatusPropagator;
+        _syncStatusOnline = syncStatusOnline;
+
     }
 
     public PBPathStatus getStatus_(Path path) throws SQLException
     {
         return PBPathStatus.newBuilder()
-                .setSync(_syncStatusPropagator.getSync_(path))
+                .setSync(_syncStatusOnline.get() ? _syncStatusPropagator.getSync_(path) : UNKNOWN)
                 .setFlags(_tsa.state_(path))
                 .build();
     }
 
     public PBPathStatus getStatus_(Path path, Sync sync) throws SQLException {
         return PBPathStatus.newBuilder()
-                .setSync(sync == IN_SYNC ? IN_SYNC : UNKNOWN)
+                .setSync(_syncStatusOnline.get() && sync == IN_SYNC ? IN_SYNC : UNKNOWN)
                 .setFlags(_tsa.state_(path))
                 .build();
     }
@@ -77,7 +80,7 @@ public class PathStatus
             Path path = e.getKey();
 
             notifications.put(path, PBPathStatus.newBuilder()
-                    .setSync(_syncStatusPropagator.getSync_(path))
+                    .setSync(_syncStatusOnline.get() ? _syncStatusPropagator.getSync_(path) : UNKNOWN)
                     .setFlags(e.getValue())
                     .build());
         }
