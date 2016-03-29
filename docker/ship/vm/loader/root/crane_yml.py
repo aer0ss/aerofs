@@ -161,11 +161,13 @@ def modify_images(containers, tagged_loader_container, my_container, tag):
     elif psutil.virtual_memory().total >= 3 * 1024 * 1024 * 1024:
         # When running with more than 3GB of memory, we can afford to give a
         # bit more to MySQL.
-        modify_image(
-            containers[rename_container('mysql', tag)]['image'],
-            ('sed -i '
-             '"s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" '
-             '"/etc/mysql/my.cnf"'))
+        mysql_name = rename_container('mysql', tag)
+        if mysql_name in containers:
+            modify_image(
+                containers[mysql_name]['image'],
+                ('sed -i '
+                 '"s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" '
+                 '"/etc/mysql/my.cnf"'))
 
 
 def rename_container(c, tag):
