@@ -523,7 +523,7 @@
         function backupAndRestoreToCurrentTarget() {
             $.get("${request.route_path('json-get-boot')}")
             .done(function(resp) {
-                var target = resp['id'];
+                var target = resp['target'];
                 console.log("will reboot to " + target);
                 backup(rebootToTargetFunction(target), $('#backup-only-progress-modal'));
             }).fail(function () {
