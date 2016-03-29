@@ -11,13 +11,15 @@ VERSION=$(docker run --rm $1 tag)
 
 if [ "$1" == "aerofs/loader" ]; then
     APPLIANCE="aerofs-appliance"
+    ARTIFACT_DIR="$(dirname "$0")/../../out.ship/appliance"
 else
     APPLIANCE="aerofs-sa-appliance"
+    ARTIFACT_DIR="$(dirname "$0")/../../out.ship/sa-appliance"
 fi
 
 upload_artifact() {
     local EXT=$1
-    local FILE="$(dirname "$0")/../../out.ship/appliance/preloaded/${APPLIANCE}-${VERSION}.${EXT}"
+    local FILE="${ARTIFACT_DIR}/preloaded/${APPLIANCE}-${VERSION}.${EXT}"
     test -r "${FILE}" || {
         echo "${FILE} does not exist." >&2
         exit $ERRBADARGS

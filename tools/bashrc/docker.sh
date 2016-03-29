@@ -21,7 +21,7 @@ function dk-create()
 {
     if [[ $# -eq 0 ]]
     then
-        dk-start-vm && ${DEV_DIR}/../../invoke --unsigned proto build_client package_clients build_docker_images && dk-reconfig
+        dk-start-vm && ${DEV_DIR}/../../invoke --unsigned proto build_client package_clients build_images && dk-reconfig
     else
         echo "dk-create takes no arguments"
         return 1

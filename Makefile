@@ -41,9 +41,9 @@ build_cloud_config:
 	$(GIT_ROOT)/docker/ship-aerofs/build-cloud-config.sh aerofs/loader
 	$(call success,"build_cloud_config")
 
-build_docker_images:
+build_images:
 	make -C $(GIT_ROOT)/docker images
-	$(call success,"build_docker_images")
+	$(call success,"build_images")
 
 build_sa_images:
 	make -C $(GIT_ROOT)/docker sa_images
@@ -106,9 +106,9 @@ proto: out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java out.shell/protobu
 	$(GIT_ROOT)/tools/build/build_protos.py build
 	$(call success,"proto")
 
-push_docker_images:
+push_images:
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/loader
-	$(call success,"push_docker_images")
+	$(call success,"push_images")
 
 push_sa_images:
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader
@@ -147,10 +147,6 @@ syncdet:
 tag_release:
 	$(GIT_ROOT)/tools/build/bootstrap tag_release aerofs/loader
 	$(call success,"tag_release")
-
-tag_sa_release:
-	$(GIT_ROOT)/tools/build/bootstrap tag_release aerofs/sa-loader
-	$(call success,"tag_sa_release")
 
 test_go:
 	$(GIT_ROOT)/golang/tester/run.sh aerofs.com

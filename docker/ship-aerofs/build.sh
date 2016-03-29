@@ -18,6 +18,12 @@ THIS_DIR="$(dirname $0)"
 
 SHIP_YML="$("${THIS_DIR}/render-ship-yml.sh" $LOADER)"
 
-"${THIS_DIR}/../ship/vm/build.sh" "${OUTPUT}" "${SHIP_YML}" "" "${THIS_DIR}/../../out.ship/appliance" $@
+if [ "$LOADER" == "aerofs/loader" ]; then
+    OUTPUT_DIR="${THIS_DIR}/../../out.ship/appliance"
+else
+    OUTPUT_DIR="${THIS_DIR}/../../out.ship/sa-appliance"
+fi
+
+"${THIS_DIR}/../ship/vm/build.sh" "${OUTPUT}" "${SHIP_YML}" "" "${OUTPUT_DIR}" $@
 
 rm "${SHIP_YML}"

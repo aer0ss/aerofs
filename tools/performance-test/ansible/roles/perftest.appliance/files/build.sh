@@ -27,7 +27,7 @@ fi
     for i in {1..5}; do $REPO_DIR/tools/cache/start.sh && break || sleep 5; done
 )
 
-$REPO_DIR/invoke --unsigned clean proto build_client package_clients build_docker_images
+$REPO_DIR/invoke --unsigned clean proto build_client package_clients build_images
 
 # Modified from dk-reconfig
 DEVMAIL=devmail.aerofs.com

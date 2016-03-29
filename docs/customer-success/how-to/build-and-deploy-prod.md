@@ -38,7 +38,7 @@ installers. To do this, run the following commands:
 
 5. Build using:
 
-       invoke --signed clean proto build_client package_clients build_docker_images build_vm
+       invoke --signed clean proto build_client package_clients build_images build_vm build_sa_images build_sa_vm
 
    *Note: you will not be able to successfully build the appliance if the keys for
    building the Eyja iOS app are present on the build machine. See below.
@@ -51,7 +51,7 @@ installers. To do this, run the following commands:
 
 7. When you are ready to release,
 
-       invoke push_docker_images push_vm tag_release
+       invoke push_images push_sa_images push_vm push_sa_vm tag_release
 
    This will upload the artifacts to S3 and the docker registry and send corresponding slack
    notifications. The docker registry images will be available to the public immediately. The S3
