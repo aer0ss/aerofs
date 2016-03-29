@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -58,15 +59,20 @@ public class TestContentAvailabilityListener extends AbstractTest
     @Mock CfgLocalDID did;
     @Mock CoreScheduler sched;
     @Mock CfgLocalUser cfgLocalUser;
-    ExecutorService schedExecutor = Executors.newSingleThreadExecutor();
-    ExecutorService polarisExecutor = Executors.newSingleThreadExecutor();
+    ExecutorService schedExecutor;
 
     List<Integer> calls = new ArrayList<>();
     SIndex sidx = new SIndex(1);
 
+    @After
+    public void tearDown() {
+        schedExecutor.shutdown();
+    }
+
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
+        schedExecutor = Executors.newSingleThreadExecutor();
         InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
         dbcw.init_();
         try (Statement s = dbcw.getConnection().createStatement()) {
@@ -95,29 +101,27 @@ public class TestContentAvailabilityListener extends AbstractTest
         }).when(sched).schedule_(any(IEvent.class));
 
         doAnswer(invocation -> {
-            polarisExecutor.submit(() -> {
-                Object[] arg = invocation.getArguments();
-                try {
-                    Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[3];
+            Object[] arg = invocation.getArguments();
+            try {
+                Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[3];
 
-                    LocationBatch batch = (LocationBatch) arg[1];
+                LocationBatch batch = (LocationBatch) arg[1];
 
-                    Set<String> oids = new HashSet<String>();
-                    batch.operations.forEach(op -> oids.add(op.oid));
+                Set<String> oids = new HashSet<String>();
+                batch.operations.forEach(op -> oids.add(op.oid));
 
-                    calls.add(batch.operations.size());
+                calls.add(batch.operations.size());
 
-                    schedExecutor.submit(() -> {
-                        ((AsyncTaskCallback) arg[2]).onSuccess_(function
-                                .apply(polarisResponse(locationBatchResult(batch.operations.size()))));
-                        return null;
-                    });
-                    l.trace("request succeeded");
-                } catch (Throwable t) {
-                    l.trace("request failed?");
-                    ((AsyncTaskCallback) arg[2]).onFailure_(t);
-                }
-            });
+                schedExecutor.submit(() -> {
+                    ((AsyncTaskCallback) arg[2]).onSuccess_(function
+                            .apply(polarisResponse(locationBatchResult(batch.operations.size()))));
+                    return null;
+                });
+                l.trace("request succeeded");
+            } catch (Throwable t) {
+                l.trace("request failed?");
+                ((AsyncTaskCallback) arg[2]).onFailure_(t);
+            }
             return null;
         }).when(client).post(any(), any(LocationBatch.class), any(AsyncTaskCallback.class), any());
 
