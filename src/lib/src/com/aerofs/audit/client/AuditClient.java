@@ -99,16 +99,12 @@ public class AuditClient
         public abstract AuditableEvent embed(String name, Object value);
 
         /**
-         * Publish an event to the audit service. Suppress any connection or transmission errors.
+         * Publish an event to the audit service.
          * Allow the implementation to reuse sockets.
          */
-        public void publish()
+        public void publish() throws IOException
         {
-            try {
-                publishBlocking();
-            } catch (IOException ioe) {
-                l.warn("audit publish error suppressed", BaseLogUtil.suppress(ioe));
-            }
+            publishBlocking();
         }
 
         /**

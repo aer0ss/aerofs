@@ -1,11 +1,14 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.audit.client.AuditClient;
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
+
+import java.io.IOException;
 
 public class AccessCodeProvider
 {
@@ -29,10 +32,14 @@ public class AccessCodeProvider
     public String createAccessCodeForUser(User user)
     {
         l.info("Gen access code for {}", user.id());
-        _auditClient.event(AuditClient.AuditTopic.DEVICE, "device.access.code")
-                .add("user", user.id())
-                .add("timeout", TIMEOUT_SEC)
-                .publish();
+        try {
+            _auditClient.event(AuditClient.AuditTopic.DEVICE, "device.access.code")
+                    .add("user", user.id())
+                    .add("timeout", TIMEOUT_SEC)
+                    .publish();
+        } catch (IOException e) {
+            l.warn("audit publish error suppressed", BaseLogUtil.suppress(e));
+        }
 
         return  _identitySessionManager.createDeviceAuthorizationNonce(user, TIMEOUT_SEC);
     }

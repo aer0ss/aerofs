@@ -264,7 +264,7 @@ public class Sparta extends Service
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
-                bind(IAnalyticsClient.class).to(AnalyticsClient.class);
+                bind(IAnalyticsClient.class).toInstance(new AnalyticsClient(deploymentSecret));
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
                         getStringProperty("sparta.oauth.id"),
                         getStringProperty("sparta.oauth.secret"),

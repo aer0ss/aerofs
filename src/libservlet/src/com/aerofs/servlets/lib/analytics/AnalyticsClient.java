@@ -34,12 +34,13 @@ public class AnalyticsClient implements IAnalyticsClient {
 
     private static final String ServiceName = "analytics";
 
-    private final ExecutorService _executor;
+    private final String _deploymentSecret;
     private final boolean _enabled;
     private final URL _url;
 
-    public AnalyticsClient()
+    public AnalyticsClient(String deploymentSecret)
     {
+        _deploymentSecret = deploymentSecret;
         _enabled = getBooleanProperty("analytics.enabled", false);
 
         if (_enabled) {
@@ -51,20 +52,13 @@ public class AnalyticsClient implements IAnalyticsClient {
                 l.error("Misconfigured analytics service URL. Analytics is DISABLED.");
             }
             _url = temp;
-
-            _executor = Executors.newSingleThreadExecutor(r -> {
-                Thread t = new Thread(r, "aerofsanalytics");
-                t.setPriority(Thread.MIN_PRIORITY);
-                return t;
-            });
         } else {
-            _executor = null;
             _url = null;
         }
 
     }
 
-    public void track(AnalyticsEvent event, UserID user_id, Long value) {
+    public void track(AnalyticsEvent event, UserID user_id) throws IOException {
         if (!_enabled) {
             return;
         }
@@ -75,32 +69,13 @@ public class AnalyticsClient implements IAnalyticsClient {
         if (user_id != null) {
             map.put("user_id", user_id.getString());
         }
-        if (value != null) {
-            map.put("value", value);
-        }
 
-        _executor.submit(() -> {
-            try {
-                submit(_gson.toJson(map));
-            } catch (IOException e) {
-                l.warn("analytics event submission failed: " + e.toString());
-            }
-        });
+        submit(_gson.toJson(map));
     }
 
-    public void track(AnalyticsEvent event, UserID user_id)
+    public void track(AnalyticsEvent event) throws IOException
     {
-        track(event, user_id, null);
-    }
-
-    public void track(AnalyticsEvent event, Long value)
-    {
-        track(event, null, value);
-    }
-
-    public void track(AnalyticsEvent event)
-    {
-        track(event, null, null);
+        track(event, null);
     }
 
     // adapted from AuditHttpClient and AuditorFactory
@@ -110,7 +85,7 @@ public class AnalyticsClient implements IAnalyticsClient {
         conn.setConnectTimeout(10 * (int) C.SEC);
         conn.setReadTimeout(10 * (int)C.SEC);
         conn.setRequestProperty(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
-        String authHeader = AeroService.getHeaderValue(ServiceName, AeroService.loadDeploymentSecret());
+        String authHeader = AeroService.getHeaderValue(ServiceName, _deploymentSecret);
         conn.addRequestProperty(HttpHeaders.AUTHORIZATION, authHeader);
         conn.setDoOutput(true);
         conn.connect();

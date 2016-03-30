@@ -85,7 +85,7 @@ public class UrlShareResource extends AbstractSpartaResource
     public Response getURLInfo(@Auth IAuthToken token,
             @HeaderParam(X_REAL_IP) String ip,
             @PathParam("key") UrlShare urlShare)
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNoPerm, ExNotFound, IOException, SQLException
     {
         throwIfNotAuthorized(token, Scope.READ_ACL, urlShare);
 
@@ -265,7 +265,7 @@ public class UrlShareResource extends AbstractSpartaResource
     public Response removeURLPassword(@Auth IAuthToken token,
             @HeaderParam(X_REAL_IP) String ip,
             @PathParam("key") UrlShare urlShare)
-            throws ExNoPerm, ExNotFound, SQLException
+            throws ExNoPerm, ExNotFound, IOException, SQLException
     {
         throwIfNotAuthorized(token, Scope.WRITE_ACL, urlShare);
 

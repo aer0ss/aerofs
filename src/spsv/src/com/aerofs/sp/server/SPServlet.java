@@ -216,7 +216,7 @@ public class SPServlet extends HttpServlet
         String deploymentSecret = AeroService.loadDeploymentSecret();
         _ssmpConnection = createSSMPConnection(deploymentSecret, URLBasedCertificateProvider.server());
         _auditClient = createAuditClient(deploymentSecret);
-        _analyticsClient = new AnalyticsClient();
+        _analyticsClient = new AnalyticsClient(deploymentSecret);
         _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection);
         _authenticator = new AuthenticatorFactory(
                 _aclNotificationPublisher,

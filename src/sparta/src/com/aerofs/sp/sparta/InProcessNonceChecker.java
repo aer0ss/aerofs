@@ -29,9 +29,11 @@ public class InProcessNonceChecker implements NonceChecker {
         {
             // TODO: can't easily unit-test this case until we can delete users
             l.warn("Authorized device nonce {} has invalid user {}", nonce, user.id().getString());
-            _auditClient.event(AuditTopic.USER, "device.mobile.error")
-                    .add("user", user.id())
-                    .publish();
+
+            AuditClient.AuditableEvent auditEvent = _auditClient.event(AuditTopic.USER, "device.mobile.error")
+                    .add("user", user.id());
+            _sqlTrans.rollback();
+            auditEvent.publish();
             throw new ExBadCredential("Authorized user does not exist.");
         }
 

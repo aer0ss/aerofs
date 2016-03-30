@@ -1358,6 +1358,7 @@ public class SPService implements ISPService
         ISharingRules rules = _sharingRules.create(sharer);
 
         List<AuditableEvent> events = Lists.newArrayList();
+        List<UserID> userIDs = Lists.newArrayList();
         boolean created = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
         if (created) events.add(auditSharing(sf, sharer, "folder.create"));
 
@@ -1392,7 +1393,7 @@ public class SPService implements ISPService
                         .add("target", sharee.id())
                         .embed("role", actualPermissions.toArray()));
 
-                _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, sharer.id());
+                userIDs.add(sharer.id());
 
             } else if (srp._subject instanceof GroupID) {
                 Group group = _factGroup.create((GroupID)srp._subject);
@@ -1415,7 +1416,7 @@ public class SPService implements ISPService
                             .add("target", sharee.id())
                             .embed("role", permissions.toArray()));
 
-                    _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, sharer.id());
+                    userIDs.add(sharer.id());
                 }
 
             } else {
@@ -1442,9 +1443,11 @@ public class SPService implements ISPService
         // Send lipwig notification as the last step of the transaction.
         _aclPublisher.publish_(affected.build());
 
+        _sqlTrans.commit();
+
         for (AuditableEvent e : events) e.publish();
 
-        _sqlTrans.commit();
+        for (UserID u : userIDs) _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, u);
 
         for (InvitationEmailer emailer : emailers) emailer.send();
 
@@ -1481,12 +1484,13 @@ public class SPService implements ISPService
         joinSharedFolderImpl(external, user, sf);
 
         Permissions perm = sf.getPermissionsNullable(user);
-        auditSharing(sf, user, "folder.join")
+        AuditableEvent auditEvent = auditSharing(sf, user, "folder.join")
                 .add("join_as", external ? "external" : "internal")
                 .add("target", user.id())
-                .embed("role", perm == null ? "" : perm.toArray())
-                .publish();
+                .embed("role", perm == null ? "" : perm.toArray());
         _sqlTrans.commit();
+
+        auditEvent.publish();
 
         _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_ACCEPT, user.id());
 
@@ -2085,16 +2089,16 @@ public class SPService implements ISPService
     public ListenableFuture<SetupTwoFactorReply> setupTwoFactor()
             throws Exception
     {
+        AuditableEvent auditEvent = null;
         _sqlTrans.begin();
         User requester =
                 _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.TWO_FACTOR_SETUP);
         if (requester.shouldEnforceTwoFactor()) {
             requester.disableTwoFactorEnforcement();
             _sessionInvalidator.invalidateSecondFactor(requester.id());
-            _auditClient.event(AuditTopic.USER, "user.2fa.disable")
+            auditEvent = _auditClient.event(AuditTopic.USER, "user.2fa.disable")
                     .embed("caller", new AuditCaller(requester.id()))
-                    .embed("user", requester.id())
-                    .publish();
+                    .embed("user", requester.id());
             _twoFactorEmailer.sendTwoFactorDisabledEmail(
                     requester.id().getString(), requester.getFullName()._first);
         }
@@ -2102,6 +2106,8 @@ public class SPService implements ISPService
         SetupTwoFactorReply.Builder builder = SetupTwoFactorReply.newBuilder();
         builder.setSecret(ByteString.copyFrom(secret));
         _sqlTrans.commit();
+
+        if (auditEvent != null) auditEvent.publish();
 
         return createReply(builder.build());
     }
@@ -2111,6 +2117,7 @@ public class SPService implements ISPService
             String userId)
             throws Exception
     {
+        AuditableEvent auditEvent = null;
         _sqlTrans.begin();
         User requester =
                 _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.TWO_FACTOR_SETUP);
@@ -2143,24 +2150,23 @@ public class SPService implements ISPService
                 // (they have just proven that they possess the proper code)
                 _session.setSecondFactorAuthDate(System.currentTimeMillis());
                 target.enableTwoFactorEnforcement();
-                _auditClient.event(AuditTopic.USER, "user.2fa.enable")
+                auditEvent = _auditClient.event(AuditTopic.USER, "user.2fa.enable")
                         .embed("caller", new AuditCaller(requester.id()))
-                        .embed("user", target.id())
-                        .publish();
+                        .embed("user", target.id());
                 _twoFactorEmailer.sendTwoFactorEnabledEmail(target.id().getString(),
                         target.getFullName()._first);
             } else {
                 target.disableTwoFactorEnforcement();
                 _sessionInvalidator.invalidateSecondFactor(target.id());
-                _auditClient.event(AuditTopic.USER, "user.2fa.disable")
+                auditEvent = _auditClient.event(AuditTopic.USER, "user.2fa.disable")
                         .embed("caller", new AuditCaller(requester.id()))
-                        .embed("user", target.id())
-                        .publish();
+                        .embed("user", target.id());
                 _twoFactorEmailer.sendTwoFactorDisabledEmail(target.id().getString(),
                         target.getFullName()._first);
             }
         }
         _sqlTrans.commit();
+        if (auditEvent != null) auditEvent.publish();
         return createVoidReply();
     }
 
@@ -2168,6 +2174,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> setTwoFactorSetupEnforcement(PBTwoFactorEnforcementLevel pblevel)
             throws Exception
     {
+        AuditableEvent auditEvent = null;
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.INTERACTIVE);
         user.throwIfNotAdmin();
@@ -2176,14 +2183,15 @@ public class SPService implements ISPService
         TwoFactorEnforcementLevel oldLevel = org.getTwoFactorEnforcementLevel();
         org.setTwoFactorEnforcementLevel(level);
         if (!oldLevel.equals(level)) {
-            _auditClient.event(AuditTopic.ORGANIZATION, "org.2fa.level")
+            auditEvent = _auditClient.event(AuditTopic.ORGANIZATION, "org.2fa.level")
                     .embed("caller", new AuditCaller(user.id()))
                     .embed("org", org.id().toTeamServerUserID())
                     .embed("old_level", oldLevel.toString())
-                    .embed("new_level", level.toString())
-                    .publish();
+                    .embed("new_level", level.toString());
         }
         _sqlTrans.commit();
+
+        if (auditEvent != null) auditEvent.publish();
 
         return createVoidReply();
     }
@@ -2218,14 +2226,15 @@ public class SPService implements ISPService
         String folderName = sf.getName(caller);
         ImmutableCollection<UserID> affectedUsers = sf.destroy();
 
-        _auditClient.event(AuditTopic.SHARING, "folder.destroy")
+        AuditableEvent auditEvent = _auditClient.event(AuditTopic.SHARING, "folder.destroy")
                 .embed("folder", new AuditFolder(sf.id(), folderName))
-                .embed("caller", new AuditCaller(caller.id()))
-                .publish();
+                .embed("caller", new AuditCaller(caller.id()));
 
         // this must be the last thing in the transaction
         _aclPublisher.publish_(affectedUsers);
         _sqlTrans.commit();
+
+        auditEvent.publish();
 
         return createVoidReply();
     }
@@ -2947,9 +2956,10 @@ public class SPService implements ISPService
 
         if (user.exists()) {
             if (!user.isCredentialCorrect(shaedSP)) {
-                _auditClient.event(AuditTopic.USER, "user.password.error")
-                        .add("user", user.id())
-                        .publish();
+                AuditableEvent auditEvent = _auditClient.event(AuditTopic.USER, "user.password.error")
+                        .add("user", user.id());
+                _sqlTrans.rollback();
+                auditEvent.publish();
                 throw new ExBadCredential("Password doesn't match the existing account");
             }
             // If the user already exists and the password matches the existing password, we do an
@@ -3364,9 +3374,10 @@ public class SPService implements ISPService
         {
             // TODO: can't easily unit-test this case until we can delete users
             l.warn("Authorized device nonce {} has invalid user {}", nonce, user.id().getString());
-            _auditClient.event(AuditTopic.USER, "device.mobile.error")
-                    .add("user", user.id())
-                    .publish();
+            AuditableEvent auditEvent = _auditClient.event(AuditTopic.USER, "device.mobile.error")
+                    .add("user", user.id());
+            _sqlTrans.rollback();
+            auditEvent.publish();
             throw new ExBadCredential("Authorized user does not exist.");
         }
 
@@ -3503,12 +3514,13 @@ public class SPService implements ISPService
 
         unlinkDeviceImplementation(device, erase);
 
-        _auditClient.event(AuditTopic.DEVICE, erase ? "device.erase" : "device.unlink")
+        AuditableEvent auditEvent = _auditClient.event(AuditTopic.DEVICE, erase ? "device.erase" : "device.unlink")
                 .add("admin_user", user.id())
                 .add("device", device.id().toStringFormal())
-                .add("owner", device.getOwner().id())
-                .publish();
+                .add("owner", device.getOwner().id());
         _sqlTrans.commit();
+
+        auditEvent.publish();
 
         _analyticsClient.track(AnalyticsEvent.DESKTOP_CLIENT_UNLINK);
 

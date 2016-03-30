@@ -68,6 +68,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -793,7 +794,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             @PathParam("id") SharedFolder sf,
             @PathParam("email") User user,
             @HeaderParam(Names.IF_MATCH) @DefaultValue("") EntityTagSet ifMatch)
-            throws SQLException, ExNotFound, ExNoPerm, ExBadArgs
+            throws SQLException, ExNotFound, ExNoPerm, ExBadArgs, IOException
     {
         User caller = validateAuth(token, Scope.WRITE_ACL, sf);
         sf.throwIfNoPrivilegeToChangeACL(caller);

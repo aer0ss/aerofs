@@ -66,7 +66,7 @@ public class LdapAuthority implements IAuthority
         _connector = new LdapConnector(_cfg);
         _auditClient = new AuditClient();
         _auditClient.setAuditorClient(AuditorFactory.createNoopClient());
-        _analyticsClient = new AnalyticsClient();
+        _analyticsClient = new AnalyticsClient(null);
     }
 
     /**
@@ -108,25 +108,30 @@ public class LdapAuthority implements IAuthority
         // authenticateUser should only be called by SP/Sparta, not the LDAP Verification servlet
         Preconditions.checkNotNull(_aclPublisher);
         FullName fullName = throwIfBadCredential(user, credential);
+        AuditClient.AuditableEvent auditEvent = null;
 
         _l.info("LDAP auth ok {}", user.id());
         trans.begin();
         // Save the user record in the database with an empty password (which cannot be used to sign
         // in)
         if (!user.exists()) {
-            _auditClient.event(AuditTopic.USER, "user.org.provision")
+            auditEvent = _auditClient.event(AuditTopic.USER, "user.org.provision")
                     .add("user", user.id())
-                    .add("authority", this)
-                    .publish();
-            user.save(new byte[0], fullName);
+                    .add("authority", this);
 
-            _analyticsClient.track(AnalyticsEvent.USER_SIGNUP);
+            user.save(new byte[0], fullName);
 
             // notify TS of user creation (for root store auto-join)
             _aclPublisher.publish_(user.getOrganization().id().toTeamServerUserID());
         }
 
         trans.commit();
+
+        // not null if user did not exist
+        if (auditEvent != null) {
+            auditEvent.publish();
+            _analyticsClient.track(AnalyticsEvent.USER_SIGNUP);
+        }
     }
 
     @Override
