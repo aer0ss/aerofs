@@ -1,7 +1,6 @@
 package convos
 
 import (
-	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
@@ -35,7 +34,6 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 		tx := dao.BeginOrPanic(ctx.db)
 		convo = dao.CreateGroupConvo(tx, p, caller)
 		dao.CommitOrPanic(tx)
-
 	case "DIRECT":
 		p := new(DirectConvoWritable)
 		err := request.ReadEntity(p)
@@ -64,7 +62,6 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 		p := new(FileConvoWritable)
 		err := request.ReadEntity(p)
 		errors.PanicOnErr(err)
-
 		tx := dao.BeginOrPanic(ctx.db)
 		defer tx.Rollback()
 		convo = dao.GetFileConvo(tx, p.FileId, caller)
@@ -78,8 +75,9 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 	}
 
 	response.WriteEntity(convo)
-	broadcast.SendConvoEvent(ctx.broadcaster, convo.Id, convo.Members)
-	broadcast.SendMessageEvent(ctx.broadcaster, convo.Id, convo.Members)
+
+	broadcastConvo(ctx.broadcaster, convo)
+	broadcastMessage(ctx.broadcaster, convo)
 }
 
 func contains(xs []string, x string) bool {

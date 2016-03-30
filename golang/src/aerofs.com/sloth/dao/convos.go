@@ -59,11 +59,10 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 	rows.Close()
 
 	// query members table
-	// Note that file conversations have no linked membership set and are
-	// deduced on the frontend
 	rows, err = tx.Query(fmt.Sprint(
-		"SELECT user_id, convo_id FROM convo_members WHERE convo_id IN ",
-		"(SELECT convo_id FROM convo_members WHERE user_id=?)",
+		"SELECT user_id, convo_id FROM convo_members WHERE ",
+		"convo_id IN (SELECT convo_id FROM convo_members WHERE user_id=?) OR ",
+		"convo_id IN (SELECT id FROM convos WHERE is_public=1)",
 	), caller)
 	errors.PanicAndRollbackOnErr(err, tx)
 	for rows.Next() {
