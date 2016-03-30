@@ -27,7 +27,11 @@ func SendConvoEvent(b Broadcaster, cid string, members []string) {
 }
 
 func SendMessageEvent(b Broadcaster, cid string, members []string) {
-	multicastSimpleEvent(b, "MESSAGE", cid, members)
+	if members == nil {
+		broadcastSimpleEvent(b, "MESSAGE", cid)
+	} else {
+		multicastSimpleEvent(b, "MESSAGE", cid, members)
+	}
 }
 
 func SendMessageReadEvent(b Broadcaster, cid, uid string, mid int64, members []string) {
