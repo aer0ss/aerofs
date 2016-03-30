@@ -43,10 +43,6 @@ installers. To do this, run the following commands:
    *Note: you will not be able to successfully build the appliance if the keys for
    building the Eyja iOS app are present on the build machine. See below.
 
-   [FIXME](https://aerofs.atlassian.net/browse/ENG-2455): during the build_vm phase, ssh onto the
-   ship-enterprise builder using the ssh command provided in the execution output. Then run
-   `top -d 0.1` to speed up the docker pull.
-
 6. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
 
 7. When you are ready to release,
