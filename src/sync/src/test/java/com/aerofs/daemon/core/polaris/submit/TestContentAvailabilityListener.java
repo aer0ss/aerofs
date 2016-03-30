@@ -30,6 +30,7 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 
@@ -133,6 +134,7 @@ public class TestContentAvailabilityListener extends AbstractTest
     }
 
     @Test
+    @Ignore
     public void shouldSubmitAvailableContentAndRemoveSuccessfulSubmissions() throws Exception {
 
         try (Trans t = tm.begin_()) {
@@ -165,6 +167,7 @@ public class TestContentAvailabilityListener extends AbstractTest
     }
 
     @Test
+    @Ignore
     public void shouldLimitSubmittedBatchSizeAndImmediatelyReschedule() throws Exception {
 
         Trans t = tm.begin_();
@@ -200,6 +203,7 @@ public class TestContentAvailabilityListener extends AbstractTest
     }
 
     @Test
+    @Ignore
     public void shouldRescheduleWhenTransactionsCommitWhileRequestInFlight() throws Exception {
         sched.schedule_(new AbstractEBSelfHandling() {
             @Override
