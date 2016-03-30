@@ -43,6 +43,7 @@ import com.aerofs.polaris.sparta.SpartaConfiguration;
 import com.aerofs.polaris.ssmp.SSMPPublisher;
 import com.aerofs.rest.util.MimeTypeDetector;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.aerofs.polaris.resources.StatsResource;
 
 import org.flywaydb.core.Flyway;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -117,7 +118,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).
-                    to(BinaryPublisher.class).in(Singleton.class);
+                        to(BinaryPublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
                         .to(DeviceResolver.class).to(FolderSharer.class).to(StoreRenamer.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
@@ -179,6 +180,7 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addResource(FoldersResource.class);
         environment.addResource(FilesResource.class);
         environment.addResource(ChildrenResource.class);
+        environment.addResource(StatsResource.class);
 
         environment.getMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }

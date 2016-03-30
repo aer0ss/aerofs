@@ -6,6 +6,7 @@ import com.aerofs.baseline.errors.BaselineError;
 import com.aerofs.polaris.resources.external_api.ChildrenResource;
 import com.aerofs.polaris.resources.external_api.FilesResource;
 import com.aerofs.polaris.resources.external_api.FoldersResource;
+import com.aerofs.polaris.resources.StatsResource;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
@@ -49,7 +50,8 @@ public final class IllegalArgumentExceptionMapper extends BaseExceptionMapper<Il
         Class<?> resourceClass = resourceInfo.getResourceClass();
         return resourceClass == FoldersResource.class ||
                 resourceClass == FilesResource.class ||
-                resourceClass == ChildrenResource.class;
+                resourceClass == ChildrenResource.class ||
+                resourceClass == StatsResource.class;
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.aerofs.polaris.api.types.*;
 import com.aerofs.polaris.dao.Atomic;
 import com.aerofs.polaris.dao.LockStatus;
 import com.aerofs.polaris.dao.types.LockableLogicalObject;
+import com.aerofs.polaris.resources.SharedFolderStatsResource;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -1015,5 +1016,25 @@ public final class ObjectStore {
             }
             return children;
         }
+    }
+
+    public Map<String,String> getOrgStats()
+    {
+        SharedFolderStatsResource sharedFolderStats = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            return dao.objectProperties.getSharedFoldersStats();
+        });
+
+        Long totalSize = dbi.inTransaction((conn, Status) -> {
+            DAO dao = new DAO(conn);
+            return dao.objectProperties.getTotalSizeOfFilesInOrg();
+        });
+
+        Map<String,String> resultMap = new HashMap<>();
+        resultMap.put("maxFileCount", sharedFolderStats.maxFileCount.toString());
+        resultMap.put("avgFileCount", sharedFolderStats.avgFileCount.toString());
+        resultMap.put("totalFileSize", totalSize.toString());
+
+        return resultMap;
     }
 }
