@@ -3,6 +3,8 @@ set -eu
 
 LOADER="$1"
 shift
+THIS_DIR="$(dirname $0)"
+
 if [ "$LOADER" == "aerofs/loader" ]; then
     OUTPUT_DIR="${THIS_DIR}/../../out.ship/appliance"
 else
@@ -10,7 +12,6 @@ else
 fi
 
 # Build OVA, remove build artifacts, change to output directory.
-THIS_DIR="$(dirname $0)"
 "${THIS_DIR}/build.sh" cloudinit,preloaded "$LOADER" "$OUTPUT_DIR" $@
 
 cd "${OUTPUT_DIR}/preloaded"
