@@ -241,6 +241,9 @@ preload() {
     cecho ${CYAN} "    ssh ${SSH_ARGS}"
     echo
 
+    #ssh into vm to speed up docker pull
+    ssh ${SSH_ARGS} top -b -d 0.1 &
+
     # Run preload script in VM. This step can take a while, and some times for some reason ssh may
     # disconnect in the middle. So we retry a few times.
     local DONE_FILE=repload.done
