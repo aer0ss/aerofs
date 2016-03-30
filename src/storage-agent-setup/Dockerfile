@@ -1,5 +1,7 @@
 FROM aerofs/base.python2.7
 
+VOLUME /aerofs-storage
+
 CMD [ "/run.sh" ]
 
 COPY root/requirements-exact.txt /
