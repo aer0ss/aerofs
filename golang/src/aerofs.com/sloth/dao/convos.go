@@ -441,6 +441,22 @@ func GetParentConversationMembers(tx *sql.Tx, sid string) []string {
 	return members
 }
 
+// GetConvoTagIds returns a map of tag id -> user id
+func GetConvoTagIds(tx *sql.Tx, cid string) map[string]string {
+	query := "SELECT id, tag_id FROM convo_members INNER JOIN users ON user_id=id WHERE convo_id=?"
+	rows, err := tx.Query(query, cid)
+	errors.PanicAndRollbackOnErr(err, tx)
+	defer rows.Close()
+	m := make(map[string]string)
+	for rows.Next() {
+		var uid, tagId string
+		err := rows.Scan(&uid, &tagId)
+		errors.PanicAndRollbackOnErr(err, tx)
+		m[tagId] = uid
+	}
+	return m
+}
+
 //
 // Private
 //

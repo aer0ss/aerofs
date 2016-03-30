@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -35,4 +36,34 @@ func GenerateDirectConvoId(members []string) string {
 func GenerateFileConvoId(fileId string) string {
 	hash := md5.Sum([]byte(fileId))
 	return "2" + hex.EncodeToString(hash[:])[1:]
+}
+
+func IsTagPresent(msg, id string) bool {
+	tag := "@" + id
+	for i := 0; i <= len(msg)-len(tag); i += 1 {
+		// check tag is found
+		if msg[i:i+len(tag)] != tag {
+			continue
+		}
+		// check left bound
+		if i != 0 && isIllegalTagBoundChar(msg[i-1]) {
+			continue
+		}
+
+		// check right bound
+		if i+len(tag) < len(msg) && isIllegalTagBoundChar(msg[i+len(tag)]) {
+			continue
+		}
+
+		return true
+	}
+	return false
+}
+
+// Illegal bound chars cannot be immediately to the left or right of @tagid
+// Keep these characters in sync with tag.js#isIllegalBoundingChar
+func isIllegalTagBoundChar(c byte) bool {
+	b, err := regexp.Match("^[a-zA-Z0-9@]$", []byte{c})
+	errors.PanicOnErr(err)
+	return b
 }

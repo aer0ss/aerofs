@@ -11,6 +11,7 @@ import (
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
+	"aerofs.com/sloth/util"
 	"aerofs.com/sloth/util/asynccache"
 	"database/sql"
 	"errors"
@@ -485,10 +486,29 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 		message = dao.InsertMessage(tx, message)
 	}
 
+	var pushRecipients []string
+	if convo.Type == "DIRECT" {
+		// for direct convos, notify the other member
+		var other string
+		if convo.Members[0] == caller {
+			other = convo.Members[1]
+		} else {
+			other = convo.Members[0]
+		}
+		pushRecipients = append(pushRecipients, other)
+	} else {
+		// for non-direct convos, only notify tagged members
+		tags := dao.GetConvoTagIds(tx, cid)
+		for tagId, uid := range tags {
+			if uid != caller && ctx.lastOnlineTimes.IsOffline(uid) && util.IsTagPresent(message.Body, tagId) {
+				pushRecipients = append(pushRecipients, uid)
+			}
+		}
+	}
+
 	dao.CommitOrPanic(tx)
 	response.WriteEntity(message)
 	broadcastMessage(ctx.broadcaster, convo)
-	pushRecipients := getPushRecipients(caller, convo.Members, ctx.lastOnlineTimes)
 	go ctx.pushNotifier.NotifyNewMessage(callerUser, pushRecipients)
 }
 
@@ -549,19 +569,6 @@ func (ctx *context) updateReceipt(request *restful.Request, response *restful.Re
 
 	response.WriteEntity(receipt)
 	broadcastMessageRead(ctx.broadcaster, convo, caller, params.MessageId)
-}
-
-func getPushRecipients(caller string, members []string, lastOnlineTimes *lastOnline.Times) []string {
-	rs := make([]string, 0)
-	for _, r := range members {
-		if r == caller {
-			continue
-		}
-		if lastOnlineTimes.IsOffline(r) {
-			rs = append(rs, r)
-		}
-	}
-	return rs
 }
 
 func broadcastConvo(bc broadcast.Broadcaster, convo *Convo) {
