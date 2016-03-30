@@ -68,6 +68,10 @@ func SendUnpinEvent(b Broadcaster, uid, cid string) {
 	multicastEventWithPayload(b, "UNPIN", uid, payload, []string{uid})
 }
 
+func SendSettingsEvent(b Broadcaster, uid string) {
+	multicastSimpleEvent(b, "SETTINGS", uid, []string{uid})
+}
+
 //
 // Private
 //

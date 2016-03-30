@@ -64,6 +64,10 @@ type CommandResponse struct {
 	Text string `json:"text"`
 }
 
+type UserSettings struct {
+	NotifyOnlyOnTag *bool `json:"notifyOnlyOnTag"`
+}
+
 //
 // FIXME: hack until I can figure out read-only keys
 //

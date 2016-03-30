@@ -162,6 +162,29 @@ func BuildRoutes(
 		Returns(403, "Forbidden", nil).
 		Returns(404, "Not Found", nil))
 
+	//
+	// path: /users/{uid}/settings
+	//
+
+	ws.Route(ws.GET("/{uid}/settings").Filter(filters.UserIsTarget).To(ctx.getSettings).
+		Doc("Get the user's settings map").
+		Notes("These are persistent settings consistent across all the user's devices").
+		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
+		Returns(200, "Settings map", UserSettings{}).
+		Returns(401, "Invalid authorization", nil).
+		Returns(403, "Forbidden", nil).
+		Returns(404, "Not Found", nil))
+
+	ws.Route(ws.PUT("/{uid}/settings").Filter(filters.UserIsTarget).To(ctx.putSettings).
+		Doc("Edit keys in the user's settings map").
+		Notes("These are persistent settings consistent across all the user's devices").
+		Param(ws.PathParameter("uid", "User id (email)").DataType("string")).
+		Reads(UserSettings{}).
+		Returns(200, "Returns new settings map", UserSettings{}).
+		Returns(401, "Invalid authorization", nil).
+		Returns(403, "Forbidden", nil).
+		Returns(404, "Not Found", nil))
+
 	return ws
 }
 
@@ -181,6 +204,8 @@ func (ctx *context) getById(request *restful.Request, response *restful.Response
 	uid := request.PathParameter("uid")
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	user := dao.GetUser(tx, uid, ctx.lastOnlineTimes)
 	dao.CommitOrPanic(tx)
 
@@ -291,6 +316,8 @@ func (ctx *context) updateAvatar(request *restful.Request, response *restful.Res
 	errors.PanicOnErr(err)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	dao.UpdateAvatar(tx, uid, bytes)
 	dao.CommitOrPanic(tx)
 
@@ -301,6 +328,8 @@ func (ctx *context) getPinned(request *restful.Request, response *restful.Respon
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	cids := dao.GetPinned(tx, caller)
 	dao.CommitOrPanic(tx)
 
@@ -312,13 +341,15 @@ func (ctx *context) pinConvo(request *restful.Request, response *restful.Respons
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	if !dao.UserExists(tx, cid) && !dao.ConvoExists(tx, cid) {
-		tx.Rollback()
 		response.WriteHeader(404)
 		return
 	}
 	dao.SetPinned(tx, caller, cid)
 	dao.CommitOrPanic(tx)
+
 	broadcast.SendPinEvent(ctx.broadcaster, caller, cid)
 }
 
@@ -327,8 +358,11 @@ func (ctx *context) unpinConvo(request *restful.Request, response *restful.Respo
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	dao.SetUnpinned(tx, caller, cid)
 	dao.CommitOrPanic(tx)
+
 	broadcast.SendUnpinEvent(ctx.broadcaster, caller, cid)
 }
 
@@ -337,16 +371,63 @@ func (ctx *context) postTyping(request *restful.Request, response *restful.Respo
 	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
 
 	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
 	convo := dao.GetConvo(tx, cid, caller)
 	if convo == nil {
 		response.WriteHeader(404)
-		tx.Rollback()
 		return
 	} else if !convo.HasMember(caller) {
 		response.WriteErrorString(403, "Forbidden")
-		tx.Rollback()
 		return
 	}
-	broadcast.SendTypingEvent(ctx.broadcaster, caller, cid, convo.Members)
 	dao.CommitOrPanic(tx)
+
+	broadcast.SendTypingEvent(ctx.broadcaster, caller, cid, convo.Members)
+}
+
+func (ctx *context) getSettings(request *restful.Request, response *restful.Response) {
+	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
+
+	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
+	settings := dao.GetSettings(tx, caller)
+	if settings == nil {
+		response.WriteHeader(404)
+		return
+	}
+
+	dao.CommitOrPanic(tx)
+
+	response.WriteEntity(settings)
+}
+
+func (ctx *context) putSettings(request *restful.Request, response *restful.Response) {
+	caller := request.Attribute(filters.AUTHORIZED_USER).(string)
+
+	var params = new(UserSettings)
+	err := request.ReadEntity(params)
+	errors.PanicOnErr(err)
+
+	// add checks for new settings here
+	if params.NotifyOnlyOnTag == nil {
+		response.WriteErrorString(400, "Must change at least one setting")
+		return
+	}
+
+	tx := dao.BeginOrPanic(ctx.db)
+	defer tx.Rollback()
+
+	dao.ChangeSettings(tx, caller, params)
+	settings := dao.GetSettings(tx, caller)
+	if settings == nil {
+		response.WriteHeader(404)
+		return
+	}
+
+	dao.CommitOrPanic(tx)
+
+	response.WriteEntity(settings)
+	broadcast.SendSettingsEvent(ctx.broadcaster, caller)
 }
