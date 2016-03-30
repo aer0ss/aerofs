@@ -12,4 +12,7 @@ SHIP_YML="$("${THIS_DIR}/../ship-aerofs/render-ship-yml.sh" aerofs/sa-loader)"
 
 "${THIS_DIR}/../ship/emulate-rm.sh" "${SHIP_YML}" sa-loader
 
+# actually destroy some external SA artifacts
+docker-machine ssh docker-dev "sudo rm -rf /aerofs-storage"
+
 rm -f "${SHIP_YML}"

@@ -170,7 +170,7 @@ function sa-start()
     then
         dk-start-vm && ${DEV_DIR}/emulate-ship.sh aerofs/sa-loader default
     else
-        echo "dk-start takes no arguments"
+        echo "sa-start takes no arguments"
         return 1
     fi
 }
@@ -213,7 +213,7 @@ function sa-destroy()
     then
         ${DEV_DIR}/sa-destroy.sh
     else
-        echo "dk-destroy takes no arguments"
+        echo "sa-destroy takes no arguments"
         return 1
     fi
 }
