@@ -1,21 +1,26 @@
 import boto3
+import botocore.exceptions
 import datetime
+import os
 import re
 import requests
-import os
+import subprocess
 import time
 
+from docker import Client, tls
 from flask import current_app
+from hpc_config import configure_deployment, reboot, repackage, new_authed_session, get_boot_id
 from lizard import celery, db, notifications
 from models import HPCDeployment, HPCServer, Admin
-from docker import Client, tls
 from sqlalchemy.exc import IntegrityError
-import botocore.exceptions
-from hpc_config import configure_deployment, reboot, repackage, new_authed_session, get_boot_id
 
-BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
 EXPIRING_LICENSE_NOTIFICATION_BUFFER = 7
 POLLING_INTERVAL = 2
+HPC_SERVER_CONFIG_PATH = '/opt/lizard/hpc-server-config'
+
+BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
+HPC_SQS_QUEUE_NAME = 'hpc_auto_scaling'
+
 
 class DeploymentAlreadyExists(Exception):
     def __init__(self):
@@ -331,3 +336,128 @@ def download_backup_file(subdomain):
 def set_backup_name(subdomain):
     backup_date = datetime.datetime.today().strftime("%Y%m%d")
     return "{}_backup_{}".format(subdomain, backup_date)
+
+def create_server(instance_type, server_name):
+    create_aws_credentials_file()
+    cloud_config_path = '{}/data/cloud-config'.format(HPC_SERVER_CONFIG_PATH)
+
+    with open(cloud_config_path) as f:
+        user_data = f.read()
+
+    instance = current_app.ec2.create_instances(
+        ImageId='ami-7f3a0b15',  # CoreOS stable 835.13.0 HVM
+        MinCount=1,
+        MaxCount=1,
+        KeyName='hpc-key',
+        UserData=user_data,
+        InstanceType=instance_type,
+        BlockDeviceMappings=[
+            {
+                'DeviceName': '/dev/xvda',
+                'Ebs': {
+                    'SnapshotId': 'snap-0b0dbb9d',
+                    'VolumeSize': 300,
+                    'DeleteOnTermination': True,
+                    'VolumeType': 'gp2',
+                },
+            },
+        ],
+        NetworkInterfaces=[
+            {
+                'DeviceIndex': 0,
+                'SubnetId': 'subnet-61f94b0c',  # public-production
+                'Groups': ['sg-a76e09de'],  # aerofs.hosted_private_cloud
+                'DeleteOnTermination': True,
+                'AssociatePublicIpAddress': True
+            },
+        ],
+    )
+
+    instance = instance[0]
+    instance.create_tags(Tags=[{'Key': 'Name', 'Value': server_name}])
+
+    # Wait that the server has finished initializing
+    instance.wait_until_running()
+
+    while True:
+        instance_status = current_app.ec2.meta.client.describe_instance_status(
+            InstanceIds=[instance.id])['InstanceStatuses'][0]
+        if instance_status['InstanceStatus']['Status'] == 'ok':
+            break
+        current_app.logger.debug('Waiting for the Status Check')
+        time.sleep(5)
+
+    if instance.state.get('Name', None) != 'running':
+        current_app.logger.info(
+            "Error: The instance {} is in state: {}".format(instance.id, instance.state))
+        return False
+
+    return instance
+
+
+def configure_server(instance):
+    # To configure the server we need both to launch the 'configure_hpc_server.sh'
+    # script
+    private_ip = instance.private_ip_address
+    config_script_path = '{}/configure_hpc_server.sh {}'.format(HPC_SERVER_CONFIG_PATH,
+                                                                private_ip)
+    subprocess.Popen([config_script_path], shell=True)
+
+    # Attach the instance to an an autoscaling group
+    attach_instance_autoscaling_group(instance.id)
+
+    # Add the instance to the DB
+    server = HPCServer()
+    server.docker_url = 'https://{}:2376'.format(private_ip)
+    server.public_ip = instance.public_ip_address
+    db.session.add(server)
+    db.session.commit()
+
+
+@celery.task()
+def launch_server(server_name):
+    # Lauching the server
+    # The name and the size of the new instance has to be changed
+    instance = create_server('r3.2xlarge', server_name)
+    configure_server(instance)
+
+    return instance.id
+
+
+@celery.task()
+def check_sqs_notifications():
+    # Connecting to the queue
+    queue = current_app.sqs_resource(QueueName=HPC_SQS_QUEUE_NAME)
+
+    # Get the number of message from the queue
+    queue_attributes = current_app.sqs_client.get_queue_attributes(
+        QueueUrl=queue.url,
+        AttributeNames=['ApproximateNumberOfMessages'])
+    number_messages_queue = int(queue_attributes['Attributes']['ApproximateNumberOfMessages'])
+
+    # If there is a message in the queue, it means that the alarm notified us
+    # that we have to create new a instance
+    if number_messages_queue != 0:
+        requests.post('localhost:8000/launch_server')
+        # By calling lizard, we took into account the notification so we can now
+        # delete the messages from the queue.
+        queue.purge()
+
+
+def attach_instance_autoscaling_group(instance_id):
+    current_app.autoscaling.attach_instances(
+        InstanceIds=[instance_id],
+        AutoScalingGroupName='hpc_test_group'
+    )
+
+
+def create_aws_credentials_file():
+    # In the HPC Monitoring container, the memory monitoring script need credentials
+    # to run
+    credential_path = '{}/secrets/aws_credentials'.format(HPC_SERVER_CONFIG_PATH)
+    if not os.path.isfile(credential_path):
+        with open(credential_path, 'w') as cred:
+            cred.write('AWSAccessKeyId={} \n'.format(current_app.config['HPC_AWS_ACCESS_KEY']))
+            cred.write('AWSSecretKey={}'.format(current_app.config['HPC_AWS_SECRET_KEY']))
+
+

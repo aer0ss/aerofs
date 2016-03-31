@@ -12,7 +12,8 @@ from flask import Blueprint, current_app, url_for, render_template, redirect, Re
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 MONITORING_PORT = 5000
-
+MAINTENANCE_MODE = True
+AUTOSCALING_NUMBER_NEW_INSTANCES = 1
 
 @blueprint.route("/", methods=["GET"])
 def index():
@@ -503,11 +504,7 @@ def hpc_servers():
     form = forms.AddHPCServer()
 
     if form.validate_on_submit():
-        server = models.HPCServer()
-        server.docker_url = form.docker_url.data
-        server.public_ip = form.public_ip.data
-        db.session.add(server)
-        db.session.commit()
+        launch_server(form.server_name.data)
 
     servers = models.HPCServer.query.all()
     server_sys_stats = {}
@@ -560,7 +557,6 @@ def hpc_deployments_status():
     return response
 
 
-
 # This function returns a 200 if all hpc servers's system stats(RAM,CPU, disk)
 # are under their assigned thresholds(via pagerduty).
 # Currently, it is only called by hpc_check_sys_stats in pagerduty
@@ -590,6 +586,25 @@ def hpc_server_sys_stats():
         return response
     else:
         return Response('Ok', 200)
+
+
+# Every 10 minutes a script called `sqs_notification.py` is run in the HPC Monitoring
+# container. When needed, it makes a post request to this route to launch a new server.
+# If we are in maintenance_mode (which will be the case when upgrading HPC) this function
+# won't create a server in order to be sure there won't be any conflict between the version of
+# the upgrade and the version of the new server. Besides, if no instance is created because of
+# that, `sqs_notification.py` will continue to call this route every 10 minutes until
+# maintenance mode is set to False and a new server will eventually be created.
+@blueprint.route("/launch_server", methods=['POST'])
+def launch_server(server_name=''):
+    if not server_name:
+        last_server_id = models.HPCServer.query.order_by(-models.HPCServer.id).first().id
+        server_name = 'hpc-server-{}'.format(last_server_id+1)
+    if not MAINTENANCE_MODE:
+        for i in range(AUTOSCALING_NUMBER_NEW_INSTANCES):
+            hpc.launch_server.si(server_name).apply_async()
+
+    return Response(200)
 
 
 # This function gives the status of a subdomain

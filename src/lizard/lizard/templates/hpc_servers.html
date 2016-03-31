@@ -11,8 +11,10 @@
         <div class="col-sm-6">
             <form role="form" class="full-width-form logged-in" action="" method="post">
                 {{ form.hidden_tag() }}
-                {{ render_field(form.docker_url) }}
-                {{ render_field(form.public_ip) }}
+                {{ render_field(form.server_name) }}
+                <p id="serverNameTooltip" data-toggle="tooltip" data-placement="bottom"
+                    title="The given name will only appear on AWS EC2. It usually follows this rule: hpc-server-{server-id}">
+                </p>
                 {{ submit_button("Add", horizontal=false) }}
             </form>
         </div>
@@ -99,6 +101,11 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
+
+        $("#server_name").one("keypress", function() {
+            $( "#serverNameTooltip" ).tooltip( "show");
+            setTimeout(function(){ $( "#serverNameTooltip" ).tooltip("hide"); }, 5000);
+        })
 
         // This ajax function's purpose is to get the status of each server
         $.ajax({

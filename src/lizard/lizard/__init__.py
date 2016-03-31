@@ -30,12 +30,17 @@ celery.conf.update(
     CELERYD_CONCURRENCY=6,
     CELERY_ACKS_LATE=True,
     CELERYBEAT_SCHEDULE = {
-    'every-night': {
-        'task': 'lizard.hpc.check_expired_deployments',
-        'schedule': crontab(minute=0, hour=0),
-        'args': (),
-    },
-}
+    	'every-night': {
+            'task': 'lizard.hpc.check_expired_deployments',
+            'schedule': crontab(minute=0, hour=0),
+            'args': (),
+        },
+        'sqs-notifications': {
+            'task': 'lizard.hpc.check_sqs_notifications',
+            'schedule': crontab(minute='*/15'),
+            'args': (),
+        }
+    }
     # TODO: Enable Celery error emails so that we get alerts when tasks fail
     # See: http://docs.celeryproject.org/en/latest/configuration.html#error-e-mails
 )
@@ -96,6 +101,10 @@ def create_app(internal=False):
                                         aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'])
     app.route53 = aws_session.client('route53')
     app.s3 = aws_session.resource('s3')
+    app.autoscaling = aws_session.client('autoscaling')
+    app.ec2 = aws_session.resource('ec2', region_name='us-east-1')
+    app.sqs_resource = aws_session.resource('sqs')
+    app.sqs_client = aws_session.client('sqs')
 
     # Enable routes
     if internal:

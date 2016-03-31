@@ -119,7 +119,4 @@ class CreateHostedDeployment(Form):
 
 # This form is used to create a new Hosted Private Cloud Server
 class AddHPCServer(Form):
-    docker_url = StringField("Docker URL", validators=[
-        InputRequired(),
-        Regexp('https://.+', message="The URL must start with https://")])
-    public_ip = StringField("Public IP address", validators=[InputRequired(), IPAddress()])
+    server_name = StringField("New server name", validators=[InputRequired()])
