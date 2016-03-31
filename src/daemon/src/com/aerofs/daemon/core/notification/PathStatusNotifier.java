@@ -68,11 +68,9 @@ public class PathStatusNotifier implements IConflictStateListener, ISnapshotable
                 }
                 sendPathStatusNotification_(pathStatuses);
             });
+            sso.addListener((online) -> _rns.getRitualNotifier()
+                    .sendNotification(Notifications.newPathStatusOutOfDateNotification()));
         }
-
-        // TODO re-add this after shellexts handle it correctly
-        // sso.addListener((online) -> _rns.getRitualNotifier()
-        // .sendNotification(Notifications.newPathStatusOutOfDateNotification()));
 
         uls.addListener_(
                 (item, progress) -> onStateChanged_(item, progress, PathFlagAggregator.Uploading));
