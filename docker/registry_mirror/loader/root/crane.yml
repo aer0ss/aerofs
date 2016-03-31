@@ -1,0 +1,36 @@
+containers:
+  registry:
+    image: aerofs/registry-mirror.registry
+    run:
+      detach: true
+      publish:
+        - "127.0.0.1:5000:5000"
+
+  registry-maintainer:
+    image: aerofs/registry-mirror.registry-maintainer
+    run:
+      detach: true
+      volume:
+        - /var/run/docker.sock:/var/run/docker.sock
+      volumes-from:
+        - registry
+      link:
+        - registry:registry.service
+
+  nginx:
+    image: aerofs/registry-mirror.nginx
+    run:
+      detach: true
+      publish:
+        # For read-only access, exposed to the public
+        - "443:443"
+      volume:
+        - ${KEYS_DIR}/nginx-auth:/host/keys
+      link:
+        - registry:registry.service
+
+  # Ship Enterprise requires inclusion of Loader.
+  loader:
+    image: aerofs/registry-mirror.loader
+    run:
+      detach: true

@@ -1,0 +1,9 @@
+repo: registry.hub.docker.com
+loader: aerofs/registry-mirror.loader
+target: default
+hostname: aerofs
+swap-size: 0
+vm-disk-size: 15000
+vm-ram-size: 2048
+vm-cpus: 2
+vm-image-name: registry-mirror-0.1

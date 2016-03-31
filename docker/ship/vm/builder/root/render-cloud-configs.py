@@ -2,6 +2,7 @@
 import StringIO
 import base64
 import gzip
+import os
 import yaml
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -18,9 +19,14 @@ def get_files(parent):
     the gzipped and base64 encoded file content.
     """
     file_list = []
-    for root, dirs, files in walk(parent):
-        file_list.extend(files)
-        break
+    for root, _, files in walk(parent):
+        for file_name in files:
+            rel_file = file_name
+            if root != parent:
+                rel_dir = os.path.relpath(root, parent)
+                rel_file = os.path.join(rel_dir, file_name)
+            file_list.append(rel_file)
+
 
     file_map = {}
     for basename in file_list:
