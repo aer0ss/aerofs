@@ -42,6 +42,9 @@ type notifier struct {
 
 // Notify synchronously sends a notification request
 func (p *notifier) Notify(body string, uids []string, badge int) error {
+	if len(uids) == 0 {
+		return nil
+	}
 	log.Printf("push notify %v %v\n", uids, body)
 	payload, err := request{Body: body, Aliases: uids, Badge: badge}.toJson()
 	if err != nil {
