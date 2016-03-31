@@ -12,7 +12,6 @@ from flask import Blueprint, current_app, url_for, render_template, redirect, Re
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 MONITORING_PORT = 5000
-MAINTENANCE_MODE = True
 AUTOSCALING_NUMBER_NEW_INSTANCES = 1
 
 @blueprint.route("/", methods=["GET"])
@@ -588,21 +587,13 @@ def hpc_server_sys_stats():
         return Response('Ok', 200)
 
 
-# Every 10 minutes a script called `sqs_notification.py` is run in the HPC Monitoring
-# container. When needed, it makes a post request to this route to launch a new server.
-# If we are in maintenance_mode (which will be the case when upgrading HPC) this function
-# won't create a server in order to be sure there won't be any conflict between the version of
-# the upgrade and the version of the new server. Besides, if no instance is created because of
-# that, `sqs_notification.py` will continue to call this route every 10 minutes until
-# maintenance mode is set to False and a new server will eventually be created.
 @blueprint.route("/launch_server", methods=['POST'])
 def launch_server(server_name=''):
     if not server_name:
         last_server_id = models.HPCServer.query.order_by(-models.HPCServer.id).first().id
         server_name = 'hpc-server-{}'.format(last_server_id+1)
-    if not MAINTENANCE_MODE:
-        for i in range(AUTOSCALING_NUMBER_NEW_INSTANCES):
-            hpc.launch_server.si(server_name).apply_async()
+    for i in range(AUTOSCALING_NUMBER_NEW_INSTANCES):
+        hpc.launch_server.si(server_name).apply_async()
 
     return Response(200)
 

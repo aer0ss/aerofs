@@ -30,7 +30,7 @@ celery.conf.update(
     CELERYD_CONCURRENCY=6,
     CELERY_ACKS_LATE=True,
     CELERYBEAT_SCHEDULE = {
-    	'every-night': {
+        'every-night': {
             'task': 'lizard.hpc.check_expired_deployments',
             'schedule': crontab(minute=0, hour=0),
             'args': (),

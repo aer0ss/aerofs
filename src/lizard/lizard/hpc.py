@@ -385,7 +385,7 @@ def create_server(instance_type, server_name):
         if instance_status['InstanceStatus']['Status'] == 'ok':
             break
         current_app.logger.debug('Waiting for the Status Check')
-        time.sleep(5)
+        time.sleep(POLLING_INTERVAL)
 
     if instance.state.get('Name', None) != 'running':
         current_app.logger.info(
