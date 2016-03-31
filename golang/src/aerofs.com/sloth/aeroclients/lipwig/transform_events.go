@@ -5,6 +5,7 @@ import (
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
+	"aerofs.com/sloth/util"
 	"aerofs.com/sloth/util/asynccache"
 	"log"
 )
@@ -33,13 +34,12 @@ func (h *eventHandler) syncTransforms(sid string) {
 			continue
 		}
 		log.Printf("insert file update %v for sid %v\n", t.LogicalTimestamp, sid)
-		dao.InsertFileUpdateMessage(tx, sid, t.Uid, t.Raw)
-
-		// TODO: Increase perf. by only using one call
-		cid := dao.GetCidForSid(tx, sid)
-		convo := dao.GetConvo(tx, cid, t.Uid)
-		log.Printf("sending file update notifications to convo %v for %v", cid, convo.Members)
-		broadcast.SendMessageEvent(h.broadcaster, cid, convo.Members)
+		fileCid := util.GenerateFileConvoId(t.Store + t.Oid)
+		convo := dao.GetConvo(tx, fileCid, t.Uid)
+		if convo != nil {
+			dao.InsertFileUpdateMessage(tx, fileCid, t.Uid, t.Raw)
+			broadcast.SendMessageEvent(h.broadcaster, convo.Id, convo.Members)
+		}
 	}
 	lastLogicalTimestamp := transforms[len(transforms)-1].LogicalTimestamp
 	dao.SetLastLogicalTimestamp(tx, sid, lastLogicalTimestamp)

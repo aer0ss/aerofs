@@ -29,6 +29,9 @@ type Client struct {
 type Transform struct {
 	LogicalTimestamp int64  `json:"logical_timestamp"` // unmarshal this to check for duplicates
 	Originator       string `json:"originator"`        // unmarshal this to translate to a UID
+	Store            string `json:"store"`
+	Oid              string `json:"oid"`
+	NewVersion       int    `json:"new_version"`
 	Uid              string
 	Raw              string
 }

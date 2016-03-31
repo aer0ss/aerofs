@@ -31,8 +31,7 @@ func SetLastLogicalTimestamp(tx *sql.Tx, sid string, timestamp int64) {
 	errors.PanicAndRollbackOnErr(err, tx)
 }
 
-func InsertFileUpdateMessage(tx *sql.Tx, sid, uid, json string) {
-	cid := GetCidForSid(tx, sid)
+func InsertFileUpdateMessage(tx *sql.Tx, cid, uid, json string) {
 	InsertMessage(tx, &Message{
 		Time:   time.Now(),
 		Body:   json,
