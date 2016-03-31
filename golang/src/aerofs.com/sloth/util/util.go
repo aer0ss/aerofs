@@ -33,9 +33,10 @@ func GenerateDirectConvoId(members []string) string {
 	return "1" + hex.EncodeToString(hash[:])[1:]
 }
 
+// Note that a fileId is composed of two 32 byte IDs [SID][OID]
+// SID is the file's associated store and the OID is the file UID
 func GenerateFileConvoId(fileId string) string {
-	hash := md5.Sum([]byte(fileId))
-	return "2" + hex.EncodeToString(hash[:])[1:]
+	return "2" + fileId[32:]
 }
 
 func IsTagPresent(msg, id string) bool {
