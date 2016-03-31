@@ -2,13 +2,11 @@ package com.aerofs.daemon.core.polaris.api;
 
 import com.google.common.base.Objects;
 
-public class LocationStatusBatchOperation
-{
+public class LocationStatusObject {
     public final String oid;
-
     public final long version;
 
-    public LocationStatusBatchOperation(String oid, long version) {
+    public LocationStatusObject(String oid, long version) {
         this.oid = oid;
         this.version = version;
     }
@@ -18,7 +16,7 @@ public class LocationStatusBatchOperation
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LocationStatusBatchOperation other = (LocationStatusBatchOperation) o;
+        LocationStatusObject other = (LocationStatusObject) o;
         return Objects.equal(oid, other.oid) && version == other.version;
     }
 

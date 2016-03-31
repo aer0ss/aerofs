@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
-import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
@@ -50,9 +50,7 @@ import java.util.concurrent.Executors;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class AbstractSyncStatusTest extends AbstractTest
 {
@@ -73,7 +71,8 @@ public class AbstractSyncStatusTest extends AbstractTest
     SID rootSID = SID.generate();
     SIndex rootSIndex = new SIndex(1);
 
-    @Mock PolarisAsyncClient polarisClient;
+    @Mock WaldoAsyncClient waldoClient;
+    @Mock WaldoAsyncClient.Factory factWaldo;
     SyncStatusRequests syncStatusRequests;
     OutOfSyncFilesDatabase outOfSyncDatabase;
     SIDDatabase sidDatabase;
@@ -224,7 +223,8 @@ public class AbstractSyncStatusTest extends AbstractTest
                 new SingleuserStoreHierarchy(new StoreDatabase(dbcw)), syncStatusRequests,
                 outOfSyncDatabase);
         syncStatusOnline.set(true);
-        statusChecker = new TestingBatchStatusChecker(polarisClient);
+        when(factWaldo.create()).thenReturn(waldoClient);
+        statusChecker = new TestingBatchStatusChecker(factWaldo);
     }
 
     public int countOutOfSyncFiles() throws SQLException {
@@ -241,8 +241,8 @@ public class AbstractSyncStatusTest extends AbstractTest
     {
         public boolean completed;
 
-        public TestingBatchStatusChecker(PolarisAsyncClient polarisClient) {
-            super(polarisClient);
+        public TestingBatchStatusChecker(WaldoAsyncClient.Factory factWaldo) {
+            super(factWaldo);
         }
 
         @Override

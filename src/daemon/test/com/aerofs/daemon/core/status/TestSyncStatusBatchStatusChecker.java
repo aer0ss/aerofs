@@ -1,34 +1,20 @@
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
-import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
-import com.aerofs.daemon.core.polaris.api.LocationStatusBatchOperation;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
-import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.ids.DID;
-import com.aerofs.ids.UserID;
-import com.aerofs.lib.ContentHash;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.IN_SYNC;
-import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.UNKNOWN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -93,7 +79,7 @@ public class TestSyncStatusBatchStatusChecker extends AbstractSyncStatusTest {
                 ((AsyncTaskCallback) arg[1]).onFailure_(t);
             }
             return null;
-        }).when(polarisClient).send(any(), any(AsyncTaskCallback.class), any());
+        }).when(waldoClient).send(any(), any(AsyncTaskCallback.class), any());
     }
 
     private HttpResponse polarisResponse(HttpResponseStatus status) {

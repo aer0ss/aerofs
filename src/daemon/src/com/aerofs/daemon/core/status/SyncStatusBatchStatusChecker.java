@@ -4,7 +4,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
-import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
@@ -24,11 +24,11 @@ public class SyncStatusBatchStatusChecker
 {
     private final static Logger l = Loggers.getLogger(SyncStatusBatchStatusChecker.class);
 
-    private final PolarisAsyncClient _polarisClient;
+    private final WaldoAsyncClient _waldoClient;
 
     @Inject
-    public SyncStatusBatchStatusChecker(PolarisAsyncClient polarisClient) {
-        _polarisClient = polarisClient;
+    public SyncStatusBatchStatusChecker(WaldoAsyncClient.Factory factWaldo) {
+        _waldoClient = factWaldo.create();
     }
 
     public void submitLocationStatusBatch(LocationStatusBatch locationStatusBatch,
@@ -36,7 +36,7 @@ public class SyncStatusBatchStatusChecker
             Function<LocationStatusBatchResult, Boolean, Exception> responseFunction) {
         byte[] content = string2utf(GSON.toJson(locationStatusBatch));
 
-        new RetryableStatusCheck("/batch/locations/status", content, callback,
+        new RetryableStatusCheck("/status", content, callback,
                 response -> parseResponse(response, locationStatusBatch, responseFunction)).send();
     }
 
@@ -98,7 +98,7 @@ public class SyncStatusBatchStatusChecker
             request.headers().add(HttpHeaders.Names.CONTENT_TYPE, "application/json");
             request.headers().add(Names.CONTENT_LENGTH, content.length);
             request.setContent(ChannelBuffers.wrappedBuffer(content));
-            _polarisClient.send(request, this, function);
+            _waldoClient.send(request, this, function);
         }
     }
 }

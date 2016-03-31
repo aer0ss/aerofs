@@ -68,8 +68,7 @@ public class PolarisSchema implements ISchema {
     public void create_(Statement s, IDBCW dbcw) throws SQLException {
         createPolarisFetchTables(s, dbcw);
 
-        //TODO uncomment when sync status flag is removed
-        //createAvailableContentTable(s, dbcw);
+        createAvailableContentTable(s, dbcw);
     }
 
     public static void createPolarisFetchTables(Statement s, IDBCW dbcw) throws SQLException
@@ -105,7 +104,6 @@ public class PolarisSchema implements ISchema {
     }
 
     public static void createAvailableContentTable(Statement s, IDBCW dbcw) throws SQLException {
-        //create available content table
         s.executeUpdate("create table " + T_AVAILABLE_CONTENT + "("
                 + C_AVAILABLE_CONTENT_SIDX + " integer not null,"
                 + C_AVAILABLE_CONTENT_OID + dbcw.uniqueIdType() + "not null,"

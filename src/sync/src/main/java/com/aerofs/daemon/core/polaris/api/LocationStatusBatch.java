@@ -4,13 +4,11 @@ import com.google.common.base.Objects;
 
 import java.util.Collection;
 
-public final class LocationStatusBatch
-{
+public final class LocationStatusBatch {
+    public final Collection<LocationStatusObject> objects;
 
-    public final Collection<LocationStatusBatchOperation> operations;
-
-    public LocationStatusBatch(Collection<LocationStatusBatchOperation> operations) {
-        this.operations = operations;
+    public LocationStatusBatch(Collection<LocationStatusObject> operations) {
+        this.objects = operations;
     }
 
     @Override
@@ -19,16 +17,16 @@ public final class LocationStatusBatch
         if (o == null || getClass() != o.getClass()) return false;
 
         LocationStatusBatch other = (LocationStatusBatch) o;
-        return Objects.equal(operations, other.operations);
+        return Objects.equal(objects, other.objects);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(operations);
+        return Objects.hashCode(objects);
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).add("operations", operations).toString();
+        return Objects.toStringHelper(this).add("operations", objects).toString();
     }
 }

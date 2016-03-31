@@ -152,13 +152,13 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                     LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
 
                     Set<String> oids = new HashSet<String>();
-                    batch.operations.forEach(op -> oids.add(op.oid));
+                    batch.objects.forEach(op -> oids.add(op.oid));
                     statusQueries.add(oids);
-                    l.trace("querying polaris for {} locations", batch.operations.size());
+                    l.trace("querying polaris for {} locations", batch.objects.size());
 
                     schedExecutor.submit(() -> {
                         ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(polarisResponse(
-                                halfSyncedLocationBatchResult(batch.operations.size()))));
+                                halfSyncedLocationBatchResult(batch.objects.size()))));
                         return null;
                     });
                 } catch (Throwable t) {
@@ -166,7 +166,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                 }
             });
             return null;
-        }).when(polarisClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
+        }).when(waldoClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
 
         int oosCount = countOutOfSyncFiles();
         assertEquals(102, oosCount);
@@ -222,12 +222,12 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                     LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
 
                     Set<String> oids = new HashSet<String>();
-                    batch.operations.forEach(op -> oids.add(op.oid));
+                    batch.objects.forEach(op -> oids.add(op.oid));
                     statusQueries.add(oids);
 
                     schedExecutor.submit(() -> {
                         ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(polarisResponse(
-                                halfSyncedLocationBatchResult(batch.operations.size()))));
+                                halfSyncedLocationBatchResult(batch.objects.size()))));
                         return null;
                     });
                 } catch (Throwable t) {
@@ -235,7 +235,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                 }
             });
             return null;
-        }).when(polarisClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
+        }).when(waldoClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
 
         verifier.scheduleVerifyUnsyncedFilesImmediate(0L);
 
@@ -274,7 +274,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                 }
             });
             return null;
-        }).when(polarisClient).send(any(), any(AsyncTaskCallback.class), any());
+        }).when(waldoClient).send(any(), any(AsyncTaskCallback.class), any());
     }
 
     private HttpResponse polarisResponse(LocationStatusBatchResult result) {

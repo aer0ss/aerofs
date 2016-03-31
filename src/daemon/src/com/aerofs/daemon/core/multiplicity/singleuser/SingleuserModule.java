@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.fs.IListLinkedAndExpelledSharedFolders;
 import com.aerofs.daemon.core.notification.ISyncNotificationSubscriber;
 import com.aerofs.daemon.core.notification.SyncNotificationSubscriber;
 import com.aerofs.daemon.core.polaris.fetch.IShareListener;
-import com.aerofs.daemon.core.polaris.submit.IContentAvailabilityListener;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
 import com.aerofs.daemon.core.status.*;
@@ -67,7 +66,6 @@ public class SingleuserModule extends AbstractModule
                     public void storeRemoved_(SIndex sidx) throws SQLException { }
                 });
 
-        bind(IContentAvailabilityListener.class).toInstance(new IContentAvailabilityListener(){});
         if (new CfgSyncStatusEnabled().get()) {
             bind(ISyncStatusPropagator.class).to(SyncStatusPropagator.class);
             bind(ISyncNotificationSubscriber.class).to(SyncNotificationSubscriber.class);
@@ -79,7 +77,6 @@ public class SingleuserModule extends AbstractModule
         } else {
             bind(ISyncNotificationSubscriber.class).toInstance(new ISyncNotificationSubscriber() {});
             bind(ISyncStatusPropagator.class).toInstance(new ISyncStatusPropagator() {});
-            newSetBinder(binder(), IContentVersionListener.class);
             newSetBinder(binder(), IShareListener.class);
         }
 

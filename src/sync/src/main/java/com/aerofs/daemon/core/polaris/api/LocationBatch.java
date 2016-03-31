@@ -1,13 +1,14 @@
 package com.aerofs.daemon.core.polaris.api;
 
-
-import java.util.Collection;
+import java.util.List;
 
 public final class LocationBatch {
 
-    public final Collection<LocationBatchOperation> operations;
+    public final String sid;
+    public final List<LocationBatchOperation> available;
 
-    public LocationBatch(Collection<LocationBatchOperation> operations) {
-        this.operations = operations;
+    public LocationBatch(String sid, List<LocationBatchOperation> available) {
+        this.sid = sid;
+        this.available = available;
     }
 }

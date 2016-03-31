@@ -4,8 +4,8 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.IContentVersionListener;
 import com.aerofs.daemon.core.net.DeviceToUserMapper;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
-import com.aerofs.daemon.core.polaris.api.LocationStatusBatchOperation;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
+import com.aerofs.daemon.core.polaris.api.LocationStatusObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteContentDatabase.RemoteContent;
@@ -118,10 +118,10 @@ public class SyncStatusContentVersionListener implements IContentVersionListener
     }
 
     private LocationStatusBatch buildLocationStatusBatch(Map<SOID, Long> versionsWithSyncStatusTBD) {
-        Collection<LocationStatusBatchOperation> operations = new ArrayList<>(
+        Collection<LocationStatusObject> operations = new ArrayList<>(
                 versionsWithSyncStatusTBD.size());
         for (Entry<SOID, Long> versionWithSyncStatusTBD : versionsWithSyncStatusTBD.entrySet()) {
-            operations.add(new LocationStatusBatchOperation(
+            operations.add(new LocationStatusObject(
                     versionWithSyncStatusTBD.getKey().oid().toStringFormal(),
                     versionWithSyncStatusTBD.getValue()));
             _syncStatusRequests.setSyncRequest(versionWithSyncStatusTBD.getKey(),

@@ -6,9 +6,10 @@ package com.aerofs.daemon.core.polaris.submit;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.IContentVersionListener;
-import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.async.AsyncTask;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
@@ -16,17 +17,16 @@ import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler.TaskState;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase.AvailableContent;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.OID;
-import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.ids.SID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -36,10 +36,7 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.*;
 
 import static com.aerofs.daemon.core.polaris.GsonUtil.GSON;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -50,16 +47,17 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * TODO: handle loss of availability due to expulsion
  */
-public class ContentAvailabilityListener implements IContentAvailabilityListener, IContentVersionListener
+public class ContentAvailabilitySubmitter implements IContentAvailabilityListener, IContentVersionListener
 {
-    private final static Logger l = Loggers.getLogger(ContentAvailabilityListener.class);
+    private final static Logger l = Loggers.getLogger(ContentAvailabilitySubmitter.class);
 
-    private final PolarisAsyncClient _polarisClient;
-    private final String _did;
+    private final WaldoAsyncClient _waldoClient;
     private final AvailableContentDatabase _acdb;
     private final TransManager _tm;
-    private final TaskState _submitAvailableContentToPolarisTask;
-    private final TransLocal<Boolean> _submitTransLocal;
+    private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
+    private final TaskState _submitTask;
+    private final TransLocal<Boolean> _tlSubmit;
 
     // polaris' resulting SSMP payload size is 24 bytes per location. SSMP
     // specifies 1024 bytes max in a payload, so the batch size of 42 is used to
@@ -67,46 +65,48 @@ public class ContentAvailabilityListener implements IContentAvailabilityListener
     private final int MAX_BATCH_SIZE = 42;
 
     @Inject
-    public ContentAvailabilityListener(PolarisAsyncClient client, CfgLocalDID did,
-            AvailableContentDatabase acdb, TransManager tm,
-            AsyncWorkGroupScheduler asyncWorkGroupScheduler, CfgLocalUser cfgLocalUser) {
-        _polarisClient = client;
-        _did = did.get().toStringFormal();
+    public ContentAvailabilitySubmitter(WaldoAsyncClient.Factory factWaldo,
+                                        AvailableContentDatabase acdb, TransManager tm,
+                                        AsyncWorkGroupScheduler sched, IMapSIndex2SID sidx2sid,
+                                        IMapSID2SIndex sid2sidx) {
+        _waldoClient = factWaldo.create();
         _acdb = acdb;
+        _sid2sidx = sid2sidx;
+        _sidx2sid = sidx2sid;
         _tm = tm;
 
-        _submitAvailableContentToPolarisTask = asyncWorkGroupScheduler.register_("availability",
+        _submitTask = sched.register_("availability",
                 new AsyncTask() {
                     @Override
                     public void run_(AsyncTaskCallback cb) {
                         l.trace("ENTER: submitAvailableContentToPolarisTask.run");
 
-                        Map<SOID, LocationBatchOperation> operations;
+                        LocationBatch batch;
                         try {
-                            operations = buildLocationBatchOperationsMap_();
+                            batch = buildLocationBatchOperationsMap_();
                         } catch (SQLException e) {
                             cb.onFailure_(e);
                             return;
                         }
 
-                        if (operations.size() == 0) {
+                        if (batch == null) {
                             cb.onSuccess_(false);
                             return;
                         }
 
-                        _polarisClient.post("/batch/locations", new LocationBatch(operations.values()),
-                                cb, response -> updateAvailableContentDatabase_(response, operations));
+                        _waldoClient.post("/submit", batch, cb,
+                                r -> updateAvailableContentDatabase_(r, batch));
                         l.trace("EXIT: submitAvailableContentToPolarisTask.run");
                     }
                 });
 
-        _submitTransLocal = new TransLocal<Boolean>() {
+        _tlSubmit = new TransLocal<Boolean>() {
             @Override
             protected Boolean initialValue(Trans t) {
                 t.addListener_(new AbstractTransListener() {
                     @Override
                     public void committed_() {
-                        _submitAvailableContentToPolarisTask.schedule_();
+                        _submitTask.schedule_();
                     }
                 });
                 return true;
@@ -116,7 +116,7 @@ public class ContentAvailabilityListener implements IContentAvailabilityListener
 
     @Override
     public void start_() {
-        _submitAvailableContentToPolarisTask.start_();
+        _submitTask.start_();
     }
 
     /**
@@ -127,26 +127,32 @@ public class ContentAvailabilityListener implements IContentAvailabilityListener
     public void onSetVersion_(SIndex sidx, OID oid, long v, Trans t) throws SQLException {
         l.trace("onSetVersion_");
         _acdb.setContent_(sidx, oid, v, t);
-        checkArgument(_submitTransLocal.get(t));
+        checkArgument(_tlSubmit.get(t));
     }
 
-    private Map<SOID, LocationBatchOperation> buildLocationBatchOperationsMap_() throws SQLException {
-        Map<SOID, LocationBatchOperation> operations = new HashMap<>();
+    private LocationBatch buildLocationBatchOperationsMap_() throws SQLException {
         try (IDBIterator<AvailableContent> contents = _acdb.listContent_()) {
-            while (contents.next_() && operations.size() < MAX_BATCH_SIZE) {
-                AvailableContent content = contents.get_();
+            if (!contents.next_()) return null;
 
-                operations.put(new SOID(content.sidx, content.oid), new LocationBatchOperation(
-                        content.oid.toStringFormal(), content.version, _did, LocationUpdateType.INSERT));
+            AvailableContent content = contents.get_();
+            SIndex sidx = content.sidx;
+            SID sid = _sidx2sid.get_(sidx);
+
+            List<LocationBatchOperation> ops = new ArrayList<>();
+            ops.add(new LocationBatchOperation(content.oid.toStringFormal(), content.version));
+
+            while (contents.next_() && ops.size() < MAX_BATCH_SIZE) {
+                content = contents.get_();
+                if (!content.sidx.equals(sidx)) break;
+                ops.add(new LocationBatchOperation(content.oid.toStringFormal(), content.version));
             }
-            l.debug("buildLocationBatchOperationsList ops.size = {}", operations.size());
+            l.debug("buildLocationBatchOperationsList ops.size = {}", ops.size());
+            return new LocationBatch(sid.toStringFormal(), ops);
         }
-        return operations;
     }
 
-    private Boolean updateAvailableContentDatabase_(HttpResponse response,
-            Map<SOID, LocationBatchOperation> operations)
-                    throws SQLException, ExRetryLater, ExInvalidID, ExProtocolError {
+    private Boolean updateAvailableContentDatabase_(HttpResponse response, LocationBatch batch)
+                    throws Exception {
         l.trace("ENTER updateAvailableContentDatabase, r.status = {}", response.getStatus());
         if (!response.getStatus().equals(HttpResponseStatus.OK)) {
             if (response.getStatus().getCode() >= 500) {
@@ -158,22 +164,28 @@ public class ContentAvailabilityListener implements IContentAvailabilityListener
         String content = response.getContent().toString(BaseUtil.CHARSET_UTF);
         LocationBatchResult batchResult = GSON.fromJson(content, LocationBatchResult.class);
 
-        l.debug("updateAvailableContentDatabase: ops.size = {}, results.size = {}", operations.size(),
+        l.debug("updateAvailableContentDatabase: ops.size = {}, results.size = {}", batch.available.size(),
                 batchResult.results.size());
 
+        SIndex sidx = _sid2sidx.getNullable_(new SID(batch.sid));
+        if (sidx == null) throw new ExNotFound("store expelled: " + batch.sid);
+
+        if (batchResult.results.size() != batch.available.size()) {
+            throw new ExProtocolError("mismatching response size");
+        }
+
         try (Trans t = _tm.begin_()) {
-            Iterator<LocationBatchOperationResult> results = batchResult.results.iterator();
-            for (Entry<SOID, LocationBatchOperation> entry : operations.entrySet()) {
-                LocationBatchOperation operation = entry.getValue();
-                if (results.next().successful) {
-                    _acdb.deleteContent_(entry.getKey().sidx(), new OID(operation.oid),
-                            operation.version, t);
-                    l.trace("updateAvailableContentDatabase delete {} {} successful",
-                            operation.oid.toString(), operation.version);
+            for (int i = 0; i < batchResult.results.size(); ++i) {
+                LocationBatchOperation op = batch.available.get(i);
+                if (batchResult.results.get(i)) {
+                    _acdb.deleteContent_(sidx, new OID(op.oid), op.version, t);
+                    l.trace("updateAvailableContentDatabase delete {}{} {} successful", sidx,
+                            op.oid, op.version);
                 } else {
-                    l.trace("updateAvailableContentDatabase not deleting {} {}",
-                            operation.oid.toString(), operation.version);
+                    l.trace("updateAvailableContentDatabase not deleting {}{} {}", sidx,
+                            op.oid, op.version);
                 }
+                ++i;
             }
             t.commit_();
         }

@@ -8,8 +8,8 @@ import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
-import com.aerofs.daemon.core.polaris.api.LocationStatusBatchOperation;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
+import com.aerofs.daemon.core.polaris.api.LocationStatusObject;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.fetch.IShareListener;
@@ -152,7 +152,7 @@ public class SyncStatusVerifier
         if (!_syncStatusOnline.get()) return;
 
         Map<SOID, ResolvedPath> paths = new LinkedHashMap<>();
-        Map<SOID, LocationStatusBatchOperation> operations = new LinkedHashMap<>();
+        Map<SOID, LocationStatusObject> operations = new LinkedHashMap<>();
         nextPageStartingAfterIdx = populateOutOfSyncsListAndReturnLastIdx_(paths, operations,
                 nextPageStartingAfterIdx, ignoreWindow, trans);
 
@@ -177,7 +177,7 @@ public class SyncStatusVerifier
     }
 
     protected long populateOutOfSyncsListAndReturnLastIdx_(Map<SOID, ResolvedPath> paths,
-            Map<SOID, LocationStatusBatchOperation> operations, long nextPageStartingAfterIdx,
+            Map<SOID, LocationStatusObject> operations, long nextPageStartingAfterIdx,
             long ignoreWindow, Trans t) throws SQLException {
         l.trace("enter populateOutOfSyncsListAndReturnLastIdx_: {}, {}", nextPageStartingAfterIdx,
                 ignoreWindow);
@@ -205,7 +205,7 @@ public class SyncStatusVerifier
                         Long version = _cvdb.getVersion_(soid.sidx(), soid.oid());
                         l.trace("path: {}, version: {}", path, version);
                         if (version != null) {
-                            operations.put(soid, new LocationStatusBatchOperation(
+                            operations.put(soid, new LocationStatusObject(
                                     soid.oid().toStringFormal(), version));
                             paths.put(soid, path);
                             added = true;
@@ -226,13 +226,13 @@ public class SyncStatusVerifier
         return nextPageStartingAfterIdx;
     }
 
-    private void storePendingRequests_(Trans t, Map<SOID, LocationStatusBatchOperation> operations)
+    private void storePendingRequests_(Trans t, Map<SOID, LocationStatusObject> operations)
             throws SQLException {
         operations.entrySet()
                 .forEach(op -> _syncStatusRequests.setSyncRequest(op.getKey(), op.getValue().version));
     }
 
-    protected Boolean scheduleUpdateSyncStatus_(Map<SOID, LocationStatusBatchOperation> operations,
+    protected Boolean scheduleUpdateSyncStatus_(Map<SOID, LocationStatusObject> operations,
             Map<SOID, ResolvedPath> paths, LocationStatusBatchResult batchResult, boolean hasMore)
                     throws SQLException {
         l.trace("enter scheduleUpdateSyncStatus_");
@@ -243,14 +243,14 @@ public class SyncStatusVerifier
         return hasMore;
     }
 
-    protected void updateSyncStatusBatch_(Map<SOID, LocationStatusBatchOperation> operations,
+    protected void updateSyncStatusBatch_(Map<SOID, LocationStatusObject> operations,
             Map<SOID, ResolvedPath> paths, LocationStatusBatchResult batchResult, Trans t)
                     throws SQLException {
         l.trace("enter updateSyncStatusBatch_");
-        Iterator<Entry<SOID, LocationStatusBatchOperation>> opsIterator = operations.entrySet()
+        Iterator<Entry<SOID, LocationStatusObject>> opsIterator = operations.entrySet()
                 .iterator();
         for (boolean backedUp : batchResult.results) {
-            Entry<SOID, LocationStatusBatchOperation> operation = opsIterator.next();
+            Entry<SOID, LocationStatusObject> operation = opsIterator.next();
             SOID soid = operation.getKey();
             if (_syncStatusRequests.deleteSyncRequestIfVersionMatches(soid,
                     operation.getValue().version)) {

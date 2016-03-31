@@ -8,7 +8,6 @@ import com.google.inject.Inject;
 
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.polaris.db.PolarisSchema.*;
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 /**
@@ -25,24 +24,7 @@ public class SyncStatusDatabaseInitialization
     public void init_() throws SQLException {
         if (!_cfgSyncStatusEnabled.get()) return;
 
-        populateAvailableContentTable();
         populateOutOfSyncFilesDatabase();
-    }
-
-    private void populateAvailableContentTable() throws SQLException {
-        if (!_cfgLocalUser.get().isTeamServerID()) return;
-
-        if (!_dbcw.tableExists(T_AVAILABLE_CONTENT)) {
-            DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
-                createAvailableContentTable(s, _dbcw);
-                s.execute("insert into " + T_AVAILABLE_CONTENT + "(" + C_AVAILABLE_CONTENT_SIDX + ","
-                        + C_AVAILABLE_CONTENT_OID + "," + C_AVAILABLE_CONTENT_VERSION + ") select "
-                        + C_VERSION_SIDX + "," + C_VERSION_OID + "," + C_VERSION_TICK + " from "
-                        + T_VERSION + " join " + T_OA + " on " + C_VERSION_SIDX + "=" + C_OA_SIDX
-                        + " and " + C_VERSION_OID + "=" + C_OA_OID + " where " + C_OA_TYPE + "="
-                        + OA.Type.FILE.ordinal());
-            });
-        }
     }
 
     private void populateOutOfSyncFilesDatabase() throws SQLException {

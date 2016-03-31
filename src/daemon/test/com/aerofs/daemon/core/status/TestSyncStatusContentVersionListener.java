@@ -164,7 +164,7 @@ public class TestSyncStatusContentVersionListener extends AbstractSyncStatusTest
                 ((AsyncTaskCallback) arg[1]).onFailure_(t);
             }
             return null;
-        }).when(polarisClient).send(any(), any(AsyncTaskCallback.class), any());
+        }).when(waldoClient).send(any(), any(AsyncTaskCallback.class), any());
     }
 
     private HttpResponse polarisResponse(LocationStatusBatchResult result) {

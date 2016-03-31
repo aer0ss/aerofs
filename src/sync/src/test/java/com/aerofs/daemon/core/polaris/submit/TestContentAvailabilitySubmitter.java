@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.polaris.submit;
 
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
@@ -46,17 +46,15 @@ import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
-public class TestContentAvailabilityListener extends AbstractTest
+public class TestContentAvailabilitySubmitter extends AbstractTest
 {
-    ContentAvailabilityListener listener;
+    ContentAvailabilitySubmitter submitter;
     AvailableContentDatabase acdb;
     TransManager tm;
     StoreDeletionOperators sdo;
-    @Mock PolarisAsyncClient client;
+    @Mock WaldoAsyncClient client;
     @Mock CfgLocalDID did;
     @Mock CoreScheduler sched;
     @Mock CfgLocalUser cfgLocalUser;
@@ -109,13 +107,13 @@ public class TestContentAvailabilityListener extends AbstractTest
                 LocationBatch batch = (LocationBatch) arg[1];
 
                 Set<String> oids = new HashSet<String>();
-                batch.operations.forEach(op -> oids.add(op.oid));
+                batch.available.forEach(op -> oids.add(op.oid));
 
-                calls.add(batch.operations.size());
+                calls.add(batch.available.size());
 
                 schedExecutor.submit(() -> {
                     ((AsyncTaskCallback) arg[2]).onSuccess_(function
-                            .apply(polarisResponse(locationBatchResult(batch.operations.size()))));
+                            .apply(polarisResponse(locationBatchResult(batch.available.size()))));
                     return null;
                 });
                 l.trace("request succeeded");
@@ -126,10 +124,13 @@ public class TestContentAvailabilityListener extends AbstractTest
             return null;
         }).when(client).post(any(), any(LocationBatch.class), any(AsyncTaskCallback.class), any());
 
+        WaldoAsyncClient.Factory fact = mock(WaldoAsyncClient.Factory.class);
+        when(fact.create()).thenReturn(client);
+
         calls.clear();
-        listener = new ContentAvailabilityListener(client, did, acdb, tm,
-                new AsyncWorkGroupScheduler(sched), cfgLocalUser);
-        listener.start_();
+        submitter = new ContentAvailabilitySubmitter(fact, did, acdb, tm,
+                new AsyncWorkGroupScheduler(sched));
+        submitter.start_();
         pause();
     }
 
@@ -139,7 +140,7 @@ public class TestContentAvailabilityListener extends AbstractTest
 
         try (Trans t = tm.begin_()) {
             for (int i = 0; i < 10; i++)
-                listener.onSetVersion_(sidx, OID.generate(), 1, t);
+                submitter.onSetVersion_(sidx, OID.generate(), 1, t);
 
             int count = 0;
             IDBIterator<AvailableContent> list = acdb.listContent_();
@@ -172,7 +173,7 @@ public class TestContentAvailabilityListener extends AbstractTest
 
         Trans t = tm.begin_();
         for (int i = 0; i < 100; i++)
-            listener.onSetVersion_(sidx, OID.generate(), 1, t);
+            submitter.onSetVersion_(sidx, OID.generate(), 1, t);
 
         int count = 0;
         IDBIterator<AvailableContent> list = acdb.listContent_();
@@ -211,7 +212,7 @@ public class TestContentAvailabilityListener extends AbstractTest
                 for (int i = 0; i < 100; i++) {
                     try (Trans t = tm.begin_()) {
                         for (int j = 0; j < 2; j++) {
-                            listener.onSetVersion_(sidx, OID.generate(), 1, t);
+                            submitter.onSetVersion_(sidx, OID.generate(), 1, t);
                         }
                         t.commit_();
                     } catch (SQLException e) {
@@ -249,13 +250,15 @@ public class TestContentAvailabilityListener extends AbstractTest
 
     private LocationBatchResult locationBatchResult(int size) {
         assert size > 0;
-        List<LocationBatchOperationResult> results = new ArrayList<>(size);
+        List<Boolean> results = new ArrayList<>(size);
         if (size > 1) {
-            results.add(new LocationBatchOperationResult(new BatchError(PolarisError.UNKNOWN, "")));
-            for (int i = 1; i < size; i++)
-                results.add(new LocationBatchOperationResult());
+            results.add(false);
+            // why is the error coming first?
+            for (int i = 1; i < size; i++) {
+                results.add(true);
+            }
         } else {
-            results.add(new LocationBatchOperationResult());
+            results.add(true);
         }
         return new LocationBatchResult(results);
     }
