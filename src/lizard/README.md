@@ -45,7 +45,7 @@ Now you should be able to hit the instance on localhost:4444 in your browser.
 
 If you're working on Hosted Private Cloud, you need to run the Celery worker to process the tasks.
 
-1. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG`
+1. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG --beat`
 
 
 #### Create test user with real license

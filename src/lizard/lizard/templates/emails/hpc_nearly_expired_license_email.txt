@@ -1,0 +1,12 @@
+Hello {{ admin.first_name }},
+
+You are receiving this email because your AeroFS Private Cloud appliance will expire in {{ days_before_expiry }} days.
+
+It is time for you to extend your license or download a backup file.
+
+If you have any questions feel free to contact our support desk.
+
+{{ contact_url }}
+
+Regards,
+The AeroFS Team

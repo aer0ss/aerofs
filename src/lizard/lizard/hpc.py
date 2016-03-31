@@ -1,13 +1,21 @@
+import boto3
+import datetime
 import re
 import requests
+import os
+import time
+
 from flask import current_app
-from lizard import celery, db
-from models import HPCDeployment, HPCServer
+from lizard import celery, db, notifications
+from models import HPCDeployment, HPCServer, Admin
 from docker import Client, tls
 from sqlalchemy.exc import IntegrityError
 import botocore.exceptions
-from hpc_config import configure_deployment, reboot, repackage
+from hpc_config import configure_deployment, reboot, repackage, new_authed_session, get_boot_id
 
+BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
+EXPIRING_LICENSE_NOTIFICATION_BUFFER = 7
+POLLING_INTERVAL = 2
 
 class DeploymentAlreadyExists(Exception):
     def __init__(self):
@@ -237,3 +245,89 @@ def delete_server(server):
 
     db.session.delete(server)
     db.session.commit()
+
+
+# Storing the backup file of the deployment being deleted on a Amazon S3 instance
+def add_backup_s3(file_name, file_path):
+    backup_bucket = current_app.s3.Bucket(BACKUP_BUCKET)
+    backup_bucket.upload_file(file_path, file_name)
+
+
+@celery.task()
+def check_expired_deployments():
+    deployment_list = HPCDeployment.query.all()
+
+    # We are checking the expiry date of each deployment
+    for deployment in deployment_list:
+        days_until_expiry = deployment.get_days_until_expiry()
+        if days_until_expiry == EXPIRING_LICENSE_NOTIFICATION_BUFFER:
+            admins = Admin.query.filter(
+                Admin.customer_id == deployment.customer.id).all()
+            for admin in admins:
+                notifications.send_hpc_nearly_expired_license_email(
+                    admin, EXPIRING_LICENSE_NOTIFICATION_BUFFER)
+        if days_until_expiry == 0:
+            admins = Admin.query.filter(
+                Admin.customer_id == deployment.customer.id).all()
+            for admin in admins:
+                notifications.send_hpc_expired_license_email(admin)
+
+            download_backup_file(deployment)
+            backup = current_app.s3.Object(BACKUP_BUCKET, set_backup_name(deployment.subdomain))
+            try:
+                # content_length attributes throws an exception if the backup file
+                # does not exist.
+                backup.content_length
+                # Deleting the deployment
+                delete_deployment(deployment)
+            except botocore.exceptions.ClientError:
+                current_app.logger.info("Failed to remove deployment {}".format(
+                    deployment.subdomain))
+
+
+def download_backup_file(subdomain):
+    session = new_authed_session(subdomain)
+
+    # Toggling maintenance mode
+    old_id = get_boot_id(session)
+    session.post("/admin/json-boot/maintenance")
+
+    # Wait for new boot id, or until we time out
+    while True:
+        new_id = get_boot_id(session)
+        current_app.logger.debug("New id {}".format(new_id))
+        if new_id is not None and new_id != old_id:
+            break
+
+        time.sleep(POLLING_INTERVAL)
+
+    # Generate the backup file
+    session.post('/admin/json-backup')
+
+    # Check when the backup file is ready
+    while True:
+        backup_request = session.get('/admin/json-backup')
+        if backup_request.status_code == 200:
+            status = backup_request.json()
+            current_app.logger.info(status)
+            if status['succeeded']:
+                break
+        else:
+            current_app.logger.warn('Failed to delete deployment {}'.format(subdomain))
+            return
+
+    #Download the backup file and storing it in a S3 bucket
+    backup_file = session.get('/admin/download_backup_file')
+    backup_name = set_backup_name(subdomain)
+    backup_path = "/tmp/{}".format(backup_name)
+    with open(backup_path, 'wb') as f:
+        for chunk in backup_file.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+    add_backup_s3(backup_name, backup_path)
+    os.remove(backup_path)
+
+
+def set_backup_name(subdomain):
+    backup_date = datetime.datetime.today().strftime("%Y%m%d")
+    return "{}_backup_{}".format(subdomain, backup_date)

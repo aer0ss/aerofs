@@ -7,6 +7,7 @@ from flask_wtf.csrf import CsrfProtect
 from migrate.versioning import api
 from migrate.exceptions import DatabaseAlreadyControlledError
 from celery import Celery
+from celery.schedules import crontab
 from .flask_analytics import AnalyticsClient
 
 import stripe
@@ -28,6 +29,13 @@ celery.conf.update(
     CELERY_RESULT_SERIALIZER='json',
     CELERYD_CONCURRENCY=6,
     CELERY_ACKS_LATE=True,
+    CELERYBEAT_SCHEDULE = {
+    'every-night': {
+        'task': 'lizard.hpc.check_expired_deployments',
+        'schedule': crontab(minute=0, hour=0),
+        'args': (),
+    },
+}
     # TODO: Enable Celery error emails so that we get alerts when tasks fail
     # See: http://docs.celeryproject.org/en/latest/configuration.html#error-e-mails
 )
@@ -87,7 +95,7 @@ def create_app(internal=False):
     aws_session = boto3.session.Session(aws_access_key_id=app.config['HPC_AWS_ACCESS_KEY'],
                                         aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'])
     app.route53 = aws_session.client('route53')
-
+    app.s3 = aws_session.resource('s3')
 
     # Enable routes
     if internal:

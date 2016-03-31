@@ -1,0 +1,10 @@
+Hello {{ admin.first_name }},
+
+You are receiving this email because your AeroFS Private Cloud appliance has expired and therefore your appliance has been deactivated.
+
+In order to extend your license or if you have any questions, feel free to contact our support desk.
+
+{{ contact_url }}
+
+Regards,
+The AeroFS Team

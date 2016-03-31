@@ -10,6 +10,7 @@ SUPPORT_ADDR = "support@aerofs.com"
 SALES_ADDR = "sales@aerofs.com"
 SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 FAQS_URL = "https://support.aerofs.com/hc/en-us/articles/204592794"
+CONTACT_URL = "https://support.aerofs.com/hc/en-us/articles/201440860"
 
 def _make_email_message(email_address, subject, text_body, html_body):
     msg = MIMEMultipart("alternative")
@@ -131,6 +132,33 @@ def _hpc_trial_setup_email_for(admin, subdomain):
             text_body,
             html_body)
 
+
+def _hpc_nearly_expired_license_email_for(admin, days_before_expiration):
+    text_body = render_template("emails/hpc_nearly_expired_license_email.txt",
+            admin=admin,
+            days_before_expiry=days_before_expiration,
+            contact_url=CONTACT_URL)
+    html_body = render_template("emails/hpc_nearly_expired_license_email.html",
+            admin=admin,
+            days_before_expiry=days_before_expiration,
+            contact_url=CONTACT_URL)
+    return _make_email_message(admin.email, "AeroFS License expiring soon",
+                               text_body,
+                               html_body)
+
+
+def _hpc_expired_license_email_for(admin):
+    text_body = render_template("emails/hpc_license_expired_email.txt",
+            admin=admin,
+            contact_url=CONTACT_URL)
+    html_body = render_template("emails/hpc_license_expired_email.html",
+            admin=admin,
+            contact_url=CONTACT_URL)
+    return _make_email_message(admin.email, "AeroFS License expired",
+                               text_body,
+                               html_body)
+
+
 def _get_mail_connection():
     host = current_app.config["MAIL_SERVER"]
     port = current_app.config["MAIL_PORT"]
@@ -189,6 +217,17 @@ def send_password_reset_email(admin, link):
 def send_hpc_trial_setup_email(admin, subdomain):
     msg = _hpc_trial_setup_email_for(admin, subdomain)
     _send_email(admin.email, msg)
+
+
+def send_hpc_nearly_expired_license_email(admin, days_before_expiration):
+    msg = _hpc_nearly_expired_license_email_for(admin, days_before_expiration)
+    _send_email(admin.email, msg)
+
+
+def send_hpc_expired_license_email(admin):
+    msg = _hpc_expired_license_email_for(admin)
+    _send_email(admin.email, msg)
+
 
 def send_private_cloud_question_email(requester, to_contact, subject, message):
     to_addr = SALES_ADDR if 'sales' in to_contact.lower() else SUPPORT_ADDR
