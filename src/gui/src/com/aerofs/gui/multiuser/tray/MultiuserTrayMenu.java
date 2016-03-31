@@ -102,7 +102,7 @@ public class MultiuserTrayMenu extends AbstractTrayMenu implements ITrayMenu, IT
     {
         Menu helpMenu = trayMenuPopulator.createHelpMenu();
         TrayMenuPopulator helpTrayMenuPopulator = new TrayMenuPopulator(helpMenu);
-        helpTrayMenuPopulator.addHelpMenuItems();
+        helpTrayMenuPopulator.addHelpMenuItems(null);
     }
 
     private void addManageTeamMenuItem(TrayMenuPopulator trayMenuPopulator)

@@ -80,7 +80,7 @@ public class TrayMenuPopulator
         mi.setEnabled(false);
     }
 
-    public void addHelpMenuItems()
+    public void addHelpMenuItems(TransferTrayMenuSection transferTrayMenuSection)
     {
         addMenuItem(S.REPORT_A_PROBLEM, new AbstractListener()
         {
@@ -110,6 +110,8 @@ public class TrayMenuPopulator
                 new DlgTransportDiagnostics(GUI.get().sh()).openDialog();
             }
         });
+
+        if (transferTrayMenuSection != null) transferTrayMenuSection.populateMenu(_rootMenu);
 
         addMenuSeparator();
 

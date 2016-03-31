@@ -2,19 +2,13 @@ package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.base.C;
 import com.aerofs.gui.AeroFSDialog;
-import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil.AbstractListener;
-import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.conflicts.DlgConflicts;
 import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
-import com.aerofs.gui.tray.AbstractTrayMenu;
-import com.aerofs.gui.tray.ITrayMenu;
-import com.aerofs.gui.tray.PauseOrResumeSyncing;
-import com.aerofs.gui.tray.RebuildDisposition;
-import com.aerofs.gui.tray.TrayIcon;
+import com.aerofs.gui.tray.*;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
-import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.gui.unsyncablefiles.DlgUnsyncableFiles;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
@@ -28,6 +22,7 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.update.Updater.Status;
 import com.google.common.base.Preconditions;
+
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 
@@ -119,15 +114,15 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             trayMenuPopulator.addMenuSeparator();
         } else {
             // Shared folders, activities, version history
-            createSharedFoldersMenu(trayMenuPopulator);
+            // createSharedFoldersMenu(trayMenuPopulator);
             createRecentActivitesMenu(menu);
             addVersionHistoryMenuItem(trayMenuPopulator);
             trayMenuPopulator.addMenuSeparator();
 
             // Transfers, pause/resume sync
-            _transferTrayMenuSection.populateMenu(menu);
-            addPauseOrResumeSyncingMenuItem(trayMenuPopulator);
-            trayMenuPopulator.addMenuSeparator();
+            // _transferTrayMenuSection.populateMenu(menu);
+            // addPauseOrResumeSyncingMenuItem(trayMenuPopulator);
+            // trayMenuPopulator.addMenuSeparator();
 
             // Preferences
             addPreferencesMenuItem(trayMenuPopulator);
@@ -242,6 +237,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
     {
         Menu helpMenu = trayMenuPopulator.createHelpMenu();
         TrayMenuPopulator helpTrayMenuPopulator = new TrayMenuPopulator(helpMenu);
-        helpTrayMenuPopulator.addHelpMenuItems();
+        helpTrayMenuPopulator.addHelpMenuItems(_transferTrayMenuSection);
     }
 }
