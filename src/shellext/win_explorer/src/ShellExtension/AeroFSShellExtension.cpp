@@ -173,16 +173,15 @@ bool AeroFSShellExtension::isLinkSharingEnabled()
 }
 
 static int overlayForStatus(const PBPathStatus& status) {
-	// temporary states (Upload/Download) take precedence over potentially long-lasting ones
+	// temporary downloading takes precedence over potentially long-lasting states
 	if (status.flags() & PBPathStatus_Flag_DOWNLOADING)	return O_Downloading;
-	if (status.flags() & PBPathStatus_Flag_UPLOADING)	return O_Uploading;
 	// conflict state takes precedence over sync status
 	if (status.flags() & PBPathStatus_Flag_CONFLICT)	return O_Conflict;
-	switch (status.sync()) {
-		case PBPathStatus_Sync_OUT_SYNC:				return O_OutSync;
-		case PBPathStatus_Sync_IN_SYNC:					return O_InSync;
-		default: break;
-	}
+	// in-sync takes precedence over uploading
+	if (status.sync() == PBPathStatus_Sync_IN_SYNC)     return O_InSync;
+	// uploading takes precedence over out-of-sync
+	if (status.flags() & PBPathStatus_Flag_UPLOADING)	return O_Uploading;
+	if (status.sync() == PBPathStatus_Sync_OUT_SYNC)    return O_OutSync;
 	return O_None;
 }
 

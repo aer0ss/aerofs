@@ -274,11 +274,9 @@ public class Images {
         if (!isOnline) sb.append("_off");
         if (hasNotification) sb.append("_n");
 
-        if (hasProgress) sb.append("_sip");
-        else if (enableSyncStatus) {
-            if (syncStatus == IN_SYNC) sb.append("_is");
-            else if (syncStatus == OUT_OF_SYNC) sb.append("_oos");
-        }
+        if (enableSyncStatus && syncStatus == IN_SYNC) sb.append("_is");
+        else if (hasProgress) sb.append("_sip");
+        else if (enableSyncStatus && syncStatus == OUT_OF_SYNC) sb.append("_oos");
 
         if (isWindowsVistaAndUp) sb.append("_win");
 

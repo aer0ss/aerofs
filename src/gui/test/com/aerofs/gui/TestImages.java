@@ -21,7 +21,8 @@ public class TestImages
         assertEquals("tray_off", getTrayIconName(false, false, false, false, OUT_OF_SYNC, false));
         assertEquals("tray_n", getTrayIconName(true, true, false, false, OUT_OF_SYNC, false));
         assertEquals("tray_sip", getTrayIconName(true, false, true, false, OUT_OF_SYNC, false));
-        assertEquals("tray_sip", getTrayIconName(true, false, true, true, IN_SYNC, false));
+        assertEquals("tray_sip", getTrayIconName(true, false, true, false, UNKNOWN, false));
+        assertEquals("tray_is", getTrayIconName(true, false, true, true, IN_SYNC, false));
         assertEquals("tray", getTrayIconName(true, false, false, true, UNKNOWN, false));
         assertEquals("tray_is", getTrayIconName(true, false, false, true, IN_SYNC, false));
         assertEquals("tray_oos", getTrayIconName(true, false, false, true, OUT_OF_SYNC, false));

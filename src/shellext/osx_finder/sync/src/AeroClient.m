@@ -14,16 +14,15 @@ NSString* const DEFAULT_SOCKET_FILE_NAME = @"shellext.sock";
 
 static Overlay overlayForStatus(PBPathStatus* status)
 {
-    // temporary states (Upload/Download) take precedence over potentially long-lasting ones
+    // temporary downloading takes precedence over potentially long-lasting states
     if (status.flags & PBPathStatus_FlagDownloading)    return DOWNLOADING;
-    if (status.flags & PBPathStatus_FlagUploading)      return UPLOADING;
     // conflict state takes precedence over sync status
     if (status.flags & PBPathStatus_FlagConflict)       return CONFLICT;
-    switch (status.sync) {
-        case PBPathStatus_SyncInSync:                   return IN_SYNC;
-        case PBPathStatus_SyncOutSync:                  return OUT_SYNC;
-        default: break;
-    }
+    // in-sync takes precendence over uploading
+    if (status.sync == PBPathStatus_SyncInSync)         return IN_SYNC;
+    // uploading takes precedence over out-of-sync
+    if (status.flags & PBPathStatus_FlagUploading)      return UPLOADING;
+    if (status.sync == PBPathStatus_SyncOutSync)        return OUT_SYNC;
     return NONE;
 }
 

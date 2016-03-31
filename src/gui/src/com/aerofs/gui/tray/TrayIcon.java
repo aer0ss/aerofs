@@ -287,7 +287,7 @@ public class TrayIcon implements ITrayMenuListener
                 _isOnline,
                 !_notificationReasons.isEmpty(),
                 !UIGlobals.progresses().getProgresses().isEmpty(),
-                _localUser.get().isAeroFSUser(),
+                true,
                 _syncStatus,
                 OSUtil.isWindows() && !OSUtil.isWindowsXP());
 
