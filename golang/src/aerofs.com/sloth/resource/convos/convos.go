@@ -495,9 +495,13 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 		// for non-direct convos, only notify tagged members
 		tags := dao.GetConvoTagIds(tx, cid)
 		for tagId, uid := range tags {
-			if uid != caller && ctx.lastOnlineTimes.IsOffline(uid) && util.IsTagPresent(message.Body, tagId) {
-				pushRecipients = append(pushRecipients, uid)
+			if uid == caller || !ctx.lastOnlineTimes.IsOffline(uid) {
+				continue
 			}
+			if *dao.GetSettings(tx, uid).NotifyOnlyOnTag && !util.IsTagPresent(message.Body, tagId) {
+				continue
+			}
+			pushRecipients = append(pushRecipients, uid)
 		}
 	}
 
