@@ -282,10 +282,6 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	}
 	convo, dependentConvos := dao.UpdateConvo(tx, convo, updatedConvo, caller)
 
-	// Only insert membership mesage to Root convo
-	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
-	dao.CommitOrPanic(tx)
-
 	if convo.Sid != "" {
 		go func() {
 			log.Printf("adding %v to %v on sparta\n", uid, convo.Sid)
@@ -300,15 +296,14 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 
 	// Insert added message to Root folder
 	dao.InsertMemberAddedMessage(tx, cid, uid, caller, time.Now())
-	dao.CommitOrPanic(tx)
 
 	// Notify all dependent convos of new member
 	// Notify just the root convo of the new message
 	for _, cid := range dependentConvos {
 		convo := dao.GetConvo(tx, cid, caller)
-		dao.CommitOrPanic(tx)
 		broadcastConvo(ctx.broadcaster, convo)
 	}
+	dao.CommitOrPanic(tx)
 	broadcastMessage(ctx.broadcaster, convo)
 }
 
@@ -354,7 +349,6 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 
 	// Only root folder gets removed message
 	dao.InsertMemberRemovedMessage(tx, cid, uid, caller, time.Now())
-	dao.CommitOrPanic(tx)
 
 	if convo.Sid != "" {
 		go func() {
@@ -370,9 +364,10 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	// Notify root if new message
 	for _, cid := range dependentConvos {
 		depConvo := dao.GetConvo(tx, cid, caller)
-		dao.CommitOrPanic(tx)
 		broadcastConvo(ctx.broadcaster, depConvo)
 	}
+
+	dao.CommitOrPanic(tx)
 	broadcastMessage(ctx.broadcaster, convo)
 }
 
