@@ -36,12 +36,12 @@ import (
 //Frequency values here are more frequent than the eventual permanent values
 //Values governing the frequency at which events are sent/queried
 const (
-	DailyMetricsInterval = time.Second * 10
-	EventsInterval       = time.Second * 8
-	UsersInterval        = time.Second * 10
+	DailyMetricsInterval = time.Minute * 30
+	EventsInterval       = time.Minute * 10
+	UsersInterval        = time.Minute * 30
 	TickerInterval       = time.Second * 5
 
-	SegmentWriteKey = ""
+	SegmentWriteKey = "rwp5ZN1LQIGfcrGukEMUtUQ3QHokYJQz"
 )
 
 // const arrays are not possible in Go
@@ -211,7 +211,10 @@ func sendGeneric(eventMap map[string][]byte, t time.Time,
 		}
 		event.Timestamp = &t
 
-		batch.Track(event)
+		err = batch.Track(event)
+		if err != nil {
+			return errors.New("Failed to track batch: " + err.Error())
+		}
 	}
 
 	// send to segment
@@ -510,7 +513,7 @@ func main() {
 
 	if strings.EqualFold("true", c["analytics.enabled"]) {
 		// retrieve company name from license
-		companyID := c["license_company"]
+		companyID = c["license_company"]
 		if companyID == "" {
 			companyID = c["customer_id"]
 		}
@@ -541,10 +544,18 @@ func main() {
 		httpClient := NewDefaultServiceHTTPClient("analytics", secret)
 		go dailyMetricsLoop(db, httpClient)
 
-		//segmentClient.Endpoint = c["analytics.endpoint"]
+		segmentClient.Endpoint = c["analytics.endpoint"]
+		if segmentClient.Endpoint == "" {
+			log.Println("Analytics endpoint is empty, events will not send")
+		}
 		// identify company by its name for Mixpanel people
 		err = segmentClient.Identify(&segment.Identify{
 			AnonymousID: companyID,
+			Context: map[string]interface{}{
+				"library": map[string]string{
+					"name": "analytics-go",
+				},
+			},
 			Traits: map[string]interface{}{
 				"Company Name": companyID,
 			},

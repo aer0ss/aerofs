@@ -90,6 +90,9 @@ func (c *Client) Identify(i *Identify) error {
 
 // Batch - send a batch message to segment client endpoint
 func (c *Client) Batch(b *Batch) error {
+	if len(b.Messages) == 0 {
+		return nil
+	}
 	return c.send(b, "/batch")
 }
 

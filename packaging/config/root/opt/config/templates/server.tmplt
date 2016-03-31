@@ -132,7 +132,8 @@ messaging.button.url.registration={{ messaging_button_url_base }}/registration
 messaging.button.auth.user={{ messaging_button_auth_user }}
 messaging.button.auth.pass={{ messaging_button_auth_pass }}
 
-analytics.enabled=true
+analytics.enabled={{ analytics_enabled }}
+analytics.endpoint={{ analytics_endpoint }}
 
 onboard.storage.enabled={{ onboard_storage_enabled }}
 onboard.sa.storagetype={{ sa_storagetype }}
