@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.status;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.UserAndDeviceNames;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -18,6 +19,7 @@ import com.aerofs.daemon.core.status.db.SyncStatusRequests;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
+import com.aerofs.daemon.core.transfers.upload.UploadState;
 import com.aerofs.daemon.core.update.DPUTUtil;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.MetaDatabase;
@@ -25,6 +27,7 @@ import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
@@ -79,6 +82,9 @@ public class AbstractSyncStatusTest extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock PauseSync pauseSync;
 
+    @Mock UserAndDeviceNames userAndDeviceNames;
+    SyncStatusUploadState syncStatusUploadState;
+
     SyncStatusPropagator propagator;
     SyncStatusOnline syncStatusOnline;
     TestingBatchStatusChecker statusChecker;
@@ -103,6 +109,11 @@ public class AbstractSyncStatusTest extends AbstractTest
 
     SOID mines;
 
+    DID storageAgentDID1 = DID.generate();
+    DID storageAgentDID2 = DID.generate();
+    DID irrelevant = DID.generate();
+    UserID teamServer = UserID.UNKNOWN_TEAM_SERVER;
+
     @Before
     public void commonSetup() throws Exception {
         dbcw = new InMemoryCoreDBCW();
@@ -123,6 +134,13 @@ public class AbstractSyncStatusTest extends AbstractTest
         doReturn(false).when(pauseSync).isPaused();
 
         syncStatusOnline = new SyncStatusOnline(pauseSync);
+
+        doReturn(UserID.UNKNOWN_TEAM_SERVER).when(userAndDeviceNames)
+                .getDeviceOwnerNullable_(storageAgentDID1);
+        doReturn(UserID.UNKNOWN_TEAM_SERVER).when(userAndDeviceNames)
+                .getDeviceOwnerNullable_(storageAgentDID2);
+        doReturn(UserID.UNKNOWN).when(userAndDeviceNames).getDeviceOwnerNullable_(irrelevant);
+        syncStatusUploadState = new SyncStatusUploadState(userAndDeviceNames, new UploadState());
 
         StoreDatabase storeDatabase = new StoreDatabase(dbcw);
         SingleuserStoreHierarchy sss = new SingleuserStoreHierarchy(storeDatabase);

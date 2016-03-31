@@ -17,14 +17,12 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.polaris.db.PolarisSchema.C_AVAILABLE_CONTENT_OID;
 import static com.aerofs.daemon.core.polaris.db.PolarisSchema.C_AVAILABLE_CONTENT_SIDX;
 import static com.aerofs.daemon.core.polaris.db.PolarisSchema.C_AVAILABLE_CONTENT_VERSION;
 import static com.aerofs.daemon.core.polaris.db.PolarisSchema.T_AVAILABLE_CONTENT;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Keep track of content that has been updated with the latest version
@@ -52,20 +50,10 @@ public class AvailableContentDatabase extends AbstractDatabase implements IStore
     }
 
     private final PreparedStatementWrapper _pswSetContent = new PreparedStatementWrapper(
-            DBUtil.updateWhere(T_AVAILABLE_CONTENT,
-                    C_AVAILABLE_CONTENT_OID + "=?", C_AVAILABLE_CONTENT_VERSION));
-    private final PreparedStatementWrapper _pswInsertContent = new PreparedStatementWrapper(
-            DBUtil.insert(T_AVAILABLE_CONTENT, C_AVAILABLE_CONTENT_SIDX, C_AVAILABLE_CONTENT_OID, C_AVAILABLE_CONTENT_VERSION));
-    private final PreparedStatementWrapper _pswGetContentVersion = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_AVAILABLE_CONTENT,
-                    C_AVAILABLE_CONTENT_OID + "=?", C_AVAILABLE_CONTENT_VERSION));
-    public void setContent_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
+            DBUtil.insertOrReplaceInto(T_AVAILABLE_CONTENT, C_AVAILABLE_CONTENT_SIDX, C_AVAILABLE_CONTENT_OID, C_AVAILABLE_CONTENT_VERSION));
+    public boolean setContent_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
-        int n = update(_pswInsertContent, sidx.getInt(), oid.getBytes(), version);
-        if (n == 1) return;
-        try (ResultSet exists = query(_pswGetContentVersion, oid.getBytes())) {
-            if (exists.next()) checkState(1 == update(_pswSetContent, oid.getBytes(), version));
-        }
+        return 1 == update(_pswSetContent, sidx.getInt(), oid.getBytes(), version);
     }
 
     private final PreparedStatementWrapper _pswDeleteContent = new PreparedStatementWrapper(

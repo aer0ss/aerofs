@@ -19,7 +19,6 @@ import com.aerofs.ids.UserID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
-
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -39,15 +38,18 @@ public class SyncStatusContentVersionListener implements IContentVersionListener
     private final RemoteContentDatabase _rcdb;
     private final DeviceToUserMapper _d2u;
     private final SyncStatusBatchStatusChecker _syncStatusBatchStatusChecker;
+    private final SyncStatusUploadState _syncStatusUploadState;
     private final TransManager _tm;
     private final TransLocal<Map<SOID, Long>> _determineSyncStatusTransLocal;
 
     @Inject
     public SyncStatusContentVersionListener(SyncStatusPropagator syncStatusPropagator,
-            SyncStatusRequests syncStatusRequests, RemoteContentDatabase rcdb, DeviceToUserMapper d2u,
+            SyncStatusRequests syncStatusRequests, SyncStatusUploadState syncStatusUploadState,
+            RemoteContentDatabase rcdb, DeviceToUserMapper d2u,
             SyncStatusBatchStatusChecker syncStatusBatchStatusChecker, TransManager tm) {
         _syncStatusPropagator = syncStatusPropagator;
         _syncStatusRequests = syncStatusRequests;
+        _syncStatusUploadState = syncStatusUploadState;
         _rcdb = rcdb;
         _d2u = d2u;
         _syncStatusBatchStatusChecker = syncStatusBatchStatusChecker;
@@ -121,6 +123,8 @@ public class SyncStatusContentVersionListener implements IContentVersionListener
         Collection<LocationStatusObject> operations = new ArrayList<>(
                 versionsWithSyncStatusTBD.size());
         for (Entry<SOID, Long> versionWithSyncStatusTBD : versionsWithSyncStatusTBD.entrySet()) {
+            if (_syncStatusUploadState.contains(versionWithSyncStatusTBD.getKey())) continue;
+
             operations.add(new LocationStatusObject(
                     versionWithSyncStatusTBD.getKey().oid().toStringFormal(),
                     versionWithSyncStatusTBD.getValue()));

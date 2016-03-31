@@ -4,14 +4,20 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatch;
 import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
+import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
+import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -28,10 +34,7 @@ import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OUT_OF_SYNC_FILES_TIMESTAMP;
 import static com.aerofs.daemon.lib.db.CoreSchema.T_OUT_OF_SYNC_FILES;
@@ -62,7 +65,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
         verifier = new SyncStatusVerifier(propagator, syncStatusOnline, coreScheduler, transManager,
                 directoryService, outOfSyncDatabase, syncStatusRequests, centralVersionDatabase,
-                statusChecker);
+                statusChecker, syncStatusUploadState);
 
         doReturn(1L).when(centralVersionDatabase).getVersion_(any(), any());
 
@@ -255,6 +258,32 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
         }
 
         assertEquals(expectedOosCount, oosCount);
+    }
+
+    @Test
+    public void shouldNotQueryPolarisForTSUploads() throws Exception {
+        try (Trans trans = transManager.begin_()) {
+            propagator.updateSyncStatus_(moria, false, trans);
+            trans.commit_();
+        }
+        syncStatusUploadState.onTransferStateChanged_(
+                new TransferredItem(new SOCID(rootSIndex, moria.oid(), CID.CONTENT),
+                        new Endpoint(null, storageAgentDID1)),
+                new TransferProgress(0, 100));
+        try (Trans trans = transManager.begin_()) {
+            LinkedHashMap<SOID, ResolvedPath> paths = new LinkedHashMap<>();
+            verifier.populateOutOfSyncsListAndReturnLastIdx_(paths, new LinkedHashMap<>(), 0, 0, trans);
+            assertFalse(paths.containsKey(moria));
+        }
+        syncStatusUploadState.onTransferStateChanged_(
+                new TransferredItem(new SOCID(rootSIndex, moria.oid(), CID.CONTENT),
+                        new Endpoint(null, storageAgentDID1)),
+                new TransferProgress(100, 100));
+        try (Trans trans = transManager.begin_()) {
+            LinkedHashMap<SOID, ResolvedPath> paths = new LinkedHashMap<>();
+            verifier.populateOutOfSyncsListAndReturnLastIdx_(paths, new LinkedHashMap<>(), 0, 0, trans);
+            assertTrue(paths.containsKey(moria));
+        }
     }
 
     @SuppressWarnings("unchecked")

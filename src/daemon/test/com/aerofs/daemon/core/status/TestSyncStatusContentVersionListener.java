@@ -56,7 +56,7 @@ public class TestSyncStatusContentVersionListener extends AbstractSyncStatusTest
         doReturn(UserID.UNKNOWN).when(d2u).getUserIDForDIDNullable_(other);
 
         contentVersionListener = new SyncStatusContentVersionListener(propagator, syncStatusRequests,
-                remoteContentDatabase, d2u, statusChecker, transManager);
+                syncStatusUploadState, remoteContentDatabase, d2u, statusChecker, transManager);
 
         l.trace("end before");
     }

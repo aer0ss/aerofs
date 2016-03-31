@@ -53,6 +53,7 @@ public class SyncStatusVerifier
     private final CentralVersionDatabase _cvdb;
     private final SyncStatusRequests _syncStatusRequests;
     private final SyncStatusBatchStatusChecker _syncStatusBatchStatusChecker;
+    private final SyncStatusUploadState _syncStatusUploadState;
 
     private volatile AtomicBoolean _eventScheduled;
 
@@ -69,7 +70,8 @@ public class SyncStatusVerifier
             SyncStatusOnline syncStatusOnline, CoreScheduler coreScheduler, TransManager transManager,
             DirectoryService directoryService, OutOfSyncFilesDatabase outOfSyncDatabase,
             SyncStatusRequests syncStatusRequests, CentralVersionDatabase centralVersionDatabase,
-            SyncStatusBatchStatusChecker syncStatusBatchStatusChecker) {
+            SyncStatusBatchStatusChecker syncStatusBatchStatusChecker,
+            SyncStatusUploadState syncStatusUploadState) {
         _syncStatusPropagator = syncStatusPropagator;
         _syncStatusOnline = syncStatusOnline;
         _sched = coreScheduler;
@@ -79,6 +81,7 @@ public class SyncStatusVerifier
         _syncStatusRequests = syncStatusRequests;
         _cvdb = centralVersionDatabase;
         _syncStatusBatchStatusChecker = syncStatusBatchStatusChecker;
+        _syncStatusUploadState = syncStatusUploadState;
 
         _syncStatusOnline.addListener(this);
     }
@@ -197,6 +200,9 @@ public class SyncStatusVerifier
 
                     nextPageStartingAfterIdx = outOfSyncFile.idx;
                     SOID soid = new SOID(outOfSyncFile.sidx, outOfSyncFile.oid);
+
+                    if (_syncStatusUploadState.contains(soid)) continue;
+
                     OA oa = _ds.getOANullable_(soid);
                     l.trace("oa: {}", oa);
                     boolean added = false;
