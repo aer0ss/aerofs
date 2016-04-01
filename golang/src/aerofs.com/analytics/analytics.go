@@ -11,7 +11,6 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -24,7 +23,9 @@ import (
 	"strings"
 	"time"
 
+	"aerofs.com/analytics/db"
 	"aerofs.com/analytics/segment"
+	"aerofs.com/analytics/util"
 	"aerofs.com/service"
 	"aerofs.com/service/auth"
 	"aerofs.com/service/config"
@@ -36,10 +37,9 @@ import (
 //Frequency values here are more frequent than the eventual permanent values
 //Values governing the frequency at which events are sent/queried
 const (
-	DailyMetricsInterval = time.Minute * 30
-	EventsInterval       = time.Minute * 10
-	UsersInterval        = time.Minute * 30
-	TickerInterval       = time.Second * 5
+	EventsInterval = time.Minute * 10
+	UsersInterval  = time.Minute * 30
+	TickerInterval = time.Second * 5
 
 	SegmentWriteKey = "rwp5ZN1LQIGfcrGukEMUtUQ3QHokYJQz"
 )
@@ -47,10 +47,10 @@ const (
 // const arrays are not possible in Go
 var (
 	companyID string
+	conf      map[string]string
 
-	DailyMetricsKey = []byte("dailymetrics")
-	EventsKey       = []byte("events")
-	UsersKey        = []byte("users")
+	EventsKey = []byte("events")
+	UsersKey  = []byte("users")
 
 	PresentFlag = []byte{}
 )
@@ -61,51 +61,18 @@ var segmentClient = segment.Client{
 	Token: SegmentWriteKey,
 }
 
-// global time indirection to allow testing
-type clockImpl struct{}
+var clock util.Clock = &util.DefaultClockImpl{}
 
-func (c *clockImpl) Now() time.Time {
-	return time.Now().UTC()
-}
-
-var clock interface {
-	Now() time.Time
-} = &clockImpl{}
-
-// BoltKV - wrapper around bolt.DB to allow future extensibility
-type BoltKV struct {
-	*bolt.DB
-}
-
-// NewBoltKV create or open a new Bolt database & call setup function
-func NewBoltKV(filename string, setup func(*BoltKV) error) (*BoltKV, error) {
-	db, err := bolt.Open(filename, 0600, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	bkv := &BoltKV{db}
-
-	err = setup(bkv)
-	if err != nil {
-		return nil, err
-	}
-
-	return bkv, nil
-}
+// db helper functions
 
 // initialize Bolt database
-func setupDB(db *BoltKV) error {
+func setupDB(db *db.BoltKV) error {
 	err := db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(EventsKey)
 		if err != nil {
 			return err
 		}
 		_, err = tx.CreateBucketIfNotExists(UsersKey)
-		if err != nil {
-			return err
-		}
-		_, err = tx.CreateBucketIfNotExists(DailyMetricsKey)
 		if err != nil {
 			return err
 		}
@@ -119,8 +86,6 @@ func setupDB(db *BoltKV) error {
 	return nil
 }
 
-// db helper functions
-
 func getBucketByTime(tx *bolt.Tx, bucketKey []byte, t time.Time,
 	interval time.Duration) (*bolt.Bucket, error) {
 
@@ -130,47 +95,11 @@ func getBucketByTime(tx *bolt.Tx, bucketKey []byte, t time.Time,
 	}
 
 	bucketTimestampKey := t.Truncate(interval)
-	bucket, err := bigBucket.CreateBucketIfNotExists(timeToBytes(bucketTimestampKey))
+	bucket, err := bigBucket.CreateBucketIfNotExists(util.TimeToBytes(bucketTimestampKey))
 	if err != nil {
 		return nil, err
 	}
 	return bucket, nil
-}
-
-// encoding helper functions
-
-func bytesToTime(b []byte) time.Time {
-	t, err := time.Parse(time.RFC3339, string(b))
-	if err != nil {
-		log.Panicln("bytesToTime:", err)
-	}
-	return t
-}
-
-func timeToBytes(t time.Time) []byte {
-	return []byte(t.Format(time.RFC3339))
-}
-
-func encodeUint64(n uint64) []byte {
-	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, n)
-	return b
-}
-
-func decodeUint64(b []byte) uint64 {
-	return binary.LittleEndian.Uint64(b)
-}
-
-func encodeBool(b bool) []byte {
-	if b {
-		return encodeUint64(1)
-	}
-	return encodeUint64(0)
-}
-
-func decodeBool(b []byte) bool {
-	v := decodeUint64(b)
-	return v != 0
 }
 
 func readEventFromRequestBody(req *http.Request) (*Event, error) {
@@ -207,18 +136,24 @@ func sendGeneric(eventMap map[string][]byte, t time.Time,
 	for k, v := range eventMap {
 		event, err := createEvent(k, v)
 		if err != nil {
-			return errors.New("Failed to create event object: " + err.Error())
+			log.Println("Failed to create event object:", err)
+			continue
 		}
 		event.Timestamp = &t
 
 		err = batch.Track(event)
 		if err != nil {
-			return errors.New("Failed to track batch: " + err.Error())
+			log.Println("Failed to track batch: ", err)
+			continue
 		}
 	}
 
+	if len(batch.Messages) == 0 {
+		log.Println("No messages in batch")
+		return nil
+	}
+
 	// send to segment
-	// TODO: make this more robust/fail-proof wrt delete
 	err := segmentClient.Batch(batch)
 	if err != nil {
 		return errors.New("Failed to track event with segment: " + err.Error())
@@ -248,7 +183,7 @@ func createEvent(key string, value []byte) (*segment.Track, error) {
 
 	event := info.Template
 	event.AnonymousID = companyID
-	event.Properties["Value"] = decodeUint64(value)
+	event.Properties["Value"] = util.DecodeUint64(value)
 
 	return &event, nil
 }
@@ -277,11 +212,11 @@ func createDailyMetricEvent(key string, value []byte) (*segment.Track, error) {
 	event.AnonymousID = companyID
 	switch info.ValueType {
 	case Boolean:
-		event.Properties["Value"] = decodeBool(value)
+		event.Properties["Value"] = util.DecodeBool(value)
 	case String:
 		event.Properties["Value"] = string(value)
 	case Integer:
-		event.Properties["Value"] = decodeUint64(value)
+		event.Properties["Value"] = util.DecodeUint64(value)
 	default:
 		return &segment.Track{}, errors.New("Failed to match event value type")
 	}
@@ -289,148 +224,50 @@ func createDailyMetricEvent(key string, value []byte) (*segment.Track, error) {
 	return &event, nil
 }
 
-func getOldBucketKeys(db *BoltKV, bucketKey []byte, interval time.Duration) ([][]byte, error) {
-	var keys [][]byte
-
-	// get list of old buckets to send, ignore current
-	err := db.View(func(tx *bolt.Tx) error {
-		eventBucket := tx.Bucket(bucketKey)
-		return eventBucket.ForEach(func(k, v []byte) error {
-			if bytesToTime(k) != clock.Now().Truncate(interval) {
-				keys = append(keys, k)
-			}
-			return nil
-		})
-	})
-	if err != nil {
-		return nil, errors.New("Failed to read keys from db bucket: " + err.Error())
-	}
-	return keys, nil
-}
-
-// attempts to send all events
-// parameters
-// db: a pointer to the db object
-// bucketKey: the name of the top-level bucket to send, as []byte
-// interval: the proper interval to truncate to for sub-buckets
-// createEvent: a function to create Event objects from db KV pairs
-func sendBucket(db *BoltKV, bucketKey []byte, interval time.Duration,
-	sendFunc func(map[string][]byte, time.Time) error) error {
-
-	keys, err := getOldBucketKeys(db, bucketKey, interval)
-	if err != nil {
-		return errors.New("Failed to read keys from db bucket: " + err.Error())
-	}
-
-	// for each old bucket
-	for _, key := range keys {
-		// read all active users
-		eventMap := make(map[string][]byte)
-		if err := db.View(func(tx *bolt.Tx) error {
-			bucket := tx.Bucket(bucketKey)
-			return bucket.Bucket(key).ForEach(func(k, v []byte) error {
-				// copy map because you cannot use the bolt slices
-				tmp := make([]byte, len(v))
-				copy(tmp, v)
-				eventMap[string(k)] = tmp
-				return nil
-			})
-		}); err != nil {
-			return errors.New("Failed to read KV pairs from sub-bucket: " + err.Error())
-		}
-
-		// then try to send
-		err := sendFunc(eventMap, bytesToTime(key))
-		if err != nil {
-			return errors.New("Failed to send events: " + err.Error())
-		}
-
-		// and delete bucket if sent successfully
-		err = db.Update(func(tx *bolt.Tx) error {
-			return tx.Bucket(bucketKey).DeleteBucket(key)
-		})
-		if err != nil {
-			// duplicate events may be sent after this is hit. TODO: panic?
-			return errors.New("Failed to delete sub-bucket: " + err.Error())
-		}
-	}
-	return nil
-}
-
-func sendLoop(db *BoltKV) {
+func sendLoop(db *db.BoltKV) {
 	ticker := time.NewTicker(TickerInterval)
 
 	for range ticker.C {
-		err := sendBucket(db, EventsKey, EventsInterval, sendEvents)
+		now := clock.Now()
+		err := util.SendBucket(db, EventsKey, EventsInterval, now, sendEvents)
 		if err != nil {
 			log.Println("Failed to send events:", err)
 		}
-		err = sendBucket(db, UsersKey, UsersInterval, sendUsers)
+		err = util.SendBucket(db, UsersKey, UsersInterval, now, sendUsers)
 		if err != nil {
 			log.Println("Failed to send users:", err)
 		}
-		err = sendBucket(db, DailyMetricsKey, DailyMetricsInterval, sendDailyMetrics)
-		if err != nil {
-			log.Println("Failed to send daily metrics:", err)
-		}
 	}
 }
 
-func getDailyMetrics(db *BoltKV, httpClient ServiceHTTPClient) error {
-	exists := false
-	now := timeToBytes(clock.Now().Truncate(DailyMetricsInterval))
-	err := db.View(func(tx *bolt.Tx) error {
-		dailyMetricsBucket := tx.Bucket(DailyMetricsKey)
-		currentBucket := dailyMetricsBucket.Bucket(now)
-		if currentBucket != nil {
-			exists = true
-		}
-		return nil
-	})
+func dailyMetricsHandler(resp http.ResponseWriter, req *http.Request, c auth.Context) {
+	b, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		return errors.New("Failed to read daily metrics from db: " + err.Error())
+		log.Println("Error reading request body:", err)
+		http.Error(resp, "", http.StatusInternalServerError)
+		return
 	}
 
-	if exists {
-		return nil
-	}
-
-	var dailyMetrics map[string][]byte
-	// GET DAILY METRICS HERE BY QUERYING SERVICES
-
-	err = db.Update(func(tx *bolt.Tx) error {
-		dailyMetricsBucket := tx.Bucket(DailyMetricsKey)
-		currentBucket, err := dailyMetricsBucket.CreateBucket(now)
-		if err != nil {
-			return errors.New("Failed to create daily metrics sub-bucket: " + err.Error())
-		}
-		for k, v := range dailyMetrics {
-			err = currentBucket.Put([]byte(k), v)
-			if err != nil {
-				return errors.New("Failed to write key-value pair to db: " + err.Error())
-			}
-		}
-		return nil
-	})
+	var dailyMetricsMap = make(map[string][]byte)
+	err = json.Unmarshal(b, &dailyMetricsMap)
 	if err != nil {
-		return errors.New("Failed to persist daily metrics: " + err.Error())
+		log.Println("Error parsing json:", err)
+		http.Error(resp, "", http.StatusBadRequest)
+		return
 	}
-	return nil
+
+	err = sendDailyMetrics(dailyMetricsMap, clock.Now())
+	if err != nil {
+		log.Println("Fafiled to send daily metrics to segment:", err)
+		http.Error(resp, "", http.StatusBadGateway)
+		return
+	}
+
+	http.Error(resp, "", http.StatusOK)
+	return
 }
 
-// stub method for collecting and sending "daily" metrics
-func dailyMetricsLoop(db *BoltKV, httpClient ServiceHTTPClient) {
-	ticker := time.NewTicker(TickerInterval)
-
-	for range ticker.C {
-		err := getDailyMetrics(db, httpClient)
-		if err != nil {
-			log.Println("Failed to get daily metrics:", err)
-		}
-	}
-}
-
-func eventHandler(db *BoltKV) auth.Handle {
+func eventHandler(db *db.BoltKV) auth.Handle {
 	return func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
 		// parse event from request
 		event, err := readEventFromRequestBody(req)
@@ -469,10 +306,10 @@ func eventHandler(db *BoltKV) auth.Handle {
 			// increment event counter
 			vprime := value
 			if v := eventBucket.Get(key); v != nil {
-				vprime += decodeUint64(v)
+				vprime += util.DecodeUint64(v)
 			}
 
-			err = eventBucket.Put(key, encodeUint64(vprime))
+			err = eventBucket.Put(key, util.EncodeUint64(vprime))
 			if err != nil {
 				return err
 			}
@@ -505,19 +342,17 @@ func main() {
 	router := httprouter.New()
 
 	// check if analytics is enabled
+	var err error
 	config := config.NewClient("analytics")
-	c, err := config.Get()
+	conf, err = config.Get()
 	if err != nil {
 		log.Fatal("Failed to fetch config:", err)
 	}
 
-	if strings.EqualFold("true", c["analytics.enabled"]) {
+	if strings.EqualFold("true", conf["analytics.enabled"]) {
 		// retrieve company name from license
-		companyID = c["license_company"]
-		if companyID == "" {
-			companyID = c["customer_id"]
-		}
-		if companyID == "" {
+		companyID = conf["license_company"] + " - " + conf["customer_id"]
+		if companyID == " - " {
 			log.Fatal("Failed to read non-empty company name")
 		}
 
@@ -532,19 +367,13 @@ func main() {
 		}
 
 		// create or open database file
-		db, err := NewBoltKV(dbFile, setupDB)
+		db, err := db.NewBoltKV(dbFile, setupDB)
 		if err != nil {
 			log.Fatal("Failed to open boltdb:", err)
 		}
 		defer db.Close()
 
-		secret := service.ReadDeploymentSecret()
-
-		// set up daily event sending
-		httpClient := NewDefaultServiceHTTPClient("analytics", secret)
-		go dailyMetricsLoop(db, httpClient)
-
-		segmentClient.Endpoint = c["analytics.endpoint"]
+		segmentClient.Endpoint = conf["analytics.endpoint"]
 		if segmentClient.Endpoint == "" {
 			log.Println("Analytics endpoint is empty, events will not send")
 		}
@@ -566,11 +395,15 @@ func main() {
 
 		go sendLoop(db)
 
+		secret := service.ReadDeploymentSecret()
 		// handle incoming events
 		router.POST("/events", auth.Auth(eventHandler(db),
 			auth.NewServiceSharedSecretExtractor(secret)))
+		router.POST("/dailymetrics", auth.Auth(dailyMetricsHandler,
+			auth.NewServiceSharedSecretExtractor(secret)))
 	} else {
-		router.POST("/",
+		log.Println("Analytics disabled.")
+		router.POST("/*anything",
 			auth.OptionalAuth(func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
 				http.Error(resp, "Service disabled", http.StatusServiceUnavailable)
 			}))

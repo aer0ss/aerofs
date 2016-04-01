@@ -93,6 +93,7 @@ containers:
       link:
         - aeroimweb:aeroimweb.service
         - analytics:analytics.service
+        - analytics-pull:analytics-pull.service
         - auditor:auditor.service
         - blurber:blurber.service
         - bunker:bunker.service
@@ -278,6 +279,19 @@ containers:
       link:
         - config:config.service
         - ca-server:ca.service
+
+  analytics-pull:
+      image: aerofs/analytics-pull
+      run:
+        detach: true
+        volumes-from:
+          # For deployment secret
+          - data
+        link:
+          - polaris:polaris.service
+          - config:config.service
+          - sparta:sparta.service
+          - analytics:analytics.service
 
   auditor:
     image: aerofs/auditor

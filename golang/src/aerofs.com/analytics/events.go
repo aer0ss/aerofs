@@ -49,7 +49,7 @@ func validateEvent(event *Event) error {
 }
 
 func lookupDailyMetric(key string) (eventInfo, error) {
-	info, ok := eventInfoMap[key]
+	info, ok := dailyMetricInfoMap[key]
 	if !ok {
 		return eventInfo{}, errors.New("Daily metric not found: " + key)
 	}
@@ -65,6 +65,24 @@ func lookupEvent(key string) (eventInfo, error) {
 }
 
 var dailyMetricInfoMap = map[string]eventInfo{
+	"AVERAGE_SHARED_FOLDER_FILE_COUNT": eventInfo{
+		Template: segment.Track{
+			Event:      "Average Shared Folder File Count",
+			Properties: make(map[string]interface{}),
+		},
+	},
+	"MAX_SHARED_FOLDER_FILE_COUNT": eventInfo{
+		Template: segment.Track{
+			Event:      "Max Shared Folder File Count",
+			Properties: make(map[string]interface{}),
+		},
+	},
+	"TOTAL_FILE_SIZE": eventInfo{
+		Template: segment.Track{
+			Event:      "Total File Size",
+			Properties: make(map[string]interface{}),
+		},
+	},
 	"OSX_DESKTOP_CLIENTS": eventInfo{
 		Template: segment.Track{
 			Event: "Desktop Clients",
@@ -241,15 +259,6 @@ var dailyMetricInfoMap = map[string]eventInfo{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
 				"Name": "LDAP Group Syncing",
-			},
-		},
-		ValueType: Boolean,
-	},
-	"EMAIL_INTEGRATION_ENABLED": eventInfo{
-		Template: segment.Track{
-			Event: "Feature Enabled",
-			Properties: map[string]interface{}{
-				"Name": "Email Integration (Exchange Plugin)",
 			},
 		},
 		ValueType: Boolean,

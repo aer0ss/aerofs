@@ -1,59 +1,28 @@
 package main
 
 import (
+	"aerofs.com/analytics/db"
+	"aerofs.com/analytics/test"
+	"aerofs.com/analytics/util"
 	"aerofs.com/service/auth"
 	"bytes"
 	"errors"
 	"github.com/aerofs/httprouter"
 	"github.com/boltdb/bolt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 )
 
-// mock implementation of time
-type mockClockImpl struct {
-	now time.Time
-}
-
-func (c *mockClockImpl) Now() time.Time {
-	return c.now
-}
-func (c *mockClockImpl) PassTime(dur time.Duration) {
-	c.now = c.now.Add(dur)
-}
-
-var mockClock = mockClockImpl{time.Now().UTC()}
+var mockClock = test.NewMockClockImpl(time.Now().UTC())
 
 // db test setup
 var dbFile string
 
-func setupTestStructs() (*BoltKV, *httptest.Server) {
-	file, err := ioutil.TempFile("", "analyticstestdb")
-	if err != nil {
-		log.Fatal("Failed to create temp file:", err)
-	}
-
-	db, err := NewBoltKV(file.Name(), setupDB)
-	if err != nil {
-		log.Fatal("Failed to create db:", err)
-	}
-	router := httprouter.New()
-	router = initializeRoutes(db, router)
-	testServer := httptest.NewServer(router)
-
-	return db, testServer
-}
-
-func initializeRoutes(db *BoltKV, r *httprouter.Router) *httprouter.Router {
+func initializeRouter(r *httprouter.Router, db *db.BoltKV) {
 	r.Handle("POST", "/events", auth.OptionalAuth(eventHandler(db)))
-	//initialize mocked routes here
-	return r
 }
 
 var badReqTests = []string{
@@ -71,7 +40,7 @@ var badReqTests = []string{
 }
 
 func TestAnalytics_Send_invalid_event_should_return_400(t *testing.T) {
-	db, testServer := setupTestStructs()
+	db, testServer := test.SetupTestStructs(setupDB, initializeRouter)
 	defer testServer.Close()
 	defer db.Close()
 
@@ -100,7 +69,7 @@ var testKey1_1 = []byte("USER_SIGNUP")
 var testKey1_2 = []byte("LINK_CREATED")
 
 func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) {
-	db, testServer := setupTestStructs()
+	db, testServer := test.SetupTestStructs(setupDB, initializeRouter)
 	defer db.Close()
 	defer testServer.Close()
 
@@ -148,10 +117,10 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 		b1 := tx.Bucket(EventsKey).Bucket(k1)
 		b2 := tx.Bucket(EventsKey).Bucket(k2)
 		if v := b2.Get(testKey1_1); v != nil {
-			testCount1 = decodeUint64(v)
+			testCount1 = util.DecodeUint64(v)
 		}
 		if v := b1.Get(testKey1_2); v != nil {
-			testCount2 = decodeUint64(v)
+			testCount2 = util.DecodeUint64(v)
 		}
 
 		k1, _ = tx.Bucket(UsersKey).Cursor().Last()
@@ -180,15 +149,15 @@ var testVal2_1 = uint64(200)
 var testHash2_1 = "1a2b3c4d"
 
 func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
-	db, testServer := setupTestStructs()
+	db, testServer := test.SetupTestStructs(setupDB, initializeRouter)
 	defer db.Close()
 	defer testServer.Close()
 
-	tse := timeToBytes(clock.Now().Truncate(EventsInterval))
-	tsu := timeToBytes(clock.Now().Truncate(UsersInterval))
+	tse := util.TimeToBytes(clock.Now().Truncate(EventsInterval))
+	tsu := util.TimeToBytes(clock.Now().Truncate(UsersInterval))
 	err := db.Update(func(tx *bolt.Tx) error {
 		tx.Bucket(EventsKey).CreateBucket(tse)
-		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
+		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_1), util.EncodeUint64(testVal2_1))
 		tx.Bucket(UsersKey).CreateBucket(tsu)
 		tx.Bucket(UsersKey).Bucket(tsu).Put([]byte(testHash2_1), PresentFlag)
 		return nil
@@ -203,14 +172,14 @@ func TestAnalytics_Current_bucket_events_should_not_be_sent(t *testing.T) {
 		return nil
 	}
 
-	sendBucket(db, EventsKey, EventsInterval, mockSend)
+	util.SendBucket(db, EventsKey, EventsInterval, clock.Now(), mockSend)
 
 	if len(tm) != 0 {
 		t.Errorf("Expected # of events sent to be 0. Got: %v", len(tm))
 	}
 
 	tm = make(map[string][]byte)
-	sendBucket(db, UsersKey, UsersInterval, mockSend)
+	util.SendBucket(db, UsersKey, UsersInterval, clock.Now(), mockSend)
 
 	if len(tm) != 0 {
 		t.Errorf("Expected # of users sent to be 0. Got: %v", len(tm))
@@ -236,23 +205,23 @@ var testKey2_2 = "USER_SIGNUP"
 var testVal2_2 = uint64(123)
 
 func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
-	db, testServer := setupTestStructs()
+	db, testServer := test.SetupTestStructs(setupDB, initializeRouter)
 	defer db.Close()
 	defer testServer.Close()
 
-	tse := timeToBytes(clock.Now().Truncate(EventsInterval))
-	tsu := timeToBytes(clock.Now().Truncate(UsersInterval))
+	tse := util.TimeToBytes(clock.Now().Truncate(EventsInterval))
+	tsu := util.TimeToBytes(clock.Now().Truncate(UsersInterval))
 	err := db.Update(func(tx *bolt.Tx) error {
 		tx.Bucket(EventsKey).CreateBucket(tse)
-		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_1), encodeUint64(testVal2_1))
+		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_1), util.EncodeUint64(testVal2_1))
 		tx.Bucket(UsersKey).CreateBucket(tsu)
 		tx.Bucket(UsersKey).Bucket(tsu).Put([]byte(testHash2_1), PresentFlag)
 
 		// create a second bucket
 		mockClock.PassTime(EventsInterval)
-		tse = timeToBytes(clock.Now().Truncate(EventsInterval))
+		tse = util.TimeToBytes(clock.Now().Truncate(EventsInterval))
 		tx.Bucket(EventsKey).CreateBucket(tse)
-		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_2), encodeUint64(testVal2_2))
+		tx.Bucket(EventsKey).Bucket(tse).Put([]byte(testKey2_2), util.EncodeUint64(testVal2_2))
 		return nil
 	})
 	if err != nil {
@@ -266,7 +235,7 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	var mockSend = func(testMap map[string][]byte, t time.Time) error {
 		for k, v := range testMap {
 			if val, ok := tm[k]; ok && len(val) != 0 {
-				tm[k] = encodeUint64(decodeUint64(val) + decodeUint64(v))
+				tm[k] = util.EncodeUint64(util.DecodeUint64(val) + util.DecodeUint64(v))
 			} else {
 				tm[k] = v
 			}
@@ -274,16 +243,16 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 		return nil
 	}
 
-	sendBucket(db, EventsKey, EventsInterval, mockSend)
-	if v, ok := tm[testKey2_1]; !ok || testVal2_1 != decodeUint64(v) {
+	util.SendBucket(db, EventsKey, EventsInterval, clock.Now(), mockSend)
+	if v, ok := tm[testKey2_1]; !ok || testVal2_1 != util.DecodeUint64(v) {
 		t.Errorf("Expected value not found for key: %v", testKey2_1)
 	}
-	if v, ok := tm[testKey2_2]; !ok || testVal2_2 != decodeUint64(v) {
+	if v, ok := tm[testKey2_2]; !ok || testVal2_2 != util.DecodeUint64(v) {
 		t.Errorf("Expected value not found for key: %v", testKey2_2)
 	}
 
 	tm = make(map[string][]byte)
-	sendBucket(db, UsersKey, UsersInterval, mockSend)
+	util.SendBucket(db, UsersKey, UsersInterval, clock.Now(), mockSend)
 	if _, ok := tm[testHash2_1]; !ok {
 		t.Errorf("Expected user key not found: %v", testHash2_1)
 	}
@@ -304,92 +273,14 @@ func TestAnalytics_Old_bucket_events_should_be_sent(t *testing.T) {
 	}
 }
 
-type MockServiceHTTPClient struct {
-	httpServer *httptest.Server
-}
-
-func (c *MockServiceHTTPClient) NewRequest(method, url string, body io.Reader) (*http.Request, error) {
-	return http.NewRequest(method, url, body)
-}
-
-func (c *MockServiceHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	return http.Post(c.httpServer.URL, req.Header.Get("Content-Type"), req.Body)
-}
-
-func TestAnalytics_Daily_metrics_should_only_send_once_per_interval(t *testing.T) {
-	db, testServer := setupTestStructs()
-	defer db.Close()
-	defer testServer.Close()
-
-	httpclient := &MockServiceHTTPClient{
-		httpServer: testServer,
-	}
-
-	// NB: make sure any routes needed by getDailyMetrics are properly mocked in initializeRoutes
-	err := getDailyMetrics(db, httpclient)
-	if err != nil {
-		t.Errorf("Error getting daily metrics: %v", err.Error())
-	}
-
-	// ensure bucket exists and count number of entries in bucket
-	keyCount := 0
-	err = db.Update(func(tx *bolt.Tx) error {
-		key := timeToBytes(clock.Now().Truncate(DailyMetricsInterval))
-		b := tx.Bucket(DailyMetricsKey).Bucket(key)
-		if b == nil {
-			return errors.New("Daily metrics bucket does not exist")
-		}
-		// Stats() does not update inside of Update tx, so do it like this
-		keyCount = b.Stats().KeyN + 1
-		b.Put([]byte("THEMASTERTESTKEY"), []byte("THEMASTERTESTVALUE"))
-		return nil
-	})
-	if err != nil {
-		t.Errorf("db error: %v", err.Error())
-		return
-	}
-
-	// error if any subsequent http requests are made
-	handler := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
-		t.Error("HTTP request was made after already getting daily metrics")
-	})
-	httpclientchecker := &MockServiceHTTPClient{
-		httpServer: httptest.NewServer(handler),
-	}
-	err = getDailyMetrics(db, httpclientchecker)
-	if err != nil {
-		t.Errorf("Error getting daily metrics: %v", err.Error())
-	}
-
-	// ensure bucket exists
-	keyCountPrime := 0
-	err = db.View(func(tx *bolt.Tx) error {
-		key := timeToBytes(clock.Now().Truncate(DailyMetricsInterval))
-		b := tx.Bucket(DailyMetricsKey).Bucket(key)
-		if b == nil {
-			return errors.New("Daily metrics bucket does not exist")
-		}
-		keyCountPrime = b.Stats().KeyN
-		return nil
-	})
-	if err != nil {
-		t.Errorf("db error: %v", err.Error())
-		return
-	}
-	if keyCount != keyCountPrime {
-		t.Errorf("Daily metrics bucket was overwritten. Expected keycount to be %v. Got: %v",
-			keyCount, keyCountPrime)
-	}
-}
-
 func TestMain(m *testing.M) {
 	// start setup
-	clock = &mockClock
+	clock = mockClock
 
 	// remove timestamp and redirect to stdout for build script compat
 	log.SetFlags(0)
 	log.SetOutput(os.Stdout)
-	log.Println("Test start time:", mockClock.now)
+	log.Println("Test start time:", mockClock.Now())
 
 	//end setup
 	//run tests
