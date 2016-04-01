@@ -33,7 +33,9 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.channels.ClosedChannelException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -80,6 +82,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     static long WRITE_TIMEOUT = 30;
     static TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
+    private static final String COOKIE_ROUTE = "route";
     private static final String HEADER_ROUTE =  "Route";
     private static final String HEADER_ALT_ROUTES = "Alternate-Routes";
 
@@ -108,6 +111,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         // user must include token in either the header or the query params, but not both
         if ((authHeader == null) == (queryToken == null)) return null;
         return authHeader != null ? TokenVerifier.accessToken(authHeader) : queryToken;
+    }
+
+    private static Map<String, String> getCookies(HttpRequest r) {
+        Map<String, String> m = new HashMap<>();
+        String cookie = r.headers().get(Names.COOKIE);
+        if (cookie != null) {
+            for (Cookie c : ServerCookieDecoder.LAX.decode(cookie)) m.put(c.name(), c.value());
+        }
+        return m;
     }
 
     @Override
@@ -142,11 +154,12 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             Version version = Version.fromRequestPath(req.getUri());
 
             // The Route header overrides any cookie and enforces strict consistency
-            boolean strictConsistency = false;
             DID did = parseDID(req.headers().get(HEADER_ROUTE));
-            if (did != null) {
-                strictConsistency = true;
+            if (did == null && req.getMethod().equals(HttpMethod.PUT) && req.headers().get("Upload-ID") != null) {
+                // only honor cookie-based routing for in-progress uploads
+                did = parseDID(getCookies(req).get(COOKIE_ROUTE));
             }
+            boolean strictConsistency = did != null;
 
             if (_router != null && did == null) {
                 did = _router.route( new QueryStringDecoder(req.getUri()).getPath(),
@@ -227,6 +240,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (status == HttpResponseStatus.UNAUTHORIZED) {
                 response.headers().set(Names.WWW_AUTHENTICATE, "Bearer realm=\"AeroFS\"");
             }
+            addCookie(response, COOKIE_ROUTE, "");
             downstream.write(response);
         }
     }
@@ -346,7 +360,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                 HttpResponse response = (HttpResponse)m;
                 int status = response.getStatus().getCode();
 
-                response.headers().set(HEADER_ROUTE, _endpoints.device(upstream).toStringFormal());
+                String route = _endpoints.device(upstream).toStringFormal();
+                addCookie(response, COOKIE_ROUTE, route);
+
+                response.headers().set(HEADER_ROUTE, route);
 
                 // add list of alternate routes for flexible failure handling
                 response.headers().set(HEADER_ALT_ROUTES,
