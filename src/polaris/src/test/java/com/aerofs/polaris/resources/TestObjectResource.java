@@ -734,10 +734,6 @@ public final class TestObjectResource {
     {
         SID store1 = SID.generate(), store2 = SID.generate();
 
-        // can't migrate from an unrecognized oid
-        PolarisHelpers.migratedObject(AUTHENTICATED, store2, OID.generate(), "migrated", ObjectType.FILE, OID.generate())
-                .assertThat().statusCode(SC_NOT_FOUND);
-
         OID file = PolarisHelpers.newFile(AUTHENTICATED, store1, "file");
 
         // object type must match migrant

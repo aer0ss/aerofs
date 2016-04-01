@@ -118,6 +118,12 @@ public class MetaChangesDatabase extends AbstractDatabase
         return update(_pswUpdateChange.get(sidx), temporaryName, idx);
     }
 
+    private final ParameterizedStatement<SIndex> _pswMoveChange = new ParameterizedStatement<>(
+            sidx ->  DBUtil.updateWhere(tableName(sidx), C_META_CHANGE_IDX + "=?", C_META_CHANGE_IDX));
+    public int moveChange_(SIndex sidx, long idx, long l, Trans t) throws SQLException {
+        return update(_pswMoveChange.get(sidx), l, idx);
+    }
+
     public static class MetaChange
     {
         public final SIndex sidx;
@@ -174,16 +180,22 @@ public class MetaChangesDatabase extends AbstractDatabase
 
     public boolean hasChanges_(SIndex sidx) throws SQLException
     {
-        try (IDBIterator<MetaChange> it = getChangesSince_(sidx, 0)) {
+        try (IDBIterator<MetaChange> it = getChangesSince_(sidx, Long.MIN_VALUE)) {
             return it.next_();
         }
     }
 
     private final ParameterizedStatement<SIndex> _pswGetObjectChanges = new ParameterizedStatement<>(
-            sidx -> DBUtil.selectWhere(tableName(sidx), C_META_CHANGE_OID + "=?", "count(*)"));
-    public boolean hasChanges_(SIndex sidx, OID oid) throws SQLException {
+            sidx -> DBUtil.selectWhere(tableName(sidx),
+                    C_META_CHANGE_OID + "=?",
+                    C_META_CHANGE_IDX,
+                    C_META_CHANGE_NEW_PARENT, C_META_CHANGE_NEW_NAME, C_META_CHANGE_MIGRANT)
+                    + " order by " + C_META_CHANGE_IDX + " limit 1");
+    public @Nullable MetaChange getFirstChange_(SIndex sidx, OID oid) throws SQLException {
         try (ResultSet rs = query(_pswGetObjectChanges.get(sidx), oid.getBytes())) {
-            return DBUtil.count(rs) > 0;
+            if (!rs.next()) return null;
+            return new MetaChange(sidx, rs.getLong(1), oid,
+                    rs.getBytes(2), rs.getString(3), rs.getBytes(4));
         }
     }
 

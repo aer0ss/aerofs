@@ -563,7 +563,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     void reconcileLocalChangesInMigratedTree_(SIndex sidx, OID oid, Trans t)
             throws SQLException, IOException, ExAlreadyExist {
         RemoteTreeCache cache = new RemoteTreeCache(sidx, oid, _rpdb);
-        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, Long.MIN_VALUE)) {
             while (it.next_()) {
                 MetaChange c = it.get_();
                 boolean from = cache.isInSharedTree(c.oid);
@@ -811,6 +811,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             if (oa.isDir()) _a2t.add_(oa.soid(), new SOID(sidxFrom, OID.TRASH), t);
         } else {
             int n = 0;
+
             while (true) {
                 OID alias = OID.generate();
                 try {
@@ -821,6 +822,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                     if (++n < 5) continue;
                     throw new ExProtocolError();
                 }
+
                 _mcdb.insertChange_(sidxFrom, alias, oa.parent(), oa.name(), t);
                 if (oa.isFile() && oa.caMasterNullable() != null) {
                     _ccdb.insertChange_(sidxFrom, alias, t);
@@ -857,7 +859,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
 
     private void moveMetaChanges_(SIndex sidxFrom, OID root, SIndex sidxTo, RemoteTreeCache c,
                                   Trans t) throws SQLException {
-        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidxFrom, -1)) {
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidxFrom, Long.MIN_VALUE)) {
             while (it.next_()) {
                 MetaChange mc = it.get_();
                 if (!c.isInSharedTree(mc.oid)) {

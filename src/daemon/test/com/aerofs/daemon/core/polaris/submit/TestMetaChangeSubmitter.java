@@ -84,10 +84,9 @@ public class TestMetaChangeSubmitter extends AbstractBaseTest
                 lacl, mock(CfgLocalUser.class), mock(MapSIndex2Store.class));
     }
 
-    void givenLocalChanges(MetaChange... c) throws SQLException
-    {
-        when(mcdb.getChangesSince_(sidx, 0)).thenReturn(new IDBIterator<MetaChange>() {
-            int idx = -1;
+    void givenLocalChanges(MetaChange... c) throws SQLException {
+        when(mcdb.getChangesSince_(eq(sidx), anyLong())).thenAnswer(i -> new IDBIterator<MetaChange>() {
+            int idx = (int)Math.max(0, (Long)(i.getArguments()[1])) - 1;
             @Override
             public MetaChange get_() throws SQLException { return c[idx]; }
 

@@ -547,9 +547,16 @@ public final class ObjectStore {
 
         LogicalObject migrantObject = null;
         if (migrant != null) {
-            migrantObject = getExistingObject(dao, migrant);
-            Preconditions.checkArgument(migrantObject.objectType.equals(child.objectType) || (child.objectType == ObjectType.FOLDER && migrantObject.objectType == ObjectType.STORE),
-                    "migrant %s has different objecttype from new copy %s", migrant, childOid);
+            // NB: the client cannot know with absolute certainty whether its local objects are
+            // present on polaris so it errs on the side of caution and may sometimes provide
+            // migrant OIDs that do not in fact exist in polaris (e.g. when a folder is created,
+            // shared and migrated out in quick succession)
+            migrantObject = dao.objects.get(migrant);
+            if (migrantObject != null) {
+                Preconditions.checkArgument(migrantObject.objectType.equals(child.objectType)
+                        || (child.objectType == ObjectType.FOLDER && migrantObject.objectType == ObjectType.STORE),
+                        "migrant %s has different objecttype from new copy %s", migrant, childOid);
+            }
         }
 
         // attach the object to the requested parent

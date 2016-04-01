@@ -4,7 +4,6 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.PolarisException;
 import com.aerofs.polaris.api.PolarisError;
 import com.aerofs.polaris.api.PolarisUtilities;
-import com.aerofs.polaris.api.types.LogicalObject;
 
 import java.util.Map;
 
@@ -25,7 +24,7 @@ public final class NameConflictException extends PolarisException {
 
     @Override
     public String getSimpleMessage() {
-        return String.format("child named %s already exists in %s", childName, parent);
+        return parent.toStringFormal() + "/" + childName + ":" + conflictingObject.toStringFormal();
     }
 
     @Override

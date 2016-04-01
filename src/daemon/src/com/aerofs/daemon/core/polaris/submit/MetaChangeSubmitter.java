@@ -50,6 +50,8 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.*;
 
+import static com.aerofs.daemon.core.polaris.api.LocalChange.Type.INSERT_CHILD;
+import static com.aerofs.daemon.core.polaris.api.LocalChange.Type.MOVE_CHILD;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -192,7 +194,7 @@ public class MetaChangeSubmitter implements Submitter
         List<MetaChange> changes = Lists.newArrayList();
         List<BatchOp> ops = Lists.newArrayList();
         Set<Long> noops = new HashSet<>();
-        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, Long.MIN_VALUE)) {
             while (it.next_() && ops.size() < MAX_BATCH_SIZE) {
                 MetaChange c = resolveAliasing_(it.get_());
                 // do not send local changes for objects with buffered changes
@@ -269,7 +271,7 @@ public class MetaChangeSubmitter implements Submitter
             return null;
         } else {
             parent = lnk.parent;
-            change.type = LocalChange.Type.MOVE_CHILD;
+            change.type = MOVE_CHILD;
             change.newChildName = c.newName;
             change.newParent = rootOID2SID(sidx, c.newParent).toStringFormal();
             proxy.setParent(c.oid, c.newParent, c.newName);
@@ -342,7 +344,9 @@ public class MetaChangeSubmitter implements Submitter
                         }
                     }
                 } else if (or.errorCode == PolarisError.NAME_CONFLICT) {
-                    onConflict_(c.get(i), lc, "");
+                    onConflict_(c.get(i), lc, or.errorMessage);
+                } else if (or.errorCode == PolarisError.NO_SUCH_OBJECT) {
+                    onMissing_(c.get(i), lc, or.errorMessage);
                 } else {
                     // TODO(phoenix): figure out which errors need special handling
                     ++failed;
@@ -359,6 +363,38 @@ public class MetaChangeSubmitter implements Submitter
             l.warn("unexpected error {}\n", statusCode, body);
             throw new ExRetryLater("unexpected status code: " + statusCode);
         }
+    }
+
+    // necessary to handle sharing/migration corner cases
+    // in particular when a subtree is locally moved out of a shared folder before the
+    // SHARE transform is received.
+    private void onMissing_(MetaChange c, LocalChange change, String body) throws Exception {
+        OID oid = new OID(body);
+        l.debug("not found {} {} {}", oid, c, change);
+        if (((change.type == INSERT_CHILD) || (change.type == MOVE_CHILD)) && c.newParent.equals(oid)) {
+            MetaChange p = _mcdb.getFirstChange_(c.sidx, oid);
+            if (p == null) {
+                l.info("no changes for {}", oid);
+                throw new ExRetryLater("not found " + oid);
+            }
+
+            // find the first meta change idx for this store
+            long base;
+            try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(c.sidx, Long.MIN_VALUE)) {
+                checkState(it.next_());
+                base = it.get_().idx;
+            }
+
+            l.info("move to front {} {} {}", oid, p, base);
+
+            // move parent insert to front
+            try (Trans t = _tm.begin_()) {
+                checkState(1 == _mcdb.moveChange_(c.sidx, p.idx, base - 1, t));
+                t.commit_();
+            }
+            return;
+        }
+        throw new ExRetryLater("not found " + oid);
     }
 
     private boolean onConflict_(MetaChange c, LocalChange change, String body) throws Exception
@@ -398,7 +434,6 @@ public class MetaChangeSubmitter implements Submitter
         throw new ExRetryLater("conflict");
     }
 
-
     /**
      * Detect whether a given remote change matches a submitted but not yet ack'ed local change
      *
@@ -431,7 +466,7 @@ public class MetaChangeSubmitter implements Submitter
     private @Nullable MetaChange submittedMetaChange_(SIndex sidx) throws SQLException
     {
         // TODO: only return change if it actually was submitted (use some sort of epoch)
-        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, 0)) {
+        try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, Long.MIN_VALUE)) {
             return it.next_() ? resolveAliasing_(it.get_()) : null;
         }
     }
@@ -446,7 +481,7 @@ public class MetaChangeSubmitter implements Submitter
         case INSERT_CHILD:
             if (!rc.childName.equals(lc.newName) || !rc.oid.equals(lc.newParent)) return null;
 
-            return oldParent == null ? LocalChange.Type.INSERT_CHILD : LocalChange.Type.MOVE_CHILD;
+            return oldParent == null ? LocalChange.Type.INSERT_CHILD : MOVE_CHILD;
         case REMOVE_CHILD:
         case DELETE_CHILD:
             return rc.oid.equals(oldParent)
@@ -456,7 +491,7 @@ public class MetaChangeSubmitter implements Submitter
             return rc.oid.equals(oldParent)
                     && rc.oid.equals(lc.newParent)
                     && rc.childName.equals(lc.newName)
-                    ? LocalChange.Type.MOVE_CHILD : null;
+                    ? MOVE_CHILD : null;
         default:
             throw new AssertionError();
         }
