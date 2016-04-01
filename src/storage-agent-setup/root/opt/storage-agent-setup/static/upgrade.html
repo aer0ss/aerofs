@@ -2,11 +2,355 @@
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="/static/style.css">
-	    <title>Storage Server Configured</title>
+        <title>Storage Server Configured</title>
     </head>
     <body>
-	    <h2>Storage Server Running</h2>
-	    <p>This Storage Server has already been configured and cannot be re-configured.</p>
-	    <p>If you wish to change how your data is stored, you will need to set up a new Storage Server, configure it, and sync data from this Storage Server.</p>
+
+        <div class="container">
+            <div class="top-bar">
+                <p>AeroFS Storage Server <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">v{{ version }}</a></p>
+            </div>
+            <h2>Storage Server Running</h2>
+            <p>This Storage Server has already been configured and cannot be re-configured.</p>
+            <p>If you wish to change how your data is stored, you will need to set up a new Storage Server, configure it, and sync data from this Storage Server.</p>
+
+            <h2>Upgrading Your Storage Server</h2>
+            <p>You can do an in-place upgrade of this Storage Server to the latest version from registry.aerofs.com.
+            Downloading and applying the latest update available will take some time, during which you should not navigate away from this page.
+            This Storage Server will also be briefly unavailable for a short period during the update.</p>
+
+            <button id="upgrade-button" onclick="showProgressAndUpgrade(); return false;">
+                Upgrade Now
+            </button>
+
+            <div id="progress" style="display:none;">
+                <p>The Storage Server Upgrade is in progress, please do not close this tab.</p>
+                <div class="bar-holder">
+                    <div id="progress-bar" class="bar"></div>
+                    <div id="progress-label" class="bar-label"></div>
+                </div>
+            </div>
+        </div>
     </body>
+
+
+    <script type="text/javascript">
+        function disableUpload() {
+            document.getElementById("upgrade-button").disabled = true;
+            document.getElementById("upgrade-button").innerHTML = "Upgrading Storage Server";
+        }
+
+        function enableUpload() {
+            document.getElementById("upgrade-button").disabled = false;
+            document.getElementById("upgrade-button").innerHTML = "Upgrade Now";
+        }
+
+        // Checks if the appliance needs upgrading.
+        // Expected signatures:
+        //          function onSuccess()
+        //          function onFailure(xhr)
+        function needsUpgrade(onSuccess, onFailure) {
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-needs-upgrade", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    onSuccess(data);
+                } else {
+                    onFailure();
+                }
+            };
+            request.onerror = onFailure;
+            request.send();
+        }
+
+        function isInProgress(route, onFailure) {
+            var request = new XMLHttpRequest();
+            request.open("GET", route, true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    return data.running;
+                } else {
+                    onFailure();
+                    throw "Couldn't complete request: " + route;
+                }
+            }
+            request.onerror = function() {
+                onFailure();
+                throw "Couldn't complete request: " + route;
+            }
+
+            request.send();
+        }
+
+        function waitForReboot(oldBootID, onSuccess) {
+            console.log('Wait for reboot to finish');
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-get-boot", true);
+            request.onload = function() {
+                if (request.status === 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.id != oldBootID) {
+                        window.clearInterval(interval);
+                        onSuccess();
+                        return;
+                    }
+                }
+                console.log("failed get new boot, status " + request.status);
+                setTimeout(function() {
+                    request.open("GET", "/json-get-boot", true);
+                    request.send();
+                }, 1000);
+            };
+
+            request.onerror = function() {
+                console.log("ignoring connectivity error while getting boot");
+                setTimeout(function() {
+                    request.open("GET", "/json-get-boot", true);
+                    request.send();
+                }, 1000);
+            }
+            request.send();
+        }
+
+        //Switch existing appliance to latest version and garbage clean old unused version images once switched.
+        function switchAppliance(handleFailure) {
+            console.log("wait for appliance switching")
+            changeProgressLabel("Switching to new version");
+            changeProgress(70);
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-get-boot", true);
+            request.onload = function() {
+                if (request.status === 200) {
+                    var data = JSON.parse(request.responseText);
+                    var bootID = data.id;
+                    console.log("old bootid " + bootID);
+                    var post = new XMLHttpRequest();
+                    post.open("POST", "/json-switch-appliance", true);
+                    post.onload = function() {
+                        console.log("switching appliance...");
+                        waitForReboot(bootID, function() {
+                            changeProgress(80);
+                            postGC(handleFailure);
+                        });
+                    };
+                    post.onerror = function() {
+                        //Ignore errors as the server might be killed before replying
+                        console.log("Ignore failure while switching");
+                        waitForReboot(bootID, function() {
+                            changeProgress(80);
+                            postGC(handleFailure);
+                        });
+                    };
+                    post.send();
+                    return;
+                } else {
+                    handleFailure();
+                }
+            };
+            request.onerror = handleFailure;
+            request.send();
+        }
+
+
+        function postGC(handleFailure) {
+            var request = new XMLHttpRequest();
+            request.open("POST", "/json-gc", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.status_code == 200 || data.status_code == 409) {
+                        console.log('appliance switching complete. Now clean old images...');
+                        changeProgressLabel("Cleaning up");
+                        changeProgress(90);
+                        waitForGC(handleFailure);
+                        return;
+                    } else {
+                        handleFailure();
+                    }
+                }
+            }
+            request.onerror = handleFailure;
+            request.send();
+        }
+
+        // Garbage clean once we switch over to the new appliance.
+        function waitForGC(handleFailure) {
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-gc", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.running) {
+                        console.log("cleaning images");
+                        setTimeout(function() {
+                            request.open("GET", "/json-gc", true);
+                            request.send();
+                        }, 1000);
+                    } else if (data.succeeded) {
+                        console.log("cleaned old images");
+                        changeProgressLabel("Upgraded");
+                        changeProgress(100);
+                        alert("Upgrade has completed");
+                        location.reload();
+                    } else {
+                        console.log("cleaning failed");
+                        handleFailure();
+                    }
+                } else {
+                    console.log("failed to get gc status", request.status);
+                    handleFailure();
+                }
+            }
+            request.onerror = handleFailure
+            request.send();
+        }
+
+        // Pulls latest images from registry.
+        // Expected signatures:
+        //          function onPullCompletion - Method that must be called after pull images is done.
+        function pullImages(onPullCompletion, handleFailure) {
+            var request = new XMLHttpRequest();
+            request.open("POST", "/json-pull-images", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.status_code == 200 || data.status_code == 409) {
+                        console.log('waiting for new images');
+                        changeProgressLabel("Pulling Images");
+                        waitForPullImages(onPullCompletion, handleFailure);
+                        return;
+                    } else {
+                        console.log("Failed to upgrade: ".concat(data));
+                        handleFailure();
+                    }
+                } else {
+                    console.log("Failed to upgrade: ".concat(request.status));
+                    handleFailure();
+                }
+            }
+            request.onerror = handleFailure;
+            request.send();
+        }
+
+
+        // Check if we have fetched the latest images from registry and display appropriate
+        // modals in case of failure or move on to next step (the onPullCompletion method).
+        // Expected signatures:
+        //          function onPullCompletion - Method that must be called after pull images is done.
+        function waitForPullImages(onPullCompletion, handleFailure) {
+            console.log("wait for pulling images to finish");
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-pull-images", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.running) {
+                        // this assumes that progress will be set at 10 when pulling starts
+                        changeProgress(10 + 50 * data.pulling / data.total)
+                        setTimeout(function() {
+                            request.open("GET", "/json-pull-images", true);
+                            request.send();
+                        }, 5000)
+                    } else if (data.succeeded) {
+                        console.log("Pulled images");
+                        onPullCompletion(handleFailure);
+                    } else {
+                        console.log("Pulling images failed");
+                        handleFailure();
+                    }
+                } else {
+                    handleFailure();
+                }
+            }
+            request.onerror = handleFailure
+            request.send();
+        }
+
+        function resumeOrStartNewUpgrade(handleFailure) {
+            // Upgrade process consists of pulling new images, switching, and GC
+            // Check where we are in the process and resume from that stage.
+            // In case of no running upgrades, start a new upgrade process.
+            try {
+                if (isInProgress("/json-pull-images", handleFailure)) {
+                    console.log("resume from pulling images");
+                    changeProgressLabel("Pulling Images");
+                    waitForPullImages(switchAppliance, handleFailure);
+                } else if (isInProgress("/json-gc", handleFailure)) {
+                    console.log("resume from gc");
+                    changeProgressLabel("Cleaning Up");
+                    changeProgress(80);
+                    waitForGC(handleFailure);
+                } else {
+                    pullImages(switchAppliance, handleFailure);
+                }
+            } catch(err) {
+                console.log(err);
+                handleFailure();
+            }
+        }
+
+        function upgradeIfNotLatest(handleFailure) {
+            changeProgressLabel("Checking for Available Upgrade");
+            needsUpgrade(function(resp) {
+                if (resp['needs-upgrade']) {
+                    console.log("needs upgrade");
+                    resumeOrStartNewUpgrade(handleFailure);
+                } else {
+                    console.log("upgrade not needed");
+                    alert("Storage Server is already up-to-date and does not need an upgrade");
+                    handleFailure();
+                }
+            }, handleFailure);
+        }
+
+        function upgradeIfHasDiskSpace(handleFailure) {
+            changeProgressLabel("Checking for Disk Space");
+            var request = new XMLHttpRequest();
+            request.open("GET", "/json-has-disk-space", true);
+            request.onload = function() {
+                if (request.status == 200) {
+                    var data = JSON.parse(request.responseText);
+                    if (data.has_disk_space) {
+                        upgradeIfNotLatest(handleFailure);
+                    } else {
+                        console.log("not enough disk space for IPU");
+                        alert("Storage Server does not have enough disk space to perform an upgrade");
+                    }
+                } else {
+                    console.log("failed to get available disk space");
+                    handleFailure();
+                }
+            }
+
+            request.onerror = function() {
+                console.log("failed to get available disk space");
+                handleFailure();
+            }
+            request.send();
+        }
+
+        function hideProgress() {
+            document.getElementById("progress").style.display = "none";
+            enableUpload();
+            alert("In-place Upgrade of your Storage Server failed, please try again later. If this issue persists contact us at support@aerofs.com");
+        }
+
+        function showProgressAndUpgrade() {
+            changeProgress(0);
+            changeProgressLabel("");
+            disableUpload();
+            document.getElementById("progress").style.display = "block";
+            upgradeIfHasDiskSpace(hideProgress);
+        }
+
+        function changeProgress(percent) {
+            document.getElementById("progress-bar").style.width = percent + '%';
+        }
+
+        function changeProgressLabel(text) {
+            document.getElementById("progress-label").innerHTML = text;
+        }
+    </script>
 </html>

@@ -125,7 +125,6 @@
                     showErrorMessage("Failed to upgrade: ".concat(resp["status_code"]));
                 }
             }).fail(function(xhr) {
-                window.clearInterval(interval);
                 if (handleFailed) handleFailed(xhr);
             });
         }

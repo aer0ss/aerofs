@@ -5,26 +5,46 @@
         <title>Upload Storage Server Configuration</title>
     </head>
     <body>
-        <h2>Upload Configuration</h2>
-        <p>This Storage Server has not been configured yet. Please upload a configuration file to set up this server.
-        You can find your configuration file on the Application Server management portal under "Storage Servers". </p>
-        <p>Each Storage Server you set up will need a new configuration file.</p>
-        <form action="/upload" method=post onsubmit="upload(); return false;" enctype=multipart/form-data>
-            <div>
-                <input id="config-file" type="file" name="file" required>
+        <div class="container">
+            <div class="top-bar">
+                <p>AeroFS Storage Server <a href="https://support.aerofs.com/hc/en-us/articles/201439644" target="_blank">v{{ version }}</a></p>
             </div>
-            <div>
-                <button type="submit" id="restore-button" class="form-control">
-                    Configure Server
-                </button>
-            </div>
-            <div class="help-block">
-                Configuration files are named like <em>{{ example_config_file_name }}</em>
-            </div>
-        </form>
+
+            <h2>Upload Configuration</h2>
+            <p>This Storage Server has not been configured yet. Please upload a configuration file to set up this server.
+            You can find your configuration file on the Application Server management portal under "Storage Servers". </p>
+            <p>Each Storage Server you set up will need a new configuration file.</p>
+            <form action="/upload" method=post enctype=multipart/form-data>
+                <input id="config-file" type="file" name="file" required onchange="fileChanged(this);" style="display: none;">
+                <div>
+                    <button type="button" id="configure-button" class="form-control" onclick="document.getElementById('config-file').click(); return false;">
+                        Upload File and Configure Server
+                    </button>
+                </div>
+                <div class="help-block">
+                    Configuration files are named like <em>{{ example_config_file_name }}</em>
+                </div>
+            </form>
+        </div>
     </body>
 
     <script type="text/javascript">
+        function fileChanged(input) {
+            if (input.files.length == 1) {
+                upload();
+            }
+        }
+
+        function disableUpload() {
+            document.getElementById("configure-button").disabled = true;
+            document.getElementById("configure-button").innerHTML = "Configuring Storage Server";
+        }
+
+        function enableUpload() {
+            document.getElementById("configure-button").disabled = false;
+            document.getElementById("configure-button").innerHTML = "Upload File and Configure Server";
+        }
+
         function upload() {
             var formData = new FormData(document.querySelector("form"));
             var request = new XMLHttpRequest();
@@ -33,20 +53,26 @@
             request.onload = function() {
                 if (request.status === 200) {
                     switchToDefaultMode();
-                } else if (request.status == 409) {
-                    alert("This storage server has already been configured, and cannot be re-configured");
-                } else if (request.status == 403) {
-                    alert("This configuration file has already been used, you must configure this server with a newly generated file");
-                } else if (request.status == 400) {
-                    alert("No file provided to upload");
+                    return;
                 } else {
-                    alert("Configuration failed unexpectedly, please try again later. If this issue persists please contact us at support@aerofs.com");
+                    enableUpload();
+                    if (request.status == 409) {
+                        alert("This storage server has already been configured, and cannot be re-configured");
+                    } else if (request.status == 403) {
+                        alert("This configuration file has already been used, you must configure this server with a newly generated file");
+                    } else if (request.status == 400) {
+                        alert("No file provided to upload");
+                    } else {
+                        alert("Configuration failed unexpectedly, please try again later. If this issue persists please contact us at support@aerofs.com");
+                    }
                 }
             };
 
             request.onerror = function() {
+                enableUpload();
                 alert("Could not upload configuration, please try again later. If this issue persists please contact us at support@aerofs.com");
             }
+            disableUpload();
             request.send(formData);
         }
 
@@ -58,6 +84,7 @@
                 if (request.status === 200) {
                     waitForReboot();
                 } else {
+                    enableUpload();
                     console.log("failed to set boot target, status " + request.status);
                     alert("Could not finish configuration, please try again later. If this issue persists please contact us at support@aerofs.com");
                 }
@@ -82,10 +109,10 @@
                         return;
                     } else {
                         console.log("did not restart server, recv " + request.responseText);
-                        alert("Storage server failed to restart, please try again later. If this issue persists please contact us at support@aerofs.com");
                     }
                 }
                 console.log("failed to get boot target, status " + request.status);
+                enableUpload();
                 alert("Storage server failed to restart, please try again later. If this issue persists please contact us at support@aerofs.com");
             };
 

@@ -1,6 +1,7 @@
 import os
 import uuid
 import requests
+from distutils.version import LooseVersion
 from datetime import datetime
 from OpenSSL import crypto
 from setup_storage_agent import setup_storage_agent
@@ -16,16 +17,42 @@ STORAGE_BUNDLE_LOCATION = "/aerofs-storage/configbundle"
 STATIC_LOC = "/opt/storage-agent-setup/static"
 app = Flask("storage server", static_folder=STATIC_LOC, template_folder=STATIC_LOC)
 
-@app.route('/', methods=["GET"])
-def root():
-    if os.path.exists(SERVER_SETUP_LOCATION):
-        return app.send_static_file("upgrade.html")
-    else:
-        return render_template("configure.html", example_config_file_name=config_file_name())
+REG = "registry.aerofs.com"
+LOADER_URL = 'http://loader.service/v1'
+_version = None
+boot_mode_cached = None
+# 1 Gebi
+disk_needed = 1073741824
+
+
+def get_version():
+    global _version
+    # cache the value to avoid frequent reads
+    if not _version:
+        with open('/version/current.ver') as f:
+            _, _version = f.readline().strip().split('=', 1)
+
+    return _version
+
 
 def config_file_name():
     return '{}{}'.format("aerofs-storage-setup_",
-                           datetime.today().strftime('%Y%m%d-%H%M%S'))
+                         datetime.today().strftime('%Y%m%d-%H%M%S'))
+
+
+def _latest_version_from_registry():
+    r = requests.get("{}/tags/latest/{}".format(LOADER_URL, REG))
+    r.raise_for_status()
+    return str(r.json())
+
+
+@app.route('/', methods=["GET"])
+def root():
+    if os.path.exists(SERVER_SETUP_LOCATION):
+        return render_template("upgrade.html", version=get_version())
+    else:
+        return render_template("configure.html", example_config_file_name=config_file_name(), version=get_version())
+
 
 @app.route('/upload', methods=["POST"])
 def upload():
@@ -57,6 +84,7 @@ def upload():
         pass
     return ""
 
+
 @app.route('/json-boot', methods=["POST"])
 def boot_to_target():
     if request.mimetype != "application/json":
@@ -64,18 +92,103 @@ def boot_to_target():
     target = request.get_json().get("target", None)
     if not target or target not in ["default", "maintenance"]:
         abort(400)
-    r = requests.post("http://loader.service/v1/boot/{}".format(target))
+    r = requests.post("{}/boot/{}".format(LOADER_URL, target))
     r.raise_for_status()
 
-boot_mode_cached = None
+
 @app.route('/json-get-boot', methods=["GET"])
 def get_boot():
     global boot_mode_cached
     if boot_mode_cached is None:
-        r = requests.get("http://loader.service/v1/boot")
+        r = requests.get("{}/boot". format(LOADER_URL))
         r.raise_for_status()
-        boot_mode_cached = r.json()["target"]
-    return jsonify(target=boot_mode_cached)
+        boot_mode_cached = r.json()
+    return jsonify(boot_mode_cached)
+
+
+@app.route('/json-needs-upgrade', methods=["GET"])
+def json_needs_upgrade_get():
+    current_version = get_version()
+    latest = _latest_version_from_registry()
+    print("GET needs upgrade current {} latest {}".format(current_version, latest))
+    return jsonify(**{
+        'needs-upgrade': LooseVersion(latest) > LooseVersion(current_version)
+    })
+
+
+@app.route('/json-switch-appliance', methods=["POST"])
+def json_switch_appliance_post():
+    latest = _latest_version_from_registry()
+    print("Switching to appliance {}".format(latest))
+    r = requests.post("{}/switch/{}/{}/default".format(LOADER_URL, REG, latest))
+    r.raise_for_status()
+
+
+def _pull_images_status():
+    r = requests.get("{}/images/pull".format(LOADER_URL))
+    r.raise_for_status()
+    return r.json()
+
+
+@app.route('/json-pull-images', methods=["GET", "POST"])
+def json_pull_images_post():
+    if request.method == "POST":
+        pull_stats = _pull_images_status()
+        if pull_stats.get("status", "") == "pulling":
+            abort(400, description="Upgrade already in progress")
+        latest = _latest_version_from_registry()
+        print("Pull new images for version {}".format(latest))
+
+        r = requests.post("{}/images/pull/{}/{}".format(LOADER_URL, REG, latest))
+        if r.status_code == 409:
+            print("A pull is already in progress.")
+        elif r.status_code != 200:
+            print("Pulling images failed with message: {}".format(r.json()))
+
+        return jsonify(status_code=r.status_code)
+    else:
+        pull_status = _pull_images_status()
+        status = pull_status.get("status", "error")
+        if status == "error":
+            print("Failed to pull images: {}".format(pull_status.get("message", "")))
+        elif status == "done":
+            print("all images pulled")
+        else:
+            stats = "{} of {}".format(pull_status.get("pulled", -1), pull_status.get("total", -1))
+            print("Pull images status, status {} ({})".format(status, stats))
+
+        return jsonify({
+            'running': status == "pulling",
+            'succeeded': status == "done",
+            'pulling': pull_status.get("pulled", -1),
+            'total': pull_status.get("total", -1)
+        })
+
+
+@app.route('/json-gc', methods=["GET", "POST"])
+def json_gc_post():
+    if request.method == "POST":
+        print("Clean old images POST")
+        r = requests.post("{}/gc".format(LOADER_URL))
+        r.raise_for_status()
+        return jsonify(status_code=r.status_code)
+    else:
+        r = requests.get("{}/gc".format(LOADER_URL))
+        r.raise_for_status()
+        status = r.json().get("status", "error")
+        return jsonify({
+            'running': status == "cleaning",
+            'succeeded': status == "done"
+        })
+
+
+@app.route('/json-has-disk-space', methods=["GET"])
+def json_disk_space():
+    s = os.statvfs('/')
+    disk_space = (s.f_bavail * s.f_frsize)
+    print("has_disk_space {} {}".format(disk_space, disk_needed))
+    return jsonify(has_disk_space=disk_space >= disk_needed)
+
 
 def setup_key_cert():
     if os.path.exists(SERVER_CERT_LOCATION) and os.path.exists(SERVER_KEY_LOCATION):
@@ -91,8 +204,10 @@ def setup_key_cert():
     write_key_to_file(key, SERVER_KEY_LOCATION)
     write_cert_to_file(cert, SERVER_CERT_LOCATION)
 
+
 def new_ca_cert_name():
     return "AeroFS-Storage-" + str(uuid.uuid4())
+
 
 def new_csr(cname, pkey):
     csr = crypto.X509Req()
@@ -108,6 +223,7 @@ def new_csr(cname, pkey):
 
     return csr
 
+
 def self_sign_csr(pkey, csr, serial=0, days=365):
     cert = crypto.X509()
     cert.set_subject(csr.get_subject())
@@ -120,15 +236,18 @@ def self_sign_csr(pkey, csr, serial=0, days=365):
     cert.sign(pkey, "sha1")
     return cert
 
-def write_key_to_file(key, file):
-    with open(file, 'w') as f:
+
+def write_key_to_file(key, path):
+    with open(path, 'w') as f:
         f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
 
-def write_cert_to_file(cert, file):
-    with open(file, 'w') as f:
+
+def write_cert_to_file(cert, path):
+    with open(path, 'w') as f:
         f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+
 
 if __name__ == "__main__":
     setup_key_cert()
     app.secret_key = "secretkey"
-    app.run("0.0.0.0", 443, debug=True, ssl_context=(SERVER_CERT_LOCATION, SERVER_KEY_LOCATION))
+    app.run("0.0.0.0", 443, ssl_context=(SERVER_CERT_LOCATION, SERVER_KEY_LOCATION))

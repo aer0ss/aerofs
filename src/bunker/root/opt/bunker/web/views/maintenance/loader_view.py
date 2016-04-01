@@ -1,17 +1,12 @@
 import json
 import logging
 import maintenance_util
-import psutil
 import requests
 
-from os import unlink
-from os.path import isfile
 from pyramid.view import view_config
-from subprocess import Popen
-from sys import stdout, stderr
-from threading import Thread
 from web.error import expected_error
 from web.version import get_private_version
+from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +72,7 @@ def json_needs_upgrade_get(request):
     latest = _latest_version_from_registry()
     log.info("GET needs upgrade current {} latest{}".format(current_version, latest))
     return {
-        'needs-upgrade': latest != current_version
+        'needs-upgrade': LooseVersion(latest) > LooseVersion(current_version)
     }
 
 

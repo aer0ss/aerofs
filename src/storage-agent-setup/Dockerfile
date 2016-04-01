@@ -13,5 +13,5 @@ RUN apk -U add build-base libffi-dev openssl-dev python-dev &&\
     apk del build-base libffi-dev openssl-dev python-dev &&\
     rm -rf /var/cache/apk/*
 
-COPY root /
+COPY root buildroot /
 
