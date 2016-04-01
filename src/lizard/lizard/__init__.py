@@ -98,11 +98,12 @@ def create_app(internal=False):
 
     # 6) AWS (Route 53)
     aws_session = boto3.session.Session(aws_access_key_id=app.config['HPC_AWS_ACCESS_KEY'],
-                                        aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'])
+                                        aws_secret_access_key=app.config['HPC_AWS_SECRET_KEY'],
+                                        region_name='us-east-1')
     app.route53 = aws_session.client('route53')
     app.s3 = aws_session.resource('s3')
     app.autoscaling = aws_session.client('autoscaling')
-    app.ec2 = aws_session.resource('ec2', region_name='us-east-1')
+    app.ec2 = aws_session.resource('ec2')
     app.sqs_resource = aws_session.resource('sqs')
     app.sqs_client = aws_session.client('sqs')
 
