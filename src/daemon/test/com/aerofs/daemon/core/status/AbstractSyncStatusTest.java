@@ -105,9 +105,6 @@ public class AbstractSyncStatusTest extends AbstractTest
 
     @Before
     public void commonSetup() throws Exception {
-        LogUtil.setLevel(LogUtil.Level.TRACE);
-        LogUtil.enableConsoleLogging();
-
         dbcw = new InMemoryCoreDBCW();
         dbcw.init_();
         DPUTUtil.runDatabaseOperationAtomically_(dbcw, s -> {

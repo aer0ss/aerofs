@@ -9,11 +9,14 @@ import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase.AvailableContent;
 import com.aerofs.daemon.core.polaris.db.PolarisSchema;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
+import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -58,10 +61,13 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     @Mock CfgLocalDID did;
     @Mock CoreScheduler sched;
     @Mock CfgLocalUser cfgLocalUser;
+    @Mock IMapSIndex2SID sidx2sid;
+    @Mock IMapSID2SIndex sid2sidx;
     ExecutorService schedExecutor;
 
     List<Integer> calls = new ArrayList<>();
     SIndex sidx = new SIndex(1);
+    SID sid = SID.rootSID(UserID.fromInternal("foo@bar.baz"));
 
     @After
     public void tearDown() {
@@ -82,6 +88,9 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         tm = new TransManager(new Trans.Factory(dbcw));
         sdo = new StoreDeletionOperators();
         acdb = new AvailableContentDatabase(dbcw, sdo);
+
+        when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
+        when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
         doReturn(DID.generate()).when(did).get();
         doReturn(UserID.UNKNOWN_TEAM_SERVER).when(cfgLocalUser).get();
@@ -128,8 +137,8 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         when(fact.create()).thenReturn(client);
 
         calls.clear();
-        submitter = new ContentAvailabilitySubmitter(fact, did, acdb, tm,
-                new AsyncWorkGroupScheduler(sched));
+        submitter = new ContentAvailabilitySubmitter(fact, acdb, tm,
+                new AsyncWorkGroupScheduler(sched), sidx2sid, sid2sidx);
         submitter.start_();
         pause();
     }
