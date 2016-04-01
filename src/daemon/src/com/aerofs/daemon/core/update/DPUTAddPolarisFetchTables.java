@@ -12,12 +12,12 @@ import com.google.inject.Inject;
 import static com.aerofs.daemon.lib.db.SyncSchema.*;
 
 
-public class DPUTAddPolarisFetchTables implements IDaemonPostUpdateTask
+public class DPUTAddPolarisFetchTables extends PhoenixDPUT
 {
     @Inject private IDBCW _dbcw;
 
     @Override
-    public void run() throws Exception
+    public void runPhoenix() throws Exception
     {
         DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
             // we internally started using polaris already...

@@ -289,14 +289,14 @@ public class CLISetup
     // ask the user which method they would like to authenticate with.
     private void setupSignInActor(CLI cli) throws Exception
     {
-        if(LibParam.OpenId.enabled() && LibParam.OpenId.displayUserPassLogin()) {
+        if(ClientParam.OpenId.enabled() && ClientParam.OpenId.displayUserPassLogin()) {
             if(useOpenIdToLogin(cli)) {
                 _model.setSignInActor(new OpenIdCLIActor(cli));
                 _displayUserPassLogin = false;
             } else {
                 _model.setSignInActor(new CredentialActor());
             }
-        } else if(LibParam.OpenId.enabled()) {
+        } else if(ClientParam.OpenId.enabled()) {
             _model.setSignInActor(new OpenIdCLIActor(cli));
             _displayUserPassLogin = false;
         } else {

@@ -10,7 +10,6 @@ import com.google.inject.Injector;
 import javax.inject.Inject;
 
 import static com.aerofs.lib.cfg.CfgDatabase.DAEMON_POST_UPDATES;
-import static com.aerofs.lib.cfg.CfgDatabase.PHOENIX_CONVERSION;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
@@ -36,18 +35,17 @@ public class DaemonPostUpdateTasks
             DPUTMigrateStorageConfig.class,
             DPUTAddStoreUsageColumn.class,
             DPUTAddMigrantColumn.class,
-            DPUTAddCollectorTables.class
-            // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter!
-    };
+            DPUTAddCollectorTables.class,
 
-    // NB: all conversion tasks MUST be idempotent
-    private final static Class<?>[] PHOENIX_TASKS = {
+            // start phoenix conversion
             DPUTAddPolarisFetchTables.class,
             DPUTSubmitLocalTreeToPolaris.class,
             DPUTHandlePrePhoenixConflicts.class,
             DPUTDropLegacyTables.class,
             DPUTSyncStatusTableAlterations.class
-            // new tasks go here - also, update PHOENIX_CONVERSION_TASKS counter!
+            // end phoenix conversion
+
+            // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter!
     };
 
     @Inject
@@ -58,7 +56,6 @@ public class DaemonPostUpdateTasks
 
         // please update counters whenever new tasks are added
         checkState(UNSUPPORTED + TASKS.length == ClientParam.PostUpdate.DAEMON_POST_UPDATE_TASKS);
-        checkState(PHOENIX_TASKS.length == ClientParam.PostUpdate.PHOENIX_CONVERSION_TASKS);
     }
 
     public void run() throws Exception {
@@ -75,15 +72,6 @@ public class DaemonPostUpdateTasks
         assert DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
 
         run(TASKS, DAEMON_POST_UPDATES, UNSUPPORTED, dryRun);
-
-        // This is kinda awkward
-        // Because of the choice to do a staggered rollout of Phoenix, we cannot (yet) make the
-        // conversion a simple DPUT. Instead, we need to trigger it based on a combination of
-        // config value and db state. However we still want to leverage the DPUT infrastructure
-        // for safe scheduling/retry and giving UI feedback.
-        // Eventually, when the legacy codepath is dropped, this can be folded back into the regular
-        // DPUT sequence. This will require some care to avoid breaking the upgrade sequence...
-        run(PHOENIX_TASKS, PHOENIX_CONVERSION, 0, dryRun);
     }
 
     private void run(Class<?>[] tasks, CfgKey k, int first, boolean dryRun) throws Exception {

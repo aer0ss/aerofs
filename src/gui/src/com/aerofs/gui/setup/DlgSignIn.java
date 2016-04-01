@@ -17,7 +17,7 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.singleuser.SingleUserDlgSecondFactor;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.S;
@@ -66,7 +66,7 @@ public class DlgSignIn extends TitleAreaDialog
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());
         _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
-        _displayUserPassLogin = LibParam.OpenId.displayUserPassLogin();
+        _displayUserPassLogin = ClientParam.OpenId.displayUserPassLogin();
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.ClientParam;
 import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.S;
@@ -82,7 +83,7 @@ public class DlgSignInToRecertify extends AeroFSJFaceDialog
         lnkHistory.addSelectionListener(
                 GUIUtil.createUrlLaunchListener(WWW.RECERTIFY_SUPPORT_URL));
 
-        if (LibParam.OpenId.enabled()) {
+        if (ClientParam.OpenId.enabled()) {
 
             // optional row 1 : OpenID button
             Button signInButton = GUIUtil.createButton(container, SWT.PUSH);

@@ -9,7 +9,7 @@ import com.aerofs.controller.SetupModel;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdGUIActor;
 import com.aerofs.gui.AeroFSDialog;
-import com.aerofs.lib.LibParam;
+import com.aerofs.lib.ClientParam;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.widgets.Shell;
 
@@ -45,7 +45,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
         super(shell, null, false, true);
 
         _model = model
-                .setSignInActor(LibParam.OpenId.enabled() ?
+                .setSignInActor(ClientParam.OpenId.enabled() ?
                         new OpenIdGUIActor() : new CredentialActor())
                 .setInstallActor(new InstallActor.MultiUser());
     }
@@ -58,7 +58,7 @@ public class DlgMultiuserSetup extends AeroFSDialog
 
         _pages = newEnumMap(PageID.class);
 
-        _pages.put(PageID.PAGE_LOGIN, LibParam.OpenId.enabled() ? new PageOpenIdSignIn(shell)
+        _pages.put(PageID.PAGE_LOGIN, ClientParam.OpenId.enabled() ? new PageOpenIdSignIn(shell)
                 : new PageCredentialSignIn(shell));
         _pages.put(PageID.PAGE_TWO_FACTOR, new PageSecondFactor(shell));
         _pages.put(PageID.PAGE_SELECT_STORAGE, new PageSelectStorage(shell));

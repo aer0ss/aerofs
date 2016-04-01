@@ -169,8 +169,6 @@ public class LibParam extends BaseParam
             return Identity.AUTHENTICATOR == Identity.Authenticator.OPENID;
         }
 
-        public static boolean displayUserPassLogin(){return getBooleanProperty("lib.display_user_pass_login", true); }
-
         /** Timeout for the entire OpenID flow, in seconds. */
         public static final Integer                     DELEGATE_TIMEOUT =
                 getIntegerProperty(                     "openid.service.timeout", 300);

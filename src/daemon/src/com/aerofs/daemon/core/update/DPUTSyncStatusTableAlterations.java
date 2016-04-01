@@ -14,12 +14,12 @@ import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_OOS_CHILDREN;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_SYNCED;
 import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
 
-public class DPUTSyncStatusTableAlterations implements IDaemonPostUpdateTask
+public class DPUTSyncStatusTableAlterations extends PhoenixDPUT
 {
     @Inject private IDBCW _dbcw;
 
     @Override
-    public void run() throws Exception {
+    public void runPhoenix() throws Exception {
         DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
             if (!_dbcw.columnExists(T_OA, C_OA_SYNCED)) {
                 addSyncStatusColumnsToOA(s);

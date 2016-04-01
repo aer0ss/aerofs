@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 
-public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
+public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
     private final static int CONVERSION_BATCH_SIZE = 50;
     private final static Logger l = Loggers.getLogger(DPUTSubmitLocalTreeToPolaris.class);
 
@@ -100,7 +100,7 @@ public class DPUTSubmitLocalTreeToPolaris implements IDaemonPostUpdateTask {
     }
 
     @Override
-    public void run() throws Exception {
+    public void runPhoenix() throws Exception {
         for (SIndex s : _sdb.getAll_()) {
             // if the change epoch already exists, then this store has already been traversed and we don't have to do it again
             if (_cedb.getChangeEpoch_(s) != null) continue;

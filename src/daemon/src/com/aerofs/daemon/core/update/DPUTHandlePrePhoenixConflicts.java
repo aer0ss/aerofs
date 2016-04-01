@@ -50,7 +50,7 @@ import java.util.Set;
  * up the central version, if present, and comparing existing branches to available remote content
  * entries.
  */
-public class DPUTHandlePrePhoenixConflicts implements IDaemonPostUpdateTask {
+public class DPUTHandlePrePhoenixConflicts extends PhoenixDPUT {
     private final static Logger l = Loggers.getLogger(DPUTHandlePrePhoenixConflicts.class);
 
     @Inject IDBCW _dbcw;
@@ -64,7 +64,7 @@ public class DPUTHandlePrePhoenixConflicts implements IDaemonPostUpdateTask {
     @Inject ILinker _link;
 
     @Override
-    public void run() throws Exception {
+    public void runPhoenix() throws Exception {
         // TODO: incremental progress and split trans
         Set<SOID> ins = new HashSet<>();
         Set<SOKID> del = new HashSet<>();
