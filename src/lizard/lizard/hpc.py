@@ -21,6 +21,7 @@ HPC_SECRETS_PATH = '/opt/lizard/hpc-server-config/secrets'
 BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
 HPC_SQS_QUEUE_NAME = 'hpc_auto_scaling'
 
+dirname = os.path.abspath(os.path.dirname(__file__))
 
 class DeploymentAlreadyExists(Exception):
     def __init__(self):
@@ -339,7 +340,7 @@ def set_backup_name(subdomain):
 
 def create_server(instance_type, server_name):
     create_aws_credentials_file()
-    cloud_config_path = os.path.join(os.getcwd(), 'cloud-config')
+    cloud_config_path = os.path.join(dirname, 'cloud-config')
 
     with open(cloud_config_path) as f:
         user_data = f.read()
@@ -399,7 +400,7 @@ def configure_server(instance):
     # To configure the server we need both to launch the 'configure_hpc_server.sh'
     # script
     private_ip = instance.private_ip_address
-    config_script_path = os.path.join(os.getcwd(), 'configure_hpc_server')
+    config_script_path = os.path.join(dirname, 'configure_hpc_server')
     subprocess.Popen([config_script_path, private_ip])
 
     # Attach the instance to an an autoscaling group
