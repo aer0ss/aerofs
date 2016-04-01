@@ -18,11 +18,11 @@ type Notifier interface {
 	Register(deviceType, alias, token string, dev bool) int
 
 	// Notify synchronously sends a notification request
-	Notify(body string, uids []string, badge int) error
+	Notify(body string, uids []string, badge int, cid string) error
 
 	// NotifyNewMessage should call Notify with an appropriate body and badge
 	// count when "caller" has messaged "targets".
-	NotifyNewMessage(caller *User, targets []string)
+	NotifyNewMessage(caller *User, targets []string, convo *Convo)
 }
 
 func NewNotifier(user, pass, url string, poolSize uint) Notifier {
@@ -41,12 +41,12 @@ type notifier struct {
 }
 
 // Notify synchronously sends a notification request
-func (p *notifier) Notify(body string, uids []string, badge int) error {
+func (p *notifier) Notify(body string, uids []string, badge int, cid string) error {
 	if len(uids) == 0 {
 		return nil
 	}
-	log.Printf("push notify %v %v\n", uids, body)
-	payload, err := request{Body: body, Aliases: uids, Badge: badge}.toJson()
+	log.Printf("push notify %v %v\n", uids, cid, body)
+	payload, err := request{Body: body, Aliases: uids, Badge: badge, Cid: cid}.toJson()
 	if err != nil {
 		return err
 	}
@@ -83,6 +83,7 @@ type request struct {
 	Aliases []string
 	Body    string
 	Badge   int
+	Cid     string
 }
 
 type buttonRegistrationRequest struct {

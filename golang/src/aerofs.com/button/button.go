@@ -40,6 +40,7 @@ type NotificationRequest struct {
 	Aliases []string
 	Body    string
 	Badge   int
+	Cid     string
 }
 
 type pushResponse struct {
@@ -144,13 +145,13 @@ func (ctx *context) handleNotification(response http.ResponseWriter, request *ht
 	log.Printf("sending %v notifications through dev APNS\n", len(apnsDevTokens))
 	responses := make([]chan *pushResponse, 0)
 	for _, token := range apnsDevTokens {
-		r := sendAPNS(ctx.apnsDev, token, r.Body, r.Badge)
+		r := sendAPNS(ctx.apnsDev, token, r.Body, r.Cid, r.Badge)
 		responses = append(responses, r)
 	}
 
 	log.Printf("sending %v notifications through prod APNS\n", len(apnsProdTokens))
 	for _, token := range apnsProdTokens {
-		r := sendAPNS(ctx.apnsProd, token, r.Body, r.Badge)
+		r := sendAPNS(ctx.apnsProd, token, r.Body, r.Cid, r.Badge)
 		responses = append(responses, r)
 	}
 
@@ -235,15 +236,16 @@ func getTokensForAliases(db *sql.DB, aliases []string) (apnsDev, apnsProd, gcmPr
 	return
 }
 
-func sendAPNS(client apns.APNSClient, token, body string, badge int) chan *pushResponse {
+func sendAPNS(client apns.APNSClient, token, body, cid string, badge int) chan *pushResponse {
 	payload := apns.NewPayload()
 	payload.Alert = body
-	payload.Badge = badge
+	// payload.Badge = badge
 	payload.Sound = "default"
 
 	pn := apns.NewPushNotification()
 	pn.DeviceToken = token
 	pn.AddPayload(payload)
+	pn.Set("cid", cid)
 
 	// TODO: avoid spawning a goroutine per message
 	c := make(chan *pushResponse)

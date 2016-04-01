@@ -508,7 +508,7 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 	dao.CommitOrPanic(tx)
 	response.WriteEntity(message)
 	broadcastMessage(ctx.broadcaster, convo)
-	go ctx.pushNotifier.NotifyNewMessage(callerUser, pushRecipients)
+	go ctx.pushNotifier.NotifyNewMessage(callerUser, pushRecipients, convo)
 }
 
 func (ctx *context) getReceipts(request *restful.Request, response *restful.Response) {
