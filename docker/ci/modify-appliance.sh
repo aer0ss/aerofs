@@ -27,6 +27,7 @@ true && {
 FROM ${CONFIG}
 RUN  sed -i \
         -e s/log_level=INFO/log_level=DEBUG/ \
+        -e s/analytics.endpoint=.*/analytics.endpoint=/ \
         /external.properties.docker.default
 END
     docker build -t ${CONFIG} "${TMP}"

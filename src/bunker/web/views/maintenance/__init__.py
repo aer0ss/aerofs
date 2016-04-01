@@ -57,6 +57,8 @@ routes = [
     'auditing',
     'sync_settings',
     'json_set_sync_settings',
+    'analytics',
+    'json_set_analytics',
     'json_set_auditing',
     'password_restriction',
     'json_set_password_restriction',
