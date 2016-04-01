@@ -83,12 +83,19 @@ class lizard (
         ensure  => present,
         require => Package["aerofs-lizard"],
     }
+    file{"/opt/lizard/hpc-server-config":
+        ensure => 'directory',
+    }
+    file{"/opt/lizard/hpc-server-config/secrets":
+        ensure => 'directory',
+    }
     file{"/opt/lizard/hpc-server-config/secrets/hpc-key.pem":
         source  => "puppet:///aerofs_hpc/hpc-key.pem",
         ensure  => present,
         require => Package["aerofs-lizard"],
     }
-    file{"/opt/lizard/hpc-server-config/secret/aerofs.com.key":
+
+    file{"/opt/lizard/hpc-server-config/secrets/aerofs.com.key":
         source  => "puppet:///aerofs_hpc/aerofs.com.key",
         ensure  => present,
         require => Package["aerofs-lizard"],
