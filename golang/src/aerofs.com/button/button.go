@@ -239,6 +239,7 @@ func sendAPNS(client apns.APNSClient, token, body string, badge int) chan *pushR
 	payload := apns.NewPayload()
 	payload.Alert = body
 	payload.Badge = badge
+	payload.Sound = "default"
 
 	pn := apns.NewPushNotification()
 	pn.DeviceToken = token
