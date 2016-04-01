@@ -10,7 +10,6 @@ import org.skife.jdbi.v2.Handle;
 public final class DAO {
 
     public final Children children;
-    public final Locations locations;
     public final LogicalObjects objects;
     public final ObjectProperties objectProperties;
     public final ObjectTypes objectTypes;
@@ -21,7 +20,6 @@ public final class DAO {
 
     public DAO(Handle conn) {
         this.children = conn.attach(Children.class);
-        this.locations = conn.attach(Locations.class);
         this.objects = conn.attach(LogicalObjects.class);
         this.objectProperties = conn.attach(ObjectProperties.class);
         this.objectTypes = conn.attach(ObjectTypes.class);

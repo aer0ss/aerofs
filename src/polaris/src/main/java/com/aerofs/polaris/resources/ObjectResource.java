@@ -12,10 +12,8 @@ import javax.annotation.security.RolesAllowed;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
-import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Map;
@@ -27,17 +25,10 @@ public final class ObjectResource {
 
     private final ObjectStore objectStore;
     private final Notifier notifier;
-    private final ResourceContext context;
 
-    public ObjectResource(@Context ObjectStore objectStore, @Context Notifier notifier, @Context ResourceContext context) {
+    public ObjectResource(@Context ObjectStore objectStore, @Context Notifier notifier) {
         this.objectStore = objectStore;
         this.notifier = notifier;
-        this.context = context;
-    }
-
-    @Path("/versions")
-    public VersionsResource getVersions() {
-        return context.getResource(VersionsResource.class);
     }
 
     // NOTE (AG): order the JAX-RS annotations first

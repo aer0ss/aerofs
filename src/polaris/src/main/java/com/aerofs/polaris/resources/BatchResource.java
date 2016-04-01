@@ -23,9 +23,4 @@ public final class BatchResource {
     public TransformBatchResource performObjectTransforms() {
         return context.getResource(TransformBatchResource.class);
     }
-
-    @Path("/locations")
-    public LocationBatchResource performLocationUpdates() {
-        return context.getResource(LocationBatchResource.class);
-    }
 }

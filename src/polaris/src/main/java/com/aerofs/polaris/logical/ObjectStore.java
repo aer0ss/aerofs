@@ -6,7 +6,6 @@ import com.aerofs.polaris.Constants;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.AccessManager;
-import com.aerofs.polaris.api.batch.location.LocationUpdateType;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.*;
 import com.aerofs.polaris.dao.Atomic;
@@ -566,7 +565,6 @@ public final class ObjectStore {
             Preconditions.checkState(content != null, "could not find content for migrant file %s", migrant);
             dao.objectProperties.add(childOid, content.version, content.hash, content.size, content.mtime);
             dao.objects.update(child.store, childOid, content.version);
-            dao.locations.add(childOid, content.version, device);
             transformTimestamp = addTransformAndUpdateMaxLogicalTimestamp(dao, device, child.store, childOid, TransformType.UPDATE_CONTENT, content.version, null, null, null, null);
         }
 
@@ -910,8 +908,7 @@ public final class ObjectStore {
         // update the version for the object
         dao.objects.update(file.store, file.oid, newVersion);
 
-        // add the location of the new content
-        dao.locations.add(file.oid, newVersion, device);
+        // TODO: on transaction commit, advertise location to waldo
 
         // return the timestamp at which the transform was made
         return logicalTimestamp;
@@ -937,125 +934,6 @@ public final class ObjectStore {
 
         // return logical timestamp associated with this transform
         return logicalTimestamp;
-    }
-
-    //------------------------------------------------------------------------------------------------------------------
-    //
-    // object location updates
-    //
-    //------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Get a list of devices at which {@code oid}, {@code version} is available.
-     *
-     * @param user user id requesting the list of devices
-     * @param oid object to be located
-     * @param version integer version > 0 of {@code oid}
-     * @return list of devices at which {@code oid}, {@code version} can be found
-     * @throws NotFoundException if the {@code object} to be located does not exist
-     * @throws AccessException if {@code user} cannot retrieve the list of locations for {@code oid}, {@code version}
-     */
-    public List<DID> getLocations(UserID user, UniqueID oid, long version) throws NotFoundException, AccessException {
-        AccessToken accessToken = checkAccess(user, oid, Access.READ);
-        return inTransaction(dao -> getLocations(dao, accessToken, oid, version));
-    }
-
-    private List<DID> getLocations(DAO dao, AccessToken accessToken, UniqueID oid, long version) throws NotFoundException, AccessException {
-        checkAccessGranted(dao, accessToken, oid, Access.READ);
-
-        // check that the object exists
-        LogicalObject object = getExistingObject(dao, oid);
-        checkVersionInRange(object, version);
-
-        // check that the object is a file
-        ObjectType objectType = dao.objectTypes.get(oid);
-        Preconditions.checkState(objectType != null, "no object type for %s", oid);
-        Preconditions.checkArgument(isFile(objectType), "cannot add content for %s", objectType);
-
-        List<DID> existingLocations = Lists.newArrayListWithCapacity(10);
-
-        // now, let's get the list of devices that have this content
-        try (ResultIterator<DID> iterator = dao.locations.get(oid, version)) {
-            while (iterator.hasNext()) {
-                existingLocations.add(iterator.next());
-            }
-        }
-
-        return existingLocations;
-    }
-
-    /**
-     * Update the list of devices at which an object
-     * identified by {@code oid}, {@code version} can be located.
-     * Updates can be one of:
-     * <ul>
-     *     <li>Addition.</li>
-     *     <li>Removal.</li>
-     * </ul>
-     *
-     * @param user user id updating the list of devices
-     * @param operationType {@link LocationUpdateType#INSERT} to add {@code did} to
-     *                   the list of devices or {@link LocationUpdateType#REMOVE}
-     *                   to remove {@code did} from the list of devices
-     * @param oid object for which the location list should be updated
-     * @param version integer version > 0 of {@code oid}
-     * @param did device id to be added or removed from the location list
-     * @throws NotFoundException if the {@code object} for which the location list should be updated does not exist
-     * @throws AccessException if {@code user} cannot update the list of locations for {@code oid}, {@code version}
-     */
-    public void performLocationUpdate(UserID user, LocationUpdateType operationType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
-        AccessToken accessToken = checkAccess(user, oid, Access.READ, Access.WRITE);
-        inTransaction(dao -> {
-            performLocationUpdate(dao, accessToken, operationType, oid, version, did);
-            return null;
-        });
-    }
-
-    private void performLocationUpdate(DAO dao, AccessToken accessToken, LocationUpdateType operationType, UniqueID oid, long version, DID did) throws NotFoundException, AccessException {
-        checkAccessGranted(dao, accessToken, oid, Access.READ, Access.WRITE);
-
-        switch (operationType) {
-            case INSERT:
-                insertLocation(dao, oid, version, did);
-                break;
-            case REMOVE:
-                removeLocation(dao, oid, version, did);
-                break;
-            default:
-                throw new IllegalArgumentException("unhandled location update type " + operationType.name());
-        }
-    }
-
-    private void insertLocation(DAO dao, UniqueID oid, long version, DID did) throws NotFoundException {
-        // check that the object exists
-        LogicalObject object = getExistingObject(dao, oid);
-
-        // check that the version looks right
-        checkVersionInRange(object, version);
-
-        // check that the object is a file
-        ObjectType objectType = dao.objectTypes.get(oid);
-        Preconditions.checkState(objectType != null, "no object type for %s", oid);
-        Preconditions.checkArgument(isFile(objectType), "cannot add content for %s type", objectType);
-
-        // now, let's add the new location for the object
-        dao.locations.add(oid, version, did);
-    }
-
-    private void removeLocation(DAO dao, UniqueID oid, long version, DID did) throws NotFoundException {
-        // check that the object exists
-        LogicalObject object = getExistingObject(dao, oid);
-
-        // check that the version looks right
-        checkVersionInRange(object, version);
-
-        // check that the object is a file
-        ObjectType objectType = dao.objectTypes.get(oid);
-        Preconditions.checkState(objectType != null, "no object type for %s", oid);
-        Preconditions.checkArgument(isFile(objectType), "cannot add content for %s type", objectType);
-
-        // now, let's remove the existing location for the object
-        dao.locations.remove(oid, version, did);
     }
 
     private LockableLogicalObject getExistingObject(DAO dao, UniqueID oid) throws NotFoundException {
