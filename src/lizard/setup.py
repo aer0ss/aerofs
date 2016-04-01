@@ -18,8 +18,8 @@ setup(name='lizard',
                                  'templates/emails/*.txt',
                                  'server_pull.sh',
                                  'server_bootstrap.sh',
-                                 'configure_hpc_server.sh'
-                                 'cloud-config'
+                                 'configure_hpc_server.sh',
+                                 'cloud-config',
                                  ]},
       )
 
