@@ -16,7 +16,7 @@ from sqlalchemy.exc import IntegrityError
 
 EXPIRING_LICENSE_NOTIFICATION_BUFFER = 7
 POLLING_INTERVAL = 2
-HPC_SERVER_CONFIG_PATH = '/opt/lizard/hpc-server-config'
+HPC_SECRETS_PATH = '/opt/lizard/hpc-server-config/secrets'
 
 BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
 HPC_SQS_QUEUE_NAME = 'hpc_auto_scaling'
@@ -321,10 +321,10 @@ def download_backup_file(subdomain):
             current_app.logger.warn('Failed to delete deployment {}'.format(subdomain))
             return
 
-    #Download the backup file and storing it in a S3 bucket
+    #Download the backup file into tmp dir and storing it in a S3 bucket
     backup_file = session.get('/admin/download_backup_file')
     backup_name = set_backup_name(subdomain)
-    backup_path = "/tmp/{}".format(backup_name)
+    backup_path = os.path.join("/tmp", backup_name)
     with open(backup_path, 'wb') as f:
         for chunk in backup_file.iter_content(chunk_size=1024):
             if chunk:
@@ -339,7 +339,7 @@ def set_backup_name(subdomain):
 
 def create_server(instance_type, server_name):
     create_aws_credentials_file()
-    cloud_config_path = '{}/data/cloud-config'.format(HPC_SERVER_CONFIG_PATH)
+    cloud_config_path = os.path.join(os.getcwd(), 'cloud-config')
 
     with open(cloud_config_path) as f:
         user_data = f.read()
@@ -399,9 +399,8 @@ def configure_server(instance):
     # To configure the server we need both to launch the 'configure_hpc_server.sh'
     # script
     private_ip = instance.private_ip_address
-    config_script_path = '{}/configure_hpc_server.sh {}'.format(HPC_SERVER_CONFIG_PATH,
-                                                                private_ip)
-    subprocess.Popen([config_script_path], shell=True)
+    config_script_path = os.path.join(os.getcwd(), 'configure_hpc_server')
+    subprocess.Popen([config_script_path, private_ip])
 
     # Attach the instance to an an autoscaling group
     attach_instance_autoscaling_group(instance.id)
@@ -454,7 +453,7 @@ def attach_instance_autoscaling_group(instance_id):
 def create_aws_credentials_file():
     # In the HPC Monitoring container, the memory monitoring script need credentials
     # to run
-    credential_path = '{}/secrets/aws_credentials'.format(HPC_SERVER_CONFIG_PATH)
+    credential_path = os.path.join(HPC_SECRETS_PATH, 'aws_credentials')
     if not os.path.isfile(credential_path):
         with open(credential_path, 'w') as cred:
             cred.write('AWSAccessKeyId={} \n'.format(current_app.config['HPC_AWS_ACCESS_KEY']))
