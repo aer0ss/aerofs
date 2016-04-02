@@ -234,6 +234,7 @@ public class Sparta extends Service
                         .toInstance(jedisConn);
                 bind(new TypeLiteral<IThreadLocalTransaction<JedisException>>() {})
                         .to(JedisThreadLocalTransaction.class);
+                bind(IAnalyticsClient.class).toInstance(new AnalyticsClient(secret));
             }
 
             @Provides @Singleton

@@ -31,6 +31,8 @@ import com.aerofs.rest.auth.ServiceToken;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
+import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,11 +94,12 @@ public class UsersResource extends AbstractSpartaResource
     private final AuditClient _audit;
     private final TwoFactorEmailer _twoFactorEmailer;
     private final Organization.Factory _factOrg;
+    private final IAnalyticsClient _analyticsClient;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher, CommandDispatcher commandDispatcher,
                          PasswordManagement passwordManagement, AuditClient audit, TwoFactorEmailer twoFactorEmailer,
-                         Organization.Factory factOrg)
+                         Organization.Factory factOrg, IAnalyticsClient analyticsClient)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
@@ -105,6 +108,7 @@ public class UsersResource extends AbstractSpartaResource
         _audit = audit;
         _twoFactorEmailer = twoFactorEmailer;
         _factOrg = factOrg;
+        _analyticsClient = analyticsClient;
     }
 
     private AuditableEvent audit(User caller, IUserAuthToken token, AuditTopic topic, String event)
@@ -335,6 +339,8 @@ public class UsersResource extends AbstractSpartaResource
                 .embed("role", permissions)
                 .publish();
 
+        _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_ACCEPT, user.id());
+
         String location = Service.DUMMY_LOCATION
                 + 'v' + version
                 + "/shares/" + sf.id().toStringFormal();
@@ -547,6 +553,8 @@ public class UsersResource extends AbstractSpartaResource
         audit(caller, auth, AuditTopic.USER, "user.delete")
                 .add("email", target.id())
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.USER_DELETE);
 
         return Response.noContent()
                 .build();

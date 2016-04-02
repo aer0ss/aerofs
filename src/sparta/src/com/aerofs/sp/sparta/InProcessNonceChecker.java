@@ -2,8 +2,12 @@ package com.aerofs.sp.sparta;
 
 import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditClient.AuditTopic;
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.bifrost.oaaas.auth.NonceChecker;
+import com.aerofs.servlets.lib.analytics.AnalyticsClient;
+import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.IdentitySessionManager;
 import com.aerofs.sp.server.lib.user.User;
@@ -18,6 +22,7 @@ public class InProcessNonceChecker implements NonceChecker {
     @Inject private SQLThreadLocalTransaction _sqlTrans;
     @Inject private IdentitySessionManager _sessionManager;
     @Inject private User.Factory _factUser;
+    @Inject private IAnalyticsClient _analyticsClient;
 
     @Override
     public AuthorizedClient authorizeAPIClient(String nonce, String devName) throws Exception {
@@ -46,6 +51,9 @@ public class InProcessNonceChecker implements NonceChecker {
                 .add("user", user.id())
                 .add("device_type", "API Client")
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_INSTALL);
+
         return r;
     }
 }

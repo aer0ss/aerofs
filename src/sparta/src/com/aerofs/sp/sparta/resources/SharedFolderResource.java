@@ -37,6 +37,7 @@ import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.Version;
 import com.aerofs.restless.util.EntityTagSet;
+import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.InvitationHelper;
@@ -60,6 +61,7 @@ import com.aerofs.sp.sparta.Transactional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
 import com.google.inject.Inject;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.slf4j.Logger;
@@ -103,13 +105,14 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final AuditClient _audit;
     private final UrlShareResource _urlShare;
     private final Organization.Factory _factOrg;
+    private final IAnalyticsClient _analyticsClient;
 
     @Inject
     public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF, Group.Factory factGroup,
             UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
             InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
             SharedFolderNotificationEmailer sfnEmailer, AuditClient audit,
-            UrlShareResource urlShare, Organization.Factory factOrg)
+            UrlShareResource urlShare, Organization.Factory factOrg, IAnalyticsClient analyticsClient)
     {
         _factUser = factUser;
         _factGroup = factGroup;
@@ -122,6 +125,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         _audit = audit;
         _urlShare = urlShare;
         _factOrg = factOrg;
+        _analyticsClient = analyticsClient;
     }
 
     private AuditableEvent audit(SharedFolder sf, User caller, IUserAuthToken token, String event)
@@ -226,6 +230,8 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         audit(sf, caller, token, "folder.create")
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.SHARED_FOLDER_CREATE, caller.id());
 
         String location = Service.DUMMY_LOCATION
                 + 'v' + version
@@ -790,6 +796,8 @@ public class SharedFolderResource extends AbstractSpartaResource
                 .add("target", user.id())
                 .embed("role", req.toArray())
                 .publish();
+
+        _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, caller.id());
 
         // TODO: call emailer outside of transaction to mimic SPService?
         em.send();

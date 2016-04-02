@@ -16,6 +16,8 @@ import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.Version;
+import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.sp.server.AccessCodeProvider;
 import com.aerofs.sp.server.Zelda;
 import com.aerofs.sp.server.audit.AuditCaller;
@@ -59,6 +61,8 @@ public class UrlShareResource extends AbstractSpartaResource
     private final AccessCodeProvider _accessCodeProvider;
     private final Zelda _zelda;
     private final TimeSource _timeSource;
+    private final IAnalyticsClient _analyticsClient;
+
 
     @Inject
     public UrlShareResource(
@@ -68,7 +72,8 @@ public class UrlShareResource extends AbstractSpartaResource
             AuditClient auditClient,
             AccessCodeProvider accessCodeProvider,
             Zelda zelda,
-            TimeSource timeSource)
+            TimeSource timeSource,
+            IAnalyticsClient analyticsClient)
     {
         _factUser = factUser;
         _factSF = factSF;
@@ -77,6 +82,7 @@ public class UrlShareResource extends AbstractSpartaResource
         _accessCodeProvider = accessCodeProvider;
         _zelda = zelda;
         _timeSource = timeSource;
+        _analyticsClient = analyticsClient;
     }
 
     @Since("1.4")
@@ -139,6 +145,8 @@ public class UrlShareResource extends AbstractSpartaResource
 
         AuditableEvent auditEvent = createAuditEvent(token, ip, "link.create", urlShare)
                 .add("soid", restObject.toStringFormal());
+
+        _analyticsClient.track(AnalyticsEvent.LINK_CREATED, caller.id());
 
         // the end point will treat empty password as not setting password. Note that the backend
         // appear to support empty string as passwords but the web client does not.

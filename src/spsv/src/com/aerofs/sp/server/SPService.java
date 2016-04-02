@@ -1359,8 +1359,12 @@ public class SPService implements ISPService
 
         List<AuditableEvent> events = Lists.newArrayList();
         List<UserID> userIDs = Lists.newArrayList();
+        UserID folderCreatorUserID = UserID.DUMMY;
         boolean created = saveSharedFolderIfNecessary(folderName, sf, sharer, external);
-        if (created) events.add(auditSharing(sf, sharer, "folder.create"));
+        if (created) {
+            events.add(auditSharing(sf, sharer, "folder.create"));
+            folderCreatorUserID = sharer.id();
+        }
 
         ImmutableCollection.Builder<UserID> affected = ImmutableSet.builder();
 
@@ -1446,6 +1450,10 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         for (AuditableEvent e : events) e.publish();
+
+        if (!folderCreatorUserID.equals(UserID.DUMMY)) {
+            _analyticsClient.track(AnalyticsEvent.SHARED_FOLDER_CREATE, folderCreatorUserID);
+        }
 
         for (UserID u : userIDs) _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_SEND, u);
 
@@ -1756,8 +1764,7 @@ public class SPService implements ISPService
                 .add("soid", restObject.toStringFormal())
                 .publish();
 
-        //TODO: Need to separate link share events for desktop and web. But for now will just have all link shares as web link share event.
-        _analyticsClient.track(AnalyticsEvent.LINK_CREATED_WEB, requester.id());
+        _analyticsClient.track(AnalyticsEvent.LINK_CREATED, requester.id());
 
         return createReply(CreateUrlReply.newBuilder().setUrlInfo(pbRestObjectUrl).build());
     }
@@ -3782,6 +3789,9 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         _userTracker.signOutAll(user.id());
+
+        //TODO: We should probably send an audit event too for user deletion
+        _analyticsClient.track(AnalyticsEvent.USER_DELETE);
 
         return createVoidReply();
     }

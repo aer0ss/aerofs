@@ -301,21 +301,10 @@ var eventInfoMap = map[string]eventInfo{
 			},
 		},
 	},
-	"LINK_CREATED_DESKTOP": eventInfo{
+	"LINK_CREATED": eventInfo{
 		Template: segment.Track{
-			Event: "Link Created",
-			Properties: map[string]interface{}{
-				"Source": "Desktop",
-			},
-		},
-		RequireUserID: true,
-	},
-	"LINK_CREATED_WEB": eventInfo{
-		Template: segment.Track{
-			Event: "Link Created",
-			Properties: map[string]interface{}{
-				"Source": "Web",
-			},
+			Event:      "Link Created",
+			Properties: make(map[string]interface{}),
 		},
 		RequireUserID: true,
 	},
@@ -375,5 +364,18 @@ var eventInfoMap = map[string]eventInfo{
 				"Platform": "Mobile",
 			},
 		},
+	},
+	"USER_DELETE": eventInfo{
+		Template: segment.Track{
+			Event: "User Delete",
+			Properties: make(map[string]interface{}),
+		},
+	},
+	"SHARED_FOLDER_CREATE": eventInfo{
+		Template: segment.Track{
+			Event: "Shared Folder Creation",
+			Properties: make(map[string]interface{}),
+		},
+		RequireUserID: true,
 	},
 }

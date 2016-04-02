@@ -66,7 +66,7 @@ var badReqTests = []string{
 	`{"event":"USER_SIGNUP","value":}`,
 	`{"event":"USER_SIGNUP","value":0}`,
 	`{"event":"USER_SIGNUP","user_id":"1234","value":1}`,
-	`{"event":"LINK_CREATED_DESKTOP","value":1}`,
+	`{"event":"LINK_CREATED","value":1}`,
 	`{"event":""}`,
 }
 
@@ -95,9 +95,9 @@ func TestAnalytics_Send_invalid_event_should_return_400(t *testing.T) {
 }
 
 var testSuccess1_1 = `{"event":"USER_SIGNUP","value":1}`
-var testSuccess1_2 = `{"event":"LINK_CREATED_DESKTOP","user_id":"123abc","value":1}`
+var testSuccess1_2 = `{"event":"LINK_CREATED","user_id":"123abc","value":1}`
 var testKey1_1 = []byte("USER_SIGNUP")
-var testKey1_2 = []byte("LINK_CREATED_DESKTOP")
+var testKey1_2 = []byte("LINK_CREATED")
 
 func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) {
 	db, testServer := setupTestStructs()
@@ -175,7 +175,7 @@ func TestAnalytics_Send_valid_event_should_return_200_and_persist(t *testing.T) 
 	}
 }
 
-var testKey2_1 = "LINK_CREATED_DESKTOP"
+var testKey2_1 = "LINK_CREATED"
 var testVal2_1 = uint64(200)
 var testHash2_1 = "1a2b3c4d"
 
