@@ -1,1 +1,1 @@
-recursive-include lizard *.html *.txt
+recursive-include lizard *.html *.txt *.sh

@@ -400,7 +400,7 @@ def configure_server(instance):
     # To configure the server we need both to launch the 'configure_hpc_server.sh'
     # script
     private_ip = instance.private_ip_address
-    config_script_path = os.path.join(dirname, 'configure_hpc_server')
+    config_script_path = os.path.join(dirname, 'configure_hpc_server.sh')
     subprocess.Popen([config_script_path, private_ip])
 
     # Attach the instance to an an autoscaling group
