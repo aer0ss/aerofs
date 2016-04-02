@@ -84,32 +84,38 @@ class lizard (
         require => Package["aerofs-lizard"],
     }
 
+    file{"/var/www/.ssh":
+        ensure  => 'directory',
+        owner   => 'www-data',
+        require => Package["aerofs-lizard"],
+    }
     file{"/opt/lizard/hpc-server-config":
-        ensure => 'directory',
-        owner  => 'www-data',
+        ensure  => 'directory',
+        owner   => 'www-data',
         require => Package["aerofs-lizard"],
     }
     file{"/opt/lizard/hpc-server-config/secrets":
-        ensure => 'directory',
-        owner  => 'www-data',
+        ensure  => 'directory',
+        owner   => 'www-data',
         require => File["/opt/lizard/hpc-server-config"],
     }
     file{"/opt/lizard/hpc-server-config/secrets/hpc-key.pem":
         source  => "puppet:///aerofs_hpc/hpc-key.pem",
         ensure  => present,
-        owner  => 'www-data',
+        owner   => 'www-data',
+        mode    => 0400,
         require => File["/opt/lizard/hpc-server-config/secrets"],
     }
     file{"/opt/lizard/hpc-server-config/secrets/aerofs.com.key":
         source  => "puppet:///aerofs_hpc/aerofs.com.key",
         ensure  => present,
-        owner  => 'www-data',
+        owner   => 'www-data',
         require => File["/opt/lizard/hpc-server-config/secrets"],
     }
     file{"/opt/lizard/hpc-server-config/secrets/aerofs.com.crt":
         source  => "puppet:///aerofs_hpc/aerofs.com.crt",
         ensure  => present,
-        owner  => 'www-data',
+        owner   => 'www-data',
         require => File["/opt/lizard/hpc-server-config/secrets"],
     }
 }

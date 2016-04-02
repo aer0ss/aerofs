@@ -9,6 +9,6 @@ fi
 IP="$1"
 PWD=$(dirname $0)
 
-scp -o StrictHostKeyChecking=no -i /opt/lizard/secrets/hpc-key.pem /opt/lizard/secrets/aerofs.com.crt /opt/lizard/secrets/aerofs.com.key \
-/opt/lizard/secrets/aws_credentials "$PWD"/server_bootstrap.sh "$PWD"/server_pull.sh core@$IP:~
-ssh -o StrictHostKeyChecking=no -i /opt/lizard/secrets/hpc-key.pem core@$IP "sudo /home/core/server_pull.sh && sudo /home/core/server_bootstrap.sh"
+scp -o StrictHostKeyChecking=no -i /opt/lizard/hpc-server-config/secrets/hpc-key.pem /opt/lizard/hpc-server-config/secrets/aerofs.com.crt /opt/lizard/hpc-server-config/secrets/aerofs.com.key \
+/opt/lizard/hpc-server-config/secrets/aws_credentials "$PWD"/server_bootstrap.sh "$PWD"/server_pull.sh core@$IP:~
+ssh -o StrictHostKeyChecking=no -i /opt/lizard/hpc-server-config/secrets/hpc-key.pem core@$IP "sudo /home/core/server_pull.sh && sudo /home/core/server_bootstrap.sh"
