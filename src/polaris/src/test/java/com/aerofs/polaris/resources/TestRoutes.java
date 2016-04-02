@@ -8,9 +8,6 @@ import com.aerofs.ids.UserID;
 import com.aerofs.polaris.PolarisHelpers;
 import com.aerofs.polaris.PolarisTestServer;
 import com.aerofs.polaris.api.PolarisUtilities;
-import com.aerofs.polaris.api.batch.location.LocationBatch;
-import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
-import com.aerofs.polaris.api.batch.location.LocationUpdateType;
 import com.aerofs.polaris.api.batch.transform.TransformBatch;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.operation.InsertChild;
@@ -164,23 +161,6 @@ public final class TestRoutes {
                 .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new TransformBatch(ImmutableList.of(new TransformBatchOperation(store, new InsertChild(file, FILE, "file", null)))))
                 .and()
                 .when().post(PolarisTestServer.getServiceURL() + "/batch/transforms/")
-                .then()
-                .assertThat().statusCode(equalTo(SC_OK));
-    }
-
-    @Test
-    public void shouldReachRoute6() { // POST /batch/locations
-        SID store = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
-
-        // post at least one location update
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(ACCEPT, APPLICATION_JSON)
-                .header(CONTENT_TYPE, APPLICATION_JSON).and().body(new LocationBatch(ImmutableList.of(new LocationBatchOperation(file, 0, DEVICE, LocationUpdateType.INSERT))))
-                .and()
-                .when().post(PolarisTestServer.getServiceURL() + "/batch/locations/")
                 .then()
                 .assertThat().statusCode(equalTo(SC_OK));
     }
