@@ -25,11 +25,20 @@ import (
 // BoltDB is used for the main database as it is easy to use and offers
 // excellent read and decent write performance.
 //
+// There is a single bucket, with the OID as key and a list of (DID, version)
+// tuples as values. For now the encoding of this list is a straightforward
+// sequence of 16 bytes OID followed by a varint version. The first byte of
+// the value is reserved to describe the encoding, to leave room for more
+// compact encodings in the future.
+//
 // A write-ahead-log is used to speed up insertions. For simplicity, this
 // log is kept in sync with an equivalent in-memory cache. This provides
 // extremely fast reads of recent writes.
 // The write-ahead-log is checkpointed when the in-memory cache exceeds
 // a fixed size threshold.
+//
+// For simplicity, the WAL is a flat sequence of fixed size entries:
+// OID (16 bytes), DID (16 bytes), version (8 bytes)
 //
 //
 // TS/SA Database
@@ -190,7 +199,11 @@ func (db *DB) loadVersions(oid UID, versions *SortedVersionMap) error {
 		if v == nil {
 			return nil
 		}
-		i := 0
+		t := v[0]
+		if t != 0 {
+			return fmt.Errorf("unsupported row encoding %d", t)
+		}
+		i := 1
 		for i+16 < len(v) {
 			dd := NewUIDFromBytes(v[i : i+16])
 			dv, n := binary.Uvarint(v[i+16:])
@@ -324,8 +337,8 @@ func (db *DB) checkpoint() error {
 		for oid, versions := range db.dirty {
 			oid.Encode(kbuf[:])
 			d := versions.d
-			vbuf := make([]byte, (len(d)/3)*(16+binary.MaxVarintLen64))
-			j := 0
+			vbuf := make([]byte, 1+(len(d)/3)*(16+binary.MaxVarintLen64))
+			j := 1
 			for i := 0; i+2 < len(d); i += 3 {
 				v := d[i+2]
 				binary.BigEndian.PutUint64(vbuf[j:j+8], d[i])
