@@ -4,11 +4,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.polaris.api.batch.BatchError;
-import com.aerofs.polaris.api.batch.location.LocationBatch;
-import com.aerofs.polaris.api.batch.location.LocationBatchOperation;
-import com.aerofs.polaris.api.batch.location.LocationBatchOperationResult;
-import com.aerofs.polaris.api.batch.location.LocationBatchResult;
-import com.aerofs.polaris.api.batch.location.LocationUpdateType;
 import com.aerofs.polaris.api.batch.transform.TransformBatch;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperation;
 import com.aerofs.polaris.api.batch.transform.TransformBatchOperationResult;
@@ -38,40 +33,6 @@ public final class TestJsonConversion {
 
     public TestJsonConversion() {
         mapper.registerModule(new PolarisModule());
-    }
-
-    @Test
-    public void shouldSerializeAndDeserializeLocationBatch() throws IOException {
-        List<LocationBatchOperation> operations = ImmutableList.of(
-                new LocationBatchOperation(OID.generate(), RANDOM.nextInt(2000), DID.generate(), LocationUpdateType.INSERT),
-                new LocationBatchOperation(OID.generate(), RANDOM.nextInt(2000), DID.generate(), LocationUpdateType.REMOVE),
-                new LocationBatchOperation(OID.generate(), RANDOM.nextInt(2000), DID.generate(), LocationUpdateType.REMOVE),
-                new LocationBatchOperation(OID.generate(), RANDOM.nextInt(2000), DID.generate(), LocationUpdateType.INSERT)
-        );
-        LocationBatch batch = new LocationBatch(operations);
-
-        String serialized = mapper.writeValueAsString(batch);
-        LOGGER.info("transform_batch:{}", serialized);
-
-        LocationBatch deserialized = mapper.readValue(serialized, LocationBatch.class);
-        assertThat(deserialized, Matchers.equalTo(batch));
-    }
-
-    @Test
-    public void shouldSerializeAndDeserializeLocationBatchResult() throws IOException {
-        List<LocationBatchOperationResult> results = ImmutableList.of(
-                new LocationBatchOperationResult(new BatchError(PolarisError.INSUFFICIENT_PERMISSIONS, "message 0")),
-                new LocationBatchOperationResult(new BatchError(PolarisError.INVALID_OPERATION_ON_TYPE, "message 1")),
-                new LocationBatchOperationResult(new BatchError(PolarisError.NAME_CONFLICT, "message 2")),
-                new LocationBatchOperationResult()
-        );
-        LocationBatchResult batch = new LocationBatchResult(results);
-
-        String serialized = mapper.writeValueAsString(batch);
-        LOGGER.info("location_batch_result:{}", serialized);
-
-        LocationBatchResult deserialized = mapper.readValue(serialized, LocationBatchResult.class);
-        assertThat(deserialized, Matchers.equalTo(batch));
     }
 
     @Test

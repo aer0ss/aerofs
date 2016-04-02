@@ -24,7 +24,6 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.jayway.restassured.RestAssured.given;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -48,71 +47,6 @@ public final class TestRoutes {
     @After
     public void afterTest() throws Exception {
         database.clear();
-    }
-
-    @Test
-    public void shouldReachRoute0() { // POST /objects/{oid}/versions/{version}/locations/{did}
-        SID store = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
-
-        // this route should exist
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .when().post(PolarisTestServer.getServiceURL() + "/objects/" + file.toStringFormal() + "/versions/" + 0 + "/locations/" + DEVICE.toStringFormal())
-                .then()
-                .assertThat().statusCode(equalTo(SC_NO_CONTENT));
-    }
-
-    @Test
-    public void shouldReachRoute1() { // GET /objects/{oid}/versions/{version}/locations/
-        // create a store and a file under it along with some content
-        SID store = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
-        PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, HASH_BYTES, 1, System.currentTimeMillis());
-
-        // add a location at which that file is present
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .when().post(PolarisTestServer.getServiceURL() + "/objects/" + file.toStringFormal() + "/versions/" + 0 + "/locations/" + DEVICE.toStringFormal())
-                .then()
-                .assertThat().statusCode(equalTo(SC_NO_CONTENT));
-
-        // attempt to get info about the locations at which that file is present
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(ACCEPT, APPLICATION_JSON)
-                .when().get(PolarisTestServer.getServiceURL() + "/objects/" + file.toStringFormal() + "/versions/" + 0 + "/locations/")
-                .then()
-                .assertThat().statusCode(equalTo(SC_OK));
-    }
-
-    @Test
-    public void shouldReachRoute2() { // DELETE /objects/{oid}/versions/{version}/locations/{did}
-        // create a store and a file under it along with some content
-        SID store = SID.generate();
-        OID file = PolarisHelpers.newFile(AUTHENTICATED, store, "file");
-        PolarisHelpers.newFileContent(AUTHENTICATED, file, 0, HASH_BYTES, 1, System.currentTimeMillis());
-
-        // add a location at which that file is present
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .when().post(PolarisTestServer.getServiceURL() + "/objects/" + file.toStringFormal() + "/versions/" + 0 + "/locations/" + DEVICE.toStringFormal())
-                .then()
-                .assertThat().statusCode(equalTo(SC_NO_CONTENT));
-
-        // now, delete that location
-        given()
-                .spec(AUTHENTICATED)
-                .and()
-                .header(ACCEPT, APPLICATION_JSON)
-                .when().delete(PolarisTestServer.getServiceURL() + "/objects/" + file.toStringFormal() + "/versions/" + 0 + "/locations/" + DEVICE.toStringFormal())
-                .then()
-                .assertThat().statusCode(equalTo(SC_NO_CONTENT));
-
     }
 
     @Test
