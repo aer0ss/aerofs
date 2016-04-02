@@ -415,9 +415,12 @@ def configure_server(instance):
 
 
 @celery.task()
-def launch_server(server_name):
+def launch_server(server_name=''):
+    if not server_name:
+        last_server_id = HPCServer.query.order_by(-HPCServer.id).first().id
+        server_name = 'hpc-server-{}'.format(last_server_id+1)
+
     # Lauching the server
-    # The name and the size of the new instance has to be changed
     instance = create_server('r3.2xlarge', server_name)
     configure_server(instance)
 
@@ -438,7 +441,7 @@ def check_sqs_notifications():
     # If there is a message in the queue, it means that the alarm notified us
     # that we have to create new a instance
     if number_messages_queue != 0:
-        requests.post('localhost:8000/launch_server')
+        launch_server.si().apply_async()
         # By calling lizard, we took into account the notification so we can now
         # delete the messages from the queue.
         queue.purge()

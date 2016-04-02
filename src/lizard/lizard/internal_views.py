@@ -12,7 +12,6 @@ from flask import Blueprint, current_app, url_for, render_template, redirect, Re
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 MONITORING_PORT = 5000
-AUTOSCALING_NUMBER_NEW_INSTANCES = 1
 
 @blueprint.route("/", methods=["GET"])
 def index():
@@ -589,11 +588,8 @@ def hpc_server_sys_stats():
 
 @blueprint.route("/launch_server", methods=['POST'])
 def launch_server(server_name=''):
-    if not server_name:
-        last_server_id = models.HPCServer.query.order_by(-models.HPCServer.id).first().id
-        server_name = 'hpc-server-{}'.format(last_server_id+1)
-    for i in range(AUTOSCALING_NUMBER_NEW_INSTANCES):
-        hpc.launch_server.si(server_name).apply_async()
+
+    hpc.launch_server.si(server_name).apply_async()
 
     return Response(200)
 
