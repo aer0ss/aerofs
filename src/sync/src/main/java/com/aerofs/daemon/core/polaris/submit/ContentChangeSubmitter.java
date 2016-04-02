@@ -29,6 +29,7 @@ import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.core.status.PauseSync;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -40,12 +41,17 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AbstractFuture;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -76,6 +82,30 @@ public class ContentChangeSubmitter implements Submitter
     private final LocalACL _lacl;
     private final CfgLocalUser _localUser;
 
+    private class Waiter extends AbstractFuture<Long> {
+        private final SOID soid;
+
+        Waiter(SOID soid) { this.soid = soid; }
+
+        @Override
+        public boolean set(@Nullable Long value) {
+            return super.set(value);
+        }
+
+        @Override
+        public boolean setException(Throwable t) {
+            return super.setException(t);
+        }
+
+        @Override
+        public boolean cancel(boolean maybeInterruptIfRunning) {
+            _waiters.remove(soid, this);
+            return super.cancel(maybeInterruptIfRunning);
+        }
+    }
+
+    private final Map<SOID, Waiter> _waiters = new HashMap<>();
+
     @Inject
     public ContentChangeSubmitter(PolarisAsyncClient client, ContentChangesDatabase ccdb,
             RemoteLinkDatabase rldb, RemoteContentDatabase rcdb, CentralVersionDatabase cvdb,
@@ -97,6 +127,15 @@ public class ContentChangeSubmitter implements Submitter
         _ch = ch;
         _lacl = lacl;
         _localUser = localUser;
+    }
+
+    public Future<Long> waitSubmitted_(SOID soid) {
+        Waiter w = _waiters.get(soid);
+        if (w == null) {
+            w = new Waiter(soid);
+            _waiters.put(soid, w);
+        }
+        return w;
     }
 
     @Override
@@ -319,5 +358,8 @@ public class ContentChangeSubmitter implements Submitter
         if (!_ccdb.deleteChange_(c.sidx, c.idx, t)) {
             l.info("submitted change now obsolete {}{}: {}", c.sidx, c.oid, c.idx);
         }
+
+        Waiter w = _waiters.remove(new SOID(c.sidx, c.oid));
+        if (w != null) w.set(updated.object.version);
     }
 }

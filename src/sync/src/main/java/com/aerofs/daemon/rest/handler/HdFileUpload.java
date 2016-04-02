@@ -1,5 +1,6 @@
 package com.aerofs.daemon.rest.handler;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoResource;
@@ -10,6 +11,7 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -37,6 +39,8 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.aerofs.rest.api.Error.Type;
 import static com.google.common.base.Preconditions.checkState;
@@ -54,6 +58,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
     @Inject private ContentEntityTagUtil _etags;
     @Inject private IPathResolver _resolver;
     @Inject private ICollectorStateDatabase _csdb;
+    @Inject private ContentChangeSubmitter _sub;
 
     @Override
     protected void handleThrows_(EIFileUpload ev) throws Exception
@@ -239,8 +244,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
     }
 
     private void applyPrefix_(IPhysicalPrefix pf, SOID soid, ContentHash h)
-            throws SQLException, IOException, ExNoResource
-    {
+            throws SQLException, IOException, ExNoResource {
         try (Trans t = _tm.begin_()) {
             ResolvedPath path = _resolver.resolveNullable_(soid);
             // NB: MUST get prefix length BEFORE apply_
@@ -254,6 +258,22 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
             _vu.update_(new SOCID(soid, CID.CONTENT), t);
 
             t.commit_();
+        }
+        // wait for content submitter
+        try {
+            l.debug("wait sub {}", soid);
+            Future<Long> f = _sub.waitSubmitted_(soid);
+            Long v = _tokenManager.inPseudoPause_(Cat.UNLIMITED, "rest-sub", () -> {
+                try {
+                    return f.get(5, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                    f.cancel(false);
+                    throw e;
+                }
+            });
+            // TODO: return version in response?
+        } catch (Exception e) {
+            l.info("content sub failed", BaseLogUtil.suppress(e));
         }
     }
 }

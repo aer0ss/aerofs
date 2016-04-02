@@ -120,14 +120,18 @@ public class PolarisContentVersionControl implements IContentVersionControl
 
     public void setContentVersion_(SIndex sidx, OID oid, long v, long lts, Trans t)
             throws SQLException {
-        _cvdb.setVersion_(sidx, oid, v, t);
         Updated u = _tlUpdated.get(t).get(sidx);
         if (u == null) {
             u = new Updated();
             _tlUpdated.get(t).put(sidx, u);
         }
         u.add(oid, lts);
-        notifyListeners_(sidx, oid, v, t);
+        // see comment in ApplyChange#applyContentChange_
+        Long pv = _cvdb.getVersion_(sidx, oid);
+        if (pv == null || pv != v) {
+            _cvdb.setVersion_(sidx, oid, v, t);
+            notifyListeners_(sidx, oid, v, t);
+        }
     }
 
     @Override

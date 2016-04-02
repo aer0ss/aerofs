@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.DaemonContentProvider;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -90,9 +91,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.jayway.restassured.RestAssured.given;
@@ -236,6 +235,15 @@ public class AbstractRestTest extends BaseAbstractRestTest
     {
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
+        ContentChangeSubmitter csub = mock(ContentChangeSubmitter.class);
+        when(csub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Long>() {
+            @Override public boolean cancel(boolean interrupt) { return false; }
+            @Override public boolean isCancelled() { return false; }
+            @Override public boolean isDone() { return true; }
+            @Override public Long get() { return null; }
+            @Override public Long get(long timeout, TimeUnit unit) { return null; }
+        });
+
         Injector inj = Guice.createInjector(new TestTokenVerifierModule(), new RestModule(), new AbstractModule()
         {
             @Override
@@ -270,6 +278,7 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 bind(RestContentHelper.class).to(DaemonRestContentHelper.class);
                 bind(ContentProvider.class).toInstance(provider);
                 bind(RemoteLinkDatabase.class).toInstance(rldb);
+                bind(ContentChangeSubmitter.class).toInstance(csub);
             }
         });
 
