@@ -134,7 +134,7 @@ def main():
     start = datetime.datetime.today()
 
     output = None
-    if not args.verbose:
+    if not args.verbose and not args.team_city:
         output = open(os.path.join(GIT_ROOT, 'build.log'), 'w')
 
     p = subprocess.Popen(make_args, stdout=output, cwd=GIT_ROOT)
