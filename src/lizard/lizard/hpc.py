@@ -427,7 +427,7 @@ def launch_server(server_name):
 @celery.task()
 def check_sqs_notifications():
     # Connecting to the queue
-    queue = current_app.sqs_resource(QueueName=HPC_SQS_QUEUE_NAME)
+    queue = current_app.sqs_resource.get_queue_by_name(QueueName=HPC_SQS_QUEUE_NAME)
 
     # Get the number of message from the queue
     queue_attributes = current_app.sqs_client.get_queue_attributes(
