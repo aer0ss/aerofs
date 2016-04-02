@@ -43,6 +43,7 @@ docker run --detach --restart=always                               \
     --publish=5000:5000                                            \
     --volume=/var/run/docker.sock:/var/run/docker.sock             \
     --volume=/var/hpc-monitoring:/state                            \
+    --volume=/home/core/aws_credentials:/aws_credentials           \
     --name=hpc-monitoring                                          \
     registry.aerofs.com/aerofs/hpc-monitoring:latest
 

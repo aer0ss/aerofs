@@ -21,7 +21,7 @@ RUN curl http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringSc
     unzip CloudWatchMonitoringScripts-1.2.1.zip && rm CloudWatchMonitoringScripts-1.2.1.zip
 
 RUN echo "*/5 * * * * /aws-scripts-mon/mon-put-instance-data.pl --mem-util --mem-used --mem-avail \
---auto-scaling=only --aws-credential-file='/home/core/aws_credentials'" >> /monitoring_taks &&\
+--auto-scaling=only --aws-credential-file='/aws_credentials'" >> /monitoring_taks &&\
     crontab /monitoring_taks
 
 CMD ["/start_process.sh"]
