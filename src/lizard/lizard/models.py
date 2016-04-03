@@ -377,9 +377,6 @@ class HPCServer(db.Model, TimeStampedMixin):
     # A server may have zero to many deployments on it
     deployments = db.relationship("HPCDeployment", backref="server")
 
-    # A server can be a reserved instance or not
-    reserved_instance = db.Column(db.Boolean, default=False)
-
     def __repr__(self):
         return "<HPCServer '{}'>".format(self.docker_url)
 
