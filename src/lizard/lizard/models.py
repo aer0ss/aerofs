@@ -324,7 +324,7 @@ class HPCDeployment(db.Model, TimeStampedMixin):
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
 
     # On which server is this running?
-    server_id = db.Column(db.Integer, db.ForeignKey('hpc_server.id'), nullable=False)
+    server_id = db.Column(db.Integer, db.ForeignKey('hpc_server.id'), nullable=True)
 
     # When the appliance was set up
     appliance_setup_date = db.Column(db.DateTime, nullable=True)
@@ -358,7 +358,7 @@ class HPCDeployment(db.Model, TimeStampedMixin):
         return start_of_today >= self.customer.newest_filled_license().expiry_date
 
     def __repr__(self):
-        return "<HPCDeployment '{}' expires: '{}'>".format(self.subdomain, self.customer.newest_filled_license.strftime('%Y-%m-%d'))
+        return "<HPCDeployment '{}'>".format(self.subdomain)
 
 
 class HPCServer(db.Model, TimeStampedMixin):

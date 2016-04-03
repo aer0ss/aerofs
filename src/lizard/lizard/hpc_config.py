@@ -1,5 +1,8 @@
+import boto3
+import os
 import re
 import requests
+from flask import current_app
 from lizard import celery, db, notifications
 from datetime import datetime, timedelta
 import time
@@ -11,7 +14,8 @@ logger = get_task_logger(__name__)
 #
 # This file contains the Celery tasks to configure an HPC deployment
 #
-
+BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
+POLLING_INTERVAL = 3
 
 class DeploymentSession(requests.Session):
     """
@@ -76,38 +80,91 @@ def new_authed_session(subdomain):
 
 
 @celery.task(bind=True)
-def configure_deployment(self, subdomain):
+def configure_deployment(self, subdomain, restore=False):
     """
     Performs the appliance setup (hostname, certificates, email, etc..)
     """
     logger.info("Configuring deployment for subdomain: {}".format(subdomain))
 
-    try:
-        session = new_authed_session(subdomain)
+    if not restore:
+        try:
+            session = new_authed_session(subdomain)
 
-        # Set the hostname (step 1 of setup)
-        r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
-        r.raise_for_status()
+            # Set the hostname (step 1 of setup)
+            r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
+            r.raise_for_status()
 
-        # Set the certificate (step 2 of setup)
-        r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
-        r.raise_for_status()
+            # Set the certificate (step 2 of setup)
+            r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
+            r.raise_for_status()
 
-        # Configure email settings (step 3 of setup)
-        r = session.post("/admin/json_setup_email",
-                         data={'email-server': 'local',
-                               'base-www-support-email-address': 'support@aerofs.com'})
-        r.raise_for_status()
+            # Configure email settings (step 3 of setup)
+            r = session.post("/admin/json_setup_email",
+                             data={'email-server': 'local',
+                                   'base-www-support-email-address': 'support@aerofs.com'})
+            r.raise_for_status()
 
-        # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
-        r = session.post("/admin/json_setup_hpc",
-                         data={'zephyr.address': 'zephyr.aerofs.com:8888'})
-        r.raise_for_status()
+            # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+            r = session.post("/admin/json_setup_hpc",
+                             data={'zephyr.address': 'zephyr.aerofs.com:8888'})
+            r.raise_for_status()
 
-    except Exception as e:
-        # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
-        # Wait 30s and retry
-        raise self.retry(exc=e, countdown=30, max_retries=10)
+        except Exception as e:
+            # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
+            # Wait 30s and retry
+            raise self.retry(exc=e, countdown=30, max_retries=10)
+    else:
+        try:
+            session = new_authed_session(subdomain)
+
+            # Download the backup file from s3 to a temp path
+            backup_date = datetime.today().strftime("%Y%m%d")
+            backup_file_name = '{}_backup_{}'.format(subdomain, backup_date)
+            backup_file_path = os.path.join('/tmp', backup_file_name)
+            current_app.s3.meta.client.download_file(
+                BACKUP_BUCKET, backup_file_name, backup_file_path)
+
+            backup_file = {'backup-file': open(backup_file_path, 'rb')}
+
+            # Upload backup file
+            session.post('/admin/json_upload_backup', files=backup_file)
+
+            # Restore the session from the backup file
+            session.post('/admin/json-restore')
+
+            # Wait until it have restored
+            while True:
+                status = session.get('/admin/json-restore')
+                try:
+                    status = status.json()
+                    logger.info(status)
+                    if status['succeeded']:
+                        break
+                except ValueError:
+                    logger.info('Failed to restore deployment')
+                time.sleep(POLLING_INTERVAL)
+
+            # Configure email settings
+            r = session.post("/admin/json_setup_email",
+                             data={'email-server': 'local',
+                                   'base-www-support-email-address': 'support@aerofs.com'})
+            r.raise_for_status()
+
+            # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+            r = session.post("/admin/json_setup_hpc",
+                             data={'zephyr.address': 'zephyr.aerofs.com:8888'})
+
+            # Setup the restored session
+            session.post('/admin/json_setup_set_restored_from_backup')
+
+            os.remove(backup_file_path)
+
+        except Exception as e:
+            # Many errors are due to the fact that DNS hasn't propagated yet or
+            # the server is busy pulling Docker images
+            # Wait 30s and retry
+            raise self.retry(exc=e, countdown=30, max_retries=10)
+
 
 
 @celery.task(bind=True)
@@ -234,5 +291,3 @@ def do_repackaging(session):
             return
         else:
             raise Exception("Repacking failed at {}".format(session.base_url))
-
-

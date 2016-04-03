@@ -13,6 +13,7 @@ blueprint = Blueprint('internal', __name__, template_folder='templates')
 
 MONITORING_PORT = 5000
 
+
 @blueprint.route("/", methods=["GET"])
 def index():
     return render_template('internal_index.html')
@@ -190,8 +191,8 @@ def verify_domain_for_customer(customer_id, domain_val):
     return Response('', 204)
 
 
-
 PAGE_SIZE = 10
+
 
 @blueprint.route("/all_accounts", methods=["GET"])
 def all_accounts():
@@ -510,7 +511,7 @@ def hpc_servers():
     for server in servers:
         # Getting the system statistics of the server
         try:
-            server_sys_stats[server.id] = _get_server_sys_stats(server.docker_url)
+            server_sys_stats[server.id] = hpc.get_server_sys_stats(server.docker_url)
         except requests.ConnectionError:
             server_sys_stats[server.id] = None
 
@@ -534,7 +535,7 @@ def hpc_server_delete(server_id):
 @blueprint.route("/hpc_deployments_status", methods=['GET'])
 def hpc_deployments_status():
     if request.args:
-        subdomain_status = _subdomain_deployment_status(request.args.get('subdomain'))
+        subdomain_status = hpc.subdomain_deployment_status(request.args.get('subdomain'))
         return jsonify(subdomain_status)
 
     servers = models.HPCServer.query.all()
@@ -543,7 +544,7 @@ def hpc_deployments_status():
     status_code = 200
 
     for server in servers:
-        problematic_deployments = _get_problematic_deployments(server.id)
+        problematic_deployments = hpc.get_problematic_deployments(server.id)
         if problematic_deployments:
             deployments_status_by_server[server.id] = problematic_deployments
             status_code = 500
@@ -570,7 +571,10 @@ def hpc_server_sys_stats():
     server_infos = {}
 
     for server in servers:
-        server_sys_stats = _get_server_sys_stats(server.docker_url)
+        server_sys_stats = hpc.get_server_sys_stats(server.docker_url)
+
+        if not server_sys_stats:
+            return Response('At least one of the server was unreachable', 500)
 
         # If any usage is higher than the threshold, we store it in a list and
         # return a 500 Response at the end
@@ -593,53 +597,14 @@ def launch_server(server_name=''):
 
     return Response(200)
 
+@blueprint.route("/upgrade_server/<int:server_id>", methods=['GET'])
+def upgrade_server(server_id):
 
-# This function gives the status of a subdomain
-def _subdomain_deployment_status(subdomain):
-    # Getting the status of the each part of a deployment
-    try:
-        session = new_authed_session(subdomain)
-        r = session.get('/admin/json-status')
-        subdomain_status = r.json()
-    except requests.exceptions.ConnectionError:
-        message = 'Connection error: Max retries exceeded with url: /admin/login'
-        subdomain_status = {'statuses': [{'is_healthy': False,
-                                          'message': message}]}
-    return subdomain_status
+    hpc.upgrade_single_instance.si(server_id).apply_async()
+
+    return Response('ok', 200)
 
 
-# This function returns a list that is empty if all deployments of the server
-# are up. If not, the list contains the name of the deployments that are down.
-def _get_problematic_deployments(server_id):
-    # we get the status only of the deployments that are in the server which id
-    # is given as a parameter
-    deployments_list = models.HPCDeployment.query.filter(
-        models.HPCDeployment.server_id == server_id,
-        models.HPCDeployment.setup_status != models.HPCDeployment.status.IN_PROGRESS).all()
-
-    problematic_deployments = []
-
-    for deployment in deployments_list:
-        # We get the status of all the container of each deployment
-        statuses = _subdomain_deployment_status(deployment.subdomain)
-
-        # If one of the container is down, we add it to the list of down deployments
-        for status in statuses['statuses']:
-            if not status['is_healthy']:
-                problematic_deployments.append(deployment.subdomain)
-
-    return problematic_deployments
-
-
-def _internal_ip(docker_url):
-    # Docker url is of the form https://<ip-addr>:port>.
-    # Use rfind to get index of 2nd ":" in docker url and extract away port
-    # to get internal ip.
-    end = docker_url.rfind(":")
-    return docker_url[len("https://"):end]
-
-
-def _get_server_sys_stats(docker_url):
-    url = 'http://{}:{}'.format(_internal_ip(docker_url), MONITORING_PORT)
-    r = requests.get(url)
-    return r.json()
+@blueprint.route("/uprade_all_servers", methods=["GET"])
+def upgrade_all_servers():
+    hpc.upgrade_all_instances.si().apply_async()

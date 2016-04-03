@@ -53,7 +53,10 @@
                 </td>
                 <td align="center" id="status{{server.id}}">
                         <img src="{{ url_for('static', filename='img/ajax-loader.gif') }}"/>
-                <td align="center"><a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a></td>
+                <td align="center">
+                    <a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a>
+                    <b> or </b> <a href="/upgrade_server/{{ server.id }}"> Upgrade</a>
+                </td>
             </tr>
 
             <div id="deploymentsListModal{{server.id}}" class="modal fade" role="dialog">

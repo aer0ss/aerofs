@@ -7,15 +7,23 @@ import requests
 import subprocess
 import time
 
+from celery import chord, group
 from docker import Client, tls
 from flask import current_app
-from hpc_config import configure_deployment, reboot, repackage, new_authed_session, get_boot_id
+from hpc_config import configure_deployment, get_boot_id, new_authed_session, reboot, repackage
 from lizard import celery, db, notifications
 from models import HPCDeployment, HPCServer, Admin
 from sqlalchemy.exc import IntegrityError
 
 EXPIRING_LICENSE_NOTIFICATION_BUFFER = 7
+MONITORING_PORT = 5000
 POLLING_INTERVAL = 2
+
+# This variable is only for testing purpose
+NUM_RESERVED_INSTANCES = 2
+MEM_USAGE_DEPLOYMENT_THRESHOLD = 80
+
+
 HPC_SECRETS_PATH = '/opt/lizard/hpc-server-config/secrets'
 
 BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
@@ -32,6 +40,11 @@ class DeploymentAlreadyExists(Exception):
         return repr(self.msg)
 
 
+class NoServerAvailable(Exception):
+    def __init__(self):
+        Exception.__init__(self, "There is no available server to create a deployment on.")
+
+
 def get_docker_client(deployment):
     """
     Returns a docker client that will communicate with the Docker daemon at the given deployment's server
@@ -45,23 +58,32 @@ def get_docker_client(deployment):
     return Client(base_url=deployment.server.docker_url, tls=tls_config, version='auto', timeout=5)
 
 
-def create_deployment(customer, subdomain, delay=0):
+# If restore is True, we have to upgrade the deployment.
+def create_deployment(customer, subdomain, delay=0, restore=False, server_id=None):
     """
     Create a new deployment for a given customer at a given subdomain.
     """
 
-    # Add the deployment to the DB
+    if not restore:
+        server = pick_server()
 
-    server = pick_server()
-
-    deployment = HPCDeployment()
-    deployment.customer = customer
-    deployment.subdomain = subdomain
-    deployment.server = server
-    deployment.set_days_until_expiry(30)
-    deployment.setup_status = HPCDeployment.status.IN_PROGRESS
-
-    db.session.add(deployment)
+        # Adding the deployment to the db
+        deployment = HPCDeployment()
+        deployment.customer = customer
+        deployment.subdomain = subdomain
+        deployment.server = server
+        deployment.set_days_until_expiry(30)
+        deployment.setup_status = HPCDeployment.status.IN_PROGRESS
+        db.session.add(deployment)
+    else:
+        # If we are restoring the deployment we just change the server on which
+        # the deployment is.
+        deployment = HPCDeployment.query.get(subdomain)
+        if server_id:
+            deployment.server = HPCServer.query.get(server_id)
+        else:
+            server = pick_server()
+            deployment.server = server
 
     # Commit the changes to DB.
     # If the subdomain already exists, try to throw a more useful exception type than IntegrityError
@@ -78,7 +100,7 @@ def create_deployment(customer, subdomain, delay=0):
     # Start a chain of celery tasks to configure the deployment
     (
         sail.si(subdomain) |
-        configure_deployment.si(subdomain) |
+        configure_deployment.si(subdomain, restore) |
         reboot.si(subdomain) |
         repackage.si(subdomain)
 
@@ -90,6 +112,79 @@ def save_error(subdomain):
     deployment = HPCDeployment.query.get(subdomain)
     deployment.setup_status = HPCDeployment.status.DOWN
     db.session.commit()
+
+
+# First we begin by upgrading the x most used instances where x is the number
+# of reserved instances
+@celery.task()
+def upgrade_all_instances():
+    sorted_instances = _sort_server_by_num_deployments()
+    upgrade_reserved_instance_tasks = []
+    most_used_instances = sorted_instances[:NUM_RESERVED_INSTANCES]
+    least_used_instances = sorted_instances[NUM_RESERVED_INSTANCES:]
+    while len(most_used_instances) > 0:
+        # This will be done NUM_RESERVED_INSTANCE times
+        instance = sorted_instances.pop(0)
+        upgrade_reserved_instance_tasks.append(
+            upgrade_single_instance.si(instance.id))
+
+    # `chord` is celery function whose first parameter is a list of celery
+    # tasks to execute and second parameter is the function to call when every
+    # task of the list has finished. Here, when all the RI are upgraded, we
+    # call the function `upgrade_remaining_deployments()`
+    chord(upgrade_reserved_instance_tasks)(upgrade_remaining_deployments.si(
+        least_used_instances))
+
+
+@celery.task()
+def upgrade_remaining_deployments(sorted_instance_list):
+    # Getting the id of all the instances that are On Demand Instances (the least
+    # crowded instances)
+    server_ids_odi = [instance.id for instance in sorted_instance_list]
+
+    remaining_deployments_to_upgrade = HPCDeployment.query.filter(
+        HPCDeployment.server_id.in_(server_ids_odi)).all()
+
+    # Upgrading the remaining deployments. This deployments should be stored
+    # either on reserved_instance or ODI. This will be decided by `pick_server()`
+    for deployment in remaining_deployments_to_upgrade:
+        upgrade_deployment(deployment)
+
+    # TODO(DS): 1. Remove old images 2. Remove empty servers
+    current_app.logger.info("Upgrade finished")
+
+
+@celery.task()
+def upgrade_single_instance(server_id):
+    server = HPCServer.query.get(server_id)
+
+    # 1. Call docker pull latest images in each server.
+    current_app.logger.info("Upgrade: Pulling images")
+    pull_server_images(_internal_ip(server.docker_url), wait=True)
+
+    # 2. After Step 1 finishes put each deployment in maintenance mode.
+    # and get their backups. Upload the backups to s3 and restore the deployments
+    # from backup
+
+    for deployment in server.deployments:
+        upgrade_deployment(deployment, server_id)
+
+
+def upgrade_deployment(deployment, server_id=None):
+        current_app.logger.info('Upgrade: Backing up {}'.format(deployment.subdomain))
+        download_backup_file(deployment.subdomain)
+        current_app.logger.info('Upgrade: Deleting {}'.format(deployment.subdomain))
+        deleted = delete_deployment(deployment, upgrade=True)
+        if deleted:
+            current_app.logger.info('Upgrade: Deployment {} was deleted. Restoring \
+                                    it with latest version images.'.format(deployment.subdomain))
+            create_deployment(deployment.customer,
+                              deployment.subdomain,
+                              restore=True,
+                              server_id=server_id)
+        else:
+            current_app.logger.warning('Deployment {} was NOT deleted'.format(
+                deployment.subdomain))
 
 
 def create_route53_change(deployment, delete=False):
@@ -208,7 +303,10 @@ def delete_containers(deployment):
         docker.remove_container(container['Id'], force=True)
 
 
-def delete_deployment(deployment):
+# If upgrade is set to True, we remove the containers but do not remove the
+# deployment from the db but just set the server ID to null.
+@celery.task()
+def delete_deployment(deployment, upgrade=False):
     current_app.logger.info("Deleting deployment %s", deployment.subdomain)
     try:
         # This may fail if the server is unreachable
@@ -221,26 +319,49 @@ def delete_deployment(deployment):
 
     delete_subdomain(deployment)
 
-    db.session.delete(deployment)
+    if not upgrade:
+        db.session.delete(deployment)
+    else:
+        deployment.server_id = None
     db.session.commit()
+
     return True
+
+
+# This function returns the list of instances sorted by the number of deployments
+# they host.
+def _sort_server_by_num_deployments():
+    count_deployments = db.func.count(HPCDeployment.subdomain)
+    server = db.session.query(HPCServer) \
+        .outerjoin(HPCDeployment) \
+        .group_by(HPCServer.id) \
+        .order_by(count_deployments.desc()) \
+        .all()
+
+    # Throws an exception if there are no servers available
+    if not server:
+        raise NoServerAvailable()
+
+    return server
 
 
 def pick_server():
     """
-    Returns a server suitable to create a new deployment on.
-    Currently picks the least crowded server.
-    Throws an exceptions if there are no servers available.
+    Returns the "best" server  to create a new deployment on.
+    We always want to pick up the most crowded instance provided that it has
+    enough memory to host a new deployment
     """
-    count_deployments = db.func.count(HPCDeployment.subdomain)
-    server, count = db.session.query(HPCServer, count_deployments) \
-        .outerjoin(HPCDeployment) \
-        .group_by(HPCServer.id) \
-        .order_by(count_deployments.asc()) \
-        .limit(1) \
-        .one()
+    sorted_instances = _sort_server_by_num_deployments()
 
-    return server
+    for instance in sorted_instances:
+        instance_stats = get_server_sys_stats(instance.docker_url)
+        if (instance_stats is not None and
+           instance_stats['mem_usage_percent'] < MEM_USAGE_DEPLOYMENT_THRESHOLD):
+            return instance
+
+    # If we did not exit from the previous loop, it means that there are no
+    # server available to create a deployment on.
+    raise NoServerAvailable()
 
 
 def delete_server(server):
@@ -291,6 +412,7 @@ def check_expired_deployments():
                     deployment.subdomain))
 
 
+@celery.task()
 def download_backup_file(subdomain):
     session = new_authed_session(subdomain)
 
@@ -337,6 +459,7 @@ def download_backup_file(subdomain):
 def set_backup_name(subdomain):
     backup_date = datetime.datetime.today().strftime("%Y%m%d")
     return "{}_backup_{}".format(subdomain, backup_date)
+
 
 def create_server(instance_type, server_name):
     create_aws_credentials_file()
@@ -396,12 +519,23 @@ def create_server(instance_type, server_name):
     return instance
 
 
+# wait is set to true if pulling new images when upgrading, otherwise false.
+def pull_server_images(server_private_ip, wait=False):
+    config_script_path = os.path.join(dirname, 'configure_hpc_server.sh')
+
+    if not wait:
+        subprocess.Popen([config_script_path, server_private_ip])
+    else:
+        pulling = subprocess.Popen([config_script_path, server_private_ip])
+        while pulling.poll() is None:
+            time.sleep(POLLING_INTERVAL)
+
+
 def configure_server(instance):
     # To configure the server we need both to launch the 'configure_hpc_server.sh'
     # script
     private_ip = instance.private_ip_address
-    config_script_path = os.path.join(dirname, 'configure_hpc_server.sh')
-    subprocess.Popen([config_script_path, private_ip])
+    pull_server_images(private_ip)
 
     # Attach the instance to an an autoscaling group
     attach_instance_autoscaling_group(instance.id)
@@ -464,3 +598,55 @@ def create_aws_credentials_file():
             cred.write('AWSSecretKey={}'.format(current_app.config['HPC_AWS_SECRET_KEY']))
 
 
+# This function gives the status of a subdomain
+def subdomain_deployment_status(subdomain):
+    # Getting the status of the each part of a deployment
+    try:
+        session = new_authed_session(subdomain)
+        r = session.get('/admin/json-status')
+        subdomain_status = r.json()
+    except requests.exceptions.ConnectionError:
+        message = 'Connection error: Max retries exceeded with url: /admin/login'
+        subdomain_status = {'statuses': [{'is_healthy': False,
+                                          'message': message}]}
+    return subdomain_status
+
+
+# This function returns a list that is empty if all deployments of the server
+# are up. If not, the list contains the name of the deployments that are down.
+def get_problematic_deployments(server_id):
+    # we get the status only of the deployments that are in the server which id
+    # is given as a parameter
+    deployments_list = HPCDeployment.query.filter(
+        HPCDeployment.server_id == server_id,
+        HPCDeployment.setup_status != HPCDeployment.status.IN_PROGRESS).all()
+
+    problematic_deployments = []
+
+    for deployment in deployments_list:
+        # We get the status of all the container of each deployment
+        statuses = subdomain_deployment_status(deployment.subdomain)
+
+        # If one of the container is down, we add it to the list of down deployments
+        for status in statuses['statuses']:
+            if not status['is_healthy']:
+                problematic_deployments.append(deployment.subdomain)
+
+    return problematic_deployments
+
+
+def _internal_ip(docker_url):
+    # Docker url is of the form https://<ip-addr>:port>.
+    # Use rfind to get index of 2nd ":" in docker url and extract away port
+    # to get internal ip.
+    end = docker_url.rfind(":")
+    return docker_url[len("https://"):end]
+
+
+def get_server_sys_stats(docker_url):
+    try:
+        url = 'http://{}:{}'.format(_internal_ip(docker_url), MONITORING_PORT)
+        r = requests.get(url)
+        return r.json()
+    except requests.ConnectionError:
+        return None
