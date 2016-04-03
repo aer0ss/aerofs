@@ -28,11 +28,11 @@ def upgrade(migrate_engine):
     # migrate_engine to your metadata
     pre_meta.bind = migrate_engine
     post_meta.bind = migrate_engine
-    post_meta.tables['hpc_server'].columns['reserved_instance'].drop()
+    pre_meta.tables['hpc_server'].columns['reserved_instance'].drop()
 
 
 def downgrade(migrate_engine):
     # Operations to reverse the above upgrade go here.
     pre_meta.bind = migrate_engine
     post_meta.bind = migrate_engine
-    post_meta.tables['hpc_server'].columns['reserved_instance'].create()
+    pre_meta.tables['hpc_server'].columns['reserved_instance'].create()
