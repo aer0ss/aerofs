@@ -2,8 +2,8 @@ package convos
 
 import (
 	"aerofs.com/sloth/aeroclients/lipwig"
-	"aerofs.com/sloth/aeroclients/sparta"
 	"aerofs.com/sloth/aeroclients/polaris"
+	"aerofs.com/sloth/aeroclients/sparta"
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/commands"
 	"aerofs.com/sloth/dao"
@@ -275,7 +275,7 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	if convo.HasMember(uid) {
 		return
 	}
-
+	dao.InsertMember(tx, cid, uid)
 	convo.AddMember(uid) // ensure newly-added uid is in the list
 
 	// NOTE: Casted to GroupConvoWritable to reuse the current update functionality
@@ -333,7 +333,7 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	if !convo.HasMember(uid) {
 		return
 	}
-
+	dao.RemoveMember(tx, cid, uid)
 	// Get updated members
 	var newMembers []string
 	for i, member := range convo.Members {
