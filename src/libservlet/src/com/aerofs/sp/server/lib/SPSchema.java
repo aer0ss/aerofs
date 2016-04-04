@@ -1,6 +1,5 @@
 package com.aerofs.sp.server.lib;
 
-import com.sun.prism.shader.Texture_Color_AlphaTest_Loader;
 
 public final class SPSchema
 {
