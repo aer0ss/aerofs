@@ -19,6 +19,7 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.sparta.Transactional;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.net.HttpHeaders;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -173,6 +174,8 @@ public class DevicesResource extends AbstractSpartaResource
         }
     }
 
+    private final static ImmutableSet<String> VALID_OS =
+            ImmutableSet.of("Windows", "Mac OS X", "Linux", "iOS", "Android");
     /**
      * Retrieves a count of number of devices in the org
      *
@@ -184,8 +187,7 @@ public class DevicesResource extends AbstractSpartaResource
     public Response count(@Auth PrivilegedServiceToken token, @QueryParam("device_os") String deviceOS)
             throws ExNotFound, SQLException, ExInvalidID
     {
-        checkArgument((deviceOS.equals("Windows") || deviceOS.equals("Mac OS X") || deviceOS.equals("Linux") ||
-                deviceOS.equals("iOS") || deviceOS.equals("Android")), "Invalid query parameter specified");
+        checkArgument(VALID_OS.contains(deviceOS), "Invalid query parameter specified");
 
         int count = 0;
         Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
