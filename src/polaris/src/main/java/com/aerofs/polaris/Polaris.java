@@ -176,11 +176,11 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addResource(TransformsResource.class);
         environment.addResource(JobsResource.class);
         environment.addResource(ConversionResource.class);
+        environment.addResource(StatsResource.class);
         // register public facing resources.
         environment.addResource(FoldersResource.class);
         environment.addResource(FilesResource.class);
         environment.addResource(ChildrenResource.class);
-        environment.addResource(StatsResource.class);
 
         environment.getMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }

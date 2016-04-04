@@ -50,8 +50,7 @@ public final class IllegalArgumentExceptionMapper extends BaseExceptionMapper<Il
         Class<?> resourceClass = resourceInfo.getResourceClass();
         return resourceClass == FoldersResource.class ||
                 resourceClass == FilesResource.class ||
-                resourceClass == ChildrenResource.class ||
-                resourceClass == StatsResource.class;
+                resourceClass == ChildrenResource.class;
     }
 
     @Override
