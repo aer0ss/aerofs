@@ -7,11 +7,11 @@ ports uses HTTPS.
 # Set up S3 and HTTPS certificate and keys
 
 The registry uses S3 to store image layers. The S3 bucket settings can be found at "registry/root/run.sh".
- 
+
 The HTTPS certificate must match the CName "registry.aerofs.com". Ask Yuri to issue new certificate as needed.
 
 The S3 and HTTPS secret/private keys must to be copied to the "keys" folder *before* you can build the system or test it
-in local environment. They should match the S3 key and HTTPS cert files already in that folder. 
+in local environment. They should match the S3 key and HTTPS cert files already in that folder.
 
     $ cp path_to_aws.secret path_to_nginx.key keys
 
@@ -19,12 +19,12 @@ Where "registry.aerofs.com" should match the S3 bucket name specified in "regist
 
 # Build the system
 
-The system contains a bunch of containers (use `list-containers.sh` to list them) and a cloud-config file. To build 
+The system contains a bunch of containers (use `list-containers.sh` to list them) and a cloud-config file. To build
 them using Ship Enterprise:
 
     $ ./build.sh
 
-The script specifies `cloudinit` as the only output format. No appliance VMs will be generated. 
+The script specifies `cloudinit` as the only output format. No appliance VMs will be generated.
 
 # Deploy and upgrade the system
 
@@ -52,5 +52,5 @@ To run the system in the local development environment:
     $ ./build.sh
     $ export KEYS_DIR=$PWD/keys
     $ crane run
-     
+
 See crane.yml for more information on the setup of the system.
