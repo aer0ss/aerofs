@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
+import com.aerofs.daemon.core.polaris.submit.ContentAvailabilitySubmitter;
 import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.protocol.ContentProvider;
 import com.aerofs.daemon.core.protocol.DaemonContentProvider;
@@ -235,13 +236,21 @@ public class AbstractRestTest extends BaseAbstractRestTest
     {
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
-        ContentChangeSubmitter csub = mock(ContentChangeSubmitter.class);
-        when(csub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Long>() {
+        ContentChangeSubmitter ccsub = mock(ContentChangeSubmitter.class);
+        when(ccsub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Long>() {
             @Override public boolean cancel(boolean interrupt) { return false; }
             @Override public boolean isCancelled() { return false; }
             @Override public boolean isDone() { return true; }
             @Override public Long get() { return null; }
             @Override public Long get(long timeout, TimeUnit unit) { return null; }
+        });
+        ContentAvailabilitySubmitter casub = mock(ContentAvailabilitySubmitter.class);
+        when(casub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Void>() {
+            @Override public boolean cancel(boolean interrupt) { return false; }
+            @Override public boolean isCancelled() { return false; }
+            @Override public boolean isDone() { return true; }
+            @Override public Void get() { return null; }
+            @Override public Void get(long timeout, TimeUnit unit) { return null; }
         });
 
         Injector inj = Guice.createInjector(new TestTokenVerifierModule(), new RestModule(), new AbstractModule()
@@ -278,7 +287,8 @@ public class AbstractRestTest extends BaseAbstractRestTest
                 bind(RestContentHelper.class).to(DaemonRestContentHelper.class);
                 bind(ContentProvider.class).toInstance(provider);
                 bind(RemoteLinkDatabase.class).toInstance(rldb);
-                bind(ContentChangeSubmitter.class).toInstance(csub);
+                bind(ContentChangeSubmitter.class).toInstance(ccsub);
+                bind(ContentAvailabilitySubmitter.class).toInstance(casub);
             }
         });
 

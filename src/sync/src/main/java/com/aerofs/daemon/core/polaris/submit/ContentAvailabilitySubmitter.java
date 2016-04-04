@@ -27,6 +27,7 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 
 import org.jboss.netty.handler.codec.http.HttpResponse;
@@ -37,6 +38,7 @@ import javax.inject.Inject;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.Future;
 
 import static com.aerofs.daemon.core.polaris.GsonUtil.GSON;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -47,7 +49,8 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * TODO: handle loss of availability due to expulsion
  */
-public class ContentAvailabilitySubmitter implements IContentAvailabilityListener, IContentVersionListener
+public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
+        implements IContentAvailabilityListener, IContentVersionListener
 {
     private final static Logger l = Loggers.getLogger(ContentAvailabilitySubmitter.class);
 
@@ -58,6 +61,7 @@ public class ContentAvailabilitySubmitter implements IContentAvailabilityListene
     private final IMapSID2SIndex _sid2sidx;
     private final TaskState _submitTask;
     private final TransLocal<Boolean> _tlSubmit;
+
 
     // polaris' resulting SSMP payload size is 24 bytes per location. SSMP
     // specifies 1024 bytes max in a payload, so the batch size of 42 is used to
@@ -178,7 +182,10 @@ public class ContentAvailabilitySubmitter implements IContentAvailabilityListene
             for (int i = 0; i < batchResult.results.size(); ++i) {
                 LocationBatchOperation op = batch.available.get(i);
                 if (batchResult.results.get(i)) {
-                    _acdb.deleteContent_(sidx, new OID(op.oid), op.version, t);
+                    OID oid = new OID(op.oid);
+                    _acdb.deleteContent_(sidx, oid, op.version, t);
+                    notifyWaiter_(new SOID(sidx, oid), null);
+
                     l.trace("updateAvailableContentDatabase delete {}{} {} successful", sidx,
                             op.oid, op.version);
                 } else {

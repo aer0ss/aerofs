@@ -11,7 +11,9 @@ import com.aerofs.daemon.core.ex.ExAborted;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
+import com.aerofs.daemon.core.polaris.submit.ContentAvailabilitySubmitter;
 import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
+import com.aerofs.daemon.core.polaris.submit.WaitableSubmitter;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -58,7 +60,8 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
     @Inject private ContentEntityTagUtil _etags;
     @Inject private IPathResolver _resolver;
     @Inject private ICollectorStateDatabase _csdb;
-    @Inject private ContentChangeSubmitter _sub;
+    @Inject private ContentChangeSubmitter _ccsub;
+    @Inject private ContentAvailabilitySubmitter _casub;
 
     @Override
     protected void handleThrows_(EIFileUpload ev) throws Exception
@@ -259,19 +262,22 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
 
             t.commit_();
         }
-        // wait for content submitter
+        l.debug("wait sub {}", soid);
+        waitSubmitted_(_ccsub, soid);
+        waitSubmitted_(_casub, soid);
+    }
+
+    private <T> void waitSubmitted_(WaitableSubmitter<T> sub, SOID soid) {
         try {
-            l.debug("wait sub {}", soid);
-            Future<Long> f = _sub.waitSubmitted_(soid);
-            Long v = _tokenManager.inPseudoPause_(Cat.UNLIMITED, "rest-sub", () -> {
+            Future<T> f = sub.waitSubmitted_(soid);
+            _tokenManager.inPseudoPause_(Cat.UNLIMITED, "rest-sub", () -> {
                 try {
-                    return f.get(5, TimeUnit.SECONDS);
+                    return f.get(3, TimeUnit.SECONDS);
                 } catch (Exception e) {
                     f.cancel(false);
                     throw e;
                 }
             });
-            // TODO: return version in response?
         } catch (Exception e) {
             l.info("content sub failed", BaseLogUtil.suppress(e));
         }

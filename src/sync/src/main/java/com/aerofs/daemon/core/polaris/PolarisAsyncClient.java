@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.polaris;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.AsyncHttpClient;
 import com.aerofs.daemon.core.net.ClientSSLEngineFactory;
 import com.aerofs.daemon.lib.CoreExecutor;
@@ -15,10 +14,6 @@ import java.net.URI;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 
 public class PolarisAsyncClient extends AsyncHttpClient {
-    static {
-        l = Loggers.getLogger(PolarisAsyncClient.class);
-    }
-
     public static class Factory {
         @Inject CoreExecutor executor;
         @Inject CfgLocalDID did;

@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkState;
  */
 public class AsyncHttpClient
 {
-    protected static Logger l = Loggers.getLogger(AsyncHttpClient.class);
+    protected static final Logger l = Loggers.getLogger(AsyncHttpClient.class);
 
     private final Auth _auth;
     private final URI _endpoint;
