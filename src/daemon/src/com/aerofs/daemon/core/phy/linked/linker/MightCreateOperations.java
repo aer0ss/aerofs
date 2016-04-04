@@ -109,7 +109,7 @@ class MightCreateOperations
     }
 
     /**
-     * @return whether an object was created or replaced
+     * @return whether an object was created, replaced or renamed
      */
     public boolean executeOperation_(Set<Operation> ops, SOID sourceSOID, SOID targetSOID,
             PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer, OIDGenerator og, Trans t)
@@ -135,11 +135,12 @@ class MightCreateOperations
             return createLogicalObject_(pc, fnt._dir, og, t);
         case UPDATE:
             checkNotNull(sourceSOID);
+            boolean moved = !_ds.resolve_(sourceSOID).equals(pc._path);
             SOID m = updateLogicalObject_(sourceSOID, pc, fnt._dir, t);
             // change of SOID indicate migration, in which case the tag file MUST NOT be recreated
             if (m.equals(sourceSOID)) scheduleTagFileFixIfNeeded(sourceSOID, pc);
             delBuffer.remove_(sourceSOID);
-            return false;
+            return moved;
         case REPLACE:
             checkNotNull(targetSOID);
             replaceObject_(pc, fnt, delBuffer, sourceSOID, targetSOID, t);
