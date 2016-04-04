@@ -10,6 +10,6 @@
     core.sync_status.should_resync_on_migration_fast
     core.sync_status.should_handle_expulsion_shared
     core.sync_status.should_handle_expulsion_unshared
-    core.sync_status.should_handle_admission
     core.sync_status.should_handle_admission_unshared
     core.sync_status.should_handle_admission_shared
+    core.sync_status.should_handle_admission

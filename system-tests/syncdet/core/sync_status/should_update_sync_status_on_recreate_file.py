@@ -43,7 +43,7 @@ def client():
     wait_synced(r, instance_unique_path())
     wait_synced(r, instance_path('foo', 'bar'))
     wait_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
+    wait_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
 
 
 def team_server():

@@ -37,7 +37,6 @@ def client():
 
     r.share_folder(instance_path('foo', 'bar'))
 
-    wait_not_synced(r, instance_path('foo'))
     wait_synced(r, instance_path('foo'))
 
     sync('shared')
@@ -60,8 +59,8 @@ def client():
 
     wait_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
     wait_synced(r, instance_unique_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('foo', 'bar'))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('foo', 'bar'))
 
 
 def team_server():

@@ -28,8 +28,6 @@ def client():
         with open(instance_path('foo', 'bar', 'baz' + str(i)), 'wb') as f:
             f.write('qux')
 
-    wait_not_synced(r, instance_unique_path())
-
     shutil.move(instance_path('foo', 'bar'), instance_path('baz'))
 
     wait_not_synced(r, instance_path('baz'))
