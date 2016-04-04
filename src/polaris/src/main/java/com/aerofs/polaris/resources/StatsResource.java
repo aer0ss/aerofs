@@ -24,7 +24,6 @@ public class StatsResource
         this.objectStore = objectStore;
     }
 
-    @Since("1.4")
     @GET
     public Response stats()
     {
