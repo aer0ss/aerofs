@@ -241,6 +241,7 @@ preload() {
 
     #ssh into vm to speed up docker pull
     ssh ${SSH_ARGS} top -b -d 1 &>/dev/null &
+    TOP_PID=$!
 
     # Run preload script in VM. This step can take a while, and some times for some reason ssh may
     # disconnect in the middle. So we retry a few times.
@@ -254,6 +255,7 @@ preload() {
             break
         elif [ ${RETRY} = 3 ]; then
             cecho ${RED} "Preloading in SSH failed. Tried too many times. Gave up."
+            kill -9 $TOP_PID
             exit 33
         else
             RETRY=$[${RETRY} + 1]
@@ -262,6 +264,7 @@ preload() {
             sleep 10
         fi
     done
+    kill -9 $TOP_PID
 
     echo
     cecho ${CYAN} "<<< Exited from VM"
