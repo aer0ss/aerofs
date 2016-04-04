@@ -9,7 +9,6 @@ from common import MODIFIED_YML_PATH, modify_image, my_image_name, my_container_
 CRANE_JINJA_PATH = '/crane.yml.jinja'
 CRANE_YML_PATH = '/crane.yml'
 
-DOCKER_REGISTRY="registry.hub.docker.com"
 
 def load_crane_yml():
     """
@@ -64,10 +63,7 @@ def modify_yaml(repo, tag, my_container=None, remove_loader_container=True):
 
     tagged_loader_container = rename_container(loader_container, tag)
     add_repo_and_tag_to_images(containers, repo, tag)
-    # Do this only if your repo a private repository. This is to prevent
-    # the registry loader from crash.
-    if repo != DOCKER_REGISTRY:
-        modify_images(containers, tagged_loader_container, my_container, tag)
+    modify_images(containers, tagged_loader_container, my_container, tag)
     modify_links(containers, tagged_loader_container, my_container, tag)
     modify_volumes_from(containers, tagged_loader_container, my_container, tag)
 

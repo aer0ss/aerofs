@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -e
 #
 # Render ship.yml and run Ship Enterprise's push-images
 #
@@ -7,8 +7,7 @@ set -eu
 readonly SLACK_WEBHOOK="https://hooks.slack.com/services/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"
 
 THIS_DIR="$(dirname $0)"
-# We expect $1 to be the loader name and $2 to be the registry we are pushing to.
-SHIP_YML="$("${THIS_DIR}/render-ship-yml.sh" $1 $2)"
+SHIP_YML="$("${THIS_DIR}/render-ship-yml.sh" $1)"
 
 "${THIS_DIR}/../ship/push-images.sh" "${SHIP_YML}"
 

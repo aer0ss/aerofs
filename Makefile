@@ -29,7 +29,7 @@ SYNCDET_TRANSPORT = default
 SYNCDET_SYNC_TIMEOUT = 180
 TEAM_CITY = false
 VERSION = $(shell $(GIT_ROOT)/tools/build/compute_next_version.py loader)
-PUSH_REPO =
+
 
 all:
 
