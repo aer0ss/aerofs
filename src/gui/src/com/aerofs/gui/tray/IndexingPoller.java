@@ -15,6 +15,7 @@ import com.aerofs.ui.UIGlobals;
 import com.aerofs.ui.UIParam;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
+import org.newsclub.net.unix.AFUNIXSocketException;
 import org.slf4j.Logger;
 
 import java.nio.channels.ClosedChannelException;
@@ -91,6 +92,7 @@ public class IndexingPoller
             {
                 if (!(t instanceof ExIndexing)) {
                     l.warn("failed to ping daemon", BaseLogUtil.suppress(t,
+                            AFUNIXSocketException.class,
                             ClosedChannelException.class));
                 }
                 schedulePingDaemon();
