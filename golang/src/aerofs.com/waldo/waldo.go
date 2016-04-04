@@ -220,7 +220,7 @@ func (c context) postAvailableContent(w http.ResponseWriter, r *http.Request, a 
 	WriteJSON(w, "results", result)
 
 	// for havre
-	if r, err := c.ssmp.Mcast("loc/"+body.Sid, string(notif)); err != nil || r.Code != 200 {
+	if r, err := c.ssmp.Ucast("havre", string(notif)); err != nil || r.Code != 200 {
 		log.Println("failed loc pub", r, err)
 	}
 	if isSA {

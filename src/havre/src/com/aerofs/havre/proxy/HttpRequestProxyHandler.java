@@ -249,9 +249,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(final ChannelHandlerContext ctx, final ExceptionEvent e)
             throws Exception
     {
-        l.warn("exception on downstream channel {} {}", e.getChannel(), BaseLogUtil.suppress(e.getCause(), ClosedChannelException.class));
         if (!(e.getCause() instanceof ClosedChannelException)) {
-            l.warn("", e.getCause());
+            l.warn("exception on downstream channel {}", e.getChannel(), e.getCause());
             e.getChannel().close();
         }
     }
@@ -271,10 +270,8 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
     {
         if (_upstream != null && _upstream.isConnected()) {
             final boolean downstreamWritable = ctx.getChannel().isWritable();
-            if (_upstream.isReadable() != downstreamWritable) {
-                l.info("{} upstream {}", downstreamWritable ? "resume" : "suspend", _upstream);
-                _upstream.setReadable(downstreamWritable);
-            }
+            l.info("{} upstream {}", downstreamWritable ? "resume" : "suspend", _upstream);
+            _upstream.setReadable(downstreamWritable);
         }
     }
 
@@ -411,17 +408,14 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
                     completeShutdown();
                 }
                 _expectingResponseChunks.set(false);
-                // resume processing requests once response is fully sent
-                _downstream.setReadable(true);
             }
         }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
-            l.warn("exception on upstream channel {} {}", e.getChannel(), e.getCause());
             if (!(e.getCause() instanceof ClosedChannelException)) {
-                l.warn("", e.getCause());
+                l.warn("exception on upstream channel {} {}", e.getChannel(), e.getCause());
                 if (e.getChannel().isConnected()) e.getChannel().close();
             }
         }
@@ -439,10 +433,7 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
             if (!_downstream.isConnected()) return;
             final boolean upstreamWritable = ctx.getChannel().isWritable();
             l.info("{} downstream {}", upstreamWritable ? "resume" : "suspend", _downstream);
-            // only alter downstream readability while waiting for request chunks
-            if (_expectingRequestChunks.get()) {
-                _downstream.setReadable(upstreamWritable);
-            }
+            _downstream.setReadable(upstreamWritable);
         }
 
         @Override
@@ -475,7 +466,10 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
         private void cleanDownstreamClose()
         {
             // don't close downstream if it switched to a different upstream already
-            if (_shutdown.get()) return;
+            if (_shutdown.get()) {
+                l.debug("orphan upstream {} {}", _downstream, _upstream);
+                return;
+            }
             // If a partial response was written we have no choice but to abruptly close the
             // connection. Otherwise we can do slightly better by returning a 502 for each
             // pipelined request.

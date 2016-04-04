@@ -48,9 +48,15 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
 
     public SSMPConnection(String secret, InetSocketAddress serverAddress, Timer timer,
                           ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
-        this(SSMPIdentifier.ANONYMOUS, serverAddress, timer, channelFactory, sslHandlerFactory);
+        this(SSMPIdentifier.ANONYMOUS, secret, serverAddress, timer, channelFactory, sslHandlerFactory);
+    }
+
+    public SSMPConnection(SSMPIdentifier id, String secret, InetSocketAddress serverAddress, Timer timer,
+                          ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
+        this(id, serverAddress, timer, channelFactory, sslHandlerFactory);
         _secret = secret;
     }
+
     public SSMPConnection(DID did, InetSocketAddress serverAddress, Timer timer,
                           ChannelFactory channelFactory, SslHandlerFactory sslHandlerFactory) {
         this(SSMPIdentifier.fromInternal(did.toStringFormal()), serverAddress, timer, channelFactory, sslHandlerFactory);
@@ -104,7 +110,7 @@ public class SSMPConnection implements ConnectionListener, EventHandler {
     }
 
     private void connect() {
-        if (_login.isAnonymous()) {
+        if (_secret != null) {
             _client.connect(_login, SSMPIdentifier.fromInternal("secret"), _secret, this);
         } else {
             _client.connect(_login, SSMPIdentifier.fromInternal("cert"), "", this);

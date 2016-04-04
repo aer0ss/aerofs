@@ -14,12 +14,11 @@ import com.aerofs.havre.proxy.HttpProxyServer;
 import com.aerofs.havre.tunnel.EndpointVersionDetector;
 import com.aerofs.havre.tunnel.TunnelEndpointConnector;
 import com.aerofs.ids.DID;
-import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.ssmp.SSMPConnection;
-import com.aerofs.ssmp.SSMPEvent.Type;
+import com.aerofs.ssmp.SSMPIdentifier;
 import com.aerofs.tunnel.ITunnelConnectionListener;
 import com.aerofs.tunnel.TunnelServer;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
@@ -142,7 +141,7 @@ public class Havre
 
         RequestRouter router = new RequestRouter(locations, channelFactory, timer, secret);
 
-        SSMPConnection ssmp = new SSMPConnection(secret,
+        SSMPConnection ssmp = new SSMPConnection(SSMPIdentifier.fromInternal("havre"), secret,
                 new InetSocketAddress("lipwig.service", 8787), timer, channelFactory,
                 new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)::newSslHandler);
         ssmp.start();

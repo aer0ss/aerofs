@@ -37,9 +37,8 @@ public class RequestRouter extends CacheLoader<String, List<String>> implements 
 
     @Override
     public void eventReceived(SSMPEvent e) {
-        if (e.type != Type.MCAST || !e.from.isAnonymous()) return;
-        String to = e.to.toString();
-        if (!to.startsWith("loc/")) return;
+        if (e.type != Type.UCAST || !e.from.isAnonymous()) return;
+        if ((e.payload.length % 24) != 0) return;
         try {
             for (int i = 0; i + 23 < e.payload.length; i += 24) {
                 String oid = BaseUtil.hexEncode(e.payload, i, 16);
@@ -59,7 +58,6 @@ public class RequestRouter extends CacheLoader<String, List<String>> implements 
     private final String _auth;
     private final SimpleHttpClient<String, LocationResponse> _client;
     private final LoadingCache<String, List<String>> _cache;
-
 
     private final static ChannelBuffer EMPTY_FILTER = ChannelBuffers.wrappedBuffer(
             "{}".getBytes(StandardCharsets.UTF_8));
@@ -97,6 +95,12 @@ public class RequestRouter extends CacheLoader<String, List<String>> implements 
             String obj = uri.substring(last - 2 * UniqueID.LENGTH, last);
 
             try {
+                // NB: caching empty list might cause download to fail temporarily after upload
+                // as there is a race between the GET request and the SSMP notif that invalidates
+                // the empty list upon location advertisement. It's pretty unlikely though given
+                // that the notif should be emitted before the http response to the upload and
+                // latency inside the appliance should be orders of magnitude smaller than between
+                // the outside world and the appliance.
                 List<String> dids = _cache.get(obj);
                 // DIDs with most recent versions come first
                 // pick first online device with highest available version
