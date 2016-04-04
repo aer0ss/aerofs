@@ -13,6 +13,8 @@ import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.polaris.db.CentralVersionDatabase;
+import com.aerofs.daemon.core.polaris.submit.ContentAvailabilitySubmitter;
+import com.aerofs.daemon.core.polaris.submit.ContentChangeSubmitter;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.core.tc.Cat;
@@ -30,6 +32,7 @@ import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.oauth.TokenVerificationClient;
@@ -66,6 +69,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
@@ -96,6 +101,9 @@ public class BaseAbstractRestTest extends AbstractTest
     protected @Mock TC.TCB tcb;
     protected @Mock CfgLocalUser localUser;
     protected @Mock CfgLocalDID localDID;
+
+    protected @Mock ContentChangeSubmitter ccsub;
+    protected @Mock ContentAvailabilitySubmitter casub;
 
     protected @Spy TokenVerifier tokenVerifier = new TokenVerifier(
             mock(TokenVerificationClient.class),
@@ -293,6 +301,21 @@ public class BaseAbstractRestTest extends AbstractTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         when(csdb.isCollectingContent_(any(SIndex.class))).thenReturn(true);
+
+        when(ccsub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Long>() {
+            @Override public boolean cancel(boolean interrupt) { return false; }
+            @Override public boolean isCancelled() { return false; }
+            @Override public boolean isDone() { return true; }
+            @Override public Long get() { return null; }
+            @Override public Long get(long timeout, TimeUnit unit) { return null; }
+        });
+        when(casub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Void>() {
+            @Override public boolean cancel(boolean interrupt) { return false; }
+            @Override public boolean isCancelled() { return false; }
+            @Override public boolean isDone() { return true; }
+            @Override public Void get() { return null; }
+            @Override public Void get(long timeout, TimeUnit unit) { return null; }
+        });
 
         // start local gateway
         if (useProxy) {

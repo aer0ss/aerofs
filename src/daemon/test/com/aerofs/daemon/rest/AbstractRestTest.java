@@ -236,23 +236,6 @@ public class AbstractRestTest extends BaseAbstractRestTest
     {
         final IIMCExecutor imce = mock(IIMCExecutor.class);
 
-        ContentChangeSubmitter ccsub = mock(ContentChangeSubmitter.class);
-        when(ccsub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Long>() {
-            @Override public boolean cancel(boolean interrupt) { return false; }
-            @Override public boolean isCancelled() { return false; }
-            @Override public boolean isDone() { return true; }
-            @Override public Long get() { return null; }
-            @Override public Long get(long timeout, TimeUnit unit) { return null; }
-        });
-        ContentAvailabilitySubmitter casub = mock(ContentAvailabilitySubmitter.class);
-        when(casub.waitSubmitted_(any(SOID.class))).thenReturn(new Future<Void>() {
-            @Override public boolean cancel(boolean interrupt) { return false; }
-            @Override public boolean isCancelled() { return false; }
-            @Override public boolean isDone() { return true; }
-            @Override public Void get() { return null; }
-            @Override public Void get(long timeout, TimeUnit unit) { return null; }
-        });
-
         Injector inj = Guice.createInjector(new TestTokenVerifierModule(), new RestModule(), new AbstractModule()
         {
             @Override
