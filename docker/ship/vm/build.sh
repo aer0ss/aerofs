@@ -224,6 +224,7 @@ preload() {
 
     # Wait for ssh readiness
     echo "Waiting for VM to launch..."
+    cecho ${CYAN} "    ssh ${SSH_ARGS}"
     while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
 
     # Copy preload script to VM. Note:
@@ -321,7 +322,7 @@ yml() {
 
 find_free_local_port() {
     local PORT=2222
-    while ! is_local_port_open ${PORT} ; do PORT=$(expr ${PORT} + 1); done
+    while is_local_port_open ${PORT} ; do PORT=$(expr ${PORT} + 1); done
     echo ${PORT}
 }
 
