@@ -68,7 +68,7 @@ setup_preload_registry() {
 
     # Launch the preload registry. Create the container first if it doesn't exist.
     if [ $(docker ps -a | grep ${REPO_CONTAINER} | wc -l) = 0 ]; then
-        docker create -P --name ${REPO_CONTAINER} registry
+        docker create --name ${REPO_CONTAINER} --net=host registry
     fi
 
     # A potential bug of docker registry https://github.com/docker/docker-registry/issues/892 may
@@ -97,7 +97,7 @@ setup_preload_registry() {
         exit 22
     fi
 
-    local REPO_PORT=$(docker port ${REPO_CONTAINER} 5000 | sed -e s'/.*://')
+    local REPO_PORT=5000
     local REPO_URL=${REPO_HOST}:${REPO_PORT}
     echo "The Preload Registry is listening at ${REPO_URL}"
 
