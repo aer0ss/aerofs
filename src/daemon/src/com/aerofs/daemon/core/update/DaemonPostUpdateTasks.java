@@ -45,7 +45,8 @@ public class DaemonPostUpdateTasks
             DPUTSyncStatusTableAlterations.class,
             // end phoenix conversion
 
-            DPUTAddAvailableContentTable.class
+            DPUTAddAvailableContentTable.class,
+            DPUTPartialCAIndex.class
             // new tasks go here - also, update DAEMON_POST_UPDATE_TASKS counter!
     };
 

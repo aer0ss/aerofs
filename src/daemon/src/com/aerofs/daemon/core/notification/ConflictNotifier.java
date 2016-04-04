@@ -102,15 +102,12 @@ class ConflictNotifier implements IDirectoryServiceListener
     public void sendSnapshot_(IConflictStateListener listener) throws SQLException
     {
         Map<Path, Boolean> paths = Maps.newHashMap();
-        IDBIterator<SOKID> it = _ds.getAllNonMasterBranches_();
-        try {
+        try (IDBIterator<SOKID> it = _ds.getAllNonMasterBranches_()) {
             while (it.next_()) {
                 SOID soid = it.get_().soid();
                 Path path = _ds.resolveNullable_(soid);
                 if (path != null) paths.put(path, _ds.getOA_(soid).cas().size() > 1);
             }
-        } finally {
-            it.close_();
         }
         listener.branchesChanged_(paths);
     }

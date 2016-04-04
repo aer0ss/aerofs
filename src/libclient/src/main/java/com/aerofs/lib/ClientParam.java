@@ -150,7 +150,7 @@ public class ClientParam
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 67;
+        public static final int DAEMON_POST_UPDATE_TASKS = 68;
         public static final int UI_POST_UPDATE_TASKS = 2;
         public static final int PHOENIX_CONVERSION_TASKS = 5;
     }

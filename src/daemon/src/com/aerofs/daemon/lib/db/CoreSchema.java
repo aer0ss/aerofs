@@ -6,6 +6,7 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.core.status.db.OutOfSyncFilesDatabase;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.inject.Inject;
 
@@ -140,8 +141,7 @@ public class CoreSchema extends SyncSchema
                         ")" + dbcw.charSet());
 
         // for getAllNonMasterBranches_()
-        s.executeUpdate("create index if not exists "
-                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")");
+        createPartialCAIndex(s);
 
         s.executeUpdate(
                 "create table " + T_ALIAS + " (" +
@@ -196,6 +196,12 @@ public class CoreSchema extends SyncSchema
 
         //TODO uncomment when sync status flag is removed
         //createOutOfSyncFilesTable(s, dbcw);
+    }
+
+    public static void createPartialCAIndex(Statement s) throws SQLException {
+        s.executeUpdate("create index "
+                + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")"
+                +" where " + C_CA_KIDX + ">" + KIndex.MASTER.getInt());
     }
 
     /**

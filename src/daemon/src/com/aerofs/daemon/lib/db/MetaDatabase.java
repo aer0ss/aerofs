@@ -507,15 +507,14 @@ public class MetaDatabase extends AbstractDatabase
     {
         Statement s = null;
         try {
-            // this method is not called requently so we don't prepare the stmt
+            // this method is not called frequently so we don't prepare the stmt
             s = c().createStatement();
             ResultSet rs = s.executeQuery("select "
                     + C_CA_SIDX + "," + C_CA_OID + "," + C_CA_KIDX +
                     " from " + T_CA +
-                    " where " + C_CA_KIDX + "!=" + KIndex.MASTER);
+                    " where " + C_CA_KIDX + ">" + KIndex.MASTER);
 
             return new DBIterNonMasterBranches(rs);
-
         } catch (SQLException e) {
             DBUtil.close(s);
             throw detectCorruption(e);
