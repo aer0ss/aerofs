@@ -242,7 +242,7 @@ preload() {
     echo
 
     #ssh into vm to speed up docker pull
-    ssh ${SSH_ARGS} top -b -d 0.1 &
+    ssh ${SSH_ARGS} top -b -d 1 &>/dev/null &
 
     # Run preload script in VM. This step can take a while, and some times for some reason ssh may
     # disconnect in the middle. So we retry a few times.
