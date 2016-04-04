@@ -158,12 +158,10 @@ resize_vdi() {
 }
 
 is_local_port_open() {
-    # See http://bit.ly/1vDblqg
-    exec 3<> "/dev/tcp/localhost/$1"
-    CODE=$?
-    exec 3>&- # close output
-    exec 3<&- # close input
-    [[ ${CODE} = 0 ]] && echo 1 || echo 0
+    # exec failure will terminate a non-interactive shell, hence the
+    # use of a subshell. As a bonus it means we don't have to close
+    # fd 3 since it's opened inside the subshell
+    (exec 3<> "/dev/tcp/localhost/$1") &>/dev/null
 }
 
 create_vm() {
@@ -320,7 +318,7 @@ yml() {
 
 find_free_local_port() {
     local PORT=2222
-    while [ $(is_local_port_open ${PORT}) = 1 ]; do PORT=$(expr ${PORT} + 1); done
+    while ! is_local_port_open ${PORT} ; do PORT=$(expr ${PORT} + 1); done
     echo ${PORT}
 }
 
