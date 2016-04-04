@@ -110,11 +110,35 @@ write_files:
       #!/bin/bash -e
       {# No more console pollution from dmesg #}
       dmesg -n 1
+      DONE=0
+      TOTAL=0
       echo 'Loading console service...'
+      read_status_json() {
+         DONE=$(cat {{ httpd_status_json }} | sed -E 's/.*\"done\":([0-9]+).*/\1/')
+         TOTAL=$(cat {{ httpd_status_json }} | sed -E 's/.*\"total\":([0-9]+).*/\1/')
+      }
 
+      new_line_flag=1
       {# We assume the tag file is created _after_ Loader image is pulled and repo file is created. #}
       [[ -f {{ tag_file }} ]] || { echo; echo 'Waiting for application images to be downloaded...'; }
-      while [[ ! -f {{ tag_file }} ]]; do sleep 1; done
+
+      while [[ ! -f {{ tag_file }} || (${TOTAL} == 0 || ${DONE} != ${TOTAL}) ]]
+      do
+            read_status_json
+            if [[  ${TOTAL} == 0 ]]
+            then
+                echo -ne "Getting list of images to download...\r"
+            else
+                if [[ $new_line_flag == 1 ]]
+                then
+                    echo -ne '\n'
+                    new_line_flag=0
+                fi
+                echo -ne "${DONE} of ${TOTAL} downloaded\r"
+            fi
+            sleep 5
+      done
+      echo -ne '\n'
 
       IMAGE="$(cat {{ repo_file }})/{{ loader_image }}:$(cat {{ tag_file }})"
       docker run --rm -v {{ loader_getty }}:/host -v /var/run/docker.sock:/var/run/docker.sock "${IMAGE}" install-getty /host

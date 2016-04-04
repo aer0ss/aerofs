@@ -19,11 +19,14 @@ else
     # Parse Output Formats
     OF_CLOUDINIT=0
     OF_PRELOADED=0
+    OF_CLOUDINIT_VM=0
     for i in $(tr ',' ' ' <<< "$1"); do
         if [ "$i" = cloudinit ]; then
             OF_CLOUDINIT=1
         elif [ "$i" = preloaded ]; then
             OF_PRELOADED=1
+        elif [ "$i" = cloudinit_vm ]; then
+            OF_CLOUDINIT_VM=1
         else
             die_usage
         fi
@@ -34,6 +37,10 @@ SHIP_YML="$2"
 EXTRA_FILES="$3"
 OUTPUT="$4"
 [[ "${5:-push}" = nopush ]] && PUSH=0 || PUSH=1
+
+PRELOAD_SCRIPT="./preload-guest.sh"
+# Use this global variable to pass data back to main()
+GLOBAL_PRELOAD_REPO_URL=""
 
 # Absolute paths are required by docker. (the realpath command is unavailable on OSX)
 abspath() {
@@ -52,8 +59,6 @@ cecho() {
     echo >&2 -e "\033[$1m$2\033[0m"
 }
 
-# Use this global variable to pass data back to main()
-GLOBAL_PRELOAD_REPO_URL=
 setup_preload_registry() {
 
     # This function assumes:
@@ -145,12 +150,18 @@ build_cloud_config_and_vdi() {
     docker build -t ${IMAGE} "${THIS_DIR}/builder"
     echo >&2 -e "\033[32mok: \033[0m- build ${IMAGE}"
 
+    local BUILD_OVA=0
+    if [[ ${OF_PRELOADED} == 1 || ${OF_CLOUDINIT_VM} == 1 ]]
+    then
+            BUILD_OVA=1
+    fi
+
     # Run the builder. Need privilege to run losetup
     docker run --rm --privileged \
         -v "${OUTPUT}":/output \
         -v "${OUTPUT}/ship.yml":/ship.yml \
         -v "${EXTRA_MOUNT}":/extra \
-        ${IMAGE} /run.sh ${OF_PRELOADED} /ship.yml /extra /output ${TAG}
+        ${IMAGE} /run.sh ${BUILD_OVA} /ship.yml /extra /output ${TAG}
 }
 
 resize_vdi() {
@@ -208,29 +219,14 @@ is_vm_powered_off() {
     [[ $(VBoxManage showvminfo $1 | grep State | grep 'powered off') ]] && echo 1 || echo 0
 }
 
-preload() {
-    local VM=$1
-    local SSH_FORWARD_PORT=$2
-    local PRELOAD_REPO_URL=$3
+insert_and_run_preload_script() {
 
-    VBoxManage startvm ${VM} --type headless
-
-    local KEY_FILE="${THIS_DIR}/builder/root/resources/preload-ssh.key"
-    local SSH_ARGS="-q -p ${SSH_FORWARD_PORT} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no \
-        -i ${KEY_FILE} core@localhost"
-
-    # In case the permission is reverted (by git etc) restore it so ssh doesn't complain.
-    chmod -f 400 "${KEY_FILE}"
-
-    # Wait for ssh readiness
-    echo "Waiting for VM to launch..."
-    cecho ${CYAN} "    ssh ${SSH_ARGS}"
-    while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
+    local OVA="$1"
+    local SSH_ARGS="$2"
 
     # Copy preload script to VM. Note:
     # 1. Don't save the script to /tmp. For some reason CoreOS may delete it while it's running.
     # 2. The "./" in the path is for the "sudo $PRELOAD_SCRIPT" below to work.
-    local PRELOAD_SCRIPT=./preload-guest.sh
     ssh ${SSH_ARGS} "cat > ${PRELOAD_SCRIPT} && chmod u+x ${PRELOAD_SCRIPT}" < "${THIS_DIR}/preload-guest.sh"
     local START=$(date +%s)
 
@@ -240,17 +236,18 @@ preload() {
     cecho ${CYAN} "    ssh ${SSH_ARGS}"
     echo
 
+    # Run preload script in VM. This step can take a while, and some times for some reason ssh may
+    # disconnect in the middle. So we retry a few times.
+
     #ssh into vm to speed up docker pull
     ssh ${SSH_ARGS} top -b -d 1 &>/dev/null &
     TOP_PID=$!
 
-    # Run preload script in VM. This step can take a while, and some times for some reason ssh may
-    # disconnect in the middle. So we retry a few times.
     local DONE_FILE=repload.done
     local RETRY=0
     while true; do
         # Ignore exit code so the current script doesn't exit if ssh disconnect.
-        ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${PRELOAD_REPO_URL} $(yml 'loader') $(yml 'repo') ${DONE_FILE}" || true
+        ssh ${SSH_ARGS} "sudo ${PRELOAD_SCRIPT} ${GLOBAL_PRELOAD_REPO_URL} $(yml 'loader') $(yml 'repo') ${DONE_FILE}" || true
         if [ "$(ssh ${SSH_ARGS} "ls ${DONE_FILE}")" ]; then
             ssh ${SSH_ARGS} "sudo rm ${DONE_FILE} ${PRELOAD_SCRIPT}"
             break
@@ -272,6 +269,31 @@ preload() {
     echo
     cecho ${CYAN} "Preloading took $(expr \( $(date +%s) - ${START} \) / 60) minutes."
     echo
+}
+
+preload() {
+    local VM=$1
+    local SSH_FORWARD_PORT=$2
+    local OVA="$3"
+    local BUILD_VM_WITH_IMAGES=$4
+
+    VBoxManage startvm ${VM} --type headless
+
+    local KEY_FILE="${THIS_DIR}/builder/root/resources/preload-ssh.key"
+    local SSH_ARGS="-q -p ${SSH_FORWARD_PORT} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no \
+        -i ${KEY_FILE} core@localhost"
+
+    # In case the permission is reverted (by git etc) restore it so ssh doesn't complain.
+    chmod -f 400 "${KEY_FILE}"
+
+    # Wait for ssh readiness
+    echo "Waiting for VM to launch..."
+    while [ monkey-$(ssh -o "ConnectTimeout 1" ${SSH_ARGS} echo magic) != monkey-magic ]; do sleep 1; done
+
+    if [[ $BUILD_VM_WITH_IMAGES  == 1 ]]
+    then
+        insert_and_run_preload_script "${OVA}" "${SSH_ARGS}"
+    fi
 
     # Overwrite cloud-config.yml, disable ssh, & shut down
     ssh ${SSH_ARGS} 'cat > tmp && sudo mv -f tmp /usr/share/oem/cloud-config.yml' < "${OUTPUT}/cloud-config.yml"
@@ -331,24 +353,31 @@ build_preloaded() {
     local VM_BASE_DIR="$2"
     local VM_IMAGE_NAME="$3"
     local OVA="$4"
+    local BUILD_VM_WITH_IMAGES=$5
 
     local VDI="${OUTPUT}/preloaded/disk.vdi"
     local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
 
     resize_vdi "${VDI}" $(yml 'vm-disk-size')
 
-    setup_preload_registry ${PRELOAD_REPO_CONTAINER} ${LOADER_IMAGE} ${PUSH}
+    if [[ $BUILD_VM_WITH_IMAGES  = 1 ]]
+    then
+        setup_preload_registry ${PRELOAD_REPO_CONTAINER} ${LOADER_IMAGE} ${PUSH}
+    fi
 
     # To minimize race condition, search for a free port right before we use the port.
     local SSH_FORWARD_PORT=$(find_free_local_port)
     local SSH_FORWARD_RULE=guestssh
     create_vm ${VM} $(yml 'vm-cpus') $(yml 'vm-ram-size') "${VDI}" "${VM_BASE_DIR}" ${SSH_FORWARD_PORT} ${SSH_FORWARD_RULE}
-    preload ${VM} ${SSH_FORWARD_PORT} ${GLOBAL_PRELOAD_REPO_URL}
+    preload ${VM} ${SSH_FORWARD_PORT} "${OVA}" $BUILD_VM_WITH_IMAGES
     update_nic ${VM} ${SSH_FORWARD_RULE}
     convert_to_ova ${VM} ${VM_IMAGE_NAME} "${OVA}"
     delete_vm ${VM} "${VM_BASE_DIR}"
 
-    teardown_preload_registry ${PRELOAD_REPO_CONTAINER}
+    if [[ $BUILD_VM_WITH_IMAGES  = 1 ]]
+    then
+        teardown_preload_registry ${PRELOAD_REPO_CONTAINER}
+    fi
 }
 
 main() {
@@ -363,19 +392,24 @@ main() {
     local VM_IMAGE_NAME=$(yml 'vm-image-name')
     local VM_BASE_DIR="${OUTPUT}/preloaded/vm"
     local OVA="${OUTPUT}/preloaded/${VM_IMAGE_NAME}.ova"
+    local CLOUD_CONFIG_OVA="${OUTPUT}/preloaded/${VM_IMAGE_NAME}-cloud-config.ova"
 
-    if [ ${OF_PRELOADED} = 1 ]; then
+    if [ ${OF_PRELOADED} = 1 ]  || [ ${OF_CLOUDINIT_VM} = 1 ]; then
         # Since it's tricky to run VMs in containes, we run VirtualBox specific commands in the
         # host.
         delete_vm ${VM} "${VM_BASE_DIR}"
     fi
 
-    if [ ${OF_CLOUDINIT} = 1 ] || [ ${OF_PRELOADED} = 1 ]; then
+    if [ ${OF_CLOUDINIT} = 1 ] || [ ${OF_PRELOADED} = 1 ] || [ ${OF_CLOUDINIT_VM} = 1 ]; then
         build_cloud_config_and_vdi ${LOADER_IMAGE}
     fi
 
+    if [ ${OF_CLOUDINIT_VM} = 1 ]; then
+        build_preloaded ${LOADER_IMAGE} "${VM_BASE_DIR}" "${VM_IMAGE_NAME}" "${CLOUD_CONFIG_OVA}" 0
+    fi
+
     if [ ${OF_PRELOADED} = 1 ]; then
-        build_preloaded ${LOADER_IMAGE} "${VM_BASE_DIR}" "${VM_IMAGE_NAME}" "${OVA}"
+        build_preloaded ${LOADER_IMAGE} "${VM_BASE_DIR}" "${VM_IMAGE_NAME}" "${OVA}" 1
     fi
 
     echo
@@ -386,7 +420,10 @@ main() {
     if [ ${OF_PRELOADED} = 1 ]; then
         cecho ${GREEN} "    VM preloaded:    $(du -h ${OVA})"
     fi
-    echo
+    if [ ${OF_CLOUDINIT_VM} = 1 ]; then
+        cecho ${GREEN} "    VM cloud config vm:    $(du -h ${CLOUD_CONFIG_OVA})"
+    fi
+echo
 }
 
 main
