@@ -4,6 +4,7 @@ from pyramid.httpexceptions import HTTPOk
 from pyramid.view import view_config
 
 from aerofs_sp.gen.common_pb2 import PBException
+from web.analytics import send_analytics_event
 from web.auth import is_admin
 from web.sp_util import exception2error
 from web.util import flash_success, get_rpc_stub, is_team_server_user_id
@@ -22,6 +23,7 @@ URL_PARAM_JOINED_TEAM_NAME = 'new_team'
     renderer='accept.mako'
 )
 def accept(request):
+    send_analytics_event(request, "ACTIVE_USER")
     return _accept_page_template_variables(request)
 
 @view_config(
@@ -30,6 +32,7 @@ def accept(request):
     renderer='accept.mako'
 )
 def accept_team_invitation_done(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
     team_name = request.params[URL_PARAM_JOINED_TEAM_NAME]
     flash_success(request, _("You are now a member of ${team}", {'team': team_name}))

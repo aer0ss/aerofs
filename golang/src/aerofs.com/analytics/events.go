@@ -293,6 +293,7 @@ var eventInfoMap = map[string]eventInfo{
 			Event:      "Active User",
 			Properties: make(map[string]interface{}),
 		},
+		RequireUserID: true,
 	},
 	"DESKTOP_CLIENT_INSTALL": eventInfo{
 		Template: segment.Track{
@@ -376,13 +377,13 @@ var eventInfoMap = map[string]eventInfo{
 	},
 	"USER_DELETE": eventInfo{
 		Template: segment.Track{
-			Event: "User Delete",
+			Event:      "User Delete",
 			Properties: make(map[string]interface{}),
 		},
 	},
 	"SHARED_FOLDER_CREATE": eventInfo{
 		Template: segment.Track{
-			Event: "Shared Folder Creation",
+			Event:      "Shared Folder Creation",
 			Properties: make(map[string]interface{}),
 		},
 		RequireUserID: true,

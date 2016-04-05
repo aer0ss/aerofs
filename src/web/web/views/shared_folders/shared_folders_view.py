@@ -20,6 +20,7 @@ from web import util
 from aerofs_sp.gen.common_pb2 import PBException, WRITE, MANAGE
 from aerofs_sp.gen.sp_pb2 import JOINED, PENDING, LEFT
 from aerofs_common.constants import PAGE_LIMIT
+from web.analytics import send_analytics_event
 
 
 log = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ def _decode_store_id(encoded_sid):
     permission = 'user'
 )
 def my_shared_folders(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
 
     return _shared_folders(request,
@@ -51,6 +53,7 @@ def my_shared_folders(request):
     permission = 'admin'
 )
 def user_shared_folders(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
     full_name = request.params[URL_PARAM_FULL_NAME]
     email = request.params[URL_PARAM_USER]
@@ -68,6 +71,7 @@ def user_shared_folders(request):
     permission = 'admin'
 )
 def org_shared_folders(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
 
     return _shared_folders(request,

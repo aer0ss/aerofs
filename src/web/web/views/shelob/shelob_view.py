@@ -3,6 +3,7 @@ import logging
 from pyramid.view import view_config
 from pyramid.security import authenticated_userid
 
+from web.analytics import send_analytics_event
 from web.util import get_rpc_stub
 from web.oauth import get_bifrost_client
 
@@ -20,7 +21,6 @@ def get_new_shelob_token(request):
             ]
     )
 
-
 @view_config(
         route_name='files',
         renderer='shelob.mako',
@@ -28,6 +28,7 @@ def get_new_shelob_token(request):
         request_method='GET',
 )
 def files(request):
+    send_analytics_event(request,"ACTIVE_USER")
     return {}
 
 

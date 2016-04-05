@@ -10,6 +10,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPNoContent, HTTPBadRequest, HTTPFound, HTTPInternalServerError
 import requests
 
+from web.analytics import send_analytics_event
 from web.util import get_rpc_stub, get_deployment_secret
 from web.oauth import get_privileged_bifrost_client, is_aerofs_mobile_client_id
 from ..org_users.org_users_view import URL_PARAM_USER, URL_PARAM_FULL_NAME
@@ -24,6 +25,7 @@ log = logging.getLogger(__name__)
     renderer='devices.mako'
 )
 def my_devices(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
 
     user = authenticated_userid(request)
@@ -42,6 +44,7 @@ def my_devices(request):
     renderer='devices.mako'
 )
 def user_devices(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
     user = request.params[URL_PARAM_USER]
     full_name = request.params[URL_PARAM_FULL_NAME]
@@ -54,6 +57,7 @@ def user_devices(request):
     renderer='devices.mako'
 )
 def team_server_devices(request):
+    send_analytics_event(request, "ACTIVE_USER")
     _ = request.translate
 
     sp = get_rpc_stub(request)

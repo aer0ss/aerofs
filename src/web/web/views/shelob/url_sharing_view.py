@@ -11,6 +11,7 @@ from pyramid.security import NO_PERMISSION_REQUIRED, authenticated_userid
 import requests
 
 from web import error
+from web.analytics import send_analytics_event
 from web.sp_util import exception2error
 from web.util import get_deployment_secret, get_rpc_stub, str2bool
 
@@ -104,6 +105,7 @@ def create_url(request):
         permission=NO_PERMISSION_REQUIRED,
 )
 def get_url(request):
+    send_analytics_event(request, "ACTIVE_USER")
     key = request.matchdict['key']
     return {'key': key}
 
