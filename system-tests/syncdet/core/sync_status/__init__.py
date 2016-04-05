@@ -2,7 +2,7 @@
 This package contains two-box system tests for sync status.
 The first actor MUST be a Team Server configured to use LINKED storage.
 """
-
+# FIXME: this should be ported to use SA instead of soon-to-be-deprecated linked TS
 __author__ = 'jaredk'
 
 import time
