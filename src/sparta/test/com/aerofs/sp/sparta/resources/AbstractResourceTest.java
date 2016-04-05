@@ -25,6 +25,8 @@ import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.injectable.TimeSource;
+import com.aerofs.servlets.lib.analytics.AnalyticsClient;
+import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
@@ -119,6 +121,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final CommandDispatcher commandDispatcher = mock(CommandDispatcher.class);
     protected static final PasswordManagement passwordManagement = mock(PasswordManagement.class);
     protected static final License license = mock(License.class);
+    private static final AnalyticsClient analytics = mock(AnalyticsClient.class);
 
     @Mock ACLNotificationPublisher aclNotificationPublisher;
     protected static final MockAuditClient auditClient = new MockAuditClient(
@@ -296,6 +299,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 bind(TimeSource.class).toInstance(spy(new TimeSource()));
                 // mock access code provider to work with mocked nonce checker
                 bind(AccessCodeProvider.class).toInstance(createMockAccessCodeProvider());
+                bind(IAnalyticsClient.class).toInstance(analytics);
             }
         });
     }
