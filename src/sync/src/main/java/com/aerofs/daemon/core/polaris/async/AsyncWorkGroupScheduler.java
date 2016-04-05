@@ -16,6 +16,7 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.sched.ExponentialRetry.ExRetryLater;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 
 import java.net.SocketException;
@@ -25,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.base.Preconditions.checkState;
+
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
@@ -253,10 +255,10 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
 
         private void activate_() {
             // resume task processing if needed
-            if (_active.isEmpty() && _scheduled.isEmpty()) {
+            boolean added = _scheduled.add(this);
+            if (added && _scheduled.size() == 1 && _active.isEmpty()) {
                 reschedNow_();
             }
-            _scheduled.add(this);
         }
 
         @Override
