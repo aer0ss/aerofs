@@ -421,12 +421,13 @@ func GetDependentConvos(tx *sql.Tx, convo *Convo) []string {
 	return dependentConvos
 }
 
-// Return a convo's members given an SID
+// Retrieve the root conversation's membership set for a conversation-tree
 func GetParentConversationMembers(tx *sql.Tx, sid string) []string {
 	rows, err := tx.Query(fmt.Sprint(
 		"SELECT user_id ",
 		"FROM convo_members INNER JOIN convos ",
-		"ON id=convo_id WHERE HEX(sid)=?"),
+		"ON id=convo_id ",
+		"WHERE type!=3 AND HEX(sid)=?"),
 		sid)
 	errors.PanicAndRollbackOnErr(err, tx)
 
