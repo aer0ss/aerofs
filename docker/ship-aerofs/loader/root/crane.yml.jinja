@@ -254,6 +254,7 @@ containers:
         # For /data/deployment_secret
         - data
       link:
+        - analytics:analytics.service
         - config:config.service
         # for cacert.pem
         - ca-server:ca.service
