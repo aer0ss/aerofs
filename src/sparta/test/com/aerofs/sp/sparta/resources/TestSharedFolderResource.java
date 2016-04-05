@@ -35,7 +35,6 @@ public class TestSharedFolderResource extends AbstractResourceTest
 {
     private static final String BASE_RESOURCE = "/v1.1/shares/";
     private static final String RESOURCE = BASE_RESOURCE + "{sid}";
-    private static final String COUNT_RESOURCE = "/v1.4/shares/count";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -1175,39 +1174,5 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .statusCode(403)
                 .when().log().everything()
                 .patch("/v1.4/shares/{sid}", share.toStringFormal());
-    }
-
-    public void count_shouldReturn401ForNonPriviledgedServiceToken() throws Exception
-    {
-        givenAdminAccess()
-        .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
-
-        givenAdminAccess()
-        .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
-
-        givenAccess("thisisnotavalidtoken")
-                .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
-    }
-
-    @Test
-    public void count_shouldReturn200ForValidPrivilegedServiceToken() throws Exception
-    {
-        givenSecret("analytics", deploymentSecret)
-        .expect()
-                .statusCode(200)
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
     }
 }

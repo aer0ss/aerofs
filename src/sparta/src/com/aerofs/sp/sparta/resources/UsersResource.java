@@ -25,12 +25,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import com.aerofs.base.id.OrganizationID;
-import com.aerofs.rest.auth.PrivilegedServiceToken;
-import com.aerofs.rest.auth.ServiceToken;
 import com.aerofs.restless.util.EntityTagSet;
-import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.organization.OrganizationDatabase;
 import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -93,13 +88,12 @@ public class UsersResource extends AbstractSpartaResource
     private final PasswordManagement _passwordManagement;
     private final AuditClient _audit;
     private final TwoFactorEmailer _twoFactorEmailer;
-    private final Organization.Factory _factOrg;
     private final IAnalyticsClient _analyticsClient;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher, CommandDispatcher commandDispatcher,
                          PasswordManagement passwordManagement, AuditClient audit, TwoFactorEmailer twoFactorEmailer,
-                         Organization.Factory factOrg, IAnalyticsClient analyticsClient)
+                         IAnalyticsClient analyticsClient)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
@@ -107,7 +101,6 @@ public class UsersResource extends AbstractSpartaResource
         _passwordManagement = passwordManagement;
         _audit = audit;
         _twoFactorEmailer = twoFactorEmailer;
-        _factOrg = factOrg;
         _analyticsClient = analyticsClient;
     }
 
@@ -153,38 +146,6 @@ public class UsersResource extends AbstractSpartaResource
             userIDs.remove(limit);
         }
         return Response.ok().entity(new Page<>(hasMore, createUsersList(userIDs))).build();
-    }
-
-    /**
-     * Retrieves a count of Users in the org
-     * @param accountType specifies the type of account to get a user count
-     */
-    @Since("1.4")
-    @GET
-    @Path("/count")
-    public Response count(@Auth PrivilegedServiceToken token,
-            @QueryParam("account_type") @DefaultValue("all") String accountType)
-            throws SQLException, ExNotFound
-    {
-        checkArgument(accountType.equals("all") || accountType.equals("ldap") || accountType.equals("local"),
-                "Invalid query parameter value specified.");
-
-        int userCount = 0;
-        Organization org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
-
-        if (accountType.equals("all")) {
-            userCount = org.countUsers();
-        }
-        else if (accountType.equals("ldap")) {
-            userCount = org.countLdapUsers();
-        }
-        else if (accountType.equals("local")) {
-            userCount = org.countLocalUsers();
-        }
-
-        return Response.ok()
-                .entity(userCount)
-                .build();
     }
 
     @Since("1.1")

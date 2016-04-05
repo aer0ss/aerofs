@@ -107,6 +107,7 @@ public class Sparta extends Service
         addResource(UrlShareResource.class);
         addResource(OrganizationsResource.class);
         addResource(GroupResource.class);
+        addResource(StatsResource.class);
     }
 
     private static InetSocketAddress listenAddress()

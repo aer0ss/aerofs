@@ -38,7 +38,6 @@ public class TestUsersResources extends AbstractResourceTest
     private final String TWO_FACTOR_RESOURCE = "/v1.3/users/{email}/two_factor";
     private final String DEVICE_RESOURCE = "/v1.3/users/{email}/devices";
     private final String RESOURCE_V13_BASE = "/v1.3/users";
-    private final String COUNT_RESOURCE = "/v1.4/users/count";
 
     @Test
     public void shouldReturn401WhenTokenMissing() throws Exception
@@ -866,75 +865,6 @@ public class TestUsersResources extends AbstractResourceTest
         sqlTrans.commit();
 
     }
-
-    @Test
-    public void count_shouldReturn401ForNonPrivilegedServiceToken() throws Exception
-    {
-        givenAdminAccess()
-        .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
-
-        givenAdminAccess()
-         .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-         .when().log().everything()
-                .get(COUNT_RESOURCE);
-
-        givenAccess("thisisnotavalidtoken")
-        .expect()
-                .statusCode(401)
-                .body("type", equalTo("UNAUTHORIZED"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE);
-    }
-
-    @Test
-    public void count_shouldReturn200ForValidPrivilegedServiceToken() throws Exception
-    {
-        givenSecret("analytics", deploymentSecret)
-                .expect()
-                .statusCode(200)
-                .when().log().everything()
-                .get(COUNT_RESOURCE);
-    }
-
-    @Test
-    public void count_shouldReturn400WhenRequestHasInvalidQueryParam() throws Exception
-    {
-        givenSecret("analytics", deploymentSecret)
-        .expect()
-                .statusCode(400)
-                .body("type", equalTo("BAD_ARGS"))
-        .when().log().everything()
-                .get(COUNT_RESOURCE + "?account_type=totallynotavalidaccounttype");
-    }
-
-    @Test
-    public void count_shouldReturn200WhenRequestHasValidQueryParam() throws Exception
-    {
-        givenSecret("analytics", deploymentSecret)
-        .expect()
-                .statusCode(200)
-        .when().log().everything()
-                .get(COUNT_RESOURCE + "?account_type=all");
-
-        givenSecret("analytics", deploymentSecret)
-        .expect()
-                .statusCode(200)
-        .when().log().everything()
-                .get(COUNT_RESOURCE + "?account_type=ldap");
-
-        givenSecret("analytics", deploymentSecret)
-        .expect()
-                .statusCode(200)
-        .when().log().everything()
-                .get(COUNT_RESOURCE + "?account_type=local");
-    }
-
 
     private ImmutableMap<String, String> userAttributes(User u)
     {
