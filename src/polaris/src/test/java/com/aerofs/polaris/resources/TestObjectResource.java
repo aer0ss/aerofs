@@ -70,7 +70,7 @@ public final class TestObjectResource {
 
     @After
     public void afterTest() throws Exception {
-        reset(polaris.getNotifier(), polaris.getTokenVerifier(), polaris.getAccessManager());
+        polaris.resetMocks();
         database.clear();
     }
 
@@ -914,7 +914,7 @@ public final class TestObjectResource {
                 .assertThat().statusCode(SC_OK);
 
         AtomicBoolean called = new AtomicBoolean();
-        when(polaris.getStoreRenamer().renameStore(any(), any(), any()))
+        when(polaris.getStoreNames().renameStore(any(), any(), any()))
                 .thenReturn(called.compareAndSet(false, true));
 
         PolarisHelpers.renameStore(AUTHENTICATED, store, "old store name", "new store name");
@@ -943,7 +943,7 @@ public final class TestObjectResource {
                     .assertThat().statusCode(SC_OK);
 
         AtomicBoolean called = new AtomicBoolean();
-        when(polaris.getStoreRenamer().renameStore(any(), any(), any()))
+        when(polaris.getStoreNames().renameStore(any(), any(), any()))
                 .thenReturn(called.compareAndSet(false, true));
 
         PolarisHelpers.renameStore(AUTHENTICATED, store, "old store name", "new store name");

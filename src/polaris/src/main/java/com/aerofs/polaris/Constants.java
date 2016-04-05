@@ -23,6 +23,13 @@ public abstract class Constants {
 
     public static final long MIGRATION_OPERATION_BATCH_SIZE = 100;
 
+    public static final String SFNOTIF_PREFIX = "sf";
+
+    // keep these messages in sync with the Enum defined in ThreadLocalSFNotifications.java
+    public static final String SFNOTIF_JOIN = "j";
+    public static final String SFNOTIF_LEAVE = "l";
+    public static final String SFNOTIF_CHANGE = "c";
+
     private Constants() {
         // to prevent instantiation by subclasses
     }

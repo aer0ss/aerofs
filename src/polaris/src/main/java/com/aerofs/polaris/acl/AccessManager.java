@@ -31,4 +31,7 @@ public interface AccessManager {
      * permissions cannot be granted to the user
      */
     void checkAccess(UserID user, Collection<UniqueID> stores, Access... requested) throws AccessException;
+
+    // clears any cache the access manager has for this user and store
+    void accessChanged(UserID user, UniqueID store);
 }

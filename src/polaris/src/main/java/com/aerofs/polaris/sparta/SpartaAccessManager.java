@@ -10,8 +10,8 @@ import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.FolderSharer;
-import com.aerofs.polaris.logical.StoreRenamer;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.aerofs.polaris.logical.StoreNames;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
@@ -22,10 +22,7 @@ import com.google.common.collect.Maps;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.*;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -55,9 +52,9 @@ import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
 // TODO(AS): This class has more responsibilities than a super hero. Change its name.
 @Singleton
-public final class SpartaAccessManager implements ManagedAccessManager, FolderSharer, StoreRenamer {
+public final class SpartaAccessManager implements ManagedAccessManager, FolderSharer, StoreNames {
 
-    private static final String SPARTA_API_VERSION = "v1.3";
+    private static final String SPARTA_API_VERSION = "v1.4";
     private static final long CONNECTION_ACQUIRE_TIMEOUT = TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SpartaAccessManager.class);
@@ -67,7 +64,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
     private final String spartaUrl;
     private final ObjectMapper mapper;
     private final CloseableHttpClient client;
-    private final Cache<UserStore, List<Access>> permsCache = CacheBuilder.newBuilder().expireAfterWrite(3, TimeUnit.MINUTES).build();
+    private final Cache<UserStore, List<Access>> permsCache = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     @Inject
     public SpartaAccessManager(
@@ -131,6 +128,11 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         if (rej != null) {
             throw new AccessException(user, rej, requested);
         }
+    }
+
+    @Override
+    public void accessChanged(UserID user, UniqueID store) {
+        permsCache.invalidate(new UserStore(user, store));
     }
 
     private List<Access> findAccessPermissions(UserID user, UniqueID store) {
@@ -240,6 +242,46 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         } catch (IOException e) {
             LOGGER.warn("Failed to rename shared folder", e);
             return false;
+        }
+    }
+
+    @Override
+    public String getStoreDefaultName(AeroUserDevicePrincipal principal, UniqueID store) throws IOException
+    {
+        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/shares/%s", SPARTA_API_VERSION, store.toStringFormal()));
+        get.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        get.addHeader(HttpHeaders.AUTHORIZATION, getHeaderValue(serviceName, deploymentSecret,
+                principal.getUser().getString(), principal.getDevice().toStringFormal()));
+
+        try (CloseableHttpResponse response = client.execute(get)) {
+            int sc = response.getStatusLine().getStatusCode();
+            if (sc == 200) {
+                try (InputStream content = response.getEntity().getContent()) {
+                    SharedFolder sf = mapper.readValue(content, SharedFolder.class);
+                    return sf.name;
+                }
+            } else {
+                LOGGER.warn("Result of getting shared folder info from sparta: {}", sc);
+                throw new IOException("could not get sf info from sparta");
+            }
+        }
+    }
+
+    @Override
+    public void setPersonalStoreName(AeroUserDevicePrincipal principal, UniqueID store, String name) throws IOException
+    {
+        HttpPut put = new HttpPut(spartaUrl + String.format("/%s/shares/%s/name", SPARTA_API_VERSION, store.toStringFormal()));
+        put.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        put.addHeader(HttpHeaders.AUTHORIZATION, getHeaderValue(serviceName, deploymentSecret,
+                principal.getUser().getString(), principal.getDevice().toStringFormal()));
+
+        put.setEntity(new StringEntity(name));
+        try (CloseableHttpResponse response = client.execute(put)) {
+            int sc = response.getStatusLine().getStatusCode();
+            if (sc != 200) {
+                LOGGER.warn("Result of setting shared folder name in sparta: {}", sc);
+                throw new IOException("could not set personal sf name in sparta");
+            }
         }
     }
 

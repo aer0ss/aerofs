@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.audit.client.MockAuditClient;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.acl.Permissions;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExBadCredential;
@@ -176,7 +177,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected final Group.Factory factGroup = new Group.Factory();
 
     @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
-
+    @Spy protected ThreadLocalSFNotifications sfNotifications = new ThreadLocalSFNotifications();
     // Can't use @Spy as User.Factory's constructor needs a spied instance;
     protected License license = spy(new License());
 
@@ -185,7 +186,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         factUser.inject(udb, oidb, tfdb, gmdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, factGroup, license);
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
-        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser);
+        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser, sfNotifications);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
         factOrgInvite.inject(oidb, factUser, factOrg);
         factGroup.inject(gdb, gmdb, gsdb, factOrg, factSharedFolder, factUser);
@@ -205,6 +206,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     @Spy protected MockSession session;
 
     @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, ssmp);
+    protected SFNotificationPublisher sfNotificationPublisher = mock(SFNotificationPublisher.class);
 
     @Spy protected Authenticator authenticator = spy(new AuthenticatorFactory(aclNotificationPublisher, auditClient, analyticsClient).create());
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
@@ -345,7 +347,9 @@ public class AbstractSPTest extends AbstractTestWithDatabase
                 aclNotificationPublisher,
                 zelda,
                 accessCodeProvider,
-                analyticsClient);
+                analyticsClient,
+                sfNotificationPublisher,
+                sfNotifications);
         wireSPService();
     }
 

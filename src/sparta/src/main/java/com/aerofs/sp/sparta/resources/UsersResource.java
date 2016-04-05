@@ -28,6 +28,8 @@ import javax.ws.rs.core.Response.Status;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
+import com.aerofs.sp.server.*;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,10 +56,6 @@ import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.Version;
 import com.aerofs.sp.common.SharedFolderState;
-import com.aerofs.sp.server.ACLNotificationPublisher;
-import com.aerofs.sp.server.CommandDispatcher;
-import com.aerofs.sp.server.PasswordManagement;
-import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.email.TwoFactorEmailer;
@@ -89,11 +87,13 @@ public class UsersResource extends AbstractSpartaResource
     private final AuditClient _audit;
     private final TwoFactorEmailer _twoFactorEmailer;
     private final IAnalyticsClient _analyticsClient;
+    private final ThreadLocalSFNotifications _sfNotif;
+    private final SFNotificationPublisher _sfPublisher;
 
     @Inject
     public UsersResource(Factory factUser, ACLNotificationPublisher aclPublisher, CommandDispatcher commandDispatcher,
-                         PasswordManagement passwordManagement, AuditClient audit, TwoFactorEmailer twoFactorEmailer,
-                         IAnalyticsClient analyticsClient)
+             PasswordManagement passwordManagement, AuditClient audit, TwoFactorEmailer twoFactorEmailer,
+             IAnalyticsClient analyticsClient, ThreadLocalSFNotifications sfNotif, SFNotificationPublisher sfPublisher)
     {
         _factUser = factUser;
         _aclPublisher = aclPublisher;
@@ -102,6 +102,8 @@ public class UsersResource extends AbstractSpartaResource
         _audit = audit;
         _twoFactorEmailer = twoFactorEmailer;
         _analyticsClient = analyticsClient;
+        _sfNotif = sfNotif;
+        _sfPublisher = sfPublisher;
     }
 
     private AuditableEvent audit(User caller, IUserAuthToken token, AuditTopic topic, String event)
@@ -287,10 +289,13 @@ public class UsersResource extends AbstractSpartaResource
         }
 
         // TODO: extract and reuse code from SPService.joinSharedFolderImpl?
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected = sf.setState(user, SharedFolderState.JOINED);
         sf.setExternal(user, toBool(external));
 
         _aclPublisher.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         String[] permissions = sf.getPermissions(user).toArray();
 
@@ -508,8 +513,12 @@ public class UsersResource extends AbstractSpartaResource
         throwIfNotSelfOrTSOf(caller, target);
 
         l.debug("API: user {} attempt delete {}", caller, target);
+        _sfNotif.begin();
         UserManagement.deactivateByTS(caller, target, false, _commandDispatcher, _aclPublisher);
         l.info("Deleted user {}", target.id().getString());
+
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         audit(caller, auth, AuditTopic.USER, "user.delete")
                 .add("email", target.id())

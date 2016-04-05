@@ -8,6 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.ids.DID;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.License;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
@@ -81,13 +82,14 @@ public abstract class AbstractBusinessObjectTest extends AbstractAutoTransaction
     @Spy protected final Group.Factory factGroup = new Group.Factory();
 
     License license = mock(License.class);
+    protected final ThreadLocalSFNotifications sfNotif = mock(ThreadLocalSFNotifications.class);
 
     @Spy protected final User.Factory factUser = new User.Factory();
     {
         factUser.inject(udb, oidb, tfdb, gmdb, factDevice, factOrg,
                 factOrgInvite, factSharedFolder, factGroup, license);
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite, factGroup, gdb);
-        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser);
+        factSharedFolder.inject(sfdb, gsdb, factGroup, factUser, sfNotif);
         factDevice.inject(ddb, cdb, cgen, factUser, factCert);
         factOrgInvite.inject(oidb, factUser, factOrg);
         factGroup.inject(gdb, gmdb, gsdb, factOrg, factSharedFolder, factUser);

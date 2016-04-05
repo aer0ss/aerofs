@@ -19,6 +19,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.OAuthRequestFilter;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.GroupSharesDatabase;
@@ -42,6 +43,9 @@ import static com.aerofs.sp.common.SharedFolderState.JOINED;
 import static com.aerofs.sp.common.SharedFolderState.LEFT;
 import static com.aerofs.sp.common.SharedFolderState.PENDING;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.aerofs.servlets.lib.ThreadLocalSFNotifications.SFNotificationMessage.JOIN;
+import static com.aerofs.servlets.lib.ThreadLocalSFNotifications.SFNotificationMessage.CHANGE;
+import static com.aerofs.servlets.lib.ThreadLocalSFNotifications.SFNotificationMessage.LEAVE;
 
 public class SharedFolder
 {
@@ -51,15 +55,17 @@ public class SharedFolder
         private GroupSharesDatabase _gsdb;
         private Group.Factory _factGroup;
         private User.Factory _factUser;
+        private ThreadLocalSFNotifications _sfNotif;
 
         @Inject
         public void inject(SharedFolderDatabase db, GroupSharesDatabase gsdb,
-                Group.Factory factGroup, User.Factory factUser)
+                Group.Factory factGroup, User.Factory factUser, ThreadLocalSFNotifications sfNotif)
         {
             _db = db;
             _gsdb = gsdb;
             _factGroup = factGroup;
             _factUser = factUser;
+            _sfNotif = sfNotif;
         }
 
         public SharedFolder create(ByteString sid)
@@ -197,7 +203,8 @@ public class SharedFolder
         _f._db.insert(_sid, folderName);
 
         try {
-            return addJoinedUser(owner, Permissions.OWNER);
+            // don't send sfNotif for the first member of a shared folder
+            return addUserImpl(owner, Permissions.OWNER);
         } catch (ExAlreadyExist e) {
             throw SystemUtil.fatal(e);
         }
@@ -224,6 +231,13 @@ public class SharedFolder
      * @throws com.aerofs.base.ex.ExAlreadyExist if the user is already added.
      */
     public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)
+            throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
+    {
+        _f._sfNotif.addNotif(user.id(), _sid, JOIN);
+        return addUserImpl(user, permissions);
+    }
+
+    private ImmutableCollection<UserID> addUserImpl(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
     {
         insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
@@ -280,9 +294,12 @@ public class SharedFolder
             insertUser(_sid, user.id(), permissions, newState, sharerID, gid);
         }
 
-        ImmutableCollection<UserID> affected = needToUpdateACLs(oldState, oldPermissions, newState,
-                getPermissionsNullable(user)) ? getJoinedUserIDs() : ImmutableList.of();
-        return new AffectedAndNeedsEmail(affected, needsEmail);
+        if (needToUpdateACLs(oldState, oldPermissions, newState, getPermissionsNullable(user))) {
+            _f._sfNotif.addNotif(user.id(), _sid, CHANGE);
+            return new AffectedAndNeedsEmail(getJoinedUserIDs(), needsEmail);
+        } else {
+            return new AffectedAndNeedsEmail(ImmutableList.of(), needsEmail);
+        }
     }
 
     public ImmutableCollection<UserID> setState(User user, SharedFolderState newState)
@@ -296,7 +313,7 @@ public class SharedFolder
             if (!wasJoined) {
                 _f._db.setState(_sid, user.id(), newState);
                 addTeamServerForUserImpl(user);
-
+                _f._sfNotif.addNotif(user.id(), _sid, JOIN);
                 // retrieve the affected users _after_ the user's state is changed
                 affectedUsers = getJoinedUserIDs();
             } else {
@@ -308,6 +325,7 @@ public class SharedFolder
                 // retrieve the affected users _before_ the user's state is changed
                 affectedUsers = getJoinedUserIDs();
 
+                _f._sfNotif.addNotif(user.id(), _sid, LEAVE);
                 _f._db.setState(_sid, user.id(), newState);
                 removeTeamServerForUserImpl(user);
             } else {
@@ -338,6 +356,10 @@ public class SharedFolder
             throws SQLException, ExNotFound, ExAlreadyExist
     {
         _f._db.setExternal(_sid, user.id(), external);
+        if (external) {
+            // don't need to have an external store's anchor under the root store
+            _f._sfNotif.addNotif(user.id(), _sid, LEAVE);
+        }
     }
 
     public boolean isExternal(User user) throws SQLException
@@ -416,6 +438,7 @@ public class SharedFolder
 
         // difference of prev and curr keySets is users that used to be joined and no longer are
         for (User removed : Sets.difference(prev.keySet(), curr.keySet())) {
+            _f._sfNotif.addNotif(removed.id(), _sid, LEAVE);
             // we may have already removed the team server due to other removed user
             if (getPermissionsNullable(removed.getOrganization().getTeamServerUser()) == null) {
                 continue;
@@ -459,6 +482,7 @@ public class SharedFolder
         SharedFolderState oldState = getStateNullable(user);
         Permissions oldPermissions = getPermissionsNullable(user);
         boolean wasJoined = oldState == JOINED;
+        boolean notifSent = false;
         GroupID gid = group == null ? GroupID.NULL_GROUP : group.id();
 
         // retrieve the list of affected users _before_ performing the deletion, so that all the
@@ -473,13 +497,23 @@ public class SharedFolder
         Permissions newPermissions = getPermissionsNullable(user);
         boolean nowJoined = newState == JOINED;
         // remove the Team Server only if the user has joined the folder
-        if (wasJoined && !nowJoined) removeTeamServerForUserImpl(user);
+        if (wasJoined && !nowJoined) {
+            _f._sfNotif.addNotif(user.id(), _sid, LEAVE);
+            notifSent = true;
+            removeTeamServerForUserImpl(user);
+        }
 
         // auto-destroy folder if empty
         if (getJoinedUserIDs().isEmpty()) destroy();
 
-        return needToUpdateACLs(oldState, oldPermissions, newState, newPermissions) ?
-                affectedUsers : ImmutableList.of();
+        if (needToUpdateACLs(oldState, oldPermissions, newState, newPermissions)) {
+            if (!notifSent) {
+                _f._sfNotif.addNotif(user.id(), _sid, CHANGE);
+            }
+            return affectedUsers;
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     /**
@@ -647,11 +681,7 @@ public class SharedFolder
         Permissions prevRole = getPermissionsNullable(user);
         _f._db.setPermissions(_sid, user.id(), permissions);
         throwIfNoOwnerLeft();
-        SharedFolderState state = getStateNullable(user);
-        Permissions currRole = getPermissionsNullable(user);
-        return needToUpdateACLs(state, prevRole, state, currRole) ?
-                getJoinedUserIDs() : ImmutableList.of();
-
+        return returnJoinedUsersIfPermChanged(user, prevRole);
     }
 
     public ImmutableCollection<UserID> setPermissionsForGroup(Group group, Permissions permissions)
@@ -661,7 +691,16 @@ public class SharedFolder
         _f._db.setPermissionsForGroup(id(), group.id(), permissions);
         throwIfNoOwnerLeft();
         ImmutableMap<User, Permissions> curr = getJoinedUsersAndRoles();
-        return needToUpdateACLs(prev, curr) ? getJoinedUserIDs() : ImmutableList.of();
+        if (needToUpdateACLs(prev, curr)) {
+            for (User u : group.listMembers()) {
+                if (prev.containsKey(u) && !prev.get(u).equals(curr.get(u))) {
+                    _f._sfNotif.addNotif(u.id(), _sid, CHANGE);
+                }
+            }
+            return getJoinedUserIDs();
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     /**
@@ -674,10 +713,7 @@ public class SharedFolder
         Permissions prevRole = getPermissionsNullable(user);
         _f._db.grantPermission(_sid, user.id(), permission);
         throwIfNoOwnerLeft();
-        SharedFolderState state = getStateNullable(user);
-        Permissions currRole = getPermissionsNullable(user);
-        return needToUpdateACLs(state, prevRole, state, currRole) ?
-                getJoinedUserIDs() : ImmutableList.of();
+        return returnJoinedUsersIfPermChanged(user, prevRole);
     }
 
     /**
@@ -692,10 +728,18 @@ public class SharedFolder
         Permissions prevRole = getPermissionsNullable(user);
         _f._db.revokePermission(_sid, user.id(), permission);
         throwIfNoOwnerLeft();
+        return returnJoinedUsersIfPermChanged(user, prevRole);
+    }
+
+    private ImmutableCollection<UserID> returnJoinedUsersIfPermChanged(User user, Permissions prev) throws SQLException {
         SharedFolderState state = getStateNullable(user);
         Permissions currRole = getPermissionsNullable(user);
-        return needToUpdateACLs(state, prevRole, state, currRole) ?
-                getJoinedUserIDs() : ImmutableList.of();
+        if (needToUpdateACLs(state, prev, state, currRole)) {
+            _f._sfNotif.addNotif(user.id(), _sid, CHANGE);
+            return getJoinedUserIDs();
+        } else {
+            return ImmutableList.of();
+        }
     }
 
     /**

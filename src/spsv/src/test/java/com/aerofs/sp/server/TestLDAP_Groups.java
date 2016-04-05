@@ -113,7 +113,7 @@ public class TestLDAP_Groups extends AbstractSPTest
         when(_invitationHelper.createBatchFolderInvitationAndEmailer(any(), any(), any(), any()))
                 .thenReturn(_invitationEmailFact.doesNothing());
         _server.resetConfig(_cfg);
-        _syncer = new LdapGroupSynchronizer(_cfg, factUser, factGroup, _invitationHelper);
+        _syncer = new LdapGroupSynchronizer(_cfg, factUser, factGroup, _invitationHelper, sfNotifications);
         authenticator = new Authenticator(new IAuthority[] {
                 new LdapAuthority(_cfg, aclNotificationPublisher, auditClient, analyticsClient)
         });

@@ -16,6 +16,7 @@ import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Common.PBSubjectPermissions;
 import com.aerofs.proto.Sp.GetACLReply;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.group.Group;
@@ -27,12 +28,16 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.never;
@@ -383,6 +388,22 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
             SPParam.MAX_SHARED_FOLDER_MEMBERS = prevValue;
         }
     }
+
+    @Test
+    // need to cast to a concrete Collection<SFNotification> type for the argument captor
+    @SuppressWarnings("unchecked")
+    public void memberCreatingSharedFolderShouldNotCreateNotifs()
+            throws Exception
+    {
+        setSession(USER_1);
+        service.shareFolder(SID_1.toStringFormal(), BaseUtil.toPB(SID_1),
+                Collections.<PBSubjectPermissions>emptyList(), "", false, false).get();
+        verify(sfNotifications, never()).addNotif(any(), any(), any());
+        ArgumentCaptor<Collection<ThreadLocalSFNotifications.SFNotification>> captor = ArgumentCaptor.forClass((Class)Collection.class);
+        verify(sfNotificationPublisher).sendNotifications(captor.capture());
+        assertTrue(captor.getValue().isEmpty());
+    }
+
 
     /**
      * Verifies that a folder invitation email has been sent numEmails times.

@@ -5,6 +5,8 @@ package com.aerofs.ids;
  * AeroFS device identifier
  */
 public class DID extends UniqueID {
+    // all zeros
+    public static DID DUMMY = new DID(UniqueID.ZERO);
 
     protected static final int MDID_VERSION_NIBBLE = 8;
 

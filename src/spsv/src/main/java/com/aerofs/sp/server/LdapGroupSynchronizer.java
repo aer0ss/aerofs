@@ -12,6 +12,7 @@ import com.aerofs.ids.ExInvalidID;
 import com.aerofs.base.id.OrganizationID;
 import com.aerofs.ids.UserID;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.authentication.LdapAuthority;
 import com.aerofs.sp.authentication.LdapConfiguration;
@@ -57,7 +58,7 @@ public class LdapGroupSynchronizer
 {
 
     public LdapGroupSynchronizer(LdapConfiguration cfg, User.Factory userFact, Group.Factory groupFact,
-            InvitationHelper invitationHelper)
+            InvitationHelper invitationHelper, ThreadLocalSFNotifications sfNotif)
     {
         _cfg = cfg;
         _ldapAuthority = new LdapAuthority(_cfg);
@@ -65,6 +66,7 @@ public class LdapGroupSynchronizer
         _groupFact = groupFact;
         _userFact = userFact;
         _invitationHelper = invitationHelper;
+        _sfNotif = sfNotif;
 
         try {
             _md = MessageDigest.getInstance("SHA-1");
@@ -98,12 +100,13 @@ public class LdapGroupSynchronizer
     }
 
     // this method is synchronized to avoid concurrent attempts to sync groups
-    public synchronized AffectedUsersAndError synchronizeGroups(SQLThreadLocalTransaction sqlTrans,
+    public synchronized SyncingResult synchronizeGroups(SQLThreadLocalTransaction sqlTrans,
             Organization org)
             throws ExExternalServiceUnavailable, LDAPException
     {
         coveredGroups = Maps.newHashMap();
         affected = ImmutableSet.builder();
+        _notifications = Lists.newArrayList();
         boolean errored = false;
         _sqlTrans = sqlTrans;
         _organization = org;
@@ -135,7 +138,7 @@ public class LdapGroupSynchronizer
             }
         }
         // don't have to create new groups here, already handled in groupFromDN
-        return new AffectedUsersAndError(errored, affected.build());
+        return new SyncingResult(errored, affected.build(), _notifications);
     }
 
     private List<String> externalIDs(Organization org)
@@ -241,6 +244,7 @@ public class LdapGroupSynchronizer
         Set<User> usersToRemove = Sets.difference(existingUsers, ldapUsers);
 
         _sqlTrans.begin();
+        _sfNotif.begin();
         try {
             for (User newMember : usersToAdd) {
                 AffectedUserIDsAndInvitedFolders result = matching.addMember(newMember);
@@ -262,9 +266,12 @@ public class LdapGroupSynchronizer
                 matching.setCommonName(ldapCommonName);
             }
             _sqlTrans.commit();
+            _notifications.addAll(_sfNotif.get());
         } catch (Exception e) {
             _sqlTrans.rollback();
             throw e;
+        } finally {
+            _sfNotif.clear();
         }
     }
 
@@ -272,12 +279,16 @@ public class LdapGroupSynchronizer
             throws SQLException, ExNoAdminOrOwner, ExNotFound, ExNoPerm
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
         try {
             affected.addAll(_groupFact.createFromExternalID(externalID.getBytes()).delete());
             _sqlTrans.commit();
+            _notifications.addAll(_sfNotif.get());
         } catch (Exception e) {
             _sqlTrans.rollback();
             throw e;
+        } finally {
+            _sfNotif.clear();
         }
     }
 
@@ -553,23 +564,26 @@ public class LdapGroupSynchronizer
         return users;
     }
 
-    public static class AffectedUsersAndError
+    public static class SyncingResult
     {
         public final Boolean _errored;
         public final ImmutableCollection<UserID> _affected;
+        public final List<ThreadLocalSFNotifications.SFNotification> _sfNotifications;
 
-        public AffectedUsersAndError(Boolean errored, ImmutableCollection<UserID> affected)
+        public SyncingResult(Boolean errored, ImmutableCollection<UserID> affected, List<ThreadLocalSFNotifications.SFNotification> notifs)
         {
             _errored = errored;
             _affected = affected;
+            _sfNotifications = notifs;
         }
 
         @Override
         public boolean equals(Object that)
         {
-            return this == that || (that instanceof AffectedUsersAndError &&
-                    _errored.equals(((AffectedUsersAndError)that)._errored) &&
-                    _affected.equals(((AffectedUsersAndError)that)._affected));
+            return this == that || (that instanceof SyncingResult &&
+                    _errored.equals(((SyncingResult)that)._errored) &&
+                    _affected.equals(((SyncingResult)that)._affected)) &&
+                    _sfNotifications.equals(((SyncingResult)that)._sfNotifications);
         }
 
         @Override
@@ -591,6 +605,8 @@ public class LdapGroupSynchronizer
     private InvitationHelper _invitationHelper;
     private MessageDigest _md;
     private SQLThreadLocalTransaction _sqlTrans;
+    private ThreadLocalSFNotifications _sfNotif;
+    private List<ThreadLocalSFNotifications.SFNotification> _notifications;
     private String[] _allMemberAttrs;
     private String[] _queryAttrs;
 }

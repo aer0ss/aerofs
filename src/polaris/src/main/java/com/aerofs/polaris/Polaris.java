@@ -40,6 +40,8 @@ import com.aerofs.polaris.resources.external_api.FilesResource;
 import com.aerofs.polaris.resources.external_api.FoldersResource;
 import com.aerofs.polaris.sparta.SpartaAccessManager;
 import com.aerofs.polaris.sparta.SpartaConfiguration;
+import com.aerofs.polaris.ssmp.ManagedSSMPConnection;
+import com.aerofs.polaris.ssmp.SSMPListener;
 import com.aerofs.polaris.ssmp.SSMPPublisher;
 import com.aerofs.rest.util.MimeTypeDetector;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -117,10 +119,12 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(cacert).to(ICertificateProvider.class);
                 bind(deploymentSecret).to(String.class).named(Constants.DEPLOYMENT_SECRET_INJECTION_KEY);
                 bind(OrderedNotifier.class).to(ManagedNotifier.class).to(Notifier.class).in(Singleton.class);
-                bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).
-                        to(BinaryPublisher.class).in(Singleton.class);
+                bind(ManagedSSMPConnection.class).to(ManagedSSMPConnection.class).in(Singleton.class);
+                bind(SSMPPublisher.class).to(UpdatePublisher.class). to(BinaryPublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
-                        .to(FolderSharer.class).to(StoreRenamer.class).in(Singleton.class);
+                        .to(FolderSharer.class).to(StoreNames.class).in(Singleton.class);
+                bind(SFAutoJoinAndLeave.class).to(SFMemberChangeListener.class).in(Singleton.class);
+                bind(SSMPListener.class).to(SSMPListener.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);
@@ -131,9 +135,10 @@ public class Polaris extends Service<PolarisConfiguration> {
         });
 
         environment.addManaged(ManagedAccessManager.class);
-        environment.addManaged(ManagedUpdatePublisher.class);
+        environment.addManaged(ManagedSSMPConnection.class);
         environment.addManaged(ManagedNotifier.class);
         environment.addManaged(Migrator.class);
+        environment.addManaged(SSMPListener.class);
 
         // setup resource authorization
         environment.addAuthenticator(new AeroOAuthAuthenticator(tokenVerifier()));
@@ -154,20 +159,17 @@ public class Polaris extends Service<PolarisConfiguration> {
         // register singleton providers
         environment.addAdminProvider(DBIExceptionMapper.class);
         environment.addAdminProvider(PolarisExceptionMapper.class);
-
         environment.addServiceProvider(DefaultExceptionMapper.class);
         environment.addServiceProvider(AuthenticationExceptionMapper.class);
         environment.addServiceProvider(IllegalArgumentExceptionMapper.class);
         environment.addServiceProvider(JsonProcessingExceptionMapper.class);
         environment.addServiceProvider(ConstraintViolationExceptionMapper.class);
-
         environment.addServiceProvider(DBIExceptionMapper.class);
         environment.addServiceProvider(PolarisExceptionMapper.class);
         environment.addServiceProvider(ParamExceptionMapper.class);
 
         environment.addServiceProvider(VersionFilterDynamicFeature.class);
         environment.addServiceProvider(new VersionProvider());
-
         environment.addServiceProvider(CORSFilterDynamicFeature.class);
 
         // register root resources

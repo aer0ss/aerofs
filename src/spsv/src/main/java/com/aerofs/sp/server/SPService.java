@@ -11,6 +11,7 @@ import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.acl.Permissions.Permission;
 import com.aerofs.base.acl.SubjectPermissions;
 import com.aerofs.base.acl.SubjectPermissionsList;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.base.async.UncancellableFuture;
@@ -57,7 +58,7 @@ import com.aerofs.sp.authentication.LocalCredential;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.InvitationHelper.InviteToSignUpResult;
-import com.aerofs.sp.server.LdapGroupSynchronizer.AffectedUsersAndError;
+import com.aerofs.sp.server.LdapGroupSynchronizer.SyncingResult;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
 import com.aerofs.sp.server.authorization.DeviceAuthClient;
@@ -140,6 +141,8 @@ public class SPService implements ISPService
 
     private final ACLNotificationPublisher _aclPublisher;
     private final AuditClient _auditClient;
+    private final SFNotificationPublisher _sfPublisher;
+    private final ThreadLocalSFNotifications _sfNotif;
 
     private SPActiveUserSessionTracker _userTracker;
     private SPSessionInvalidator _sessionInvalidator;
@@ -230,7 +233,9 @@ public class SPService implements ISPService
             ACLNotificationPublisher aclPublisher,
             Zelda zelda,
             AccessCodeProvider accessCodeProvider,
-            IAnalyticsClient analyticsClient)
+            IAnalyticsClient analyticsClient,
+            SFNotificationPublisher sfPublisher,
+            ThreadLocalSFNotifications sfNotif)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -264,10 +269,12 @@ public class SPService implements ISPService
         _authenticator = authenticator;
         _auditClient = auditClient;
         _aclPublisher = aclPublisher;
+        _sfPublisher = sfPublisher;
+        _sfNotif = sfNotif;
 
         _invitationHelper = new InvitationHelper(_authenticator, _factInvitationEmailer, _esdb);
         _ldapGroupSynchronizer = new LdapGroupSynchronizer(new LdapConfiguration(), factUser,
-                factGroup, _invitationHelper);
+                factGroup, _invitationHelper, _sfNotif);
 
         _commandQueue = commandQueue;
         _commandDispatcher = new CommandDispatcher(_commandQueue, _jedisTrans, ssmp);
@@ -383,6 +390,7 @@ public class SPService implements ISPService
 
         // Notify SPTransaction that an exception occurred.
         _sqlTrans.handleException();
+        _sfNotif.clear();
 
         // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
@@ -1343,6 +1351,7 @@ public class SPService implements ISPService
         List<SubjectPermissions> srps = SubjectPermissionsList.listFromPB(subjectPermissionsList);
 
         _sqlTrans.begin();
+        _sfNotif.begin();
         User sharer = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         l.info("{} shares {} [{}] with {}", sharer, sf, external, srps);
 
@@ -1441,6 +1450,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         for (AuditableEvent e : events) e.publish();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         if (!folderCreatorUserID.equals(UserID.DUMMY)) {
             _analyticsClient.track(AnalyticsEvent.SHARED_FOLDER_CREATE, folderCreatorUserID);
@@ -1477,6 +1488,7 @@ public class SPService implements ISPService
         external = firstNonNull(external, false);
         SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
 
+        _sfNotif.begin();
         _sqlTrans.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
 
@@ -1490,6 +1502,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         auditEvent.publish();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         _analyticsClient.track(AnalyticsEvent.FOLDER_INVITATION_ACCEPT, user.id());
 
@@ -1594,6 +1608,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> leaveSharedFolder(ByteString sid) throws Exception
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
 
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sid)));
@@ -1626,6 +1641,8 @@ public class SPService implements ISPService
                 .publish();
 
         _sqlTrans.commit();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         return createVoidReply();
     }
@@ -2215,6 +2232,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
         User caller = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         SharedFolder sf = _factSharedFolder.create(new SID(BaseUtil.fromPB(sharedId)));
         l.info("{} destroys {}", caller, sf);
@@ -2233,6 +2251,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         auditEvent.publish();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         return createVoidReply();
     }
@@ -2758,6 +2778,7 @@ public class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update)
 
         _sqlTrans.begin();
+        _sfNotif.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         sf.throwIfNoPrivilegeToChangeACL(user);
         ISharingRules rules = _sharingRules.create(user);
@@ -2792,6 +2813,8 @@ public class SPService implements ISPService
         }
         _aclPublisher.publish_(affected.build());
         _sqlTrans.commit();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         return createVoidReply();
     }
@@ -2841,6 +2864,7 @@ public class SPService implements ISPService
             throws Exception
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         SharedFolder sf = _factSharedFolder.create(storeId);
         sf.throwIfNoPrivilegeToChangeACL(user);
@@ -2868,6 +2892,8 @@ public class SPService implements ISPService
             throw new ExBadArgs(msg + ".");
         }
         _sqlTrans.commit();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         return createVoidReply();
     }
@@ -2945,6 +2971,7 @@ public class SPService implements ISPService
         // FIXME(jP): WAAAAAH! I don't want to do hash-generation in a database transaction!
         // But how else will I get the user id given nothing but this lousy signup code?
         _sqlTrans.begin();
+        _sfNotif.begin();
 
         UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
@@ -2984,6 +3011,9 @@ public class SPService implements ISPService
                 .add("last_name", lastName)
                 .add("is_admin", !joinExistingOrg) // TODO: this is incorrect if the user already exists
                 .publish();
+
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         _analyticsClient.track(AnalyticsEvent.USER_INVITATION_ACCEPT);
         _analyticsClient.track(AnalyticsEvent.USER_SIGNUP);
@@ -3772,10 +3802,13 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userId);
         user.getOrganization();
 
+        _sfNotif.begin();
         UserManagement.deactivateByAdmin(caller, user, eraseDevices, _commandDispatcher,
                 _aclPublisher);
 
         _sqlTrans.commit();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         _userTracker.signOutAll(user.id());
 
@@ -3850,6 +3883,7 @@ public class SPService implements ISPService
     {
         ImmutableCollection.Builder<UserID> needsACLUpdate = ImmutableSet.builder();
         _sqlTrans.begin();
+        _sfNotif.begin();
         User admin = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         Organization org = admin.getOrganization();
         // Permissions: cannot modify a group unless you are an admin.
@@ -3900,6 +3934,8 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         l.info("{} added {} member(s) to {}", admin, userEmails.size(), group);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         for (InvitationEmailer email : emails) {
             try {
@@ -3919,6 +3955,7 @@ public class SPService implements ISPService
             Exception
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         // Permissions: cannot modify a group unless you are an admin.
         user.throwIfNotAdmin();
@@ -3937,7 +3974,8 @@ public class SPService implements ISPService
         _aclPublisher.publish_(affected.build());
 
         _sqlTrans.commit();
-
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
         // TODO (RD) send removed from group email
 
         l.info("{} removed {} member(s) from {}", user, userEmails.size(), group);
@@ -3950,6 +3988,7 @@ public class SPService implements ISPService
             Exception
     {
         _sqlTrans.begin();
+        _sfNotif.begin();
         User user = _session.getAuthenticatedUserWithProvenanceGroup(ProvenanceGroup.LEGACY);
         // Permissions: cannot delete a group unless you are an admin.
         user.throwIfNotAdmin();
@@ -3963,6 +4002,8 @@ public class SPService implements ISPService
         _aclPublisher.publish_(affected);
 
         _sqlTrans.commit();
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         l.info("{} deleted {}", user, group);
 
@@ -4090,8 +4131,9 @@ public class SPService implements ISPService
             org = _factOrg.create(OrganizationID.PRIVATE_ORGANIZATION);
         }
 
-        AffectedUsersAndError result = _ldapGroupSynchronizer.synchronizeGroups(_sqlTrans, org);
+        SyncingResult result = _ldapGroupSynchronizer.synchronizeGroups(_sqlTrans, org);
         _aclPublisher.publish_(result._affected);
+        _sfPublisher.sendNotifications(result._sfNotifications);
 
         if (result._errored) {
             l.warn("ldap group syncing did not complete successfully, view log for details");

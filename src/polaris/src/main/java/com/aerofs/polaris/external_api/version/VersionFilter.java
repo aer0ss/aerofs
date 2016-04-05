@@ -30,18 +30,18 @@ public class VersionFilter implements ContainerRequestFilter
     public void filter(ContainerRequestContext requestContext) throws IOException
     {
         String path = "/" + requestContext.getUriInfo().getPath();
-        l.debug("path {} ", path);
+        l.trace("path {} ", path);
 
         Version verFromRequest = Version.fromRequestPath(path);
-        l.info("version {} ", verFromRequest);
+        l.trace("version {} ", verFromRequest);
 
         if (verFromRequest != null && isSupportedVersion(verFromRequest)
                 && _version.compareTo(verFromRequest) <= 0) {
-            l.info("accept version {} [{}]", verFromRequest, _version);
+            l.debug("accept version {} [{}]", verFromRequest, _version);
             requestContext.setProperty(REQUEST_VERSION, verFromRequest);
             return;
         }
-        l.info("reject version {} [{}]", path, _version);
+        l.warn("reject version {} [{}]", path, _version);
         requestContext.abortWith(Response.status(Response.Status.NOT_FOUND)
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .entity(new Error(Error.Type.NOT_FOUND, "No such resource"))

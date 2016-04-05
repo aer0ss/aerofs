@@ -18,9 +18,11 @@ import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
 import com.aerofs.restless.Since;
 import com.aerofs.restless.Version;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.InvitationHelper;
+import com.aerofs.sp.server.SFNotificationPublisher;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedFolders;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -59,10 +61,13 @@ public class GroupResource extends AbstractSpartaResource
     private final ACLNotificationPublisher _aclNotifier;
     private final Authenticator _authenticator;
     private final InvitationHelper _invitationHelper;
+    private final ThreadLocalSFNotifications _sfNotif;
+    private final SFNotificationPublisher _sfPublisher;
 
     @Inject
     public GroupResource(User.Factory factUser, Group.Factory factGroup, Organization.Factory factOrg,
-            ACLNotificationPublisher aclNotifier, Authenticator authenticator, InvitationHelper invitationHelper)
+            ACLNotificationPublisher aclNotifier, Authenticator authenticator, InvitationHelper invitationHelper,
+            ThreadLocalSFNotifications sfNotif, SFNotificationPublisher sfPublisher)
     {
         _factUser = factUser;
         _factGroup = factGroup;
@@ -70,6 +75,8 @@ public class GroupResource extends AbstractSpartaResource
         _aclNotifier = aclNotifier;
         _authenticator = authenticator;
         _invitationHelper = invitationHelper;
+        _sfNotif = sfNotif;
+        _sfPublisher = sfPublisher;
     }
 
     @Since("1.3")
@@ -120,8 +127,11 @@ public class GroupResource extends AbstractSpartaResource
         requirePermission(Scope.ORG_ADMIN, token);
         throwIfGroupNonexistentOrInDifferentOrg(userFromAuthToken(token), group);
 
+        _sfNotif.begin();
         _aclNotifier.publish_(group.delete());
 
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
         //TODO etags
         return Response.noContent()
                 .build();
@@ -213,8 +223,12 @@ public class GroupResource extends AbstractSpartaResource
                     "and not allowed to be in this organization's groups");
         }
 
+        _sfNotif.begin();
         AffectedUserIDsAndInvitedFolders result = group.addMember(newMember);
         _aclNotifier.publish_(result._affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
+
         _invitationHelper.createBatchFolderInvitationAndEmailer(group,
                 // default to sending the emails from an org admin if there's no user associated with the request
                 caller != null ? caller : _factUser.create(OrganizationID.PRIVATE_ORGANIZATION.toTeamServerUserID()),
@@ -269,8 +283,11 @@ public class GroupResource extends AbstractSpartaResource
             throw new ExNotFound("User is not a member of group");
         }
 
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected = group.removeMember(member, null);
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         return Response.noContent()
                 .build();

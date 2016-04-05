@@ -13,11 +13,12 @@ import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.FolderSharer;
-import com.aerofs.polaris.logical.StoreRenamer;
+import com.aerofs.polaris.logical.StoreNames;
 import com.aerofs.polaris.notification.ManagedNotifier;
-import com.aerofs.polaris.notification.ManagedUpdatePublisher;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
+import com.aerofs.polaris.ssmp.ManagedSSMPConnection;
+import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.cache.CacheBuilder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.junit.rules.ExternalResource;
@@ -26,6 +27,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 
 /**
  * JUnit resource that handles the lifecycle of a
@@ -110,11 +112,13 @@ public final class PolarisTestServer extends ExternalResource {
 
     private final class TestPolaris extends Polaris {
 
-        private final ManagedUpdatePublisher publisher = Mockito.mock(ManagedUpdatePublisher.class);
+        private final UpdatePublisher publisher = Mockito.mock(UpdatePublisher.class);
         private final ManagedAccessManager accessManager = Mockito.mock(ManagedAccessManager.class);
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
         private final FolderSharer folderSharer = Mockito.mock(FolderSharer.class);
-        private final StoreRenamer storeRenamer = Mockito.mock(StoreRenamer.class);
+        private final StoreNames storeNames = Mockito.mock(StoreNames.class);
+        private final ManagedSSMPConnection ssmpConnection = new ManagedSSMPConnection(mock(SSMPConnection.class));
+        private Environment env = null;
 
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
@@ -124,12 +128,15 @@ public final class PolarisTestServer extends ExternalResource {
                 @Override
                 protected void configure() {
                     bind(notifier).to(ManagedNotifier.class).to(Notifier.class).ranked(1);
-                    bind(publisher).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).ranked(1);
+                    bind(publisher).to(UpdatePublisher.class).ranked(1);
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
                     bind(folderSharer).to(FolderSharer.class).ranked(1);
-                    bind(storeRenamer).to(StoreRenamer.class).ranked(1);
+                    bind(storeNames).to(StoreNames.class).ranked(1);
+                    bind(ssmpConnection).to(ManagedSSMPConnection.class).ranked(1);
                 }
             });
+
+            env = environment;
         }
 
         @Override
@@ -141,6 +148,11 @@ public final class PolarisTestServer extends ExternalResource {
         protected TokenVerifier tokenVerifier()
         {
             return tokenVerifier;
+        }
+
+        protected void resetMocks()
+        {
+            reset(publisher, accessManager, notifier, folderSharer, storeNames, ssmpConnection.conn);
         }
     }
 
@@ -165,9 +177,24 @@ public final class PolarisTestServer extends ExternalResource {
         return server.folderSharer;
     }
 
-    public StoreRenamer getStoreRenamer()
+    public StoreNames getStoreNames()
     {
-        return server.storeRenamer;
+        return server.storeNames;
+    }
+
+    public ManagedSSMPConnection getSSMPConn()
+    {
+        return server.ssmpConnection;
+    }
+
+    public Environment getPolarisEnvironment()
+    {
+        return server.env;
+    }
+
+    public void resetMocks()
+    {
+        server.resetMocks();
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.base.ssl.ICertificateProvider;
@@ -177,6 +178,9 @@ public class SPServlet extends HttpServlet
 
     private final IAnalyticsClient _analyticsClient;
 
+    private final ThreadLocalSFNotifications _sfNotif;
+    private final SFNotificationPublisher _sfPublisher;
+
     public SPServlet()
     {
         _sqlConProvider = new PooledSQLConnectionProvider();
@@ -218,6 +222,8 @@ public class SPServlet extends HttpServlet
         _auditClient = createAuditClient(deploymentSecret);
         _analyticsClient = new AnalyticsClient(deploymentSecret);
         _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection);
+        _sfNotif = new ThreadLocalSFNotifications();
+        _sfPublisher = new SFNotificationPublisher(_ssmpConnection);
         _authenticator = new AuthenticatorFactory(
                 _aclNotificationPublisher,
                 _auditClient,
@@ -244,7 +250,7 @@ public class SPServlet extends HttpServlet
             _factOrg.inject(_odb, _oidb, _factUser, _factSharedFolder, _factOrgInvite, _factGroup,
                     _gdb);
             _factOrgInvite.inject(_oidb, _factUser, _factOrg);
-            _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser);
+            _factSharedFolder.inject(_sfdb, _gsdb, _factGroup, _factUser, _sfNotif);
             _factGroup.inject(_gdb, _gmdb, _gsdb, _factOrg, _factSharedFolder, _factUser);
             _factUserSettingsToken.inject(_ustdb);
         }
@@ -291,7 +297,9 @@ public class SPServlet extends HttpServlet
                 _aclNotificationPublisher,
                 _zelda,
                 _accessCodeProvider,
-                _analyticsClient);
+                _analyticsClient,
+                _sfPublisher,
+                _sfNotif);
         _reactor = new SPServiceReactor(_service);
         _postDelegate = new DoPostDelegate(SP_POST_PARAM_PROTOCOL, SP_POST_PARAM_DATA);
     }

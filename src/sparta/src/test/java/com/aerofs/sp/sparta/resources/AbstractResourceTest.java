@@ -25,6 +25,7 @@ import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.bifrost.server.BifrostTest;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.injectable.TimeSource;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.servlets.lib.db.BifrostDatabaseParams;
@@ -97,6 +98,7 @@ public class AbstractResourceTest extends AbstractBaseTest
     private static final Session session = mock(Session.class);
     protected static Injector bifrostInj;
     private static Bifrost bifrost;
+    protected static final ThreadLocalSFNotifications sfNotif = mock(ThreadLocalSFNotifications.class);
     private static final NonceChecker nonceChecker = mock(NonceChecker.class);
     protected static String deploymentSecret = "81706d9d9cbdbc4e6f14e08117cfcd73";
 
@@ -300,6 +302,7 @@ public class AbstractResourceTest extends AbstractBaseTest
                 // mock access code provider to work with mocked nonce checker
                 bind(AccessCodeProvider.class).toInstance(createMockAccessCodeProvider());
                 bind(IAnalyticsClient.class).toInstance(analytics);
+                bind(ThreadLocalSFNotifications.class).toInstance(sfNotif);
             }
         });
     }

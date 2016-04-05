@@ -7,11 +7,11 @@ package com.aerofs.sp.server;
 import com.aerofs.ids.UserID;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.ssmp.*;
-import com.google.common.util.concurrent.ListenableFuture;
 
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.concurrent.ExecutionException;
+
+import static com.aerofs.sp.server.LipwigUtil.lipwigFutureGet;
 
 /**
  * Helper class to handle ACL epoch bump and related lipwig notifications
@@ -40,31 +40,5 @@ public class ACLNotificationPublisher
     {
         // TODO: pipeline requests
         for (UserID user : users) publish_(user);
-    }
-
-    /**
-     * Utility to minimize duped code in the below lipwig-related methods.
-     */
-    private static void lipwigFutureGet(ListenableFuture<SSMPResponse> future)
-            throws Exception
-    {
-        try {
-            SSMPResponse r = future.get();
-            if (r.code == SSMPResponse.NOT_FOUND) {
-                // NB: UCAST will 404 if the user is not connected
-                // NB: MCAST will 404 if no user subscribed to the topic
-            } else if (r.code != SSMPResponse.OK) {
-                throw new Exception("unexpected response " + r.code);
-            }
-        } catch (InterruptedException e) {
-            assert false : ("publisher client should never be interrupted");
-        } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof Exception) {
-                throw (Exception) e.getCause();
-            } else {
-                assert false : ("cannot handle arbitrary throwable");
-            }
-        }
     }
 }

@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.sparta.providers;
 
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.sparta.Transactional;
 import com.sun.jersey.api.container.MappableContainerException;
@@ -24,11 +25,13 @@ import java.sql.SQLException;
 public class TransactionWrapper implements ResourceMethodDispatchAdapter
 {
     private final SQLThreadLocalTransaction _sqlTrans;
+    private final ThreadLocalSFNotifications _sfNotif;
 
     @Inject
-    public TransactionWrapper(SQLThreadLocalTransaction sqlTrans)
+    public TransactionWrapper(SQLThreadLocalTransaction sqlTrans, ThreadLocalSFNotifications sfNotif)
     {
         _sqlTrans = sqlTrans;
+        _sfNotif = sfNotif;
     }
 
     @Override
@@ -78,6 +81,7 @@ public class TransactionWrapper implements ResourceMethodDispatchAdapter
             } catch (SQLException e) {
                 throw new MappableContainerException(e);
             } finally {
+                _sfNotif.clear();
                 if (!committed) _sqlTrans.handleException();
             }
         }

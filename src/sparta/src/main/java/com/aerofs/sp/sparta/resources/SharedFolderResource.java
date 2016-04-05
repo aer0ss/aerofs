@@ -14,6 +14,7 @@ import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoPerm;
 import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.id.GroupID;
+import com.aerofs.base.id.OrganizationID;
 import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.SID;
@@ -26,10 +27,7 @@ import com.aerofs.rest.api.Error.Type;
 import com.aerofs.rest.api.SFGroupMember;
 import com.aerofs.rest.api.SFMember;
 import com.aerofs.rest.api.SFPendingMember;
-import com.aerofs.rest.auth.DelegatedUserDeviceToken;
-import com.aerofs.rest.auth.ServiceToken;
-import com.aerofs.rest.auth.IAuthToken;
-import com.aerofs.rest.auth.IUserAuthToken;
+import com.aerofs.rest.auth.*;
 import com.aerofs.restless.*;
 import com.aerofs.restless.Auth;
 import com.aerofs.restless.Service;
@@ -37,9 +35,11 @@ import com.aerofs.restless.Since;
 import com.aerofs.restless.Version;
 import com.aerofs.restless.util.EntityTagSet;
 import com.aerofs.servlets.lib.analytics.AnalyticsEvent;
+import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.sp.common.SharedFolderState;
 import com.aerofs.sp.server.ACLNotificationPublisher;
 import com.aerofs.sp.server.InvitationHelper;
+import com.aerofs.sp.server.SFNotificationPublisher;
 import com.aerofs.sp.server.UserManagement;
 import com.aerofs.sp.server.audit.AuditCaller;
 import com.aerofs.sp.server.audit.AuditFolder;
@@ -47,6 +47,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.SharedFolderNotificationEmailer;
 import com.aerofs.sp.server.lib.group.Group;
 import com.aerofs.sp.server.lib.group.Group.AffectedUserIDsAndInvitedUsers;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.sf.SharedFolder;
 import com.aerofs.sp.server.lib.sf.SharedFolder.AffectedAndNeedsEmail;
 import com.aerofs.sp.server.lib.sf.SharedFolder.GroupPermissions;
@@ -103,13 +104,16 @@ public class SharedFolderResource extends AbstractSpartaResource
     private final AuditClient _audit;
     private final UrlShareResource _urlShare;
     private final IAnalyticsClient _analyticsClient;
+    private final ThreadLocalSFNotifications _sfNotif;
+    private final SFNotificationPublisher _sfPublisher;
 
     @Inject
     public SharedFolderResource(User.Factory factUser, SharedFolder.Factory factSF, Group.Factory factGroup,
             UrlShare.Factory factUrlShare, SharingRulesFactory sharingRules,
             InvitationHelper invitationHelper, ACLNotificationPublisher aclNotifier,
             SharedFolderNotificationEmailer sfnEmailer, AuditClient audit,
-            UrlShareResource urlShare, IAnalyticsClient analyticsClient)
+            UrlShareResource urlShare, IAnalyticsClient analyticsClient,
+            ThreadLocalSFNotifications sfNotif, SFNotificationPublisher sfPublisher)
     {
         _factUser = factUser;
         _factGroup = factGroup;
@@ -122,6 +126,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         _audit = audit;
         _urlShare = urlShare;
         _analyticsClient = analyticsClient;
+        _sfNotif = sfNotif;
+        _sfPublisher = sfPublisher;
     }
 
     private AuditableEvent audit(SharedFolder sf, User caller, IUserAuthToken token, String event)
@@ -205,6 +211,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             } while (sf.exists() && --attempts > 0);
         }
 
+        _sfNotif.begin();
         Set<UserID> affected = Sets.newHashSet();
         affected.addAll(sf.save(share.name, caller));
         if (share.members != null && share.members.size() > 0) {
@@ -224,6 +231,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
         if (share.isLocked != null && share.isLocked) sf.setLocked();
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
 
         audit(sf, caller, token, "folder.create")
                 .publish();
@@ -244,6 +252,18 @@ public class SharedFolderResource extends AbstractSpartaResource
                         pending, sf.isExternal(caller), Permissions.OWNER.toArray(), sf.isLocked()))
                 .tag(etag)
                 .build();
+    }
+
+    @Since("1.4")
+    @PUT
+    @Path("/{id}/name")
+    public Response setName(@Auth IUserAuthToken token, @PathParam("id") SharedFolder sf, String name) throws SQLException, ExNotFound
+    {
+        User caller = validateAuth(token, Scope.READ_ACL, sf);
+        throwIfNotAMember(sf, caller, "must be a member of a shared folder to set a name for it");
+        sf.setName(caller, name);
+
+        return Response.ok().build();
     }
 
     @Since("1.1")
@@ -338,6 +358,7 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         ISharingRules rules = _sharingRules.create(caller);
         Permissions req = rules.onUpdatingACL(sf, user, Permissions.fromArray(member.permissions));
+        _sfNotif.begin();
 
         // POST when the user is already in the shared folder, but not joined, will join the user
         if (sf.getPermissionsNullable(user) != null) {
@@ -348,6 +369,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         }
 
         _aclNotifier.publish_(sf.getJoinedUserIDs());
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         audit(sf, caller, token, "folder.add")
                 .add("target", user.id())
@@ -394,6 +417,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         ISharingRules rules = _sharingRules.create(user);
         Permissions req = rules.onUpdatingACL(sf, user, Permissions.fromArray(member.permissions));
 
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected;
         try {
             affected = sf.setPermissions(user, req);
@@ -405,6 +429,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         // rules.throwIfAnyWarningTriggered();
 
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         audit(sf, caller, token, "folder.permission.update")
                 .add("target", user.id())
@@ -443,6 +469,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             }
         }
 
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected;
         try {
             affected = caller.equals(user)
@@ -453,6 +480,9 @@ public class SharedFolderResource extends AbstractSpartaResource
         }
 
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
+
         audit(sf, caller, token, caller.equals(user) ? "folder.leave" : "folder.permission.delete")
                 .add("target", user.id())
                 .publish();
@@ -520,10 +550,14 @@ public class SharedFolderResource extends AbstractSpartaResource
 
         ISharingRules rules = _sharingRules.create(caller);
         Permissions req = rules.onUpdatingACL(sf, group, Permissions.fromArray(groupMember.permissions));
+        _sfNotif.begin();
+
         AffectedUserIDsAndInvitedUsers result = group.joinSharedFolder(sf,
                 Permissions.fromArray(groupMember.permissions), caller);
 
         _aclNotifier.publish_(result._affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         for (User invitee : group.listMembers()) {
             audit(sf, caller, token, "folder.add")
@@ -602,6 +636,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         Permissions req = rules.onUpdatingACL(sf, group, Permissions.fromArray(groupMember.permissions));
         Permissions oldPermissions = group.getRoleForSharedFolder(sf);
 
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected;
         try {
             affected = group.changeRoleInSharedFolder(sf, req);
@@ -613,6 +648,8 @@ public class SharedFolderResource extends AbstractSpartaResource
         // rules.throwIfAnyWarningTriggered();
 
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         audit(sf, caller, token, "folder.permission.update")
                 .add("target", group.id())
@@ -654,6 +691,7 @@ public class SharedFolderResource extends AbstractSpartaResource
             }
         }
 
+        _sfNotif.begin();
         ImmutableCollection<UserID> affected;
         try {
             affected = group.deleteSharedFolder(sf);
@@ -662,6 +700,9 @@ public class SharedFolderResource extends AbstractSpartaResource
         }
 
         _aclNotifier.publish_(affected);
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
+
         audit(sf, caller, token, "folder.permission.delete")
                 .add("target", group.id())
                 .publish();
@@ -758,6 +799,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         ISharingRules rules = _sharingRules.create(user);
         Permissions req = rules.onUpdatingACL(sf, user, Permissions.fromArray(invitee.permissions));
 
+        _sfNotif.begin();
         InvitationEmailer em = _invitationHelper.doesNothing();
         AffectedAndNeedsEmail updates = sf.addUserWithGroup(user, null, req,
                 caller);
@@ -773,6 +815,8 @@ public class SharedFolderResource extends AbstractSpartaResource
             affected.addAll(sf.getJoinedUserIDs());
         }
         _aclNotifier.publish_(affected.build());
+        _sfPublisher.sendNotifications(_sfNotif.get());
+        _sfNotif.clear();
 
         audit(sf, caller, token, "folder.invite")
                 .add("target", user.id())
