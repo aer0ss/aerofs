@@ -106,6 +106,7 @@ class OrgSettingsViewTest(TestBase):
     def _create_request(self, params=None):
         request = self.create_dummy_request({} if params is None else params)
         request.registry.settings['show_quota_options'] = True
+        request.registry.settings['analytics.enabled'] = False
         return request
 
 def test_suite():

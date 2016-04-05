@@ -141,6 +141,7 @@ containers:
 # so that bunker can write to the autocomplete user table
 # remove this when ldap syncing is implemented
         - mysql:mysql.service
+        - analytics:analytics.service
 
   enforcer:
     image: aerofs/enforcer
@@ -193,6 +194,7 @@ containers:
         - havre:havre.service
         - charlie:charlie.service
         - auditor:auditor.service
+        - analytics:analytics.service
 
 {% if not hpc %}
   zephyr:

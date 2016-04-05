@@ -3,6 +3,7 @@ from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPOk, HTTPFound
 from aerofs_sp.gen.common_pb2 import PBException
 from web import util
+from web.analytics import send_analytics_event
 from web.util import is_group_view_enabled_nonadmin
 from web.auth import is_admin
 from web.sp_util import exception2error
@@ -26,6 +27,7 @@ def org_groups(request):
     if hide_groups_nonadmin and user_not_admin:
         return HTTPFound(location=request.route_path('files'))
     else:
+        send_analytics_event(request, "ACTIVE_USER")
         sp = util.get_rpc_stub(request)
         reply = sp.get_org_preferences()
 

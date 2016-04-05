@@ -9,6 +9,7 @@ from aerofs_sp.gen.sp_pb2 import USER, ADMIN
 from aerofs_common.exception import ExceptionReply
 
 from web import util
+from web.analytics import send_analytics_event
 from web.oauth import get_privileged_bifrost_client
 from web.sp_util import exception2error
 from web.util import error_on_invalid_email, get_rpc_stub, str2bool, is_user_view_enabled_nonadmin
@@ -42,6 +43,7 @@ def org_users(request):
     if hide_users_nonadmin and user_not_admin:
         return HTTPFound(location=request.route_path('files'))
     else:
+        send_analytics_event(request, "ACTIVE_USER")
         return {
             'admin_level': ADMIN,
             'user_level': USER,
