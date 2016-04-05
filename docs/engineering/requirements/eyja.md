@@ -2,245 +2,152 @@
 Eyja 
 ====
 
-# Say Goodbye to 'Where is the file?'
+Latest Update: Apr 5, 2016
 
-"Where is the file?"<br>
-"I put it in our folder."<br>
-"What folder?"<br>
-"The one I shared with you last week."<br>
-"I can’t find it."<br>
-"Check your email, I have sent you an invite."<br>
-"Can’t you just send the file to me?"<br>
-"OK... hang on... there."<br>
-"Thanks. Does it have the edits I sent last week?"<br>
-"What edits?"  
-Eyja brings your work together in one place.
+Resources
+_____
 
-# Mockups
-
-[Latest Eyja Mockups](https://share.aerofs.com/l/67f506b1386a4f56947b619d111c1947#/)
+* [Eyja Mockups](https://share.aerofs.com/l/67f506b1386a4f56947b619d111c1947#/)
 
 
-# Definitions
+
+Key Concepts
+_____
 
 
-`Conversation` A set of messages between multiple people. There are several types of conversations:
+`Channel` A conversation between multiple people, with a name. Channels:
 
-* `Channel` A conversation between multiple people. Channels:
-	* Channels must have a name, given by the user.
-	* Channels can be either public or private.
-	* Members can be added, or removed.
-	e.g. 'Marketing'
+	* must have a name, given by the user.
+	* can be either public or private.
+	* if public, can be joined, or left by anyone. 
+	* if private, cannot be found or joined by non-members.
+	* members can add or remove other people.
+use case: the channel 'Marketing' that talks about anything under marketing. People from outside marketing might want to join and leave as they please.  
+<br><br>
 	
-* `Direct Conversation` A conversation between multiple people with the following properties:
-	* Direct Conversations have an immutable name, with the first names of each member, ordered alphabetically.
-	* Direct Conversations are private.
-	* Members cannot be added or removed.
-	e.g. 'Ned, Sansa, Tyrion'
-	
-* `1:1 Conversation` A Direct Conversation with only two people. Name for conversation is the first name of the other person talking.  
-e.g. 'Jaime Lannister'
-* `File Conversation` A conversation around a file.
+`Direct Conversation` A conversation between multiple people, with no special name. Direct Conversations:
 
-`Conversation Subfolder` A folder that is below a channel or a direct conversation, and that may contain files and other conversation subfolders. It does not have any conversation associated with it. 
+	* do not have a special name. Instead, the name is made of the first names of each member, ordered alphabetically.
+	* are private.
+	* cannot be found or joined by non-members.
+	* members cannot add or remove other people. 
+	* once created, no member can leave, join, invite, or expel. ('immutable')
+use case: a quick conversation between 'Karen, John, Hugues, Yuri'
+<br><br>
 
-`Conversation Member` A user that has joined a conversation. 
+`File Conversation` A conversation around a file. File conversations:
 
-`Conversation Message` Words from a member.
+	* must belong to a channel or a direct conversation.
+	* inherit the public or private property of their root channel or direct conversation. 	
 
-`File Update Message` Events about files in a conversation. e.g.: 'file updated', 'file deleted', 'file created'. 
+use case: a marketing presentation being prepared by multiple people.
+<br><br>
 
-`Eyja Desktop` The desktop version of Eyja, which includes file sync and share. 
+`Conversation Subfolder` A folder used to organize contents inside a conversation. Subfolders: 
 
-`Eyja Web` The web version of Eyja.
+	* must belong to a channel or a direct conversation.
+	* may contain file conversations and conversation subfolders. 
+	* do not have any conversation associated with it. 
 
-`Eyja mobile` The mobile applications, either iOS or Android.
+use case: the subfolder 'Presentations' in Marketing Channel
+<br><br>
 
-`File Upload` The action of sharing a file in a conversation.
+`Post a File` Uploading a file to a conversation. Members can:
 
-`Send a File` A File Upload where recipients may download a copy of the file. If members want to share subsequent edits they made on the file, they would need to upload it again. Send a File triggers a File Update Message. e.g. 'Sansa sent raven.jpg'
+	* preview the file (if previewable)
+	* download the file
+	* (subject to change in API) replace the file by upload a new version with the same name.
 
-`Sync a File` A File Upload where recipients with Eyja Desktop receive a copy of the file on their desktop. If members make edits, a new copy of the file is updated  to the other members.
+`Sync a File` Uploading a file to a conversation and a shared folders. Members can:
 
-`Tag Notification` A notification that makes every reasonable attempt to inform the user immediately. e.g. The badge '1' next to messages. 
-
-`Unread Notification` A notification that tells the user she needs to look at it, and will change state once it is done. e.g. A conversation in bold. 
-
-`File Update Notification` A small, unobstrusive signal that can be ignored. e.g. a small icon next to a recently updated file.
-
-`Eyja Root Folder` The Eyja folder in the user home directory when user has installed Eyja Desktop.
-
-`Shared Folder` A folder in the Eyja folder that is shared with members of the corresponding conversation. 
-
-`Personal Folder` A folder in the Eyja folder that is not shared with anyone else.
-
-`Inbox` A place that shows the latest Tag and Unread Notifications.
-
-`Conversation Tree` The tree of folders and files below a conversation.
-
-`Roster` The list of conversations.
+	* preview the file
+	* open the file (if viewing from desktop, otherwise: web = download, mobile = open in other apps)
+	* get notified for new file changes
+	* receive a new copy of the file in their shared folder every time it changes. 
 
 
-# Behaviors
+`Conversation Shared Folder`. A shared folder that contains and syncs all the files and folders contained in the conversation. 
 
-### Roster
+	* Members auto-join shared folders.
 
-The roster lists: 
+`Roster`. The list of channels and direct conversations a members belongs to. The roster:
 
-* Channels
-	* All channels the user belongs to.
-	* Ordered alphabetically.  
-	* All subfolders and files associated with the channel.
-
-* Direct Conversations
-	* Most recent 20 Direct Conversations. 
-	* Ordered alphabetically.
-	* All subfolders and files associated with the channel. 
+	* displays all channels, ordered alphabetically.
+	* displays the 15 most recent direct conversations, order alphabetically. 
+<br><br>
 	
 
-### Privacy of Channels and Direct Conversations
-
-A `Public Channel` can be found and joined by anyone. Name, messages, members, and file updates can be seen and searched by anyone.  
-
-A `Private Channel` can be seen only by members. It cannot be joined. New members can be invited by existing members. Members can be expelled by existing members. Name, messages, memebers, and file updates can be seen by only by members.  
-
-A Direct Conversation can be seen only by members. It cannot be joined. New members cannot be invited by existing members. Name, messages, memebers, and file updates can be seen only by members.  
-
-A member of a public channel can make the channel private. 
-
-A private channel cannot be made public. 
-
-
 	
-### Join, Invite, Leave, Expel
 
-In Public Channels:
- 
-* A non-member can join.
-* A member can leave.
-* A member can invite another member.  
-* A member can expel another member.  
+Conversation Privacy
+____
 
-In Private Channels:
+`Public Channel`:
 
-* A member can leave.
-* A member can invite another member.
-* A member can expel another member.
-* A non-member cannot join.
-
-In Direct Conversations:
-
-* No member can leave, join, invite, or expel. 
-
+	* Can be joined by non-members
+	* Messages, file conversations, and files:
+		* can be seen by non-members.
+		* can be searched by non-members.
 	
-### Direct Conversations are Unique
+`Private Channel`:
 
-Direct Conversations are unique. If a user creates a conversation B with members that already share a conversation A, user comes back to the conversation A. 
+	* Cannot be joined by non-members. 
+	* Messages, file conversations, and files:
+		* cannot be seen by non-members.
+		* cannot be searched by non-members.
+		
+Direct Conversations are private.
 
+`Making a Public Channel Private`
 
+* Only applies to Public Channels.
+* A member of a public channel can make a public channel private. 
+* All other change is disallowed (making a private channel public, making a direct conversation public)
 
-### File Conversations
+`Inviting a New Member in a Private Channel`
 
-File Conversations cannot include files or folders.  
-File Conversations exist only within either a Channel or a Direct Conversation.                
+* When adding someone to a private channel, the inviter should be offered the option to show the conversation history to the new member. 
 
+<br><br>
 
-
-### Desktop: Folder Locations
+Desktop Shared Folder Locations
+____
 
 Eyja Location: ~/Eyja  
 Eyja Channels -: ~/Eyja/
 Eyja Direction Conversations Location: ~/Eyja/Direct Conversations/
 
 e.g. 1  
-Group Conversation 'White Walkers'  
-Folder: ~/Eyja/White Walkers   
+Group Conversation 'Marketing'  
+Folder: ~/Eyja/Marketing  
 
 e.g. 2  
-Direct Conversation with 'Arya Stark'
-~/Eyja/Direct Conversations/Arya Stark/  
+Direct Conversation with 'Yuri Sagalov'
+~/Eyja/Direct Conversations/Yuri Sagalov  
+<br><br>
+
+
+Design
+____
+	
+`Notifications`  
+[Notification Design](https://share.aerofs.com/l/5cefa362ebf14d0daf347eba03e3b143) 
+
+`Roster`  
+[roster design](https://share.aerofs.com/l/c198dce852294857b44fc171be940154)
+
+<br><br>
 
 
 
-### Notifications 
+### Do not cross beyond this point  
+____ 
 
-
-##### Tag Notifications
-
-A Tag Notification happens either when:
- 
-* someone sends a message to you  
-* someone tags you. e.g. '@Stannis'
-
-A Tag Notification:
- 
-* shows the count '1': 
-	* left panel: on the conversation
-	* desktop: on the app icon
-	* web: on the favicon
-	* iOS: a badge on the app icon
-* bolds the conversation
-* adds the conversation to the Inbox
-
-Under some conditions, it may:
-
-* trigger a sound notification
-* trigger a mobile notification
-* trigger a desktop notification 
-* trigger an email notification
-
-See 'Connected, Active' for triggering conditions.
-
-    
-##### Unread Notifications
-An Unread Notification happens either when:
-
-* someone sends a message in a group conversation you belong to
-* someone updates a file you uploaded  
-* someone updates a file you edited  
-* someone updates a file where you left a comment  
-* someone comments on a file where you left a comment  
-* someone comments on a file you uploaded 
-* someone comments on a file you edited  
-* someone deletes a file you uploaded  
-* someone deletes a file you edited  
-* someone deletes a file you commented on
-* someone renames a file you uploaded
-* someone renames a file you edited
-* someone renames a file you commented on
-
-An Unread Notification:
-
-* bolds the conversation
-* adds the conversation to the Inbox
-
-
-##### File Update Notifications
-
-It happens either when:
-
-* someone updates a file in a group conversation you belong to 
-* someone comments on a file in a group conversation you belong to  
-* someone uploads a file in a group conversation you belong to
-* someone deletes a file in a folder you belong to 
-* someone renames a file in a folder you belong to 
-
-A File Update:
-
-* changes the icon to Unread
-* If file update is 'New File', changes the icon to green unread. 
-
-
-
-
-# Work in Progress
-
-Read this section to know what's coming.
-
+This is a repository for future product improvements or incomplete requirements.
 
 ### Connected, Active
 
-Users should receive alert notifications only when they haven't been paying attention.
+Users should receive alert notifications only when they haven't been paying attention, and they should have. 
 
 Suggestion:
  
@@ -282,8 +189,9 @@ Also, for each preference, users might want a different notification preference 
 Users should be able to use Eyja with their keyboard only.
 
 Suggestion (OSX):  
-Search - CMD + F  
-New Conversation - CMD + N  
+Search - CMD + f 
+New Conversation - CMD + n
+Quick Switcher - CMD + k
 Conversation Toggling - CMD + down/up  
 
 
@@ -293,7 +201,6 @@ When a user deletes a file in Eyja:
 
 * file update 'file deleted' in both the file thread and the file conversation
 * file disappears from the group conversation tree
-* file   
 
 `Delete Conversation`. The conversation is removed from all ascendant conversations and the conversation is archived. No notification in ascendant conversation appears.  
 
@@ -443,100 +350,21 @@ Works GREAT
 
 `Conversations with file updates, but no messages.`  
 e.g. Air Computing Pictures  
-Conversation-level notifications  
+Conversation only has notification, works as a feed of changes. 
 
 `Conversations with no file updates.`  
 e.g. Strictly Curated  
-Watch for accidental syncing. Group conversation should allow to force (or use by default) Send a File
+Like a regular chat app.
 
 `Only one file update is relevant.`  
 e.g. AeroFS Team/Recruiting/Engineering  
-Weak. User will spend a lot of times expanding the tree to find the tree. 
-Solution: show the unread without expanding. 
-Solution 2: show an inbox.
-Solution 3: ability to subscribe and unsubscribe to a folder or a file.
+Weak. Some files might get updated but bring noise to the conversation. The relevant file might be multiple levels below. 
+Solution: unread inbox
+Solution 2: notification settings to turn off entire sections.
 
-`Messages or files updates that are relevant for multiple group conversations.`  
-e.g. Engineers wants to access pictures for a project (or receive file updates) that are in the design folder.  
-Solution: make named group conversations public, and add the ability to link them.   People who need to read the file updates need to join the group conversation.  
-Solution 2: ability to subscribe to a folder or a file.   
-
-`Ability to subscribe to a folder or a file.`
-* should still support the canonical folderd of a conversation. 
-* visual distinction between canonical folder and subscribed folder.  
-* watch for loss of information. e.g. there is a design comment about a file not in the file conversation, but in the group conversation. because the engineer subscribed to a subfolder, the conversation is missed. 
-
-
-### Things Users Want To Know (notifications)
-
-Things that are relevant:
-
-#### someone updates a file
-someone updates a file you uploaded  
-someone updates a file you edited  
-someone updates a file where you left a comment  
-someone updates a file in a group conversation you belong to  
-
-#### someone comments on a file
-someone comments on a file where you left a comment  
-someone comments on a file you uploaded  
-someone comments on a file you edited
-someone comments on a file in a group conversation you belong to  
-
-#### someone sends a message
-someone sends a message in a group conversation you belong to 
-someone sends a message to you  
-
-#### someone uploads a file 
-someone uploads a file in a group conversation you belong to
-
-#### someone deletes the file 
-someone deletes a file you uploaded
-someone deletes a file you edited
-someone deletes a file you commented on
-someone deletes a file in a folder you belong to 
-
-#### someone renames a file  
-someone renames a file you uploaded
-someone renames a file you edited
-someone renames a file you commented on
-someone renames a file in a folder you belong to 
-
-#### someone tags you
-someone tags you
-
-#### someone moves  
-someone moves in a group conversation  
-someone moves out from a conversation  
-
-#### someone modifies a message
-someone modifies a message by editing it  
-someone modifies a message by deleting it   
-
-
-
-Files uploade for file sending.
-
-
-creating add-hoc conversations
-A member can add or remove a user; however this means a new conversation is created with the new set of members (except if the conversation with the same members exist; in that case it will take the user to the new conversation). 
-
-
-
-
-Unicity:
-We could break immutability, but Compose a message will change. There 2 groups 'A, B, C'. A invites B and C to a new conversation. Now there are 3 groups 'A, B, C'.
-
-in 1:1 conversation 'A, B':
-
-- 'A' invites 'C' 
-	- if 'A, B, C' exists, it goes to the existing conversation.
-	- if 'A, B, C' does not exist, it asks 'A' 'do you want to keep history for 'C'?' Then it creates a new conversation. 'A, B, C'. 'B' sees that its messages with 'A' were shared with 'C'. While 'A' thought it was OK, 'B' thinks it isn't.
-
-- 'C' leaves. 
-	- if 'A, B' exists, not sure of what happens. Maybe 2 groups of 'A, B'? 
-	- if 'A, B' does not exist, the conversation becomes 'A, B'. This is a 1:1 conversation, but 'C' is shown in the history. 'A' asks herself 'If 'C' was in the conversation, does this mean my messages be shared with someone else?'
-
-
-
+`Messages or files updates that are relevant for people that are not members.`  
+e.g. Engineers wants to access pictures that are in the design folder.  
+Solution: ability to subscribe to a folder or a file. 
+Solution 2: link public channels #marketing.
+Solution 3: show them in search. 
 
