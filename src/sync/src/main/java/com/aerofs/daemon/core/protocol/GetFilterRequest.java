@@ -93,7 +93,7 @@ public class GetFilterRequest implements CoreProtocolReactor.Handler
                 SenderFilterAndIndex sfi = s.iface(SenderFilters.class).get_(from, fromBase);
                 long c = Objects.firstNonNull(_cedb.getContentChangeEpoch_(sidx), 0L);
 
-                l.debug("{} send gf response for {} fs {}", from, sidx, (sfi == null ? null : sfi._filter));
+                l.debug("{} send gf response for {} {} fs {}", from, fromBase, sidx, (sfi == null ? null : sfi._filter));
 
                 if (sfi != null) {
                     bd.setSenderFilter(sfi._filter.toPB())
@@ -114,13 +114,12 @@ public class GetFilterRequest implements CoreProtocolReactor.Handler
             }
             rs.writeDelimitedTo(out);
         }
-        if (out.size() > 0) {
-            if (os != null) {
-                os.write(out.toByteArray());
-            } else {
-                _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.typeString(Type.REPLY),
-                        msg.pb().getRpcid(), out);
-            }
+        if (os != null) {
+            os.write(out.toByteArray());
+            os.close();
+        } else {
+            _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.typeString(Type.REPLY),
+                    msg.pb().getRpcid(), out);
         }
     }
 }

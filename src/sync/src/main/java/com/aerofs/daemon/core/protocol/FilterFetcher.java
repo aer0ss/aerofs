@@ -175,13 +175,12 @@ public class FilterFetcher
             }
             rs.writeDelimitedTo(out);
         }
-        if (out.size() > 0) {
-            if (os != null) {
-                os.write(out.toByteArray());
-            } else {
-                _trl.sendUnicast_(ep, CoreProtocolUtil.typeString(Type.REPLY),
-                        request.getRpcid(), out);
-            }
+        if (os != null) {
+            os.write(out.toByteArray());
+            os.close();
+        } else {
+            _trl.sendUnicast_(ep, CoreProtocolUtil.typeString(request.getType()),
+                    request.getRpcid(), out);
         }
 
         _rpc.asyncRequest_(ep, request, new FutureCallback<DigestedMessage>() {

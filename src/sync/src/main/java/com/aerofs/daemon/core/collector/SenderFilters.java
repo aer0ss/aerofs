@@ -123,11 +123,8 @@ public class SenderFilters
         } else {
             ret = new BFOID(_filterLast);
             // TODO cache the last few filters
-            IDBIterator<BFOID> iter = _sfdb.getSenderFilters_(_sidx, sfidxFilter, _sfidxLast);
-            try {
-                while (iter.next_()) ret.union_(iter.get_());
-            } finally {
-                iter.close_();
+            try (IDBIterator<BFOID> it = _sfdb.getSenderFilters_(_sidx, sfidxFilter, _sfidxLast)) {
+                while (it.next_()) ret.union_(it.get_());
             }
         }
 
