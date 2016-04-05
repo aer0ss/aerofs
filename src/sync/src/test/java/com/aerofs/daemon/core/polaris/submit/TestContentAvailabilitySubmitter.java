@@ -25,15 +25,18 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.log.LogUtil;
+import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.InMemorySQLiteDBCW;
 import com.google.gson.Gson;
-
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 
@@ -74,12 +77,14 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
     @After
     public void tearDown() {
+        LogUtil.setLevel(Level.NONE);
         schedExecutor.shutdown();
     }
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
+        LogUtil.setLevel(Level.TRACE);
         schedExecutor = Executors.newSingleThreadExecutor();
         InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
         dbcw.init_();

@@ -32,11 +32,11 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * This class is responsible for occasionally polling Polaris to verify that any
+ * This class is responsible for occasionally polling Waldo to verify that any
  * unsynced files really are out of sync. This results in eventual consistency
  * even if SSMP 'synced' notifications are missed for any reason.
  *
- * In order to reduce load on Polaris by allowing time for the normal sync
+ * In order to reduce load on Waldo by allowing time for the normal sync
  * process to work, files recently marked out-of-sync are ignored.
  */
 public class SyncStatusVerifier
@@ -62,7 +62,7 @@ public class SyncStatusVerifier
     private final int MAX_BATCH_SIZE = 40;
     // page size is larger than batch size to reduce likelihood of unnecessary
     // db queries, as expelled OIDs are removed from the db rather than being
-    // sent to polaris
+    // sent to waldo
     private final int PAGE_SIZE = MAX_BATCH_SIZE * 2;
 
     @Inject
@@ -146,8 +146,7 @@ public class SyncStatusVerifier
 
     /*
      * Retrieves list of unsynced files from the OutOfSyncFilesDatabase, creates
-     * a single request for the polaris LocationsBatch endpoint, and checks to
-     * make sure they are really out of sync.
+     * a single request for waldo, and checks to make sure they are really out of sync.
      */
     protected void batchUpdateSyncStatus_(long nextPageStartingAfterIdx, long ignoreWindow, Trans trans)
             throws SQLException {
@@ -315,7 +314,7 @@ public class SyncStatusVerifier
 
         @Override
         public void onFailure_(Throwable t) {
-            l.error("error communicating with polaris, aborting", t);
+            l.error("error communicating with waldo, aborting", t);
             scheduleVerifyUnsyncedFilesDelay();
         }
     }
