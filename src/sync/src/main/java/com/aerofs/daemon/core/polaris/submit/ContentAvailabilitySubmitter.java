@@ -10,7 +10,9 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.IContentVersionListener;
 import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
-import com.aerofs.daemon.core.polaris.api.*;
+import com.aerofs.daemon.core.polaris.api.LocationBatch;
+import com.aerofs.daemon.core.polaris.api.LocationBatchOperation;
+import com.aerofs.daemon.core.polaris.api.LocationBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTask;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
@@ -37,8 +39,8 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 
 import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.aerofs.daemon.core.polaris.GsonUtil.GSON;
 import static com.google.common.base.Preconditions.checkArgument;
@@ -88,16 +90,20 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
                         LocationBatch batch;
                         try {
                             batch = buildLocationBatchOperationsMap_();
+                            l.trace("built batch, size={}", batch != null ? batch.available.size() : 0);
                         } catch (SQLException e) {
+                            l.warn("failed building operations map", e);
                             cb.onFailure_(e);
                             return;
                         }
 
-                        if (batch == null) {
+                        if (batch == null || batch.available == null || batch.available.isEmpty()) {
+                            l.trace("operations map is empty");
                             cb.onSuccess_(false);
                             return;
                         }
 
+                        l.trace("posting to waldo");
                         _waldoClient.post("/submit", batch, cb,
                                 r -> updateAvailableContentDatabase_(r, batch));
                         l.trace("EXIT: submitAvailableContentToPolarisTask.run");
@@ -135,6 +141,7 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
     }
 
     private LocationBatch buildLocationBatchOperationsMap_() throws SQLException {
+        l.trace("ENTER buildLocationBatchOperationsList");
         try (IDBIterator<AvailableContent> contents = _acdb.listContent_()) {
             if (!contents.next_()) return null;
 
@@ -192,7 +199,6 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
                     l.trace("updateAvailableContentDatabase not deleting {}{} {}", sidx,
                             op.oid, op.version);
                 }
-                ++i;
             }
             t.commit_();
         }

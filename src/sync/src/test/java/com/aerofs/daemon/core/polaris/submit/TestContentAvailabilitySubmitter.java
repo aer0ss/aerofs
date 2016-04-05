@@ -3,7 +3,8 @@ package com.aerofs.daemon.core.polaris.submit;
 import com.aerofs.daemon.core.AsyncHttpClient.Function;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
-import com.aerofs.daemon.core.polaris.api.*;
+import com.aerofs.daemon.core.polaris.api.LocationBatch;
+import com.aerofs.daemon.core.polaris.api.LocationBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase;
@@ -33,7 +34,6 @@ import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 
@@ -49,7 +49,10 @@ import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestContentAvailabilitySubmitter extends AbstractTest
 {
@@ -82,14 +85,15 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         dbcw.init_();
         try (Statement s = dbcw.getConnection().createStatement()) {
             new PolarisSchema().create_(s, dbcw);
-            PolarisSchema.createAvailableContentTable(s, dbcw);
         }
 
         tm = new TransManager(new Trans.Factory(dbcw));
         sdo = new StoreDeletionOperators();
         acdb = new AvailableContentDatabase(dbcw, sdo);
 
+        when(sid2sidx.get_(sid)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
+        when(sidx2sid.get_(sidx)).thenReturn(sid);
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
 
         doReturn(DID.generate()).when(did).get();
@@ -109,27 +113,30 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         }).when(sched).schedule_(any(IEvent.class));
 
         doAnswer(invocation -> {
-            Object[] arg = invocation.getArguments();
-            try {
-                Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[3];
+            sched.schedule_(new AbstractEBSelfHandling() {
+                @Override
+                public void handle_() {
+                    Object[] arg = invocation.getArguments();
+                    try {
+                        l.trace("handling request");
+                        Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[3];
 
-                LocationBatch batch = (LocationBatch) arg[1];
+                        LocationBatch batch = (LocationBatch) arg[1];
 
-                Set<String> oids = new HashSet<String>();
-                batch.available.forEach(op -> oids.add(op.oid));
+                        Set<String> oids = new HashSet<String>();
+                        batch.available.forEach(op -> oids.add(op.oid));
 
-                calls.add(batch.available.size());
+                        calls.add(batch.available.size());
 
-                schedExecutor.submit(() -> {
-                    ((AsyncTaskCallback) arg[2]).onSuccess_(function
-                            .apply(polarisResponse(locationBatchResult(batch.available.size()))));
-                    return null;
-                });
-                l.trace("request succeeded");
-            } catch (Throwable t) {
-                l.trace("request failed?");
-                ((AsyncTaskCallback) arg[2]).onFailure_(t);
-            }
+                        ((AsyncTaskCallback) arg[2]).onSuccess_(function
+                                .apply(httpResponse(locationBatchResult(batch.available.size()))));
+                        l.trace("request succeeded");
+                    } catch (Throwable t) {
+                        l.trace("request failed?");
+                        ((AsyncTaskCallback) arg[2]).onFailure_(t);
+                    }
+                }
+            });
             return null;
         }).when(client).post(any(), any(LocationBatch.class), any(AsyncTaskCallback.class), any());
 
@@ -137,14 +144,13 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         when(fact.create()).thenReturn(client);
 
         calls.clear();
-        submitter = new ContentAvailabilitySubmitter(fact, acdb, tm,
-                new AsyncWorkGroupScheduler(sched), sidx2sid, sid2sidx);
+        submitter = new ContentAvailabilitySubmitter(fact, acdb, tm, new AsyncWorkGroupScheduler(sched),
+                sidx2sid, sid2sidx);
         submitter.start_();
         pause();
     }
 
     @Test
-    @Ignore
     public void shouldSubmitAvailableContentAndRemoveSuccessfulSubmissions() throws Exception {
 
         try (Trans t = tm.begin_()) {
@@ -161,7 +167,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
             t.commit_();
         }
 
-        pause(50, 2);
+        pause(2);
 
         int count = 0;
         IDBIterator<AvailableContent> list = acdb.listContent_();
@@ -177,7 +183,6 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     }
 
     @Test
-    @Ignore
     public void shouldLimitSubmittedBatchSizeAndImmediatelyReschedule() throws Exception {
 
         Trans t = tm.begin_();
@@ -195,7 +200,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         t.commit_();
         t.end_();
 
-        pause(50, 4);
+        pause(4);
 
         count = 0;
         list = acdb.listContent_();
@@ -213,7 +218,6 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     }
 
     @Test
-    @Ignore
     public void shouldRescheduleWhenTransactionsCommitWhileRequestInFlight() throws Exception {
         sched.schedule_(new AbstractEBSelfHandling() {
             @Override
@@ -257,12 +261,12 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         assertEquals(200 + calls.size() - 1, total);
     }
 
+    // add one error per batch, unless it's the last one we're checking
     private LocationBatchResult locationBatchResult(int size) {
         assert size > 0;
         List<Boolean> results = new ArrayList<>(size);
         if (size > 1) {
             results.add(false);
-            // why is the error coming first?
             for (int i = 1; i < size; i++) {
                 results.add(true);
             }
@@ -272,7 +276,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         return new LocationBatchResult(results);
     }
 
-    private HttpResponse polarisResponse(LocationBatchResult result) {
+    private HttpResponse httpResponse(LocationBatchResult result) {
         HttpResponse polarisResponse = mock(HttpResponse.class);
         doReturn(HttpResponseStatus.OK).when(polarisResponse).getStatus();
         doReturn(ChannelBuffers.copiedBuffer(new Gson().toJson(result), Charset.defaultCharset()))
@@ -282,11 +286,11 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
     private void pause() {
         long currentTimeMillis = System.currentTimeMillis();
-        while (System.currentTimeMillis() - currentTimeMillis < 2500);
+        while (System.currentTimeMillis() - currentTimeMillis < 500);
     }
 
-    private void pause(int times, int numCalls) {
-        for (int i = 0; i < times && calls.size() < numCalls; i++)
+    private void pause(int numCalls) {
+        for (int i = 0; i < 240 && calls.size() < numCalls; i++)
             pause();
     }
 }
