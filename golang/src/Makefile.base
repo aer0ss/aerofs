@@ -4,6 +4,9 @@ include $(GIT_ROOT)/Makefile.common
 IMAGE_NAME =
 PACKAGE_NAME =
 
+RSYNC = rsync -a --copy-unsafe-links --delete --delete-excluded --exclude '*.pyc' --exclude '.*'
+VERSION_SRC = $(GIT_ROOT)/out.gradle/packages/current.ver
+
 GOCKERIZE_ARGS =
 GOCKERIZE_BIN = $(GIT_ROOT)/golang/gockerize/gockerize
 # N.B.: relative to the build dir.
@@ -12,11 +15,17 @@ GOCKERIZE_CTX = .
 REGISTRY = registry.aerofs.com:5050
 TAG = latest
 
-image:
+buildroot:
+
+image: buildroot
 	$(GOCKERIZE_ARGS) $(GOCKERIZE_BIN) $(IMAGE_NAME) $(PACKAGE_NAME) $(GOCKERIZE_CTX)
 	$(call success,"- build $(IMAGE_NAME)")
 
-.PHONY: push image
+$(VERSION_SRC):
+	make -C $(GIT_ROOT) write_version
+
 push: image
 	docker tag -f $(IMAGE_NAME) $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 	docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+
+.PHONY: buildroot image push

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -37,16 +35,7 @@ func (c *DefaultServiceHTTPClient) NewRequest(method, url string, body io.Reader
 	return req, nil
 }
 
-// Do - wrapper around http.Client.Do, returns error on non-200 status codes
+// Do - wrapper around http.Client.Do
 func (c *DefaultServiceHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	resp, err := c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 {
-		t, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status code: %s\n%s", resp.Status, t)
-	}
-	return resp, nil
+	return c.Client.Do(req)
 }

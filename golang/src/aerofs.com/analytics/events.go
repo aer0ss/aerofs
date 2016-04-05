@@ -65,6 +65,12 @@ func lookupEvent(key string) (eventInfo, error) {
 }
 
 var dailyMetricInfoMap = map[string]eventInfo{
+	"SEATS_AVAILABLE": eventInfo{
+		Template: segment.Track{
+			Event:      "Seats Available",
+			Properties: make(map[string]interface{}),
+		},
+	},
 	"AVERAGE_SHARED_FOLDER_FILE_COUNT": eventInfo{
 		Template: segment.Track{
 			Event:      "Average Shared Folder File Count",
@@ -83,11 +89,11 @@ var dailyMetricInfoMap = map[string]eventInfo{
 			Properties: make(map[string]interface{}),
 		},
 	},
-	"OSX_DESKTOP_CLIENTS": eventInfo{
+	"MAC_DESKTOP_CLIENTS": eventInfo{
 		Template: segment.Track{
 			Event: "Desktop Clients",
 			Properties: map[string]interface{}{
-				"OS": "Mac/OSX",
+				"OS": "Mac",
 			},
 		},
 	},
@@ -133,7 +139,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Users",
 			Properties: map[string]interface{}{
-				"Account Type": "Internal/LDAP",
+				"Account Type": "AD/LDAP",
 			},
 		},
 	},
@@ -141,38 +147,8 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Users",
 			Properties: map[string]interface{}{
-				"Account Type": "External/Local",
+				"Account Type": "Local",
 			},
-		},
-	},
-	"MAX_WEB_DOWNLOAD": eventInfo{
-		Template: segment.Track{
-			Event:      "Maximum Web Download",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"MAX_WEB_UPLOAD": eventInfo{
-		Template: segment.Track{
-			Event:      "Maximum Web Upload",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"AVG_WEB_DOWNLOAD": eventInfo{
-		Template: segment.Track{
-			Event:      "Average Web Download",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"AVG_WEB_UPLOAD": eventInfo{
-		Template: segment.Track{
-			Event:      "Average Web Upload",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"STORAGE_FOOTPRINT": eventInfo{
-		Template: segment.Track{
-			Event:      "Total Storage Footprint (KB)",
-			Properties: make(map[string]interface{}),
 		},
 	},
 	"APPLIANCE_VERSION": eventInfo{
@@ -185,18 +161,6 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	"SHARED_FOLDERS": eventInfo{
 		Template: segment.Track{
 			Event:      "Shared Folders",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"AVG_SHARED_FOLDER_FILES": eventInfo{
-		Template: segment.Track{
-			Event:      "Average Files Per Shared Folder",
-			Properties: make(map[string]interface{}),
-		},
-	},
-	"MAX_SHARED_FOLDER_FILES": eventInfo{
-		Template: segment.Track{
-			Event:      "Maximum Shared Folder Files",
 			Properties: make(map[string]interface{}),
 		},
 	},
@@ -263,14 +227,11 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		},
 		ValueType: Boolean,
 	},
-	"TEAM_SERVER_ENABLED": eventInfo{
+	"TEAM_SERVER_COUNT": eventInfo{
 		Template: segment.Track{
-			Event: "Feature Enabled",
-			Properties: map[string]interface{}{
-				"Name": "Team Server/Storage Agent",
-			},
+			Event:      "Team Servers Installed",
+			Properties: make(map[string]interface{}),
 		},
-		ValueType: Boolean,
 	},
 }
 

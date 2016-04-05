@@ -37,8 +37,8 @@ import (
 //Frequency values here are more frequent than the eventual permanent values
 //Values governing the frequency at which events are sent/queried
 const (
-	EventsInterval = time.Minute * 10
-	UsersInterval  = time.Minute * 30
+	EventsInterval = time.Hour * 2
+	UsersInterval  = time.Hour * 24
 	TickerInterval = time.Second * 5
 
 	SegmentWriteKey = "rwp5ZN1LQIGfcrGukEMUtUQ3QHokYJQz"

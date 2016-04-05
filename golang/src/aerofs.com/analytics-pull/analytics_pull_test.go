@@ -45,6 +45,9 @@ func initializeRouter(r *httprouter.Router, db *db.BoltKV) {
 	r.GET("/stats", auth.OptionalAuth(func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
 		resp.Write([]byte(`{"avg_file_count":3,"max_file_count":5,"total_file_size":1000}`))
 	}))
+	r.GET("/v1.4/stats/*anything", auth.OptionalAuth(func(resp http.ResponseWriter, req *http.Request, c auth.Context) {
+		resp.Write([]byte(`{"avg_file_count":3,"max_file_count":5,"total_file_size":1000}`))
+	}))
 }
 
 func TestAnalytics_Daily_metrics_should_only_send_once_per_interval(t *testing.T) {
