@@ -1,8 +1,33 @@
 #!/bin/bash
 set -eu
 
+# Usage: ./tag_release aerofs/loader [release]
+# Use the release argument if the build is good to release to public.
+# Else, it will be tagged as a automated build version (docker-${VERSION}.xxx.
+
 VERSION=$(docker run --rm $1 tag)
 
 TAG="docker-${VERSION}"
+TAG_PREFIX="${TAG}."
+
+function compute_next_build_version {
+    local AUTOMATED_BUILD_VERSIONS=$(git tag -l ${TAG_PREFIX}* | sed s/${TAG_PREFIX}//g)
+    local LATEST_BUILD_VERSION=$(echo "${AUTOMATED_BUILD_VERSIONS[*]}" | sort -nr | head -n1)
+
+    if [ -z "$AUTOMATED_BUILD_VERSIONS" ]; then
+        TAG="$TAG.001"
+    else
+        NEXT_BUILD_VERSION=$(( ++LATEST_BUILD_VERSION ))
+        TAG="$TAG.$NEXT_BUILD_VERSION"
+    fi
+}
+
+# Check for "release"
+if [ "${2:-unset}" != "release" ]; then
+    compute_next_build_version
+fi
+
+echo ${TAG}
+
 git tag -a ${TAG} -m ${TAG}
 git push --tags
