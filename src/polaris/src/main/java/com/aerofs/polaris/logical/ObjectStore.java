@@ -1018,7 +1018,7 @@ public final class ObjectStore {
         }
     }
 
-    public Map<String,String> getOrgStats()
+    public Map<String,Long> getOrgStats()
     {
         SharedFolderStatsResource sharedFolderStats = dbi.inTransaction((conn, Status) -> {
             DAO dao = new DAO(conn);
@@ -1030,10 +1030,10 @@ public final class ObjectStore {
             return dao.objectProperties.getTotalSizeOfFilesInOrg();
         });
 
-        Map<String,String> resultMap = new HashMap<>();
-        resultMap.put("maxFileCount", sharedFolderStats.maxFileCount.toString());
-        resultMap.put("avgFileCount", sharedFolderStats.avgFileCount.toString());
-        resultMap.put("totalFileSize", totalSize.toString());
+        Map<String,Long> resultMap = new HashMap<>();
+        resultMap.put("max_file_count", sharedFolderStats.maxFileCount);
+        resultMap.put("avg_file_count", sharedFolderStats.avgFileCount);
+        resultMap.put("total_file_size", totalSize);
 
         return resultMap;
     }
