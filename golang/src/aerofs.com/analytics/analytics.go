@@ -294,28 +294,24 @@ func eventHandler(db *db.BoltKV) auth.Handle {
 		}
 		value := event.Value
 
-		log.Println(event.Event)
-
 		// increment database event counter
 		err = db.Update(func(tx *bolt.Tx) error {
 			// get current event & user buckets
 			t := clock.Now()
-			if event.Event != "ACTIVE_USER" {
-				eventBucket, err := getBucketByTime(tx, EventsKey, t, EventsInterval)
-				if err != nil {
-					return err
-				}
+			eventBucket, err := getBucketByTime(tx, EventsKey, t, EventsInterval)
+			if err != nil {
+				return err
+			}
 
-				// increment event counter
-				vprime := value
-				if v := eventBucket.Get(key); v != nil {
-					vprime += util.DecodeUint64(v)
-				}
+			// increment event counter
+			vprime := value
+			if v := eventBucket.Get(key); v != nil {
+				vprime += util.DecodeUint64(v)
+			}
 
-				err = eventBucket.Put(key, util.EncodeUint64(vprime))
-				if err != nil {
-					return err
-				}
+			err = eventBucket.Put(key, util.EncodeUint64(vprime))
+			if err != nil {
+				return err
 			}
 
 			// record that user is active

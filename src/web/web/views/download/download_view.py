@@ -1,6 +1,5 @@
 from pyramid.view import view_config
 import re
-from web.analytics import send_analytics_event
 from web.version import get_private_version
 
 
@@ -10,7 +9,6 @@ from web.version import get_private_version
     permission='user',
 )
 def download(request):
-    send_analytics_event(request, "ACTIVE_USER")
     return _download(request, False)
 
 
@@ -20,7 +18,6 @@ def download(request):
     permission='admin',
 )
 def download_team_server(request):
-    send_analytics_event(request, "ACTIVE_USER")
     return _download(request, True)
 
 
@@ -30,7 +27,6 @@ def download_team_server(request):
     permission='admin',
 )
 def download_sccm(request):
-    send_analytics_event(request, "ACTIVE_USER")
     path = 'AeroFSInstall-{}.msi'.format(get_private_version(request.registry.settings))
     return {
         'url':  request.static_url('web:installer/{}'.format(path))

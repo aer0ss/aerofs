@@ -10,8 +10,6 @@ from root_factory import RootFactory
 from auth import get_principals
 from celery import Celery
 import views
-import threading
-import analytics
 
 log = logging.getLogger(__name__)
 
@@ -32,9 +30,6 @@ def main(global_config, **settings):
     """
     This function returns a Pyramid WSGI application.
     """
-
-    thread = threading.Thread(target = analytics.analytics_consumer_thread_func)
-    thread.start()
 
     configuration = Configuration(settings['deployment.config_server_uri'], service_name='maintenance-web')
     settings.update(configuration.server_properties())

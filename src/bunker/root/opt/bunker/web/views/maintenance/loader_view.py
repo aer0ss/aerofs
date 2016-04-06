@@ -7,7 +7,6 @@ from pyramid.view import view_config
 from web.error import expected_error
 from web.version import get_private_version
 from distutils.version import LooseVersion
-from web.analytics import send_analytics_event
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +22,6 @@ LOADER_URL = 'http://loader.service/v1'
 )
 def set_configuration_completed(request):
     maintenance_util.set_configuration_completed()
-    send_analytics_event(request,"SETUP_COMPLETE",False)
     return {}
 
 

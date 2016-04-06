@@ -5,7 +5,6 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 import aerofs_sp.gen.common_pb2 as common
 
-from web.analytics import send_analytics_event
 from web.util import flash_error, flash_success, get_rpc_stub, str2bool
 
 # URL param keys
@@ -34,7 +33,6 @@ def decode_store_id(encoded_sid):
     request_method='GET',
 )
 def org_settings(request):
-    send_analytics_event(request, "ACTIVE_USER")
     sp = get_rpc_stub(request)
 
     reply = sp.get_org_preferences()
@@ -57,7 +55,6 @@ def org_settings(request):
     request_method='POST',
 )
 def org_settings_post(request):
-    send_analytics_event(request, "ACTIVE_USER")
     sp = get_rpc_stub(request)
     _update_org_settings(request, sp)
     return HTTPFound(location=request.route_path('org_settings'))

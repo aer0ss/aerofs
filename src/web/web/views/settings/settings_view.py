@@ -3,7 +3,6 @@ import logging
 from pyramid.security import authenticated_userid
 from pyramid.view import view_config
 
-from web.analytics import send_analytics_event
 from web.util import get_rpc_stub
 from web.oauth import get_bifrost_client
 
@@ -38,7 +37,6 @@ def create_new_settings_token(request):
     request_method='GET'
 )
 def settings(request):
-    send_analytics_event(request, "ACTIVE_USER")
     sp = get_rpc_stub(request)
     reply = sp.get_user_preferences(None)
     can_has_tfa = sp.get_two_factor_setup_enforcement().level > 0
