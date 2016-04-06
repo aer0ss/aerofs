@@ -52,7 +52,12 @@ public class InProcessNonceChecker implements NonceChecker {
                 .add("device_type", "API Client")
                 .publish();
 
-        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_INSTALL);
+       /** Commenting this out since authorizeAPIClient 'My Files' also uses this method and there's currently
+        * no way to distiguish a  mobile client installation from a 'My Files' page view
+        */
+
+        //TODO: Separate authorizeAPIClient into two methods - one for web and another for mobile
+//        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_INSTALL);
 
         return r;
     }

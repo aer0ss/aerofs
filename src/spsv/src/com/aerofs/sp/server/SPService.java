@@ -3406,8 +3406,6 @@ public class SPService implements ISPService
 //                .add("os_name", "unknown")    // FIXME: Get this from somewhere?
                 .publish();
 
-        _analyticsClient.track(AnalyticsEvent.MOBILE_CLIENT_INSTALL);
-
         return reply;
     }
 
