@@ -34,21 +34,14 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 
 import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -69,7 +62,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     @Mock CfgLocalUser cfgLocalUser;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock IMapSID2SIndex sid2sidx;
-    ExecutorService schedExecutor;
+    Queue<AbstractEBSelfHandling> scheduled = new ArrayDeque<>();
 
     List<Integer> calls = new ArrayList<>();
     SIndex sidx = new SIndex(1);
@@ -78,14 +71,17 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     @After
     public void tearDown() {
         LogUtil.setLevel(Level.NONE);
-        schedExecutor.shutdown();
+    }
+
+    private void runScheduled_() {
+        AbstractEBSelfHandling ev;
+        while ((ev = scheduled.poll()) != null) ev.handle_();
     }
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
         LogUtil.setLevel(Level.TRACE);
-        schedExecutor = Executors.newSingleThreadExecutor();
         InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
         dbcw.init_();
         try (Statement s = dbcw.getConnection().createStatement()) {
@@ -108,12 +104,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         // and waits for completion
         doAnswer(invocation -> {
             l.trace("scheduling");
-            schedExecutor.submit(() -> {
-                l.trace("running");
-                ((AbstractEBSelfHandling) invocation.getArguments()[0]).handle_();
-                l.trace("done running");
-                return null;
-            });
+            scheduled.add((AbstractEBSelfHandling) invocation.getArguments()[0]);
             return null;
         }).when(sched).schedule_(any(IEvent.class));
 
@@ -128,7 +119,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
                         LocationBatch batch = (LocationBatch) arg[1];
 
-                        Set<String> oids = new HashSet<String>();
+                        Set<String> oids = new HashSet<>();
                         batch.available.forEach(op -> oids.add(op.oid));
 
                         calls.add(batch.available.size());
@@ -152,33 +143,33 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         submitter = new ContentAvailabilitySubmitter(fact, acdb, tm, new AsyncWorkGroupScheduler(sched),
                 sidx2sid, sid2sidx);
         submitter.start_();
-        pause();
     }
 
     @Test
     public void shouldSubmitAvailableContentAndRemoveSuccessfulSubmissions() throws Exception {
-
         try (Trans t = tm.begin_()) {
             for (int i = 0; i < 10; i++)
                 submitter.onSetVersion_(sidx, OID.generate(), 1, t);
 
             int count = 0;
-            IDBIterator<AvailableContent> list = acdb.listContent_();
-            while (list.next_()) {
-                list.get_();
-                count++;
+            try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
+                while (list.next_()) {
+                    list.get_();
+                    count++;
+                }
             }
             assertEquals(10, count);
             t.commit_();
         }
 
-        pause(2);
+        runScheduled_();
 
         int count = 0;
-        IDBIterator<AvailableContent> list = acdb.listContent_();
-        while (list.next_()) {
-            list.get_();
-            count++;
+        try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
+            while (list.next_()) {
+                list.get_();
+                count++;
+            }
         }
 
         assertEquals(2, calls.size());
@@ -189,29 +180,31 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
     @Test
     public void shouldLimitSubmittedBatchSizeAndImmediatelyReschedule() throws Exception {
-
-        Trans t = tm.begin_();
-        for (int i = 0; i < 100; i++)
-            submitter.onSetVersion_(sidx, OID.generate(), 1, t);
-
         int count = 0;
-        IDBIterator<AvailableContent> list = acdb.listContent_();
-        while (list.next_()) {
-            list.get_();
-            count++;
+        try (Trans t = tm.begin_()) {
+            for (int i = 0; i < 100; i++)
+                submitter.onSetVersion_(sidx, OID.generate(), 1, t);
+
+            try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
+                while (list.next_()) {
+                    list.get_();
+                    count++;
+                }
+            }
+
+            assertEquals(100, count);
+            t.commit_();
         }
 
-        assertEquals(100, count);
-        t.commit_();
-        t.end_();
-
-        pause(4);
+        // process
+        runScheduled_();
 
         count = 0;
-        list = acdb.listContent_();
-        while (list.next_()) {
-            list.get_();
-            count++;
+        try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
+            while (list.next_()) {
+                list.get_();
+                count++;
+            }
         }
 
         assertEquals(4, calls.size());
@@ -242,7 +235,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
         int total = 0;
         for (int i = 0; i < 50 && total != 200 + calls.size() - 1; i++) {
-            pause();
+            runScheduled_();
             total = 0;
             for (Integer call : calls)
                 total += call;
@@ -287,15 +280,5 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         doReturn(ChannelBuffers.copiedBuffer(new Gson().toJson(result), Charset.defaultCharset()))
                 .when(polarisResponse).getContent();
         return polarisResponse;
-    }
-
-    private void pause() {
-        long currentTimeMillis = System.currentTimeMillis();
-        while (System.currentTimeMillis() - currentTimeMillis < 500);
-    }
-
-    private void pause(int numCalls) {
-        for (int i = 0; i < 240 && calls.size() < numCalls; i++)
-            pause();
     }
 }
