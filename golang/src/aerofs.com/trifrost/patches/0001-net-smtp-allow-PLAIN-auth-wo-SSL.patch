@@ -1,0 +1,36 @@
+From e6e2d5d40f9eef1c2eb9eb77a71e07dbaf83f34f Mon Sep 17 00:00:00 2001
+From: Hugues Bruant <hugues@aerofs.com>
+Date: Wed, 6 Apr 2016 14:49:39 -0400
+Subject: [PATCH] net/smtp: allow PLAIN auth wo/ SSL
+
+Stupid customers with stupid server config are stupid
+---
+ src/net/smtp/auth.go | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+diff --git a/src/net/smtp/auth.go b/src/net/smtp/auth.go
+index 3f1339e..14cb692 100644
+--- a/src/net/smtp/auth.go
++++ b/src/net/smtp/auth.go
+@@ -53,18 +53,6 @@ func PlainAuth(identity, username, password, host string) Auth {
+ }
+ 
+ func (a *plainAuth) Start(server *ServerInfo) (string, []byte, error) {
+-	if !server.TLS {
+-		advertised := false
+-		for _, mechanism := range server.Auth {
+-			if mechanism == "PLAIN" {
+-				advertised = true
+-				break
+-			}
+-		}
+-		if !advertised {
+-			return "", nil, errors.New("unencrypted connection")
+-		}
+-	}
+ 	if server.Name != a.host {
+ 		return "", nil, errors.New("wrong host name")
+ 	}
+-- 
+2.7.3
+
