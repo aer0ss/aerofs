@@ -114,7 +114,7 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
             trayMenuPopulator.addMenuSeparator();
         } else {
             // Shared folders, activities, version history
-            // createSharedFoldersMenu(trayMenuPopulator);
+            createSharedFoldersMenu(trayMenuPopulator);
             createRecentActivitesMenu(menu);
             addVersionHistoryMenuItem(trayMenuPopulator);
             trayMenuPopulator.addMenuSeparator();
