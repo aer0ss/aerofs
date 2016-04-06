@@ -4,7 +4,7 @@ Eyja
 
 Latest Update: Apr 5, 2016
 
-Resources
+Resources  
 _____
 
 * [Eyja Mockups](https://share.aerofs.com/l/67f506b1386a4f56947b619d111c1947#/)
