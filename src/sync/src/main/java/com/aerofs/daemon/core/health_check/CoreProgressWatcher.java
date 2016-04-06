@@ -38,6 +38,9 @@ public final class CoreProgressWatcher implements HealthCheckService.ScheduledRu
     {
         try {
             l.info("run cpw");
+            if (l.isDebugEnabled() && _prevNumExecutedEvents == Long.MIN_VALUE) {
+                Util.logAllThreadStackTraces();
+            }
             checkProgress_();
         } catch (Throwable t) {
             l.error("fail check progress", t);

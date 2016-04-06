@@ -238,8 +238,10 @@ public class FirstLaunch
     private void fetchAccessibleStores_()
     {
         try {
+            l.debug("signing");
             SPBlockingClient sp = newMutualAuthClientFactory().create()
                     .signInRemote();
+            l.debug("get acl");
             ImmutableMap.Builder<SID, PBStoreACL> stores = ImmutableMap.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
                 stores.put(new SID(BaseUtil.fromPB(sacl.getStoreId())), sacl);
