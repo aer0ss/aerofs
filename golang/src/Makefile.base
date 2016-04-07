@@ -15,11 +15,11 @@ GOCKERIZE_CTX = .
 REGISTRY = registry.aerofs.com:5050
 TAG = latest
 
-buildroot:
-
 image: buildroot
 	$(GOCKERIZE_ARGS) $(GOCKERIZE_BIN) $(IMAGE_NAME) $(PACKAGE_NAME) $(GOCKERIZE_CTX)
 	$(call success,"- build $(IMAGE_NAME)")
+
+buildroot:
 
 $(VERSION_SRC):
 	make -C $(GIT_ROOT) write_version
