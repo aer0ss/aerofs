@@ -113,7 +113,14 @@ func (m *mailer) tryReconnect() error {
 
 	if m.user != "" && m.pass != "" {
 		log.Println("smtp: authenticating...")
-		auth := smtp.PlainAuth("", m.user, m.pass, m.host)
+
+		auth := MultiAuth(
+			smtp.CRAMMD5Auth(m.user, m.pass),
+			LoginAuth(m.user, m.pass),
+			// NB: always keep PLAIN last
+			// some servers expect PLAIN but do not advertise it...
+			smtp.PlainAuth("", m.user, m.pass, m.host),
+		)
 		if err := client.Auth(auth); err != nil {
 			return err
 		}
