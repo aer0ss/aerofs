@@ -22,16 +22,16 @@ public class DPUTSyncStatusTableAlterations extends PhoenixDPUT
     public void runPhoenix() throws Exception {
         DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
             if (!_dbcw.columnExists(T_OA, C_OA_SYNCED)) {
-                addSyncStatusColumnsToOA(s);
+                addSyncStatusColumnsToOA(_dbcw, s);
             }
         });
     }
 
-    private final void addSyncStatusColumnsToOA(Statement s) throws SQLException {
+    protected static final void addSyncStatusColumnsToOA(IDBCW dbcw, Statement s) throws SQLException {
         // add sync column to store table
         s.executeUpdate(
-                "alter table " + T_OA + " add column " + C_OA_SYNCED + _dbcw.boolType() + "default 1");
-        s.executeUpdate("alter table " + T_OA + " add column " + C_OA_OOS_CHILDREN + _dbcw.longType()
+                "alter table " + T_OA + " add column " + C_OA_SYNCED + dbcw.boolType() + "default 1");
+        s.executeUpdate("alter table " + T_OA + " add column " + C_OA_OOS_CHILDREN + dbcw.longType()
                 + "default 0");
     }
 }
