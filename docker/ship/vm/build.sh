@@ -355,6 +355,12 @@ build_preloaded() {
     local OVA="$4"
     local BUILD_VM_WITH_IMAGES=$5
 
+    # Depending on the output format desired(cloudinit/preloaded/cloudinit_vm) we
+    # call this function multiple times. This is becuase for preloaded/cloudinit_vm
+    # we want separate VM's created and for each VM created we disable ssh.So just
+    # create separate VDI's for each case.
+    build_cloud_config_and_vdi ${LOADER_IMAGE}
+
     local VDI="${OUTPUT}/preloaded/disk.vdi"
     local PRELOAD_REPO_CONTAINER=shipenterprise-preload-registry
 
@@ -400,7 +406,7 @@ main() {
         delete_vm ${VM} "${VM_BASE_DIR}"
     fi
 
-    if [ ${OF_CLOUDINIT} = 1 ] || [ ${OF_PRELOADED} = 1 ] || [ ${OF_CLOUDINIT_VM} = 1 ]; then
+    if [ ${OF_CLOUDINIT} = 1 ]; then
         build_cloud_config_and_vdi ${LOADER_IMAGE}
     fi
 
