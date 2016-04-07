@@ -95,6 +95,7 @@ public abstract class AbstractEmailSender
         props.put("mail.smtp.timeout", TIMEOUT);
         props.put("mail.smtp.connectiontimeout", CONNECTION_TIMEOUT);
         props.put("mail.smtp.port", _port);
+        props.put("mail.smtp.auth.mechanisms", "LOGIN PLAIN");
 
         // Without it Java Mail would send "EHLO" rather thant "EHLO <hostname>". The former
         // is not supported by some mail relays include postfix which is used as the local mail
