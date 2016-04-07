@@ -41,7 +41,7 @@ const (
 	UsersInterval  = time.Hour * 24
 	TickerInterval = time.Second * 5
 
-	SegmentWriteKey = "rwp5ZN1LQIGfcrGukEMUtUQ3QHokYJQz"
+	SegmentWriteKey = "4rWk9raEpHqSVI5yA6QDKV5WRWNxKyE7"
 )
 
 // const arrays are not possible in Go
