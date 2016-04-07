@@ -66,27 +66,25 @@ def create_deployment(customer, subdomain, delay=0, restore=False, server_id=Non
     """
 
     if not restore:
-        server = pick_server()
-
         # Adding the deployment to the db
         deployment = HPCDeployment()
         deployment.customer = customer
         deployment.subdomain = subdomain
-        deployment.server = server
         deployment.set_days_until_expiry(30)
         deployment.setup_status = HPCDeployment.status.IN_PROGRESS
-        db.session.add(deployment)
     else:
         # If we are restoring the deployment we just change the server on which
         # the deployment is.
         deployment = HPCDeployment.query.get(subdomain)
-        if server_id:
-            deployment.server = HPCServer.query.get(server_id)
-        else:
-            server = pick_server()
-            deployment.server = server
+
+    if server_id:
+        deployment.server = HPCServer.query.get(server_id)
+    else:
+        server = pick_server()
+        deployment.server = server
 
     # Commit the changes to DB.
+    db.session.add(deployment)
     # If the subdomain already exists, try to throw a more useful exception type than IntegrityError
     try:
         db.session.commit()

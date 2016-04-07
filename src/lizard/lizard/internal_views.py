@@ -416,13 +416,16 @@ def hpc_deployments():
     form = forms.CreateHostedDeployment()
 
     if request.method == 'POST':
+        current_app.logger.info(form.validate_on_submit())
         if form.validate_on_submit():
             customer = models.Customer.query.get(form.customer_id.data)
             if customer is None:
                 flash("No such customer", 'error')
             else:
                 try:
-                    hpc.create_deployment(customer, form.subdomain.data)
+                    hpc.create_deployment(customer=customer,
+                                          subdomain=form.subdomain.data,
+                                          server_id=form.server_id.data)
                 except hpc.DeploymentAlreadyExists:
                     flash("A deployment with this subdomain already exists", 'error')
         else:

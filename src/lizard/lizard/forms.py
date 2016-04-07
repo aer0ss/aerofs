@@ -116,6 +116,8 @@ class CreateHostedDeployment(Form):
         InputRequired(),
         Regexp('^[a-z0-9][a-z0-9-]*[a-z0-9]$',
                message="Only letters, numbers and dashes are allowed for the subdomain, and it can't start or end with a dash.")])
+    server_id =IntegerField("Server ID (Optional, if not filled in we pickup the most relevant server)",
+                            validators=[Optional()])
 
 # This form is used to create a new Hosted Private Cloud Server
 class AddHPCServer(Form):

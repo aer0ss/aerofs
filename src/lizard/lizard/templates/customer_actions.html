@@ -71,6 +71,7 @@
         <p id="restrictName" data-toggle="tooltip" data-placement="bottom"
            title="Only lower case letters, numbers and dashes are allowed for the subdomain, and it can't start or end with a dash">
         </p>
+        {{ render_field(hpc_form.server_id) }}
         {{ submit_button("Create") }}
     </form>
 
