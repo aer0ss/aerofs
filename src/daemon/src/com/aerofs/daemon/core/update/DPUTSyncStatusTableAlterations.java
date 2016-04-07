@@ -8,7 +8,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_OOS_CHILDREN;
 import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_SYNCED;
@@ -20,18 +19,18 @@ public class DPUTSyncStatusTableAlterations extends PhoenixDPUT
 
     @Override
     public void runPhoenix() throws Exception {
-        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, s -> {
-            if (!_dbcw.columnExists(T_OA, C_OA_SYNCED)) {
-                addSyncStatusColumnsToOA(s);
-            }
-        });
+        addSyncStatusColumnsToOA(_dbcw);
     }
 
-    private final void addSyncStatusColumnsToOA(Statement s) throws SQLException {
-        // add sync column to store table
-        s.executeUpdate(
-                "alter table " + T_OA + " add column " + C_OA_SYNCED + _dbcw.boolType() + "default 1");
-        s.executeUpdate("alter table " + T_OA + " add column " + C_OA_OOS_CHILDREN + _dbcw.longType()
-                + "default 0");
+    protected static final void addSyncStatusColumnsToOA(IDBCW dbcw) throws SQLException {
+        DPUTUtil.runDatabaseOperationAtomically_(dbcw, s -> {
+            if (!dbcw.columnExists(T_OA, C_OA_SYNCED)) {
+                // add sync column to store table
+                s.executeUpdate("alter table " + T_OA + " add column " + C_OA_SYNCED + dbcw.boolType()
+                        + "default 1");
+                s.executeUpdate("alter table " + T_OA + " add column " + C_OA_OOS_CHILDREN
+                        + dbcw.longType() + "default 0");
+            }
+        });
     }
 }

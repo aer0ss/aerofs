@@ -11,7 +11,10 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
-import com.aerofs.daemon.core.polaris.api.*;
+import com.aerofs.daemon.core.polaris.api.Batch;
+import com.aerofs.daemon.core.polaris.api.BatchResult;
+import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
 import com.aerofs.daemon.lib.db.IAliasDatabase;
@@ -25,15 +28,18 @@ import com.aerofs.lib.LibParam;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
+
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
     private final static int CONVERSION_BATCH_SIZE = 50;
     private final static Logger l = Loggers.getLogger(DPUTSubmitLocalTreeToPolaris.class);
 
+    private final IDBCW _dbcw;
     private final DirectoryService _ds;
     private final StoreDatabase _sdb;
     private final ISIDDatabase _siddb;
@@ -65,6 +72,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
 
     @Inject
     public DPUTSubmitLocalTreeToPolaris(
+            IDBCW dbcw,
             DirectoryService ds,
             StoreDatabase sh,
             ISIDDatabase siddb,
@@ -81,6 +89,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
             IAliasDatabase adb,
             PolarisAsyncClient client)
     {
+        _dbcw = dbcw;
         _ds = ds;
         _sdb = sh;
         _siddb = siddb;
@@ -101,6 +110,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
 
     @Override
     public void runPhoenix() throws Exception {
+        DPUTSyncStatusTableAlterations.addSyncStatusColumnsToOA(_dbcw);
         for (SIndex s : _sdb.getAll_()) {
             // if the change epoch already exists, then this store has already been traversed and we don't have to do it again
             if (_cedb.getChangeEpoch_(s) != null) continue;
