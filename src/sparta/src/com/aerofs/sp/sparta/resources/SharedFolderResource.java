@@ -27,6 +27,7 @@ import com.aerofs.rest.api.SFGroupMember;
 import com.aerofs.rest.api.SFMember;
 import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.auth.DelegatedUserDeviceToken;
+import com.aerofs.rest.auth.ServiceToken;
 import com.aerofs.rest.auth.IAuthToken;
 import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.restless.*;
@@ -207,6 +208,7 @@ public class SharedFolderResource extends AbstractSpartaResource
         Set<UserID> affected = Sets.newHashSet();
         affected.addAll(sf.save(share.name, caller));
         if (share.members != null && share.members.size() > 0) {
+            if (!(token instanceof ServiceToken)) throw new ExNoPerm();
             for (SFMember member : share.members) {
                 if (member.email.equals(caller.id().getString())) {
                     continue;
@@ -215,8 +217,8 @@ public class SharedFolderResource extends AbstractSpartaResource
                 if (!user.exists()) {
                     throw new ExNotFound("user not found: " + member.email);
                 }
-                sf.addUserWithGroup(user, null, Permissions.fromArray(member.permissions), caller);
-                affected.add(UserID.fromExternal(member.email));
+                sf.addJoinedUser(user,Permissions.fromArray(member.permissions));
+                affected.add(user.id());
             }
         }
         if (share.isExternal != null) sf.setExternal(caller, share.isExternal);
