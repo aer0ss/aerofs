@@ -605,10 +605,9 @@ def subdomain_deployment_status(subdomain):
         session = new_authed_session(subdomain)
         r = session.get('/admin/json-status')
         subdomain_status = r.json()
-    except requests.exceptions.ConnectionError:
-        message = 'Connection error: Max retries exceeded with url: /admin/login'
+    except Exception as e:
         subdomain_status = {'statuses': [{'is_healthy': False,
-                                          'message': message}]}
+                                          'message': str(e)}]}
     return subdomain_status
 
 
