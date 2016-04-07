@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+
+Vagrant.configure("2") do |config|
+  config.vm.define :trusty64 do |box|
+    box.vm.box = "ubuntu/trusty64"
+    box.vm.network :private_network, ip: "192.168.60.11"
+    box.vm.hostname = "trusty64"
+    box.vm.provider :virtualbox do |vb|
+      vb.gui = false
+      vb.customize ["modifyvm", :id, "--name", "trusty64"]
+      vb.customize ["modifyvm", :id, "--memory", "1024"]
+      vb.customize ["modifyvm", :id, "--cpus", "2"]
+      vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    end
+    box.vm.provision "shell", inline: '/vagrant/provision.sh'
+  end
+  config.vm.synced_folder "~/repos", "/mnt/repos"
+end
