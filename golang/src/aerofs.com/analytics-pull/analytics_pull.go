@@ -194,7 +194,7 @@ func addSharedFolderStatsMetrics(metrics map[string][]byte, httpClient ServiceHT
 	}
 	metrics[avgFileCountKey] = util.EncodeUint64(sfStats.AvgFileCount)
 	metrics[maxFileCountKey] = util.EncodeUint64(sfStats.MaxFileCount)
-	metrics[totalFileSizeKey] = util.EncodeUint64(sfStats.TotalFileSize)
+	metrics[totalFileSizeKey] = util.EncodeUint64(sfStats.TotalFileSize / (1000 * 1000))
 	return nil
 }
 
@@ -390,7 +390,9 @@ func main() {
 	// set up daily event sending
 	httpClient := NewDefaultServiceHTTPClient("analytics-pull", secret)
 
-	go teamServerLoop(httpClient)
+	if enabled {
+		go teamServerLoop(httpClient)
+	}
 
 	ticker := time.NewTicker(TickerInterval)
 

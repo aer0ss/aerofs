@@ -85,13 +85,13 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"TOTAL_FILE_SIZE": eventInfo{
 		Template: segment.Track{
-			Event:      "Total File Size",
+			Event:      "Total File Size (MB)",
 			Properties: make(map[string]interface{}),
 		},
 	},
 	"MAC_DESKTOP_CLIENTS": eventInfo{
 		Template: segment.Track{
-			Event: "Desktop Clients",
+			Event: "Desktop Client Count",
 			Properties: map[string]interface{}{
 				"OS": "Mac",
 			},
@@ -99,7 +99,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"WINDOWS_DESKTOP_CLIENTS": eventInfo{
 		Template: segment.Track{
-			Event: "Desktop Clients",
+			Event: "Desktop Client Count",
 			Properties: map[string]interface{}{
 				"OS": "Windows",
 			},
@@ -107,7 +107,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"LINUX_DESKTOP_CLIENTS": eventInfo{
 		Template: segment.Track{
-			Event: "Desktop Clients",
+			Event: "Desktop Client Count",
 			Properties: map[string]interface{}{
 				"OS": "Linux",
 			},
@@ -115,13 +115,13 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"GROUPS": eventInfo{
 		Template: segment.Track{
-			Event:      "Groups",
+			Event:      "Group Count",
 			Properties: make(map[string]interface{}),
 		},
 	},
 	"ANDROID_MOBILE_APPS": eventInfo{
 		Template: segment.Track{
-			Event: "Mobile Clients",
+			Event: "Mobile Client Count",
 			Properties: map[string]interface{}{
 				"OS": "Android",
 			},
@@ -129,7 +129,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"IOS_MOBILE_APPS": eventInfo{
 		Template: segment.Track{
-			Event: "Mobile Clients",
+			Event: "Mobile Client Count",
 			Properties: map[string]interface{}{
 				"OS": "iOS",
 			},
@@ -137,7 +137,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"LDAP_USERS": eventInfo{
 		Template: segment.Track{
-			Event: "Users",
+			Event: "User Count",
 			Properties: map[string]interface{}{
 				"Account Type": "AD/LDAP",
 			},
@@ -145,7 +145,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"LOCAL_USERS": eventInfo{
 		Template: segment.Track{
-			Event: "Users",
+			Event: "User Count",
 			Properties: map[string]interface{}{
 				"Account Type": "Local",
 			},
@@ -160,7 +160,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 	},
 	"SHARED_FOLDERS": eventInfo{
 		Template: segment.Track{
-			Event:      "Shared Folders",
+			Event:      "Shared Folder Count",
 			Properties: make(map[string]interface{}),
 		},
 	},
@@ -168,7 +168,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "Auditing",
+				"Feature": "Auditing",
 			},
 		},
 		ValueType: Boolean,
@@ -177,7 +177,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "Desktop Client Authorization",
+				"Feature": "Desktop Client Authorization",
 			},
 		},
 		ValueType: Boolean,
@@ -186,7 +186,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "MDM",
+				"Feature": "MDM",
 			},
 		},
 		ValueType: Boolean,
@@ -195,7 +195,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "AD/LDAP",
+				"Feature": "AD/LDAP",
 			},
 		},
 		ValueType: Boolean,
@@ -204,7 +204,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "Link Access Sign-in Required",
+				"Feature": "Link Sign-in Required",
 			},
 		},
 		ValueType: Boolean,
@@ -213,7 +213,7 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "Password Restriction",
+				"Feature": "Password Restriction",
 			},
 		},
 		ValueType: Boolean,
@@ -222,14 +222,14 @@ var dailyMetricInfoMap = map[string]eventInfo{
 		Template: segment.Track{
 			Event: "Feature Enabled",
 			Properties: map[string]interface{}{
-				"Name": "LDAP Group Syncing",
+				"Feature": "LDAP Group Syncing",
 			},
 		},
 		ValueType: Boolean,
 	},
 	"TEAM_SERVER_COUNT": eventInfo{
 		Template: segment.Track{
-			Event:      "Team Servers Installed",
+			Event:      "Team Server Count",
 			Properties: make(map[string]interface{}),
 		},
 	},
