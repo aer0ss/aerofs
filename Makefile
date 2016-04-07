@@ -108,10 +108,10 @@ proto: out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java out.shell/protobu
 
 push_images:
 ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
-    $(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
+	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
 endif
-    $(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/loader $(PUSH_REPO)
-    $(call success,"push_images")
+	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/loader $(PUSH_REPO)
+	$(call success,"push_images")
 
 push_sa_images:
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader
