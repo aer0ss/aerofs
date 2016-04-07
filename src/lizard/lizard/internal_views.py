@@ -524,7 +524,7 @@ def hpc_servers():
 @blueprint.route("/hpc_servers/<int:server_id>", methods=["DELETE"])
 def hpc_server_delete(server_id):
     server = models.HPCServer.query.get_or_404(server_id)
-    hpc.delete_server(server)
+    hpc.delete_server_from_db(server)
     return Response('ok', 200)
 
 

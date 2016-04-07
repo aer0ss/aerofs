@@ -103,7 +103,8 @@ def create_app(internal=False):
     app.route53 = aws_session.client('route53')
     app.s3 = aws_session.resource('s3')
     app.autoscaling = aws_session.client('autoscaling')
-    app.ec2 = aws_session.resource('ec2')
+    app.ec2_resource = aws_session.resource('ec2')
+    app.ec2_client = aws_session.client('ec2')
     app.sqs_resource = aws_session.resource('sqs')
     app.sqs_client = aws_session.client('sqs')
 

@@ -28,6 +28,7 @@ HPC_SECRETS_PATH = '/opt/lizard/hpc-server-config/secrets'
 
 BACKUP_BUCKET = 'aerofs.hpc.backupfiles'
 HPC_SQS_QUEUE_NAME = 'hpc_auto_scaling'
+HPC_AUTOSCALING_GROUP_NAME = 'hpc_autoscaling_group'
 
 dirname = os.path.abspath(os.path.dirname(__file__))
 
@@ -150,8 +151,12 @@ def upgrade_remaining_deployments(sorted_instance_list):
     for deployment in remaining_deployments_to_upgrade:
         upgrade_deployment(deployment)
 
-    # TODO(DS): 1. Remove old images 2. Remove empty servers
+    # TODO(DS): 1. Remove old images
     current_app.logger.info("Upgrade finished")
+
+    # Removing empty servers
+    for server_id in server_ids_odi:
+        delete_server_if_empty(server_id)
 
 
 @celery.task()
@@ -318,12 +323,15 @@ def delete_deployment(deployment, upgrade=False):
         return False
 
     delete_subdomain(deployment)
+    hosting_server_id = deployment.server_id
 
     if not upgrade:
         db.session.delete(deployment)
     else:
         deployment.server_id = None
     db.session.commit()
+
+    delete_server_if_empty(hosting_server_id)
 
     return True
 
@@ -364,7 +372,7 @@ def pick_server():
     raise NoServerAvailable()
 
 
-def delete_server(server):
+def delete_server_from_db(server):
     current_app.logger.info("Deleting server %s", server.docker_url)
 
     if len(server.deployments) > 0:
@@ -468,7 +476,7 @@ def create_server(instance_type, server_name):
     with open(cloud_config_path) as f:
         user_data = f.read()
 
-    instance = current_app.ec2.create_instances(
+    instance = current_app.ec2_resource.create_instances(
         ImageId='ami-7f3a0b15',  # CoreOS stable 835.13.0 HVM
         MinCount=1,
         MaxCount=1,
@@ -504,7 +512,7 @@ def create_server(instance_type, server_name):
     instance.wait_until_running()
 
     while True:
-        instance_status = current_app.ec2.meta.client.describe_instance_status(
+        instance_status = current_app.ec2_resource.meta.client.describe_instance_status(
             InstanceIds=[instance.id])['InstanceStatuses'][0]
         if instance_status['InstanceStatus']['Status'] == 'ok':
             break
@@ -649,3 +657,44 @@ def get_server_sys_stats(docker_url):
         return r.json()
     except requests.ConnectionError:
         return None
+
+
+# We delete the server if:
+# 1. It is empty. 2. # of servers > NUM_RESERVED_INSTANCES because we don't want
+# to have less than  NUM_RESERVED_INSTANCES servers.
+def delete_server_if_empty(server_id):
+    server = HPCServer.query.get(server_id)
+
+    if (db.session.query(HPCServer).count() > NUM_RESERVED_INSTANCES and
+       len(server.deployments) == 0):
+        server_aws_id = get_aws_instance_id_from_public_ip(server.public_ip)
+        current_app.logger.info('Removing instance {}'.format(server_aws_id))
+
+        # Detach the instance from the autoscaling group and removing it
+        current_app.autoscaling.detach_instances(
+            InstanceIds=[server_aws_id],
+            AutoScalingGroupName=HPC_AUTOSCALING_GROUP_NAME,
+            ShouldDecrementDesiredCapacity=True)
+        current_app.ec2_client.terminate_instances(InstanceIds=[server_aws_id])
+        delete_server_from_db(server)
+        current_app.logger.info('Instance {} removed.'.format(server_aws_id))
+
+
+def get_aws_instance_id_from_public_ip(public_ip):
+
+    # Retrieving the instances of the autoscaling group in order to compare
+    # their public ip address and therefore get the AWS Instance ID
+    hpc_autoscaling_group = current_app.autoscaling.describe_auto_scaling_groups(
+        AutoScalingGroupNames=[HPC_AUTOSCALING_GROUP_NAME])['AutoScalingGroups']
+    hpc_autoscaling_group_instances = hpc_autoscaling_group[0]['Instances']
+
+    for instance in hpc_autoscaling_group_instances:
+        instance_id = instance['InstanceId']
+        instance_public_ip = current_app.ec2_client.describe_instances(
+            InstanceIds=[instance_id])['Reservations'][0]['Instances'][0]['PublicIpAddress']
+        if public_ip == instance_public_ip:
+            return instance_id
+
+    # We should not reach here.
+    raise Exception('The given IP ({}) does not match any ID in the autoscaling group.'.format(
+        public_ip))
