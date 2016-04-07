@@ -120,20 +120,27 @@ def save_error(subdomain):
 @celery.task()
 def upgrade_all_instances():
     sorted_instances = _sort_server_by_num_deployments()
-    upgrade_reserved_instance_tasks = []
+    upgrade_single_instance_tasks = []
     most_used_instances = sorted_instances[:NUM_RESERVED_INSTANCES]
     least_used_instances = sorted_instances[NUM_RESERVED_INSTANCES:]
+
     while len(most_used_instances) > 0:
         # This will be done NUM_RESERVED_INSTANCE times
-        instance = sorted_instances.pop(0)
-        upgrade_reserved_instance_tasks.append(
+        instance = most_used_instances.pop(0)
+        upgrade_single_instance_tasks.append(
             upgrade_single_instance.si(instance.id))
+
+    while len(least_used_instances) > 0:
+        # We only pull new images on these instances
+        instance = least_used_instances.pop(0)
+        upgrade_single_instance_tasks.append(
+            pull_server_images.si(_internal_ip(instance.docker_url), wait=True))
 
     # `chord` is celery function whose first parameter is a list of celery
     # tasks to execute and second parameter is the function to call when every
     # task of the list has finished. Here, when all the RI are upgraded, we
     # call the function `upgrade_remaining_deployments()`
-    chord(upgrade_reserved_instance_tasks)(upgrade_remaining_deployments.si(
+    chord(upgrade_single_instance_tasks)(upgrade_remaining_deployments.si(
         least_used_instances))
 
 
@@ -164,13 +171,11 @@ def upgrade_single_instance(server_id):
     server = HPCServer.query.get(server_id)
 
     # 1. Call docker pull latest images in each server.
-    current_app.logger.info("Upgrade: Pulling images")
     pull_server_images(_internal_ip(server.docker_url), wait=True)
 
     # 2. After Step 1 finishes put each deployment in maintenance mode.
     # and get their backups. Upload the backups to s3 and restore the deployments
     # from backup
-
     for deployment in server.deployments:
         upgrade_deployment(deployment, server_id)
 
@@ -528,7 +533,9 @@ def create_server(instance_type, server_name):
 
 
 # wait is set to true if pulling new images when upgrading, otherwise false.
+@celery.task()
 def pull_server_images(server_private_ip, wait=False):
+    current_app.logger.info('Pulling images in server {}'.format(server_private_ip))
     config_script_path = os.path.join(dirname, 'configure_hpc_server.sh')
 
     if not wait:
