@@ -131,7 +131,10 @@ endif
 	$(call success,"push_images")
 
 push_sa_images:
-	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader
+ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
+	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
+endif
+	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader $(PUSH_REPO)
 	$(call success,"push_sa_images")
 
 push_sa_vm:
