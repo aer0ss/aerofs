@@ -39,6 +39,6 @@ function sign_osx() {
     security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
     # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
     # for information on signing frameworks
-    codesign --force --sign "Air Computing, Inc." "$@"
+    codesign --force --deep --sign "Air Computing, Inc." "$@"
 }
 
