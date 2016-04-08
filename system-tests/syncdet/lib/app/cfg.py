@@ -177,7 +177,7 @@ class BaseOSXCfg(BaseCfg):
     def _app_name(self):
         raise NotImplementedError
 
-    def _app_path(self):
+    def app_path(self):
         # NB: in a real install /Applications is used but to avoid perm issues syncdet uses ~/Applications
         return os.path.join(os.path.expanduser('~'), 'Applications', self._app_name() + '.app')
 

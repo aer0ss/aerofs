@@ -330,7 +330,8 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
         ensure_site_config_present(os.path.join(self.get_untar_dir(), 'i386'))
 
         print 'launch aerofs...'
-        untarred_cli_path = os.path.join(self.get_untar_dir(), self.get_ui_name())
+        os.rename(self.get_untar_dir(), self.get_approot())
+        untarred_cli_path = os.path.join(self.get_approot(), self.get_ui_name())
         case.background.start_process([untarred_cli_path], key=get_cfg().get_ui_name())
 
 
@@ -462,7 +463,7 @@ class BaseOSXInstaller(BaseAeroFSInstaller):
         rm_rf(self.get_app_install_dir())
         extract(self.get_installer_path(), 'Release', self.get_app_install_dir())
 
-        ensure_site_config_present(self.get_approot())
+        ensure_site_config_present(os.path.join(self._cfg.app_path(), 'Contents', 'Resources', 'Java'))
 
         print 'starting cli...'
         case.background.start_process(get_cfg().get_ui_cmd(), key=get_cfg().get_ui_name())
