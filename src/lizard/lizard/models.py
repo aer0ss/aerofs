@@ -377,6 +377,10 @@ class HPCServer(db.Model, TimeStampedMixin):
     # A server may have zero to many deployments on it
     deployments = db.relationship("HPCDeployment", backref="server")
 
+    # If the server is upgrading or not
+    upgrade_status = db.Column(db.Boolean, default=False)
+
+
     def __repr__(self):
         return "<HPCServer '{}'>".format(self.docker_url)
 

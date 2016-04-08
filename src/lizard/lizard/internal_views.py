@@ -574,16 +574,18 @@ def hpc_server_sys_stats():
     server_infos = {}
 
     for server in servers:
-        server_sys_stats = hpc.get_server_sys_stats(server.docker_url)
+        # Checking if the server is upgrading or not
+        if not server.upgrade_status:
+            server_sys_stats = hpc.get_server_sys_stats(server.docker_url)
 
-        if not server_sys_stats:
-            return Response('At least one of the server was unreachable', 500)
+            if not server_sys_stats:
+                return Response('At least one of the server was unreachable', 500)
 
-        # If any usage is higher than the threshold, we store it in a list and
-        # return a 500 Response at the end
-        for stats in server_sys_stats:
-            if server_sys_stats[stats] > threshold[stats]:
-                server_infos.setdefault(server.id, []).append(stats)
+            # If any usage is higher than the threshold, we store it in a list and
+            # return a 500 Response at the end
+            for stats in server_sys_stats:
+                if server_sys_stats[stats] > threshold[stats]:
+                    server_infos.setdefault(server.id, []).append(stats)
 
     if server_infos:
         response = jsonify(server_infos)

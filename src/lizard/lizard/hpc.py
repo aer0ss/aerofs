@@ -167,6 +167,8 @@ def upgrade_remaining_deployments(sorted_instance_list):
 @celery.task()
 def upgrade_single_instance(server_id):
     server = HPCServer.query.get(server_id)
+    server.upgrade_status = True
+    db.session.commit()
 
     # 1. Call docker pull latest images in each server.
     pull_server_images(_internal_ip(server.docker_url), wait=True)
@@ -177,9 +179,17 @@ def upgrade_single_instance(server_id):
     for deployment in server.deployments:
         upgrade_deployment(deployment, server_id)
 
+    # The server has finished upgrading.
+    server.upgrade_status = False
+    db.session.commit()
 
 def upgrade_deployment(deployment, server_id=None):
         current_app.logger.info('Upgrade: Backing up {}'.format(deployment.subdomain))
+
+        # Modifying the db for the upgrade
+        deployment.server_id = None
+        db.session.commit()
+
         download_backup_file(deployment.subdomain)
         current_app.logger.info('Upgrade: Deleting {}'.format(deployment.subdomain))
         deleted = delete_deployment(deployment, upgrade=True)
@@ -330,9 +340,7 @@ def delete_deployment(deployment, upgrade=False):
 
     if not upgrade:
         db.session.delete(deployment)
-    else:
-        deployment.server_id = None
-    db.session.commit()
+        db.session.commit()
 
     delete_server_if_empty(hosting_server_id)
 
