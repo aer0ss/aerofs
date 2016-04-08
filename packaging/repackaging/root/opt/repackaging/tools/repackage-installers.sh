@@ -144,31 +144,21 @@ echo "Repackaging Linux installers..."
 for package in aerofs aerofsts
 do
     # Installer .deb (unified)
-    ( $TOOLS/linux/add_file_to_deb.sh \
+    $TOOLS/linux/add_file_to_deb.sh \
         $INSTALLERS/original/${package}-installer-${version}.deb \
         $INSTALLERS/modified/${package}-installer-${version}.deb \
         $SITE_PROP \
-        usr/share/${package}/amd64/;
-      $TOOLS/linux/add_file_to_deb.sh \
-        $INSTALLERS/modified/${package}-installer-${version}.deb \
-        $INSTALLERS/modified/${package}-installer-${version}.deb \
-        $SITE_PROP \
-        usr/share/${package}/i386/ ) &
+        usr/share/${package} &
 
     # Note the output path is "aerofs" even for team server
     # because that's what the updater currently expects and
     # it's hard to change without breaking compat.
     # Installer .tgz (unified)
-    ( $TOOLS/linux/add_file_to_tgz.sh \
+    $TOOLS/linux/add_file_to_tgz.sh \
         $INSTALLERS/original/${package}-installer-${version}.tgz \
         $INSTALLERS/modified/${package}-installer-${version}.tgz \
         $SITE_PROP \
-        aerofs/amd64;
-      $TOOLS/linux/add_file_to_tgz.sh \
-        $INSTALLERS/original/${package}-installer-${version}.tgz \
-        $INSTALLERS/modified/${package}-installer-${version}.tgz \
-        $SITE_PROP \
-        aerofs/i386 ) &
+        aerofs &
 
     # 64-bit update package
     $TOOLS/linux/add_file_to_tgz.sh \

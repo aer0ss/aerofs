@@ -164,7 +164,7 @@ function make_linux_update_tgz() {
     # Only re-make on updates
     local CREATED=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "${PACKAGE_DIR}/${TARGET}" 2>/dev/null)
     if [[ -n "$CREATED" ]] ; then
-        [[ -z "$(find "${LINUX_UPDATER_DIR}/${ARCH}" -type f -newermt "$CREATED" | head -n 1)" ]]
+        [[ -z "$(find "${LINUX_UPDATER_DIR}" -type f -newermt "$CREATED" | head -n 1)" ]]
 
         if [[ $? == 0 ]]; then
             echo '>> not rebuilding linux_update_tgz'
@@ -180,7 +180,7 @@ function make_linux_update_tgz() {
     rm -rf "${BUILD_DIR}"
     mkdir -p "${BUILD_DIR}/aerofs"
 
-    cp -a "${LINUX_UPDATER_DIR}/${ARCH}"/updater "${BUILD_DIR}/aerofs/"
+    cp -a "${LINUX_UPDATER_DIR}/updater-${ARCH}" "${BUILD_DIR}/aerofs/updater"
 
     pushd "${BUILD_DIR}/aerofs/" >>/dev/null
     ln -s updater "${AEROFS_PRODUCT_UNIX}"

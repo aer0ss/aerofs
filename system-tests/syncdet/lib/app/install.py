@@ -326,8 +326,7 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
             print setup_cmd
             subprocess.check_call(setup_cmd, shell=True)
             # This is overriding default location of the storage_agent.conf file.
-        ensure_site_config_present(os.path.join(self.get_untar_dir(), 'amd64'))
-        ensure_site_config_present(os.path.join(self.get_untar_dir(), 'i386'))
+        ensure_site_config_present(self.get_untar_dir())
 
         print 'launch aerofs...'
         os.rename(self.get_untar_dir(), self.get_approot())

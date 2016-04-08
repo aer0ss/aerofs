@@ -6,15 +6,15 @@ GOPATH = $(abspath ../../../)
 GOBUILD = GOPATH=$(GOPATH) CGOENABLED=0 go build $(BUILD_FLAGS)
 
 
-all: $(DEST)/linux/amd64/updater \
-	 $(DEST)/linux/i386/updater \
+all: $(DEST)/linux/updater-i386 \
+	 $(DEST)/linux/updater-amd64 \
 	 $(DEST)/osx/updater \
 	 $(DEST)/win/updater.exe
 
-$(DEST)/linux/amd64/updater: $(SRC)
+$(DEST)/linux/updater-amd64: $(SRC)
 	GOOS=linux GOARCH=amd64 $(GOBUILD) -o "$@" aerofs.com/updater
 
-$(DEST)/linux/i386/updater: $(SRC)
+$(DEST)/linux/updater-i386: $(SRC)
 	GOOS=linux GOARCH=386 $(GOBUILD) -o "$@" aerofs.com/updater
 
 $(DEST)/osx/updater: $(SRC)

@@ -98,7 +98,7 @@ else
 endif
 	$(call success,"package_clients")
 
-package_updates: _clean_updates build_client
+package_updates: _clean_updates
 ifeq ($(SIGNED),)
 	$(error "SIGNED must be defined to run package_updates.")
 endif

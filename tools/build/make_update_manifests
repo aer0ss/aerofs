@@ -62,7 +62,7 @@ include common $BUILD_PRODUCT
 
 case $(uname) in
     Darwin) MANIFEST="${GIT_ROOT}/resource/updater/osx/updater" ;;
-    Linux) MANIFEST="${GIT_ROOT}/resource/updater/linux/amd64/updater" ;;
+    Linux) MANIFEST="${GIT_ROOT}/resource/updater/linux/updater-amd64" ;;
     *) echo >&2 "unsupported platform $(uname)" ; exit 1 ;;
 esac
 
@@ -103,7 +103,6 @@ function make_linux_update() {
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-linux-${ARCH}.json" \
         "${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
-        "${BASE_RESOURCES_DIR}/updater/linux/${ARCH}" \
         "${LOCAL_LINUX_PRODUCT_DIR}" \
         "${CLIENT_LINUX_RESOURCES_DIR}/shared" \
         "${CLIENT_LINUX_RESOURCES_DIR}/${ARCH}" \
@@ -121,18 +120,12 @@ function make_osx_product_dir() {
 }
 
 function make_osx_update() {
-    if is_client ; then
-        SHELLEXT_DIR="${CLIENT_OSX_SHELLEXT_DIR}"
-    fi
-
     $MANIFEST create \
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base" \
         "${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
-        "${BASE_RESOURCES_DIR}/updater/osx" \
         "${LOCAL_OSX_PRODUCT_DIR}" \
         "${CLIENT_OSX_RESOURCES_DIR}" \
-        ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
@@ -162,7 +155,6 @@ function make_windows_update() {
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base" \
         "${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
-        "${BASE_RESOURCES_DIR}/updater/win" \
         "${CLIENT_WIN_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \

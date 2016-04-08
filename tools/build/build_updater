@@ -39,8 +39,7 @@ include sign
 DST="$BASE_RESOURCES_DIR/updater"
 
 if $BUILD_LINUX ; then
-    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/linux/i386/updater"
-    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/linux/amd64/updater"
+    make -C $GIT_ROOT/golang/src/aerofs.com/updater "$DST/linux/updater-i386" "$DST/linux/updater-amd64"
 fi
 
 if $BUILD_WINDOWS ; then

@@ -29,4 +29,4 @@ while [ -h "$SOURCE" ]; do
 done
 DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
-exec "$DIR/$ARCH/updater" as "$0"
+exec "$DIR/updater-$ARCH" as "$0"
