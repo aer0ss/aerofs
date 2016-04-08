@@ -1,5 +1,20 @@
 #!/bin/bash -e
 
+containers="hpc-monitoring hpc-docker-gen hpc-port-allocator hpc-logrotator hpc-reverse-proxy"
+
+for container in $containers; do
+    docker ps | grep $container; EXIT=$?;
+    if [ $EXIT -eq 0 ]
+    then
+        docker stop $container
+        docker rm $container
+        docker rmi "registry.aerofs.com/aerofs/$container"
+    fi
+done
+
+set +e; docker rmi "registry.aerofs.com/aerofs/hpc-sail"; set -e
+
+
 # Note: this script must be run as root on the HPC server
 
 # Move the certs to the correct location

@@ -509,10 +509,11 @@ def create_server(instance_type, server_name):
     )
 
     instance = instance[0]
-    instance.create_tags(Tags=[{'Key': 'Name', 'Value': server_name}])
 
     # Wait that the server has finished initializing
     instance.wait_until_running()
+
+    instance.create_tags(Tags=[{'Key': 'Name', 'Value': server_name}])
 
     while True:
         instance_status = current_app.ec2_resource.meta.client.describe_instance_status(
