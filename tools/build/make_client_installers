@@ -297,8 +297,7 @@ function make_osx_packages() {
 
     if $SIGNED ; then
         echo ">> signing app for Mac App Store"
-        sign_osx --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
-                 "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
+        sign_osx "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
 
         # Note: We avoid re-codesigning AeroFSFinderExtension because
         # every time we do so, it changes the binary, which in turn
