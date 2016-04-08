@@ -34,7 +34,7 @@ func Launch(launcher string, args []string) error {
 	}
 
 	if err := syscall.Exec(launcher, args, os.Environ()); err != nil {
-		return fmt.Errorf("Could not run launcher:\n%s", launcher, args, os.Environ(), err.Error())
+		return fmt.Errorf("Could not run launcher: %s %s %v %v", err.Error(), launcher, args, os.Environ())
 	}
 	return nil
 }
@@ -59,10 +59,6 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	settings := SETTINGS[product]
 
 	rtroot := filepath.Join(HOME, settings.rtroot)
-	if err := os.Mkdir(rtroot, 0755); err != nil {
-		return fmt.Errorf("Failed to create rtroot:\n%s", err.Error())
-	}
-
 	if err := setLogFile(rtroot); err != nil {
 		return fmt.Errorf("Failed to set logfile:\n%s", err.Error())
 	}
@@ -86,8 +82,6 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	return Launch(launcher, args)
 }
 
-func OpenErrorPage(addr string) {
-	if err := exec.Command("xdg-open", "http://" + addr).Run(); err != nil {
-		log.Println(os.Stderr, err)
-	}
+func OpenErrorPage(addr string) error {
+	return exec.Command("xdg-open", "http://"+addr).Run()
 }

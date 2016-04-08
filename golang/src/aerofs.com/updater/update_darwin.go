@@ -53,10 +53,6 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	settings := SETTINGS[product]
 
 	rtroot := filepath.Join(data, settings.rtroot)
-	if err := os.Mkdir(rtroot, 0755); err != nil {
-		return fmt.Errorf("Failed to create rtroot:\n%s", err.Error())
-	}
-
 	if err := setLogFile(rtroot); err != nil {
 		return fmt.Errorf("Failed to set logfile:\n%s", err.Error())
 	}
@@ -85,8 +81,6 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	return Launch(launcher, args)
 }
 
-func OpenErrorPage(addr string) {
-	if err := exec.Command("open", "http://" + addr).Run(); err != nil {
-		log.Println(os.Stderr, err)
-	}
+func OpenErrorPage(addr string) error {
+	return exec.Command("open", "http://"+addr).Run()
 }

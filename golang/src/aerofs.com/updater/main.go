@@ -27,6 +27,7 @@ func Usage() {
 }
 
 func DisplayError(err error) {
+	log.Printf("Serving error page on localhost: %s\n", err.Error())
 	killServer := make(chan int)
 
 	http.HandleFunc("/",
@@ -40,15 +41,22 @@ func DisplayError(err error) {
 	// Windows requires we explicitly bind to localhost
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-	    log.Fatalf("Could not start webserver listener: %s\n", err.Error())
+		log.Fatalf("Could not start webserver listener: %s\n", err.Error())
 	}
 
 	go http.Serve(ln, nil)
 
 	time.Sleep(2 * time.Second)
-	OpenErrorPage(ln.Addr().String())
+	if err = OpenErrorPage(ln.Addr().String()); err != nil {
+		log.Fatalf("Failed to open browser: %s\n", err.Error())
+	}
 
-	os.Exit(<-killServer)
+	select {
+	case c := <-killServer:
+		os.Exit(c)
+	case <-time.After(5 * time.Second):
+		log.Fatalf("Error page not served")
+	}
 }
 
 // OS-specific Aero launcher
@@ -72,10 +80,7 @@ func runAsBinary() {
 
 	force := flag.Bool("force", false, "force update")
 	if err = LaunchAero(abs, *force); err != nil {
-		err = fmt.Errorf("Failed to launch:\n%s\n", err.Error())
-
-		ioutil.WriteFile(filepath.Join(filepath.Dir(abs), "updater.log"), []byte(err.Error()), 0644)
-		DisplayError(err)
+		log.Fatalf("Failed to launch: %s\n", err.Error())
 	}
 }
 

@@ -33,20 +33,20 @@ type settings struct {
 
 func LaunchIfMatching(approot, launcher string, args []string) {
 	if err := os.MkdirAll(approot, 0755); err != nil {
-		log.Printf("Could not mkdir approot: %s", err.Error())
+		log.Printf("Could not mkdir approot: %s\n", err.Error())
 		return
 	}
 
 	manifest, err := LoadManifest(filepath.Join(approot, MANIFEST))
 	if err != nil {
-		log.Printf("Could not load manifest: %s", err.Error())
+		log.Printf("Could not load manifest: %s\n", err.Error())
 		return
 	}
 
 	if Match(filepath.Join(approot, "current"), manifest) {
+		log.Println("Matching approot for manifest")
 		if err = Launch(launcher, args); err != nil {
-			log.Printf(err.Error())
-			DisplayError(fmt.Errorf("Could not launch:\n%s\n", err.Error()))
+			log.Printf("Failed to launch: %s\n", err.Error())
 		}
 	}
 }
@@ -63,8 +63,12 @@ func PreLaunch(launcher string, args []string) error {
 }
 
 func setLogFile(rtroot string) error {
+	if err := os.MkdirAll(rtroot, 0755); err != nil {
+		return fmt.Errorf("Failed to create rtroot:\n%s", err.Error())
+	}
+
 	logpath := filepath.Join(rtroot, "updater.log")
-	logfile, err := os.OpenFile(logpath, os.O_APPEND | os.O_CREATE | os.O_RDWR, 0644)
+	logfile, err := os.OpenFile(logpath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return fmt.Errorf("Failed to open updater.log for writing:\n%s", err.Error())
 	}
@@ -100,6 +104,7 @@ func Update(config, manifestName, approot string) error {
 		return fmt.Errorf("Could not read secure ca certificate:\n%s", err.Error())
 	}
 
+	log.Println("Downloading manifest...")
 	manifestUrl := url.Scheme + "://" + url.Host + "/static/updates/" + manifestName
 	manifestFile := filepath.Join(approot, MANIFEST)
 	manifest, err := Download(manifestUrl, manifestFile, transport)
@@ -122,14 +127,20 @@ func Update(config, manifestName, approot string) error {
 		return fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
 	}
 
+	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
+
 	if err = Apply(current, next, manifest, fetcher); err != nil {
 		return fmt.Errorf("Could not apply updates:\n%s", err.Error())
 	}
+
+	log.Println("Copying site-config...")
 
 	// copy site config into new approot
 	if err = LinkOrCopy(filepath.Join(next, "site-config.properties"), config); err != nil {
 		return fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
 	}
+
+	log.Println("Switching next/current...")
 
 	if _, err = os.Stat(current); err == nil {
 		old := filepath.Join(approot, "old-"+strconv.FormatInt(time.Now().UnixNano(), 16))

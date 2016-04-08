@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 )
 
 var SETTINGS map[Product]settings = map[Product]settings{
@@ -27,35 +26,28 @@ var SETTINGS map[Product]settings = map[Product]settings{
 	},
 }
 
-// Check Windows major version
-// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724439(v=vs.85).aspx
-func IsXP() bool {
-	dll, err := syscall.LoadDLL("kernel32.dll")
-	if err != nil {
-		return false
-	}
-	p, err := dll.FindProc("GetVersion")
-	if err != nil {
-		return false
-	}
-	v, _, _ := p.Call()
-	dll.Release()
-	return byte(v) < 6
-}
-
 func Launch(launcher string, args []string) error {
 	if err := PreLaunch(launcher, args); err != nil {
 		return err
 	}
 
-	if err := exec.Command(launcher).Run(); err != nil {
-		return fmt.Errorf("Could not run launcher:\n%s", launcher, args, os.Environ(), err.Error())
+	// NB: syscall.Exec is not supported on Windows
+	cmd := exec.Command(launcher, args...)
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("Could not run launcher: %s %s %v %v", err.Error(), launcher, args, os.Environ())
 	}
 	return nil
 }
 
 func LaunchAero(exec string, forceUpdate bool) error {
 	APPDATA := os.Getenv("APPDATA")
+	if len(APPDATA) == 0 {
+		PROFILE := os.Getenv("USERPROFILE")
+		if len(PROFILE) == 0 {
+			return fmt.Errorf("USERPROFILE not set")
+		}
+		APPDATA = filepath.Join(PROFILE, "AppData", "Roaming")
+	}
 	base := filepath.Base(exec)
 	path := filepath.Dir(exec)
 
@@ -66,11 +58,11 @@ func LaunchAero(exec string, forceUpdate bool) error {
 
 	settings := SETTINGS[product]
 
-	rtroot := filepath.Join(APPDATA, settings.rtroot)
-	if err := os.Mkdir(rtroot, 0755); err != nil {
-		return fmt.Errorf("Failed to create rtroot:\n%s", err.Error())
+	LOCALAPPDATA := os.Getenv("LOCALAPPDATA")
+	if len(LOCALAPPDATA) == 0 {
+		return fmt.Errorf("LOCALAPPDATA not set")
 	}
-
+	rtroot := filepath.Join(LOCALAPPDATA, settings.rtroot)
 	if err := setLogFile(rtroot); err != nil {
 		return fmt.Errorf("Failed to set logfile:\n%s", err.Error())
 	}
@@ -94,8 +86,6 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	return Launch(launcher, args)
 }
 
-func OpenErrorPage(addr string) {
-	if err := exec.Command("cmd", "/C", "start", "", "http://" + addr).Run(); err != nil {
-		log.Println(os.Stderr, err)
-	}
+func OpenErrorPage(addr string) error {
+	return exec.Command("cmd", "/C", "start", "", "http://"+addr).Run()
 }

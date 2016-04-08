@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -33,6 +34,7 @@ func (f *HttpFetcher) Fetch(hash string) (string, error) {
 	c := http.Client{
 		Transport: f.Transport,
 	}
+	log.Printf("Fetching %s\n", hash)
 	resp, err := c.Get(f.BaseURL + "/" + hash)
 	if err != nil {
 		return "", fmt.Errorf("Could not get fetch url:\n%s", err.Error())
