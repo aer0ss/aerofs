@@ -33,6 +33,10 @@ func Launch(launcher string, args []string) error {
 		return err
 	}
 
+	if err := os.Chdir(filepath.Dir(launcher)); err != nil {
+		return err
+	}
+
 	if err := syscall.Exec(launcher, args, os.Environ()); err != nil {
 		return fmt.Errorf("Could not run launcher: %s %s %v %v", err.Error(), launcher, args, os.Environ())
 	}

@@ -34,7 +34,7 @@ function setup_clean_approot() {
 
 function copy_labeling_resources() {
     LABELING_LOWER=$(echo $LABELING | tr '[:upper:]' '[:lower:]')
-    cp "$LABELING_RESOURCES_DIR/$LABELING_LOWER/labeling.properties" "$APPROOT/bin/"
+    cp "$LABELING_RESOURCES_DIR/$LABELING_LOWER/labeling.properties" "$APPROOT/"
 }
 
 function copy_os_specific_resources() {

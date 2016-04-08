@@ -32,6 +32,10 @@ func Launch(launcher string, args []string) error {
 		return err
 	}
 
+	if err := os.Chdir(filepath.Dir(launcher)); err != nil {
+		return err
+	}
+
 	// syscall.Exec is not supported on Windows
 	// exec.Command makes it super hard to start a detached process
 	// go low-level with a win32 CreateProcess call

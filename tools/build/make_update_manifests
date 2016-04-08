@@ -109,7 +109,7 @@ function make_linux_update() {
         "${CLIENT_LINUX_RESOURCES_DIR}/${ARCH}" \
         ${SA_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
-        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
 }
 
@@ -134,7 +134,7 @@ function make_osx_update() {
         "${CLIENT_OSX_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
-        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
 
     # rename launcher binary to the appropriate name
@@ -166,7 +166,7 @@ function make_windows_update() {
         "${CLIENT_WIN_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
-        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}:lib" \
+        "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
 
     # rename launcher binary to the appropriate name
