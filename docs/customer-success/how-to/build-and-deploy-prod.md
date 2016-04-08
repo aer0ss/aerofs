@@ -52,7 +52,7 @@ installers. To do this, run the following commands:
 6. When you are ready to push the docker images, ssh into `buildmachine@buildmachine.arrowfs.org`
 and run:
 
-       invoke push_images push_sa_images push_sa_vm
+       invoke --push-repo registry.aerofs.com push_images push_sa_images push_sa_vm
 
    When everything is pushed, go ahead and tag the release.
    Note: If the build is done through TeamCity, you can find the working directory in the TeamCity's
