@@ -2,17 +2,15 @@
 Eyja 
 ====
 
-Latest Update: Apr 5, 2016
+Latest Update: Apr 8, 2016
 
-Resources  
-_____
+### Resources  
 
 * [Eyja Mockups](https://share.aerofs.com/l/67f506b1386a4f56947b619d111c1947#/)
 
 
 
-Key Concepts
-_____
+### Key Concepts
 
 
 `Channel` A conversation between multiple people, with a name. Channels:
@@ -79,8 +77,7 @@ use case: the subfolder 'Presentations' in Marketing Channel
 
 	
 
-Conversation Privacy
-____
+### Conversation Privacy
 
 `Public Channel`:
 
@@ -110,8 +107,8 @@ Direct Conversations are private.
 
 <br><br>
 
-Desktop Shared Folder Locations
-____
+### Desktop Shared Folder Locations
+
 
 Eyja Location: ~/Eyja  
 Eyja Channels -: ~/Eyja/
@@ -127,60 +124,79 @@ Direct Conversation with 'Yuri Sagalov'
 <br><br>
 
 
-Design
-____
+
+### Renaming Folders and Channels
+
+	* If a user renames a channel shared folder on her desktop, the channel keeps its current name.
+	* If a user renames a channel, every shared folder that still have the same name are renamed with the new name.
+	
+<br><br>
+
+### Notifications Behavior
 	
 `Notifications`  
 [Notification Design](https://share.aerofs.com/l/5cefa362ebf14d0daf347eba03e3b143) 
 
-`Roster`  
-[roster design](https://share.aerofs.com/l/c198dce852294857b44fc171be940154)
 
 <br><br>
 
 
 
-### Do not cross beyond this point  
-____ 
+# In Review
+
+
+### Desktop Deletions
+
+`File Deletion`
+When a user deletes a file that belongs to a shared folder: 
+
+	* The file is deleted in every member's shared folder
+	* A Message Update 'File deleted' is displayed in the channel 
+	* File disappears from the roster
+	* File disappears from My Files
+	* Users can download the deleted file by clicking on the file update.
+	
+`Channel Shared Folder Deletion`
+When a user deletes a channel shared folder:
+
+	* The conversation shows you 
+	
+`Direct Conversation Shared Folder Deletion`
+When a user deletes a direct conversation shared folder:
+	
+	* 
+
+<br><br>
+
+### Transitioning AeroFS to Eyja
+
+	* Current customers that do not want to use Eyja can continue doing so.
+	* Current customers that want to try out Eyja can install a separate application.
+	* Current customers that want to convert to Eyja install a separate application and move folders (either manually or through script)
+	
+<br><br>
+
+
+
+
+# Do not cross beyond this point  
+
 
 This is a repository for future product improvements or incomplete requirements.
 
-### Connected, Active
+### Email Notification
 
-Users should receive alert notifications only when they haven't been paying attention, and they should have. 
+	* User is offline and receives a message on Eyja. User receives an email mentioned it is offline. 
+	
+<br><br> 
+	
+### Better Read State
 
-Suggestion:
- 
-`user connected in desktop` User has Eyja Desktop open and has used Eyja in the past X number of minutes.  
-`user connected in web` User has Eyja Web open.  
-`user connected in mobile` User has the app in the foreground.  
-`connected user` User is active in desktop, web, or mobile.   
+If the user reads a message, don't make her read it a second time somewhere else. This limitation can happen when:
 
-`active conversation` A conversation that the user has in front of her.
-
-If a user is connected to the desktop but she is not on the active conversation where the tag happens, sound and desktop notifications are triggered.  
-If a user is connected to the web but she is not on the active conversation where the tag happens, sound and desktop notifications are triggered.   
-If a user is not connected on desktop, tag notifications are pushed to the phone.  
-If a user is not connected, tag notifications are sent by email.   
-
-
-### Notification Settings
-
-Users should decide what is relevant for them:
-
-* at the app level
-* at the group conversation level
-* at the conversation level
-
-Suggestions
-
-Provide notification preferences at all levels. Preferences may be:
-
-* tag notifications for tag and direct messages
-* tag notifications for any update
-* mute
-
-Also, for each preference, users might want a different notification preference for mobile. 
+	* a push notification is sent to mobile, recipient reads the message on desktop. The push notification should disappear on mobile. 
+	* an email notification is sent to mobile, recipent reads the message on desktop
+<br><br>
 
 
 
@@ -190,90 +206,37 @@ Users should be able to use Eyja with their keyboard only.
 
 Suggestion (OSX):  
 Search - CMD + f 
+Filter Conversations - option + CMD + f
 New Conversation - CMD + n
 Quick Switcher - CMD + k
 Conversation Toggling - CMD + down/up  
 
-
-### Deletion
-
-When a user deletes a file in Eyja: 
-
-* file update 'file deleted' in both the file thread and the file conversation
-* file disappears from the group conversation tree
-
-`Delete Conversation`. The conversation is removed from all ascendant conversations and the conversation is archived. No notification in ascendant conversation appears.  
-
-### Move
-
-* someone moves a file you uploaded
-* someone moves a file you edited
-* someone moves a file you commented on
-* someone moves a file in a folder you belong to 
+<br><br>
 
 
 
-### File Updates in Group Conversations
+### Admin Role
 
-File Updates bubble up to the ascendant conversations.  
-WIP: what we show in file conversations.
+In addition to everything a user can do, an admin can:
 
-
-### Name Conflict
-
-Name conflict with first and last names. 
-Conversation names are unique among the same level.  
-File names are unique among the same level.
-
-
-### Group Conversation with Two Members
-
-A group conversation can be started by two members. If it has a unique name, it creates a new conversation. If it does not, it links back to the direct covnersation. 
-
-### Roles
-
-* Non-admin: can join public conversations, invite people, create new conversations, delete conversations, same for files.
-* Admin: non-admin rights + can invite new users to Eyja, can delete users, can set things for the entire Eyja organization (data retention policy, 2FA).
-
-### Transitioning AeroFS to Eyja
-
-* start clean. have people move their aerofs folder, and keep the folder they want back to Eyja.
-* all members need to be owners of the shared folder
+	* invite new users
+	* delete users
+	* ?
+	
+	
+<br><br>
 
 
-### Banners, Alerts, Push Notifications, Emails
+
+### Mac Desktop Notifications
 
 When someone is tagged:
 
-* OSX: if the user has Eyja open in OSX, a Banner notification is displayed in the notification center. The user can respond by hitting a 'Reply' in the Banner to send a message back. A sound is heard.
-* Windows: if the user has Eyja open in Windows, a notification appears next to the user tray. A sound is heard.
-* Mobile: push notification. 
-* If a user has Eyja open on desktop or web, she should not receive a push notification on mobile. 
-* If a user has Eyja closed in all devices, she should receive an email with the message.
+	* OSX: if the user has Eyja open in OSX, a Banner notification is displayed in the notification center. The user can respond by hitting a 'Reply' in the Banner to send a message back. A sound is heard.
+
+<br><br>
 
 
-### Notification Clearing
-
-A Notification is cleared when:
-
-* For tag notification, when the user opens the conversation where the tag happened.
-* For unread notification, when the user opens any of the conversations where the update is displayed. In particular, notifications that were triggered by file updates disappear upon clicking. 
-
-### File Manipulation in Desktop
-
-If a file is dragged to a Shared Folder or a subfolder, the file is synced. 
-
-`Move File`. A user can move a file from 
-
-
-### Private Folders
-There should be a way to sync the files.
-
-### Naming
-
-* Camel Case enforcing for group conversations
-* Group conversations names are unique
-* Files in folders are unique
 
 ### Selective Sync
 
@@ -281,15 +244,19 @@ Allows users to stay in a conversation but not sync the files themselves. Every 
 Suggestion: Dropbox allows new uploads with the same file name to replace the file in place. 
 
 
-### File and Conversation Linking
+### Channel Linking
+
+User can reference a channel #Art Club. Users can click on the channel to go directly in this channel.
 
 
 ### Search
 
+
+
 ### UX at scale
 Scale 1,000 (users, groups, files, directories)
 
-Folder / Fike Limits 
+Folder / File Limits 
 
 ### Archiving
 
@@ -297,14 +264,13 @@ Folder / Fike Limits
 
 ### Admin
 
-### Experience without a desktop.
-* Users might try open a file on web or mobile, and reupload in the same conversation to 'sync them'. AeroFS currently does not support file syncing through uploading a file with the same name. We should think supporting it eventually.
+### Renaming Group Conversation Folders
+
+should throw an error that it cannot be done. 
+
 
 ### AeroFS desktop interface. 
 * It needs a revamping to feel it is part of the Eyja product. For now we can live with using the existing interface and linking back to Eyja in some way. Example: 'Share This Folder' keeps the same old look. Once a user invites people, the notification might say to the user 'click to open the conversation in eyja'. 
-
-### Reminders on messages
-Ability to add `add a reminder` to a message and get reminded
 
 ### Unread Inbox
 
@@ -315,23 +281,16 @@ Ability to add `add a reminder` to a message and get reminded
 * JIRA
 * Box
 
-### Personal Folders
-
-There should be a way in Eyja to access files from private folders.
-
 
 ### Reactions
 
 
-
-# Stuff
+### Stuff
 
 Where I keep design problems, thoughts, and notes.
 
 ### Open Questions
 
-* if I delete a file, how does that work?
-* if I move a folder out, how does that work?
 * if I rename a folder, how does that work?
 * If I delete a folder, how does that work?
 * if I delete a conversation, how does that work?
