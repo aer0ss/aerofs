@@ -8,7 +8,7 @@ shift 3
 VOLUMES="$@"
 
 HOST_FOLDER=/data-buffer
-# '-xxx' to avoid potential name conflicts with applicaiton folders
+# '-xxx' to avoid potential name conflicts with application folders
 BIND_FOLDER=/data-xxx
 
 # Copy data from source container to host.

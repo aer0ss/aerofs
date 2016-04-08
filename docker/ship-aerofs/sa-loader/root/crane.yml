@@ -8,6 +8,7 @@ containers:
       detach: true
       publish:
         - "443:443"
+      #so we don't need to copy all the data on IPU
       volume:
         - /aerofs-storage:/aerofs-storage
       link:
@@ -18,6 +19,7 @@ containers:
     run:
       detach: true
       net: host
+      #so we don't need to copy all the data on IPU
       volume:
         - /aerofs-storage:/aerofs-storage
 
