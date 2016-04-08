@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 var SETTINGS map[Product]settings = map[Product]settings{
@@ -31,11 +32,26 @@ func Launch(launcher string, args []string) error {
 		return err
 	}
 
-	// NB: syscall.Exec is not supported on Windows
-	cmd := exec.Command(launcher, args...)
-	if err := cmd.Start(); err != nil {
+	// syscall.Exec is not supported on Windows
+	// exec.Command makes it super hard to start a detached process
+	// go low-level with a win32 CreateProcess call
+	var sI syscall.StartupInfo
+	var pI syscall.ProcessInformation
+	if err := syscall.CreateProcess(
+		nil,
+		syscall.StringToUTF16Ptr(launcher),
+		nil,
+		nil,
+		false,
+		syscall.CREATE_NEW_PROCESS_GROUP|0x00000008, // DETACHED_PROCESS
+		nil,
+		nil,
+		&sI,
+		&pI,
+	); err != nil {
 		return fmt.Errorf("Could not run launcher: %s %s %v %v", err.Error(), launcher, args, os.Environ())
 	}
+	log.Println("Sucessfully started")
 	return nil
 }
 
