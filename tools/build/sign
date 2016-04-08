@@ -20,11 +20,7 @@ function sign_exe() {
 
     CODESIGNING_PASSWORD=$(cat $CODESIGNING_PASSWORD_FILE)
     export PASSPHRASE="$CODESIGNING_PASSWORD"
-
-    if [[ -r "$CERT_FILE" && -r "$KEY_FILE" ]] ; then
-        echo >&2 "Can't find cert/key at $CERT_FILE and $KEY_FILE - do you need to mount a volume?"
-        exit 1
-    fi
+    [[ -r "$CERT_FILE" && -r "$KEY_FILE" ]] || (echo >&2 "Can't find cert/key at $CERT_FILE and $KEY_FILE - do you need to mount a volume?" && exit 1)
 
     printenv PASSPHRASE | signcode -spc "$CERT_FILE" -v "$KEY_FILE" \
         -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \

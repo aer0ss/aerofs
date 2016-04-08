@@ -82,6 +82,7 @@ while [ "${1:-}" != "" ]; do
 done
 
 include common $BUILD_PRODUCT
+include sign
 
 ###############################################################################
 #
@@ -194,34 +195,6 @@ function make_linux_update_tgz() {
 }
 
 function make_windows_installers() {
-    # This function is used to sign exe files and dll's
-    function sign_exe() {
-        FILENAME="$1"
-
-        # If we later want to let CI use a test cert and key for signing, use the following:
-        # CERT_FILE="$BUILD_SCRIPT_DIR/signing/cert.spc"
-        # KEY_FILE="$BUILD_SCRIPT_DIR/signing/privateKey.pvk"
-        # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
-        local CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
-        local KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
-        local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
-
-        if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
-            echo >&2 "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE"
-            return 1
-        fi
-
-        CODESIGNING_PASSWORD=$(cat $CODESIGNING_PASSWORD_FILE)
-        export PASSPHRASE="$CODESIGNING_PASSWORD"
-        [[ -r "$CERT_FILE" && -r "$KEY_FILE" ]] || (echo "Can't find cert/key at $CERT_FILE and $KEY_FILE - do you need to mount a volume?" && exit 1)
-
-        printenv PASSPHRASE | signcode -spc "$CERT_FILE" -v "$KEY_FILE" \
-            -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \
-            -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "${FILENAME}"
-
-        rm -f "${FILENAME}.bak"
-    }
-
     local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
     local BUILD_DIR="${PACKAGE_BUILD_DIR}/windows-${PRODUCT}"
 
@@ -324,20 +297,7 @@ function make_osx_packages() {
 
     if $SIGNED ; then
         echo ">> signing app for Mac App Store"
-
-        # Unlock the keychain, to prevent AFK dev from failing a build.
-        # All the secrets are available already anyway.
-        SECURE_VOLUME="/Volumes/aerofskeys"
-        OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
-        OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/keychain_passphrase.txt"
-
-        security unlock-keychain -p "$(cat $OSX_KEYCHAIN_PASSPHRASE_FILE)" "$OSX_KEYCHAIN_FILE"
-
-        # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
-        # for information on signing frameworks
-        codesign --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
-                 --force \
-                 --sign "Air Computing, Inc." \
+        sign_osx --resource-rules "$BUILD_SCRIPT_DIR/osx/rules.plist" \
                  "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
 
         # Note: We avoid re-codesigning AeroFSFinderExtension because
@@ -346,9 +306,7 @@ function make_osx_packages() {
         # we have pre-signed the checked-in resource, and must update
         # the signature whenever we modify anything under the .osax
         # folder.
-        # codesign --force \
-        #          --sign "Air Computing, Inc." \
-        #          "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
+        # sign_osx "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
     fi
 
     pushd "$BUILD_DIR" >>/dev/null
