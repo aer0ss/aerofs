@@ -62,7 +62,7 @@ include common $BUILD_PRODUCT
 
 case $(uname) in
     Darwin) MANIFEST="${GIT_ROOT}/resource/updater/osx/updater" ;;
-    Linux) MANIFEST="${GIT_ROOT}/resource/updater/linux/updater" ;;
+    Linux) MANIFEST="${GIT_ROOT}/resource/updater/linux/amd64/updater" ;;
     *) echo >&2 "unsupported platform $(uname)" ; exit 1 ;;
 esac
 

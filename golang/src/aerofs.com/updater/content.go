@@ -42,7 +42,7 @@ func (f *HttpFetcher) Fetch(hash string) (string, error) {
 		return "", fmt.Errorf("Unexpected %s", resp.Status)
 	}
 	tmp := filepath.Join(os.TempDir(), hash)
-	os.MkdirAll(os.TempDir(), 0755)  // os.TempDir() sometimes doesn't exist on Darwin
+	os.MkdirAll(os.TempDir(), 0755) // os.TempDir() sometimes doesn't exist on Darwin
 	os.Remove(tmp)
 	file, err := os.Create(tmp)
 	if err != nil {
@@ -63,7 +63,7 @@ type LocalStore struct {
 
 func (s *LocalStore) Fetch(hash string) (string, error) {
 	src := filepath.Join(s.BasePath, hash)
-	tmp := filepath.Join(os.TempDir(), hash)
+	tmp := filepath.Join(filepath.Dir(s.BasePath), "tmp-"+hash)
 	h, err := CopyFile(tmp, src)
 	if err != nil {
 		os.Remove(tmp)
@@ -78,7 +78,7 @@ func (s *LocalStore) Fetch(hash string) (string, error) {
 
 func (s *LocalStore) Store(src string) (string, error) {
 	suffix := strconv.FormatInt(time.Now().UnixNano(), 16)
-	tmp := filepath.Join(os.TempDir(), filepath.Base(src)+"-"+suffix)
+	tmp := filepath.Join(filepath.Dir(s.BasePath), "tmp-"+filepath.Base(src)+"-"+suffix)
 	h, err := CopyFile(tmp, src)
 	if err != nil {
 		os.Remove(tmp)
