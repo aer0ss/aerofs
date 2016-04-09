@@ -3,7 +3,7 @@
 containers="hpc-monitoring hpc-docker-gen hpc-port-allocator hpc-logrotator hpc-reverse-proxy"
 
 for container in $containers; do
-    docker ps | grep $container; EXIT=$?;
+    set +e; docker ps | grep $container; EXIT=$?; set -e
     if [ $EXIT -eq 0 ]
     then
         docker stop $container
