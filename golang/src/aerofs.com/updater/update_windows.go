@@ -59,7 +59,8 @@ func Launch(launcher string, args []string) error {
 	return nil
 }
 
-func LaunchAero(exec string, forceUpdate bool) error {
+// NB: extra command line args are ignored for now
+func LaunchAero(exec string, _ []string) error {
 	APPDATA := os.Getenv("APPDATA")
 	if len(APPDATA) == 0 {
 		PROFILE := os.Getenv("USERPROFILE")
@@ -92,9 +93,7 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	launcher := filepath.Join(current, settings.launcher)
 	args := []string{}
 
-	if !forceUpdate {
-		LaunchIfMatching(approot, launcher, args)
-	}
+	LaunchIfMatching(approot, launcher, args)
 
 	if err := Update(filepath.Join(path, "site-config.properties"),
 		settings.manifest,

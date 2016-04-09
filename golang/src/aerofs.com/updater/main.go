@@ -4,7 +4,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -63,57 +62,60 @@ func DisplayError(err error) {
 func runAsBinary() {
 	var abs string
 	var err error
+	var args []string
 
-	if flag.NArg() == 0 {
+	if len(os.Args) == 1 {
 		abs, err = filepath.Abs(os.Args[0])
 		if err != nil {
 			DisplayError(fmt.Errorf("Failed to resolve executable path:\n%s\n", err.Error()))
 		}
-	} else if flag.NArg() == 2 && flag.Arg(0) == "as" {
+	} else if len(os.Args) > 2 && os.Args[1] == "as" {
 		// N.B. we use the path to find site-config etc and the script name to
 		// determine gui/cli/etc. This hack passes the correct path and name,
 		// since using `exec -a "$0"` will override _both_ of these.
-		abs = filepath.Join(filepath.Dir(os.Args[0]), filepath.Base(flag.Arg(1)))
+		abs = filepath.Join(filepath.Dir(os.Args[0]), filepath.Base(os.Args[2]))
+		if len(os.Args) > 3 {
+			args = os.Args[3:]
+		}
 	} else {
-		DisplayError(fmt.Errorf("Invalid arguments: %s %s", flag.Arg(0), flag.Arg(1)))
+		log.Fatalf("Invalid arguments: %v", os.Args[1:])
 	}
 
-	force := flag.Bool("force", false, "force update")
-	if err = LaunchAero(abs, *force); err != nil {
+	if err = LaunchAero(abs, args); err != nil {
 		log.Fatalf("Failed to launch: %s\n", err.Error())
 	}
 }
 
 func main() {
-	flag.Parse()
+	argc := len(os.Args)
 
-	if flag.NArg() == 0 || flag.NArg() == 2 {
+	if argc == 1 || (argc > 2 && os.Args[1] == "as") {
 		runAsBinary()
 		return
 	}
 
-	if flag.NArg() < 4 {
+	if argc < 5 {
 		Usage()
 	}
-	op := flag.Arg(0)
-	manifestFile := flag.Arg(1)
-	data := flag.Arg(2)
+	op := os.Args[1]
+	manifestFile := os.Args[2]
+	data := os.Args[3]
 
 	if op == "apply" {
-		if flag.NArg() > 5 {
+		if argc > 6 {
 			Usage()
 		}
 		var src string
-		dst := filepath.Clean(flag.Arg(3))
-		if flag.NArg() > 4 {
-			src = filepath.Clean(flag.Arg(4))
+		dst := filepath.Clean(os.Args[4])
+		if argc > 5 {
+			src = filepath.Clean(os.Args[5])
 		}
 		if src == dst {
 			log.Fatalf("in-place apply not supported")
 		}
 		ApplyManifest(manifestFile, data, src, dst)
 	} else if op == "create" {
-		CreateManifest(manifestFile, data, flag.Args()[3:])
+		CreateManifest(manifestFile, data, os.Args[4:])
 	} else {
 		Usage()
 	}

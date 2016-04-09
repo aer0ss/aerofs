@@ -42,7 +42,7 @@ func Launch(launcher string, args []string) error {
 	return nil
 }
 
-func LaunchAero(exec string, forceUpdate bool) error {
+func LaunchAero(exec string, _ []string) error {
 	HOME := os.Getenv("HOME")
 	data := filepath.Join(HOME, "Library", "Application Support")
 	base := filepath.Base(exec)
@@ -67,9 +67,7 @@ func LaunchAero(exec string, forceUpdate bool) error {
 	launcher := filepath.Join(path, settings.launcher)
 	args := []string{launcher, current}
 
-	if !forceUpdate {
-		LaunchIfMatching(approot, launcher, args)
-	}
+	LaunchIfMatching(approot, launcher, args)
 
 	// run from approot
 	properties := filepath.Join(path, "site-config.properties")
