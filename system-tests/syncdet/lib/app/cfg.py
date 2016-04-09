@@ -191,7 +191,7 @@ class BaseOSXCfg(BaseCfg):
         return self._app_name() + 'Client'
 
     def get_ui_cmd(self):
-        return [os.path.join(self._app_path(), 'Contents', 'MacOS', self.get_ui_name()), self.get_rtroot(), 'cli']
+        return [os.path.join(self.app_path(), 'Contents', 'MacOS', self.get_ui_name()), self.get_rtroot(), 'cli']
 
     def get_ritual_path(self):
         return "{0}/{1}".format(self.get_rtroot(), "ritual.sock")
