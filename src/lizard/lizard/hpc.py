@@ -114,13 +114,12 @@ def save_error(subdomain):
 
 
 # First we begin by upgrading the x most used instances where x is the number
-# of reserved instances
+# of reserved instances.
 @celery.task()
-def upgrade_all_instances():
-    sorted_instances = _sort_server_by_num_deployments()
+def upgrade_multiple_instances(instances_to_upgrade):
     upgrade_single_instance_tasks = []
-    most_used_instances = sorted_instances[:NUM_RESERVED_INSTANCES]
-    least_used_instances = sorted_instances[NUM_RESERVED_INSTANCES:]
+    most_used_instances = instances_to_upgrade[:NUM_RESERVED_INSTANCES]
+    least_used_instances = instances_to_upgrade[NUM_RESERVED_INSTANCES:]
 
     while len(most_used_instances) > 0:
         # This will be done NUM_RESERVED_INSTANCE times
@@ -349,7 +348,7 @@ def delete_deployment(deployment, upgrade=False):
 
 # This function returns the list of instances sorted by the number of deployments
 # they host.
-def _sort_server_by_num_deployments():
+def sort_server_by_num_deployments():
     count_deployments = db.func.count(HPCDeployment.subdomain)
     server = db.session.query(HPCServer) \
         .outerjoin(HPCDeployment) \
@@ -370,7 +369,7 @@ def pick_server():
     We always want to pick up the most crowded instance provided that it has
     enough memory to host a new deployment
     """
-    sorted_instances = _sort_server_by_num_deployments()
+    sorted_instances = sort_server_by_num_deployments()
 
     for instance in sorted_instances:
         instance_stats = get_server_sys_stats(instance.docker_url)

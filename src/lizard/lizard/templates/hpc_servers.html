@@ -19,8 +19,8 @@
             </form>
         </div>
     </div>
-
-    <br />
+    <br>
+    <br><br>
     <table class="table">
         <tr>
             <th>ID</th>
@@ -55,7 +55,8 @@
                         <img src="{{ url_for('static', filename='img/ajax-loader.gif') }}"/>
                 <td align="center">
                     <a href="#" onclick="remove_server('{{ server.id }}'); return false;">Remove</a>
-                    <b> or </b> <a href="/upgrade_server/{{ server.id }}"> Upgrade</a>
+                    <b> or </b>
+                    <a href="#" onclick="upgrade_server('{{ server.id }}'); return false;">Upgrade</a>
                 </td>
             </tr>
 
@@ -159,6 +160,24 @@
             });
          }
     }
+
+
+    function upgrade_server(server_id){
+        console.log(server_id)
+        if (confirm("Are you sure that you want to upgrade this server?")) {
+            $.ajax({
+                url: '/upgrade_server/' + server_id,
+                type: 'post',
+                success: function(result) {
+                    console.log("Upgrading")
+                },
+                error: function(result) {
+                    alert("Failed! " + result);
+                }
+            });
+         }
+    }
+
 
     function launch_modal(failure_list) {
         $('#statusModal').modal('toggle')

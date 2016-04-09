@@ -1,3 +1,4 @@
+import ast
 import datetime
 import stripe
 import tarfile
@@ -602,14 +603,33 @@ def launch_server(server_name=''):
 
     return Response(200)
 
-@blueprint.route("/upgrade_server/<int:server_id>", methods=['GET'])
+@blueprint.route("/upgrade_server/<int:server_id>", methods=['POST'])
 def upgrade_server(server_id):
-
     hpc.upgrade_single_instance.si(server_id).apply_async()
-
     return Response('ok', 200)
 
 
-@blueprint.route("/uprade_all_servers", methods=["GET"])
+@blueprint.route("/uprade_all_servers", methods=["POST"])
 def upgrade_all_servers():
-    hpc.upgrade_all_instances.si().apply_async()
+    sorted_instances = hpc.sort_server_by_num_deployments()
+    hpc.upgrade_multiple_instances.si(sorted_instances).apply_async()
+
+
+# This route is designed for test purpose. It takes as a parameter
+# ids of the server we do not want to upgrade(so that we don't update/break
+# servers hosting actual dpeloyments on accident.
+# Reserved instances will concern only the instance to upgrade.
+@csrf.exempt
+@blueprint.route("/upgrade_servers_test", methods=["POST"])
+def upgrade_all_servers_test():
+    server_not_to_upgrade = request.form['server_not_to_upgrade']
+    server_not_to_upgrade = map(int, server_not_to_upgrade.split())
+
+    sorted_instances = hpc.sort_server_by_num_deployments()
+
+    # Getting the list of instance we want to upgrade
+    sorted_instances_test = [instance for instance in sorted_instances
+                             if instance.id not in server_not_to_upgrade]
+
+    hpc.upgrade_multiple_instances.si(sorted_instances_test).apply_async()
+    return Response('ok', 200)
