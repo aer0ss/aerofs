@@ -1,4 +1,3 @@
-.gradle
 approot/*
 buildroot
 env/*
@@ -10,7 +9,6 @@ golang/pkg/*
 **/.project
 **/.settings
 
-*.iml
 *.pyc
 
 build.log
@@ -35,3 +33,47 @@ src/web/web/static/installers
 src/web/web/static/js/compiled/*
 web/js/recruiting.js
 web/styles/css/compiled/
+
+# external libraries
+src/aeroim-client/node_modules
+src/aeroim-client/npm-debug.log
+
+# packaged output
+src/aeroim-client/build
+src/aeroim-client/dist
+src/aeroim-client/*.bundle
+
+# compiled JS
+src/aeroim-client/*-compiled.js
+src/aeroim-client/*.js.map
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
+
+# Android
+.gradle
+local.properties
+*.iml
+
+# React Native iOS
+.flowconfig
+.watchmanconfig
+
+# Fastlane files
+src/aeroim-client/ios/fastlane/report.xml
+src/aeroim-client/android/fastlane/report.xml
