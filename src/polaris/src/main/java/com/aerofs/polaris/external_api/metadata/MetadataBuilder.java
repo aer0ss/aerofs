@@ -19,6 +19,7 @@ import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.api.Error;
 import com.aerofs.rest.util.MimeTypeDetector;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -326,8 +327,27 @@ public class MetadataBuilder
 
         ChildrenList childrenList = shouldReturnChildren(dao, oid, fields)
                 ? childrenList(dao, oid, false) : null;
-        ParentPath path = isFieldPresent(fields, "path") && parentFolders != null
+        ParentPath path = parentFolders != null  && isFieldPresent(fields, "path")
                 ? parentPath(parentFolders.values()) : null;
+
+        if (l.isDebugEnabled()) {
+            if (path != null) {
+                l.debug("Path: folder names: {}", path.folders.size() == 0 ? "[]" :
+                    Joiner.on(",").join(path.folders.stream().map(o -> o.name).collect(Collectors.toList())));
+            } else {
+                l.debug("Response path is null");
+            }
+            if (childrenList != null) {
+                l.debug("Children: folder names: {}",
+                childrenList.folders.size() == 0 ? "[]" :
+                    Joiner.on(",").join(childrenList.folders.stream().map(o -> o.name).collect(Collectors.toList())));
+                l.debug("Children file names: {}",
+                childrenList.files.size() == 0 ? "[]" :
+                    Joiner.on(",").join(childrenList.files.stream().map(o -> o.name).collect(Collectors.toList())));
+            } else {
+                l.debug("Response children list is null");
+            }
+        }
 
         if (objectStore.isFile(dao.objectTypes.get(oid))) {
             Content fp = dao.objectProperties.getLatest(oid);
@@ -400,6 +420,8 @@ public class MetadataBuilder
             boolean isFile)
     {
         l.info("Get metadata for object {}", object.toStringFormal());
+        l.debug("Query params: {}", queryParam);
+
         UniqueID oid = restObject2OID(principal, object);
         checkAccess(principal, Lists.newArrayList(oid), READ);
 
@@ -426,11 +448,13 @@ public class MetadataBuilder
             throw new NotFoundException(oid);
         }
         LinkedHashMap<UniqueID, Folder> parentFolders = computeParentFolders(dao, principal, oid);
+        Preconditions.checkState(parentFolders != null, "Parent folders shouldn't be null");
         throwIfInSufficientTokenScope(principal, oid, Scope.READ_FILES, parentFolders);
 
         if ((objectStore.isFile(dao.objectTypes.get(oid))) != isFile) {
             throw new NotFoundException(oid);
         }
+
         return getObjectMetadata(dao, principal, oid, queryParam, parentFolders);
     }
 

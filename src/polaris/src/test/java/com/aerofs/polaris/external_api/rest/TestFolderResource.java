@@ -133,12 +133,17 @@ public class TestFolderResource extends AbstractRestTest
         String oid = rootSID.toStringFormal() + OID.ROOT.toStringFormal();
 
         givenAccess()
+                .queryParam("fields", "path,children")
         .expect()
                 .statusCode(200)
                 .body("id", equalTo(oid))
                 .body("name", equalTo("AeroFS"))
                 .body("is_shared", equalTo(false))
                 .body("parent", equalTo(oid))
+                .body("path", notNullValue())
+                .body("path.folders",  iterableWithSize(0))
+                .body("children", notNullValue())
+                .body("children.folders",  iterableWithSize(1))
         .when().get(getApiFoldersURL() + "root");
     }
 
