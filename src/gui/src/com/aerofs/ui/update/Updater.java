@@ -574,10 +574,8 @@ public abstract class Updater
 
     private boolean hasPermissions()
     {
-        InjectableFile f = _factFile.create(AppRoot.abs());
-        // On Windows, approot is in a per-version folder, so we actually want to test whether we
-        // can write to approot's parent
-        if (OSUtil.isWindows()) f = f.getParentFile();
+        // AppRoot.abs() is "current/" subdir of min approot
+        InjectableFile f = _factFile.create(AppRoot.abs()).getParentFile();
         f = f.newChild(".tmp" + Math.random());
 
         return (f.mkdirIgnoreError() && f.deleteIgnoreError());

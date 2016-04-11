@@ -33,8 +33,6 @@ files = {}
 transforms = {
     'aerofs.exe':           'filAeroFS',
     'aerofsts.exe':         'filAeroFS',
-    'AeroFSShellExt32.dll': 'filAeroFSShellExt32',
-    'AeroFSShellExt64.dll': 'filAeroFSShellExt64',
     'logo.ico':             'filAeroFSIcon',
 }
 

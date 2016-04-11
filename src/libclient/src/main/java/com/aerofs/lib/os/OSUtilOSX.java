@@ -57,7 +57,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         ArrayList<String> result = new ArrayList<>();
         result.addAll(Arrays.asList(
                 AppRoot.abs().concat("/AeroFSsetup"),
-                "--icon=" + AppRoot.abs() + "/../AeroFS.icns",
+                "--icon=/Applications/" + L.productSpaceFreeName() + ".app/Contents/Resources/AeroFS.icns",
                 "--prompt=" + prompt,
                 "/bin/sh",
                 "-c"
@@ -204,7 +204,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         String oldChecksum = Cfg.db().get(SHELLEXT_CHECKSUM);
         String checksum = getShellExtensionChecksum();
 
-        l.debug("Comparing checksums: " + oldChecksum + " -> " + checksum);
+        l.debug("Comparing checksums: {} -> {}", oldChecksum, checksum);
 
         // The checksums match, there's nothing to do
         if (checksum.equals(oldChecksum)) return;

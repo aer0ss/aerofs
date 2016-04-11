@@ -55,6 +55,8 @@ func Launch(launcher string, args []string) error {
 		return fmt.Errorf("Could not run launcher: %s %s %v %v", err.Error(), launcher, args, os.Environ())
 	}
 	log.Println("Sucessfully started")
+	// NB: Launch is expected not to return on success
+	os.Exit(0)
 	return nil
 }
 
@@ -88,18 +90,21 @@ func LaunchAero(exec string, _ []string) error {
 	}
 
 	approot := filepath.Join(APPDATA, settings.approot)
-	current := filepath.Join(approot, "current")
-	launcher := filepath.Join(current, settings.launcher)
+	version := LastInstallVersion(approot)
+	launcher := LauncherPath(approot, version, settings.launcher)
 	args := []string{}
 
 	LaunchIfMatching(approot, launcher, args)
 
-	if err := Update(filepath.Join(path, "site-config.properties"),
+	inst, err := Update(filepath.Join(path, "site-config.properties"),
 		settings.manifest,
 		approot,
-	); err != nil {
+		version,
+	)
+	if err != nil {
 		log.Printf("Failed to update from site-config:\n\t%s", err.Error())
 		return fmt.Errorf("Failed to update from site-config:\n%s", err.Error())
 	}
-	return Launch(launcher, args)
+
+	return Launch(filepath.Join(inst, settings.launcher), args)
 }

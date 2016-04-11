@@ -21,4 +21,7 @@ $(DEST)/osx/updater: $(SRC)
 	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o "$@" aerofs.com/updater
 
 $(DEST)/win/updater.exe: $(SRC)
-	GOOS=windows GOARCH=386 $(GOBUILD) -o "$@" aerofs.com/updater
+	# NB: do not store icon w/ .syso ext to prevent it from being picked up in *nix build
+	cp icon icon.syso
+	GOOS=windows GOARCH=386 $(GOBUILD) -ldflags "-H windowsgui" -o "$@" aerofs.com/updater
+	rm icon.syso

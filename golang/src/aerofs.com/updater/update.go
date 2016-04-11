@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
+	"strings"
 )
 
 type Product int
@@ -88,20 +88,20 @@ func secureTransport(cacert string) (*http.Transport, error) {
 	}, nil
 }
 
-func Update(config, manifestName, approot string) error {
+func Update(config, manifestName, approot string, version uint64) (string, error) {
 	siteConfig, err := LoadJavaProperties(config)
 	if err != nil {
-		return fmt.Errorf("Could not load site-config:\n%s", err.Error())
+		return "", fmt.Errorf("Could not load site-config:\n%s", err.Error())
 	}
 
 	url, err := url.Parse(siteConfig["config.loader.configuration_service_url"])
 	if err != nil {
-		return fmt.Errorf("Could not parse site-config:\n%s", err.Error())
+		return "", fmt.Errorf("Could not parse site-config:\n%s", err.Error())
 	}
 
 	transport, err := secureTransport(siteConfig["config.loader.base_ca_certificate"])
 	if err != nil {
-		return fmt.Errorf("Could not read secure ca certificate:\n%s", err.Error())
+		return "", fmt.Errorf("Could not read secure ca certificate:\n%s", err.Error())
 	}
 
 	log.Println("Downloading manifest...")
@@ -109,7 +109,7 @@ func Update(config, manifestName, approot string) error {
 	manifestFile := filepath.Join(approot, MANIFEST)
 	manifest, err := Download(manifestUrl, manifestFile, transport)
 	if err != nil {
-		return fmt.Errorf("Could not download manifests:\n%s", err.Error())
+		return "", fmt.Errorf("Could not download manifests:\n%s", err.Error())
 	}
 
 	fetcher := &HttpFetcher{
@@ -117,40 +117,88 @@ func Update(config, manifestName, approot string) error {
 		Transport: transport,
 	}
 
-	current := filepath.Join(approot, "current")
-	next := filepath.Join(approot, "next")
+	current := InstallPath(approot, version)
+	next := InstallPath(approot, version+1)
 
 	if err = os.RemoveAll(next); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("Could not recursively remove %s:\n%s", next, err.Error())
+		return "", fmt.Errorf("Could not recursively remove %s:\n%s", next, err.Error())
 	}
 	if err = os.MkdirAll(next, 0755); err != nil {
-		return fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
+		return "", fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
 	}
 
 	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
 
 	if err = Apply(current, next, manifest, fetcher); err != nil {
-		return fmt.Errorf("Could not apply updates:\n%s", err.Error())
+		return "", fmt.Errorf("Could not apply updates:\n%s", err.Error())
 	}
 
 	log.Println("Copying site-config...")
 
 	// copy site config into new approot
 	if err = LinkOrCopy(filepath.Join(next, "site-config.properties"), config); err != nil {
-		return fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
+		return "", fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
 	}
 
-	log.Println("Switching next/current...")
-
-	if _, err = os.Stat(current); err == nil {
-		old := filepath.Join(approot, "old-"+strconv.FormatInt(time.Now().UnixNano(), 16))
-		if err = os.Rename(current, old); err != nil {
-			return fmt.Errorf("Could not rename approot:\n%s", err.Error())
+	lnk := filepath.Join(approot, "current")
+	if err = os.Remove(lnk); err == nil || os.IsNotExist(err) {
+		log.Println("Symlink...")
+		if err = os.Symlink(next, lnk); err != nil {
+			log.Printf("Failed to symlink: %s\n", err.Error())
 		}
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("Could not find approot:\n%s", err.Error())
+		next = lnk
+	} else {
+		log.Printf("Failed to remove current symlink: %s\n", err.Error())
 	}
-	return os.Rename(next, current)
+
+	log.Println("Launching...")
+
+	return next, nil
+}
+
+func InstallPath(approot string, v uint64) string {
+	return filepath.Join(approot, "m_"+strconv.FormatUint(v, 16))
+}
+
+func LauncherPath(approot string, v uint64, name string) string {
+	return filepath.Join(InstallPath(approot, v), name)
+}
+
+func LastInstallVersion(approot string) uint64 {
+	d, err := os.Open(approot)
+	if err != nil {
+		log.Printf("no last ver: %s\n", err.Error())
+		return 0
+	}
+	children, err := d.Readdirnames(-1)
+	d.Close()
+	if err != nil {
+		log.Printf("no last ver: %s\n", err.Error())
+		return 0
+	}
+	var mv uint64 = 0
+	for _, n := range children {
+		if strings.HasPrefix(n, "m_") {
+			log.Printf("found ver: %s\n", n)
+			if v, err := strconv.ParseUint(n[2:], 16, 64); err == nil && v > mv {
+				mv = v
+			}
+		}
+	}
+
+	// cleanup old versions
+	for _, n := range children {
+		if strings.HasPrefix(n, "m_") {
+			if v, err := strconv.ParseUint(n[2:], 16, 64); err == nil && v < mv {
+				if err = os.RemoveAll(filepath.Join(approot, n)); err != nil {
+					log.Printf("failed to remove %s: %s\n", n, err.Error())
+				} else {
+					log.Printf("removed %s\n", n)
+				}
+			}
+		}
+	}
+	return mv
 }
 
 func Download(manifestUrl, dest string, transport *http.Transport) (map[string]interface{}, error) {

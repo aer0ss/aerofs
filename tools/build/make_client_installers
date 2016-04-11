@@ -205,9 +205,6 @@ function make_windows_installers() {
     mkdir -p "${BUILD_DIR}"
 
     cp -a "${BASE_RESOURCES_DIR}/updater/win/updater.exe" "${BUILD_DIR}/${EXECUTABLE}"
-    if is_client ; then
-        cp -a "${CLIENT_WIN_SHELLEXT_DIR}"/* "${BUILD_DIR}/"
-    fi
     echo -n "${RELEASE_VERSION}" > "${BUILD_DIR}/version"
 
     mkdir "${BUILD_DIR}/icons"

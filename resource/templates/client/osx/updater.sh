@@ -55,4 +55,7 @@ rm -f "$APP_DIR"/../manifest.json
 # AeroFS on user logout. This would result in an "AeroFS is still running"
 # dialog on the next login with the AeroFS tray icon not appearing despite the
 # fact that AeroFS is running.
-open -a "$PACKAGE_DIR"
+# NB: The -n and -F flags are important to make sure OSX doesn't "helpfully"
+# opt not to launch the app because it is under the mistaken impression that
+# there is already a running instance.
+open -n -F -a "$PACKAGE_DIR"

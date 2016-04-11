@@ -106,12 +106,19 @@ function make_osx_product_dir() {
 }
 
 function make_osx_update() {
+    # NB: this is the pre-Yosemite shellext which injects code into Finder
+    # not the Finder Sync extension which needs to be inside the app bundle
+    if is_client ; then
+        SHELLEXT_DIR="${CLIENT_OSX_SHELLEXT_DIR}"
+    fi
+
     $MANIFEST create \
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base" \
         "${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${LOCAL_OSX_PRODUCT_DIR}" \
         "${CLIENT_OSX_RESOURCES_DIR}" \
+        ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"

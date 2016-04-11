@@ -1,5 +1,6 @@
 package com.aerofs.lib.os;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.labeling.L;
@@ -258,7 +259,7 @@ public class OSUtilWindows implements IOSUtil
             suffix = "10";
         }
 
-        result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
+        result = result.newChild("icons").newChild(icon.name + suffix + ".ico");
         if (!result.exists()) {
             newDefectWithLogs("gui.icon_path.windows")
                     .setMessage("icon not found: " + result.getAbsolutePath())
@@ -324,8 +325,7 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public boolean isShellExtensionAvailable()
     {
-        // Shell extensions are installed by the installer and patcher on Windows
-        return false;
+        return !L.isMultiuser();
     }
 
     @Override
@@ -335,9 +335,20 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
-    public void installShellExtension(boolean silently)
-    {
-        // Shell extensions are installed by the installer and patcher on Windows
+    public void installShellExtension(boolean silently) {
+        l.info("register shellext...");
+        String approot = AppRoot.abs();
+        regsvr(Util.join(approot, "AeroFSShellExt32.dll"));
+        regsvr(Util.join(approot, "x64", "AeroFSShellExt64.dll"));
+    }
+
+    private void regsvr(String abspath) {
+        try {
+            int ret = SystemUtil.execForeground("regsvr32.exe", "/s", abspath);
+            l.info("registered {} {}", abspath, ret);
+        } catch (IOException e) {
+            l.info("failed to register {}", abspath, BaseLogUtil.suppress(e));
+        }
     }
 
     @Override

@@ -166,30 +166,13 @@ Function install_unprivileged
         FindClose $1
     ${EndUnless}
 
-    # Delete the old AeroFS files before we switched to the one-folder-per-version model
-    # TODO: This code can be removed after, say, April 2013 (6 months from now)
-    RMDir /r /REBOOTOK "$INSTDIR\bin"
-    RMDir /r /REBOOTOK "$INSTDIR\icons"
-    RMDir /r /REBOOTOK "$INSTDIR\lib"
-    Delete /REBOOTOK "$INSTDIR\aerofs.jar"
-    Delete /REBOOTOK "$INSTDIR\shortcut.exe"
-    Delete /REBOOTOK "$INSTDIR\aerofsd.dll"
-    Delete /REBOOTOK "$INSTDIR\aerofsj.dll"
-    Delete /REBOOTOK "$INSTDIR\aerofsjn.dll"
-    Delete /REBOOTOK "$INSTDIR\AeroFSShellExt32.dll"
-    Delete /REBOOTOK "$INSTDIR\AeroFSShellExt64.dll"
-    Delete /REBOOTOK "$INSTDIR\sqlitejdbc.dll"
-    Delete /REBOOTOK "$INSTDIR\version"
-    Delete /REBOOTOK "$INSTDIR\cacert.pem"
-    Delete /REBOOTOK "$INSTDIR\cacert-ci.pem"
-    # aerofs.ini obsolete after prod 0.4.130 due to move to our own launcher instead of eclipse.exe
-    Delete /REBOOTOK "$INSTDIR\aerofs.ini"
+    # Delete previous manifest to force fresh download
+    Delete "$INSTDIR\manifest.json"
 
     # Allow overwritting the executables even if they are still in use
     # This should not be the case, but we never know, since they are not in the
     # per-version folder.
     !insertmacro allowOverwritting "$INSTDIR\${AEROFS_EXECUTABLE}"
-    !insertmacro allowOverwritting "$INSTDIR\aerofsd.exe"
 
     # Copy files
     DetailPrint "Copying files..."
@@ -215,15 +198,6 @@ Function install_unprivileged
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "UninstallString" "$INSTDIR\uninstall.exe"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "URLInfoAbout" "${URL}"
 
-    Delete /REBOOTOK "$INSTDIR\aerofs.ini"
-
-    # If the file site-config.properties exists in the install directory,
-    # copy it into the version-specific approot (where the client will look for it)
-    FileOpen $4 "$INSTDIR\version" r
-    FileRead $4 $1
-    FileClose $4
-    CopyFiles "$INSTDIR\site-config.properties" "$INSTDIR\v_$1\site-config.properties"
-
 FunctionEnd
 
 /**
@@ -241,22 +215,9 @@ Function postInstall_privileged
 
     # Allow the executables to go through the Windows Firewall
     SimpleFC::AddApplication "AeroFS" "$USERS_INSTDIR\${AEROFS_EXECUTABLE}" 0 2 "" 1
-    SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\aerofsd.exe" 0 2 "" 1
+    SimpleFC::AddApplication "AeroFS GUI" "$USERS_INSTDIR\current\${AEROFS_EXECUTABLE}" 0 2 "" 1
+    SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\current\aerofsd.exe" 0 2 "" 1
 
-    # Register the shell extension
-    # TODO (WW) remove shell extension dlls from the Team Server package so the following registration
-    # will silently fail.
-    DetailPrint "Registering the shell extension"
-    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt32.dll"'
-    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\x64\AeroFSShellExt64.dll"'
-
-    # Relaunch explorer on Windows XP - otherwise it won't detect that we added a new shell extension
-    # But do not relaunch on updates (silent mode) otherwise Explorer would be restarted too often
-    ${IfNot} ${Silent}
-    ${AndIf} ${IsWinXP}
-        !insertmacro KillProcess "explorer.exe" $USERNAME
-        Exec 'C:\Windows\explorer.exe' # It's important to specify the full name, otherwise the 32-bits explorer is launched on x64 systems, because the installer is a 32-bits process
-    ${EndIf}
 FunctionEnd
 
 /**
