@@ -73,20 +73,6 @@ function make_linux_product_dir() {
     rm -rf "${LOCAL_LINUX_PRODUCT_DIR}"
     mkdir -p "${LOCAL_LINUX_PRODUCT_DIR}"
 
-    # Create the symlinks to updater that will later be copied into the
-    # approot. The symlinks the user should use directly will be created later
-    # as part of the debian package and tgz.
-    # pushd is used to ensure symlinks made are relative
-    pushd "${LOCAL_LINUX_PRODUCT_DIR}" >>/dev/null
-    ln -s updater "${AEROFS_PRODUCT_UNIX}"
-    # Create symlinks for each of the products
-    for SUFFIX in cli gui sh ; do
-        ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
-    done
-    popd >>/dev/null
-
-# render_template "${CLIENT_LINUX_TEMPLATES_DIR}/INSTALL" "${AEROFS_RELEASE_LINUX_DIR}/INSTALL"
-# render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/copier" "${AEROFS_RELEASE_LINUX_SHARED_DIR}/copier"
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" "${LOCAL_LINUX_PRODUCT_DIR}/launcher"
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/product.desktop" "${LOCAL_LINUX_PRODUCT_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
     render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/updater.sh" "${LOCAL_LINUX_PRODUCT_DIR}/updater.sh"
