@@ -34,6 +34,8 @@ src/web/web/static/js/compiled/*
 web/js/recruiting.js
 web/styles/css/compiled/
 
+!src/aeroim-client/bin
+
 # external libraries
 src/aeroim-client/node_modules
 src/aeroim-client/npm-debug.log
