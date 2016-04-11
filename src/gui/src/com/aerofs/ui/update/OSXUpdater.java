@@ -46,7 +46,7 @@ class OSXUpdater extends Updater
             * the admin user) will still have ownership.
             *
             * The Authorization API on OSX does not have a username associated with it, only admin
-            * priv (e.g. you can execute code with root priviliges, but not as the root user)
+            * priv (e.g. you can execute code with root privileges, but not as the root user)
             */
 
             if (hasPermissions) {
