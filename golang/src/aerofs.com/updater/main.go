@@ -5,15 +5,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 var errInvalidManifest error = fmt.Errorf("invalid manifest")
@@ -25,51 +21,14 @@ func Usage() {
 	os.Exit(1)
 }
 
-func DisplayError(err error) {
-	log.Printf("Serving error page on localhost: %s\n", err.Error())
-	killServer := make(chan int)
-
-	http.HandleFunc("/",
-		func(err error) func(w http.ResponseWriter, r *http.Request) {
-			return func(w http.ResponseWriter, r *http.Request) {
-				io.WriteString(w, err.Error())
-				killServer <- 1
-			}
-		}(err))
-
-	// Windows requires we explicitly bind to localhost
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		log.Fatalf("Could not start webserver listener: %s\n", err.Error())
-	}
-
-	go http.Serve(ln, nil)
-
-	time.Sleep(2 * time.Second)
-	if err = OpenErrorPage(ln.Addr().String()); err != nil {
-		log.Fatalf("Failed to open browser: %s\n", err.Error())
-	}
-
-	select {
-	case c := <-killServer:
-		os.Exit(c)
-	case <-time.After(5 * time.Second):
-		log.Fatalf("Error page not served")
-	}
-}
-
 // OS-specific Aero launcher
 func runAsBinary() {
 	var abs string
 	var err error
 	var args []string
 
-	if len(os.Args) == 1 {
-		abs, err = filepath.Abs(os.Args[0])
-		if err != nil {
-			DisplayError(fmt.Errorf("Failed to resolve executable path:\n%s\n", err.Error()))
-		}
-	} else if len(os.Args) > 2 && os.Args[1] == "as" {
+	// special invocation form on Linux for cli/gui distinction and sh parameters
+	if len(os.Args) > 2 && os.Args[1] == "as" {
 		// N.B. we use the path to find site-config etc and the script name to
 		// determine gui/cli/etc. This hack passes the correct path and name,
 		// since using `exec -a "$0"` will override _both_ of these.
@@ -78,18 +37,28 @@ func runAsBinary() {
 			args = os.Args[3:]
 		}
 	} else {
-		log.Fatalf("Invalid arguments: %v", os.Args[1:])
+		// ignore parameters otherwise
+		// NB: on OSX, invocation from the app bundle sometimes result in the
+		// Process Serial Number being passed as a command line parameter.
+		abs, err = filepath.Abs(os.Args[0])
+		if err != nil {
+			abs = os.Args[0]
+		}
 	}
 
 	if err = LaunchAero(abs, args); err != nil {
 		log.Fatalf("Failed to launch: %s\n", err.Error())
+		// TODO: dialog box
+		// - OSX: osascript
+		// - Windows: MessageBox() from user32.dll
+		// - Linux: xmessage
 	}
 }
 
 func main() {
 	argc := len(os.Args)
 
-	if argc == 1 || (argc > 2 && os.Args[1] == "as") {
+	if argc < 2 || (os.Args[1] != "create" && os.Args[1] != "apply") {
 		runAsBinary()
 		return
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -87,8 +86,4 @@ func LaunchAero(exec string, fwd []string) error {
 		return fmt.Errorf("Failed to update from site-config:\n%s", err.Error())
 	}
 	return Launch(launcher, args)
-}
-
-func OpenErrorPage(addr string) error {
-	return exec.Command("xdg-open", "http://"+addr).Run()
 }

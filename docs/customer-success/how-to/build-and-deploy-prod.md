@@ -41,7 +41,7 @@ installers. To do this, run the following commands:
 
 4. Build using
 
-       invoke --signed clean proto build_updater build_client package_clients package_updates \
+       invoke --signed clean proto build_client package_clients package_updates \
           build_images build_vm build_sa_images build_sa_vm tag_release push_vm
 
    *Note: you will not be able to successfully build the appliance if the keys for

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -81,8 +80,4 @@ func LaunchAero(exec string, _ []string) error {
 		return fmt.Errorf("Failed to update from site-config:\n%s", err.Error())
 	}
 	return Launch(launcher, args)
-}
-
-func OpenErrorPage(addr string) error {
-	return exec.Command("open", "http://"+addr).Run()
 }
