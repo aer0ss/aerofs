@@ -19,6 +19,11 @@
         "cnames": [ "alpinx.docker" ],
         "nameservers": [ "127.0.0.1" ]
     },
+    "dl-cdn.alpinelinux.org": {
+        "type": "static",
+        "cnames": [ "alpinx.docker" ],
+        "nameservers": [ "127.0.0.1" ]
+    },
     "docker.": {
         "type": "containers",
         "socket": "unix:///var/run/docker.sock"
