@@ -55,8 +55,4 @@ rm -f "$APP_DIR"/../manifest.json
 # AeroFS on user logout. This would result in an "AeroFS is still running"
 # dialog on the next login with the AeroFS tray icon not appearing despite the
 # fact that AeroFS is running.
-# NB. The first run of the updater will download all new manifests, but may not
-# restart itself properly due to some race condition I have been unable to track
-# down. Logging at this level of the updater is sparse and test cycles are long,
-# running the binary twice fixes the problem for now.
-open -a "$PACKAGE_DIR"; sleep 10; open -a "$PACKAGE_DIR"
+open -a "$PACKAGE_DIR"
