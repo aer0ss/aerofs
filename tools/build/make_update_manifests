@@ -132,14 +132,6 @@ function make_osx_update() {
 }
 
 function make_windows_update() {
-    if $SIGNED ; then
-        # FIXME: there is no point re-signing these on every release
-        # instead they should just be store as signed artifacts
-        # and the signature should be checked when building the appliance
-        chktrust "${CLIENT_WIN_RESOURCES_DIR}/aerofs.exe"
-        chktrust "${CLIENT_WIN_RESOURCES_DIR}/aerofsd.exe"
-    fi
-
     if is_client ; then
         SHELLEXT_DIR="${CLIENT_WIN_SHELLEXT_DIR}"
     fi
