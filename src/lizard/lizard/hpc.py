@@ -134,7 +134,10 @@ def upgrade_multiple_instances(server_list_to_upgrade=[]):
         upgrade_single_instance_tasks.append(
             upgrade_single_instance.si(instance.id))
 
+    least_used_instances_id = []
     for instance in least_used_instances:
+        # We store the IDs of these instances
+        least_used_instances_id.append(instance.id)
         # We only pull new images on these instances
         upgrade_single_instance_tasks.append(
             pull_server_images.si(_internal_ip(instance.docker_url), wait=True))
@@ -146,17 +149,16 @@ def upgrade_multiple_instances(server_list_to_upgrade=[]):
     # TODO(DS): adding the instance ID as a parameter of `upgrade_remaining_deployment`
     # is for test purpose and should be removed
     chord(upgrade_single_instance_tasks)(upgrade_remaining_deployments.si(
-        least_used_instances, most_used_instances[0].id))
+        least_used_instances_id, most_used_instances[0].id))
 
 
 @celery.task()
-def upgrade_remaining_deployments(sorted_instance_list, server_id=None):
+def upgrade_remaining_deployments(instances_id, server_id=None):
     # Getting the id of all the instances that are On Demand Instances (the least
     # crowded instances)
-    server_ids_odi = [instance.id for instance in sorted_instance_list]
 
     remaining_deployments_to_upgrade = HPCDeployment.query.filter(
-        HPCDeployment.server_id.in_(server_ids_odi)).all()
+        HPCDeployment.server_id.in_(instances_id)).all()
 
     # Upgrading the remaining deployments. This deployments should be stored
     # either on reserved_instance or ODI. This will be decided by `pick_server()`
@@ -167,7 +169,7 @@ def upgrade_remaining_deployments(sorted_instance_list, server_id=None):
     current_app.logger.info("Upgrade finished")
 
     # Removing empty servers
-    for server_id in server_ids_odi:
+    for server_id in instances_id:
         delete_server_if_empty(server_id)
 
 
