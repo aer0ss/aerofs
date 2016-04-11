@@ -129,15 +129,13 @@ def upgrade_multiple_instances(server_list_to_upgrade=[]):
     most_used_instances = instances_to_upgrade[:NUM_RESERVED_INSTANCES]
     least_used_instances = instances_to_upgrade[NUM_RESERVED_INSTANCES:]
 
-    while len(most_used_instances) > 0:
+    for instance in most_used_instances:
         # This will be done NUM_RESERVED_INSTANCE times
-        instance = most_used_instances.pop(0)
         upgrade_single_instance_tasks.append(
             upgrade_single_instance.si(instance.id))
 
-    while len(least_used_instances) > 0:
+    for instance in least_used_instances:
         # We only pull new images on these instances
-        instance = least_used_instances.pop(0)
         upgrade_single_instance_tasks.append(
             pull_server_images.si(_internal_ip(instance.docker_url), wait=True))
 
@@ -145,12 +143,14 @@ def upgrade_multiple_instances(server_list_to_upgrade=[]):
     # tasks to execute and second parameter is the function to call when every
     # task of the list has finished. Here, when all the RI are upgraded, we
     # call the function `upgrade_remaining_deployments()`
+    # TODO(DS): adding the instance ID as a parameter of `upgrade_remaining_deployment`
+    # is for test purpose and should be removed
     chord(upgrade_single_instance_tasks)(upgrade_remaining_deployments.si(
-        least_used_instances))
+        least_used_instances, most_used_instances[0].id))
 
 
 @celery.task()
-def upgrade_remaining_deployments(sorted_instance_list):
+def upgrade_remaining_deployments(sorted_instance_list, server_id=None):
     # Getting the id of all the instances that are On Demand Instances (the least
     # crowded instances)
     server_ids_odi = [instance.id for instance in sorted_instance_list]
@@ -161,7 +161,7 @@ def upgrade_remaining_deployments(sorted_instance_list):
     # Upgrading the remaining deployments. This deployments should be stored
     # either on reserved_instance or ODI. This will be decided by `pick_server()`
     for deployment in remaining_deployments_to_upgrade:
-        upgrade_deployment(deployment)
+        upgrade_deployment(deployment, server_id)
 
     # TODO(DS): 1. Remove old images
     current_app.logger.info("Upgrade finished")
