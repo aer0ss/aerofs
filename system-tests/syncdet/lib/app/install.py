@@ -166,9 +166,9 @@ def extract(source, base, destdir):
             os.chmod(targetpath, unix_perm)
 
 
-def ensure_site_config_present(approot):
-    print 'ensure site-config.properties is present in {}'.format(approot)
-    site_config_file = os.path.join(approot, 'site-config.properties')
+def ensure_site_config_present(approot, name='site-config.properties'):
+    print 'ensure {} is present in {}'.format(name, approot)
+    site_config_file = os.path.join(approot, name)
     if not os.path.isfile(site_config_file):
         host = case.local_actor().aero_host
         client_config_url = 'https://{}/config/client'.format(host)
@@ -462,7 +462,8 @@ class BaseOSXInstaller(BaseAeroFSInstaller):
         rm_rf(self.get_app_install_dir())
         extract(self.get_installer_path(), 'Release', self.get_app_install_dir())
 
-        ensure_site_config_present(os.path.join(self._cfg.app_path(), 'Contents', 'Resources', 'Java'))
+        ensure_site_config_present(os.path.join(self._cfg.app_path(), 'Contents', 'Resources', 'site-config.lproj'),
+                                   'locversion.plist')
 
         print 'starting cli...'
         case.background.start_process(get_cfg().get_ui_cmd(), key=get_cfg().get_ui_name())
