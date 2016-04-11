@@ -116,8 +116,16 @@ def save_error(subdomain):
 # First we begin by upgrading the x most used instances where x is the number
 # of reserved instances.
 @celery.task()
-def upgrade_multiple_instances(instances_to_upgrade):
+def upgrade_multiple_instances(server_list_to_upgrade=[]):
+    instances_to_upgrade = sort_server_by_num_deployments()
     upgrade_single_instance_tasks = []
+
+    # Getting the list of instances we want to upgrade if we don't want to upgrade
+    # them all
+    if server_list_to_upgrade:
+        instances_to_upgrade = [instance for instance in instances_to_upgrade
+                                 if instance.id in server_list_to_upgrade]
+
     most_used_instances = instances_to_upgrade[:NUM_RESERVED_INSTANCES]
     least_used_instances = instances_to_upgrade[NUM_RESERVED_INSTANCES:]
 
