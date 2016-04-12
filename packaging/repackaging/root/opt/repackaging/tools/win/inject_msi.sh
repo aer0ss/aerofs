@@ -29,8 +29,6 @@ cp "${BASE_MSI}" "${TEMP_MSI}"
 SITE_CONFIG_TARGET="${WORKSPACE}/${FILE_ID}"
 
 cp "${SITE_CONFIG}" "${SITE_CONFIG_TARGET}"
-echo "" >> "${SITE_CONFIG_TARGET}"
-echo -n "updater.installer.url=" >> "${SITE_CONFIG_TARGET}"
 
 # inject the enterprise site config into the archive
 pushd "${WORKSPACE}" >>/dev/null

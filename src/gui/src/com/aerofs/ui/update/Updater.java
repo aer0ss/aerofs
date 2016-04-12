@@ -71,9 +71,7 @@ public abstract class Updater
 
     protected static final Logger l = Loggers.getLogger(Updater.class);
 
-    private static final String PROD_INSTALLER_URL = "https://cache.client.aerofs.com";
-    private static final String INSTALLER_URL = getStringProperty("updater.installer.url",
-            PROD_INSTALLER_URL);
+    private static final String INSTALLER_URL = getStringProperty("updater.installer.url");
 
     private String _installationFilename = "";
 
