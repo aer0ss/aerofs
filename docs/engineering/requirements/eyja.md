@@ -156,25 +156,78 @@ When a user deletes a file that belongs to a shared folder:
 	* File disappears from My Files
 	* Users can download the deleted file by clicking on the file update.
 	
-`Channel Shared Folder Deletion`
-When a user deletes a channel shared folder:
+`Shared Folder Deletion`
+When a user deletes a shared folder on the desktop:
 
-	* The conversation shows you 
+	* The user does not leave the conversation.  
+	* If the user tries to sync a new file from the conversation ('sync a file' button, or drag and drop), a message states that the user must sync the shared folder again, and prompts for confirmation to sync the shared folder and sync the file.
+	* If the user tries to download a file from the conversation, a message suggests to the user that she would have a better experience syncing the shared folder again. The user can dismiss the message, and she can opt in to never seeing the message again. 
 	
-`Direct Conversation Shared Folder Deletion`
-When a user deletes a direct conversation shared folder:
-	
-	* 
-
 <br><br>
 
-### Transitioning AeroFS to Eyja
+### Current Customers
 
 	* Current customers that do not want to use Eyja can continue doing so.
 	* Current customers that want to try out Eyja can install a separate application.
-	* Current customers that want to convert to Eyja install a separate application and move folders (either manually or through script)
+	* Current customers that want to convert to Eyja install a separate application and move folders (either manually or through script).
+	
 	
 <br><br>
+
+### Links
+
+Create/Copy a link:
+
+	* If a link with no restrictions exist, copy the link
+	* Otherwise, create a new link.
+	* A link can be restricted in My Files. (not supporting the case would take more time)
+	
+<br><br>
+
+### Product Variants from AeroFS
+
+`Remove`
+remove it from UI and code
+
+`Hide` 
+hide it from UI, keep it in code
+
+Right-Click Desktop  
+ 
+* Replace: 'Shared Folder...' with 'Share on Eyja...'
+* Add: 'View Conversation' (shared folders)
+	
+Menu Bar
+
+* Remove: 'Manage Shared Folder'
+
+My Files Non-Admin
+
+_The left menu is removed_
+
+* Replace: Folder/File > 'Actions' > 'Share Folder' with 'Share on Eyja'. Link goes to Create a New Channel page in /messages
+* Replace: Folder/File > 'Actions' > 'Manage Sharing' destination. Link goes to the conversation in /messages
+* Replace: 'Install' with 'Download Eyja'
+* Add: Folder/File > 'Actions' > 'View Conversation'
+* Hide: 'Pending Invitations' (we might need when people want to control what is downloaded)
+* Hide: 'My devices' (screen should be moved to settings)
+* Hide: 'My Organization' > 'Groups' (we will need once we add Groups to UX)
+* Remove: Footer
+* Remove: 'Manage Shared Folders'
+* Remove: 'My Organization' > 'Users' (for non-admins)
+* Remove: 'My apps'
+* Remove: 'API Access Tokens'
+* Remove: 'You have been an AeroFS member...'
+
+My Files Admin
+
+<to be written>
+
+
+Brand
+
+* Replace: All references to 'AeroFS' (not ready)
+* Replace: New styling (not ready)
 
 
 
