@@ -140,11 +140,6 @@ Direct Conversation with 'Yuri Sagalov'
 
 <br><br>
 
-
-
-# In Review
-
-
 ### Desktop Deletions
 
 `File Deletion`
@@ -165,15 +160,6 @@ When a user deletes a shared folder on the desktop:
 	
 <br><br>
 
-### Current Customers
-
-	* Current customers that do not want to use Eyja can continue doing so.
-	* Current customers that want to try out Eyja can install a separate application.
-	* Current customers that want to convert to Eyja install a separate application and move folders (either manually or through script).
-	
-	
-<br><br>
-
 ### Links
 
 Create/Copy a link:
@@ -183,6 +169,14 @@ Create/Copy a link:
 	* A link can be restricted in My Files. (not supporting the case would take more time)
 	
 <br><br>
+
+
+
+
+# In Review
+
+<br><br>
+
 
 ### Product Variants from AeroFS
 
@@ -210,18 +204,24 @@ _The left menu is removed_
 * Replace: 'Install' with 'Download Eyja'
 * Add: Folder/File > 'Actions' > 'View Conversation'
 * Hide: 'Pending Invitations' (we might need when people want to control what is downloaded)
-* Hide: 'My devices' (screen should be moved to settings)
 * Hide: 'My Organization' > 'Groups' (we will need once we add Groups to UX)
+* Hide: 'Manage Shared Folders'
+* Move: 'My devices' (screen should be moved to settings)
+* Move: 'Invite a Team Member to AeroFS' (should be in header)
 * Remove: Footer
-* Remove: 'Manage Shared Folders'
 * Remove: 'My Organization' > 'Users' (for non-admins)
 * Remove: 'My apps'
 * Remove: 'API Access Tokens'
-* Remove: 'You have been an AeroFS member...'
+* Remove: 'You have been an AeroFS member since...'
 
 My Files Admin
 
-<to be written>
+* Same edits as non-admin, except left menu is kept. 
+* My Organization is a separate page. There is a 'My organization' link in the name dropdown (top-right). The link goes to Users page
+* Add: left menu: Billing
+* Hide: Groups
+* Hide: Shared folders
+* Hide: Team servers
 
 
 Brand
@@ -274,7 +274,7 @@ In addition to everything a user can do, an admin can:
 
 	* invite new users
 	* delete users
-	* ?
+	* set them as admin
 	
 	
 <br><br>
