@@ -145,8 +145,9 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 		log.Println("Symlink...")
 		if err = os.Symlink(next, lnk); err != nil {
 			log.Printf("Failed to symlink: %s\n", err.Error())
+		} else {
+			next = lnk
 		}
-		next = lnk
 	} else {
 		log.Printf("Failed to remove current symlink: %s\n", err.Error())
 	}

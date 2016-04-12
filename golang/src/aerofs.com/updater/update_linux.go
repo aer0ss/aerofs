@@ -78,8 +78,14 @@ func LaunchAero(exec string, fwd []string) error {
 
 	LaunchIfMatching(approot, launcher, args)
 
+	// convert GOARCH value if needed
+	arch := runtime.GOARCH
+	if arch == "386" {
+		arch = "i386"
+	}
+
 	inst, err := Update(filepath.Join(path, "site-config.properties"),
-		fmt.Sprintf(settings.manifest, runtime.GOARCH),
+		fmt.Sprintf(settings.manifest, arch),
 		approot,
 		version,
 	)
