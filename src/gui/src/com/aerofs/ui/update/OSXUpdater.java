@@ -27,10 +27,23 @@ class OSXUpdater extends Updater
     {
         l.info("update to version {}", newVersion);
 
-        InjectableFile packageRoot = _factFile.create("/Applications/" + L.productSpaceFreeName() + ".app");
-        l.debug("packageRoot is {}", packageRoot.getAbsolutePath());
-        InjectableFile appRoot = _factFile.create(AppRoot.abs());
-        l.debug("appRoot is {}", appRoot.getAbsolutePath());
+        // detect and support being run outside of /Applications (e.g. ~/Applications)
+        // NB: the golang updater which chainloads the C launcher passes the launcher path as an
+        // env var. Walk upwards out of Content/MacOS to the root of the app bundle
+        String appname = L.productSpaceFreeName() + ".app";
+        String pkg = System.getenv("AERO_APP_PATH");
+        if (!pkg.isEmpty()) {
+            pkg = _factFile.create(pkg).getParentFile().getParent();
+        }
+        l.info("package path from env {}", pkg);
+        // fallback to default system-wide install path if the env var is missing or invalid
+        if (!pkg.endsWith("/" + appname)) {
+            pkg = "/Applications/" + appname;
+            l.info("fallback package path {}", pkg);
+        }
+
+        String appRoot = AppRoot.abs();
+        l.debug("appRoot is {}", appRoot);
 
         try {
             InjectableFile upFile = _factFile.createTempFile(L.productUnixName() +
@@ -51,8 +64,8 @@ class OSXUpdater extends Updater
 
             if (hasPermissions) {
                 SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
-                        packageRoot.getAbsolutePath(),
-                        appRoot.getAbsolutePath(),
+                        pkg,
+                        appRoot,
                         Util.join(Cfg.absRTRoot(), ClientParam.UPDATE_DIR, installerFilename),
                         newVersion,
                         System.getenv("USER"));
@@ -62,8 +75,7 @@ class OSXUpdater extends Updater
                 // the update must be executed as the user who originally
                 // copied AeroFS into the /Applications folder
                 OutArg<String> username = new OutArg<String>();
-                SystemUtil.execForeground(username, "stat", "-f", "%Su",
-                        packageRoot.getAbsolutePath());
+                SystemUtil.execForeground(username, "stat", "-f", "%Su", pkg);
 
                 UI.get().show(MessageType.WARN, L.product() +
                                                 " updates can only be applied from the account which" +

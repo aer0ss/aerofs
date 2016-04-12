@@ -35,8 +35,11 @@ func Launch(launcher string, args []string) error {
 		return err
 	}
 
-	if err := syscall.Exec(launcher, args, os.Environ()); err != nil {
-		return fmt.Errorf("Could not run launcher:\n%s", launcher, args, os.Environ(), err.Error())
+	env := os.Environ()
+	env = append(env, "AERO_APP_PATH="+filepath.Dir(launcher))
+
+	if err := syscall.Exec(launcher, args, env); err != nil {
+		return fmt.Errorf("Could not run launcher:\n%s", launcher, args, env, err.Error())
 	}
 	return nil
 }
