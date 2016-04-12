@@ -9,7 +9,6 @@ if 'win32' not in sys.platform.lower():
 from syncdet.case import background
 
 from aerofs_common.param import POLLING_INTERVAL
-from aerofs_ritual.cygpathtools import cygpath_to_winpath
 from lib import ritual
 from cfg import get_cfg, BaseLinuxCfg, BaseWin32Cfg, BaseOSXCfg
 

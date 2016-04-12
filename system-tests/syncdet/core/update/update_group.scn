@@ -1,0 +1,2 @@
+:group update_group
+    core.update.should_upgrade

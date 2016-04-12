@@ -8,6 +8,7 @@
 :include ../core/meta_conflict/gt_2_clients_group.scn
 :include ../core/anti_entropy/test_anti_entropy_group.scn
 :include ../api/test_api_n_clients_group.scn
+:include ../core/update/update_group.scn
 :include cleanup.scn
 
 :scn,nofail all
@@ -22,6 +23,7 @@
         meta_conflict_gt_2_group()
         anti_entropy_group()
         api_n_group()
+        update_group()
 
 :serial
     all()

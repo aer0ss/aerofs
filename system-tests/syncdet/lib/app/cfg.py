@@ -8,7 +8,6 @@ import os.path
 import platform
 import sys
 import uuid
-import getpass
 
 from syncdet import case
 

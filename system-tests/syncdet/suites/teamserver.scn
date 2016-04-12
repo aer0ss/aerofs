@@ -1,12 +1,14 @@
 :include ../core/block_storage/teamserver/teamserver_group.scn
 :include ../api/test_api_n_clients_group.scn
 :include ../api/test_api_teamserver_group.scn
+:include ../core/update/update_group.scn
 
 :scn,nofail teamserver_group_test
     :serial
        teamserver_group()
        api_n_group()
        api_teamserver_group()
+       update_group()
 
 :serial
     teamserver_group_test()
