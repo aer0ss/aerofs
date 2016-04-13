@@ -1,4 +1,4 @@
-
+I
 Eyja 
 ====
 
@@ -223,6 +223,20 @@ My Files Admin
 * Hide: Shared folders
 * Hide: Team servers
 
+Appliance Admin
+
+Bunker won't exist, but here are some features we might enable later: 
+ 
+* Customization
+* Mobile Device Management
+* Identity
+* Email Integration
+* New User Invitation
+* Link Sharing
+* Password Restrictions
+* System Status
+
+
 
 Brand
 
@@ -336,6 +350,10 @@ should throw an error that it cannot be done.
 
 
 ### Reactions
+
+### External Sharing
+
+* single-channel sharing (free user)
 
 
 ### Stuff
