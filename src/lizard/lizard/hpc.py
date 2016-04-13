@@ -339,10 +339,12 @@ def delete_deployment(deployment, upgrade=False):
         # This may fail if the server is unreachable
         # Just ignore any errors for now. In the future we might want to ask the user.
         delete_containers(deployment)
+        # Store if the containers have been deleted or not
+        deleted = True
     except Exception as ex:
         current_app.logger.warn("Deleting deployment: Ignoring exception %s \
                 while deleting containers. ", ex)
-        return False
+        deleted = False
 
     delete_subdomain(deployment)
     hosting_server_id = deployment.server_id
@@ -352,8 +354,10 @@ def delete_deployment(deployment, upgrade=False):
         db.session.commit()
 
     delete_server_if_empty(hosting_server_id)
-
-    return True
+    if deleted:
+        return True
+    else:
+        return False
 
 
 # This function returns the list of instances sorted by the number of deployments
