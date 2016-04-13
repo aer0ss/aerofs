@@ -115,6 +115,7 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 	fetcher := &HttpFetcher{
 		BaseURL:   url.Scheme + "://" + url.Host + "/static/updates/data",
 		Transport: transport,
+		TmpDir:    filepath.Join(approot, "dl"),
 	}
 
 	current := InstallPath(approot, version)

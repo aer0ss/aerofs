@@ -42,7 +42,11 @@ func UpdateFile(dst, h string, fetcher ContentFetcher) error {
 	if err != nil {
 		return fmt.Errorf("Could not fetch update:\n%s", err.Error())
 	}
-	return os.Rename(tmp, dst)
+	if err = os.Rename(tmp, dst); err != nil {
+		_, err = CopyFile(dst, tmp)
+		os.Remove(tmp)
+	}
+	return err
 }
 
 func UnmarshalFile(mc interface{}) (string, os.FileMode, error) {

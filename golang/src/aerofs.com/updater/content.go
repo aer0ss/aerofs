@@ -28,6 +28,7 @@ type ContentStore interface {
 type HttpFetcher struct {
 	BaseURL   string
 	Transport *http.Transport
+	TmpDir    string
 }
 
 func (f *HttpFetcher) Fetch(hash string) (string, error) {
@@ -39,23 +40,23 @@ func (f *HttpFetcher) Fetch(hash string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Could not get fetch url:\n%s", err.Error())
 	}
+	log.Printf("  length %s\n", resp.Header.Get("Content-Length"))
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("Unexpected %s", resp.Status)
 	}
-	tmp := filepath.Join(os.TempDir(), hash)
-	os.MkdirAll(os.TempDir(), 0755) // os.TempDir() sometimes doesn't exist on Darwin
-	os.Remove(tmp)
+	os.MkdirAll(f.TmpDir, 0755)
+	tmp := filepath.Join(f.TmpDir, hash)
 	file, err := os.Create(tmp)
 	if err != nil {
 		return "", fmt.Errorf("Could not create temp file:\n%s", err.Error())
 	}
-	if _, err = io.Copy(file, resp.Body); err != nil {
-		file.Close()
+	_, err = io.Copy(file, resp.Body)
+	file.Close()
+	if err != nil {
 		os.Remove(tmp)
 		return "", fmt.Errorf("Could not copy update:\n%s", err.Error())
 	}
-	file.Close()
 	return tmp, nil
 }
 
