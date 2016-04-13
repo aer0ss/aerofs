@@ -9,6 +9,7 @@ import (
 	"aerofs.com/sloth/dao"
 	. "aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
+	"aerofs.com/sloth/index"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
@@ -35,6 +36,7 @@ type context struct {
 	polarisClient   *polaris.Client
 	lipwigClient    *lipwig.Client
 	sidMap          asynccache.Map
+	idx             *index.Index
 }
 
 //
@@ -51,7 +53,7 @@ func BuildRoutes(
 	spartaClient *sparta.Client,
 	polarisClient *polaris.Client,
 	lipwigClient *lipwig.Client,
-
+	idx *index.Index,
 ) *restful.WebService {
 	ctx := &context{
 		broadcaster:     broadcaster,
@@ -63,6 +65,7 @@ func BuildRoutes(
 		lipwigClient:    lipwigClient,
 		polarisClient:   polarisClient,
 		sidMap:          asynccache.New(createSharedFolderFunc(db, spartaClient, lipwigClient)),
+		idx:             idx,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)

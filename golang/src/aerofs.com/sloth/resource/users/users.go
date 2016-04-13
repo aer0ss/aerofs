@@ -7,6 +7,7 @@ import (
 	"aerofs.com/sloth/dao"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
+	"aerofs.com/sloth/index"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	. "aerofs.com/sloth/structs"
@@ -24,6 +25,7 @@ type context struct {
 	lastOnlineTimes *lastOnline.Times
 	pushNotifier    push.Notifier
 	spartaClient    *sparta.Client
+	idx             *index.Index
 }
 
 //
@@ -38,7 +40,7 @@ func BuildRoutes(
 	checkUser restful.FilterFunction,
 	updateLastOnline restful.FilterFunction,
 	spartaClient *sparta.Client,
-
+	idx *index.Index,
 ) *restful.WebService {
 	ctx := &context{
 		broadcaster:     broadcaster,
@@ -46,6 +48,7 @@ func BuildRoutes(
 		lastOnlineTimes: lastOnlineTimes,
 		pushNotifier:    pushNotifier,
 		spartaClient:    spartaClient,
+		idx:             idx,
 	}
 	ws := new(restful.WebService)
 	ws.Filter(checkUser)
@@ -287,6 +290,12 @@ func (ctx *context) updateUser(request *restful.Request, response *restful.Respo
 	errors.PanicAndRollbackOnErr(err, tx)
 
 	dao.CommitOrPanic(tx)
+
+	if (userExists) {
+		(*ctx).idx.IndexExistingUser(*newUser)
+	} else {
+		(*ctx).idx.IndexNewUser(*newUser)
+	}
 
 	response.WriteEntity(newUser)
 	broadcast.SendUserEvent(ctx.broadcaster, uid)

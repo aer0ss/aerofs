@@ -75,6 +75,9 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 			}
 		}()
 	}
+
+	(*ctx).idx.IndexExistingConvo(*updated)
+
 	response.WriteEntity(updated)
 
 	// Broadcast message to the given convo

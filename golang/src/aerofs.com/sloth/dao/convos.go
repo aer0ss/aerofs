@@ -113,12 +113,16 @@ func ConvoExists(tx *sql.Tx, cid string) bool {
 	return true
 }
 
-func GetConvo(tx *sql.Tx, cid, caller string) *Convo {
+func GetMinimumConvo(tx *sql.Tx, cid string) *Convo {
 	// query convos table
 	row := tx.QueryRow(fmt.Sprint(
 		"SELECT ", CONVO_QUERY_COLS, " FROM convos WHERE id=?",
 	), cid)
-	c := parseConvoRow(tx, row)
+	return parseConvoRow(tx, row)
+}
+
+func GetConvo(tx *sql.Tx, cid, caller string) *Convo {
+	c := GetMinimumConvo(tx, cid);
 	if c == nil {
 		return nil
 	}

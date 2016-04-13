@@ -11,12 +11,14 @@ import (
 	"aerofs.com/sloth/broadcast"
 	"aerofs.com/sloth/errors"
 	"aerofs.com/sloth/filters"
+	idx "aerofs.com/sloth/index"
 	"aerofs.com/sloth/lastOnline"
 	"aerofs.com/sloth/push"
 	"aerofs.com/sloth/resource/bots"
 	"aerofs.com/sloth/resource/commands"
 	"aerofs.com/sloth/resource/convos"
 	"aerofs.com/sloth/resource/keepalive"
+	"aerofs.com/sloth/resource/search"
 	pushResource "aerofs.com/sloth/resource/push"
 	"aerofs.com/sloth/resource/token"
 	"aerofs.com/sloth/resource/users"
@@ -24,6 +26,7 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
+	"github.com/blevesearch/bleve"
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/swagger"
 	_ "github.com/go-sql-driver/mysql"
@@ -42,6 +45,13 @@ const TOKEN_CACHE_TIME = time.Minute
 const TOKEN_CACHE_SIZE = 1000
 const HTTP_CLIENT_POOL_SIZE = 20
 const MAX_OPEN_DB_CONNS = 30
+
+// TODO: these paths should be configurable via command-line args
+// Root of the index for searching messages/convos/users
+const INDEX_PATH = "/data/sloth/index"
+// Filename where we store the id of the last indexed message
+const INDEXED_FILENAME = "/data/sloth/indexed"
+const INDEX_INIT_DONE_FILENAME = "/data/sloth/init_done"
 
 //
 // Lipwig Client Config
@@ -154,6 +164,22 @@ func main() {
 			broadcaster)
 	}
 
+	index, err := bleve.Open(INDEX_PATH)
+	if err == bleve.ErrorIndexPathDoesNotExist {
+		log.Print(err)
+		mapping := bleve.NewIndexMapping();
+		index, err = bleve.New(INDEX_PATH, mapping)
+	}
+	errors.PanicOnErr(err)
+	defer index.Close()
+
+	idx := &idx.Index{
+		Index:            index,
+		IndexedFilename:  INDEXED_FILENAME,
+		InitDoneFilename: INDEX_INIT_DONE_FILENAME,
+	}
+	go idx.UpdateIndexJob(db, lastOnlineTimes)
+
 	// intitialize shared filters
 	checkUserFilter := filters.CheckUser(tokenVerifier)
 	updateLastOnlineFilter := filters.UpdateLastOnline(lastOnlineTimes, broadcaster)
@@ -172,6 +198,7 @@ func main() {
 		checkUserFilter,
 		updateLastOnlineFilter,
 		spartaClient,
+		idx,
 	))
 	restful.Add(convos.BuildRoutes(
 		db,
@@ -183,8 +210,16 @@ func main() {
 		spartaClient,
 		polarisClient,
 		lipwigClient,
+		idx,
 	))
 	restful.Add(keepalive.BuildRoutes(
+		checkUserFilter,
+		updateLastOnlineFilter,
+	))
+	restful.Add(search.BuildRoutes(
+		db,
+		idx,
+		lastOnlineTimes,
 		checkUserFilter,
 		updateLastOnlineFilter,
 	))

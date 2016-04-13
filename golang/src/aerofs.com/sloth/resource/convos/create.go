@@ -74,6 +74,8 @@ func (ctx *context) createConvo(request *restful.Request, response *restful.Resp
 		return
 	}
 
+	(*ctx).idx.IndexNewConvo(*convo)
+
 	response.WriteEntity(convo)
 
 	broadcastConvo(ctx.broadcaster, convo)
