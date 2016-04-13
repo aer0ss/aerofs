@@ -23,11 +23,11 @@ RUN curl -L https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/loca
 RUN curl -L https://github.com/aerofs/crane/releases/download/v1.5.1/crane_linux_amd64 -o /usr/local/bin/crane &&\
     chmod +x /usr/local/bin/crane
 
-RUN pip install -r /requirements.txt
-
 EXPOSE 80
 
 # -u to disable console print buffering
 ENTRYPOINT [ "python", "-u", "/main.py" ]
 
 COPY root /
+
+RUN pip install -r /requirements.txt
