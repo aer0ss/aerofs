@@ -113,7 +113,7 @@ func (tc *TokenCreator) CreateToken(uid string) (string, error) {
 	data.Set("client_id", tc.clientId)
 	data.Set("client_secret", tc.clientSecret)
 	data.Set("grant_type", "delegated")
-	data.Set("scope", "files.read,files.write,files.appdata,acl.write")
+	data.Set("scope", "files.read,files.write,files.appdata,acl.read,acl.write")
 	body := strings.NewReader(data.Encode())
 
 	req, err := http.NewRequest("POST", SPARTA_BASE_URL+"/delegate/token", body)
