@@ -45,7 +45,6 @@ func FromConfig(config map[string]string) Mailer {
 	log.Print("smtp port: ", mailer.port)
 	log.Print("smtp sender: ", mailer.sender)
 	log.Print("smtp user: ", mailer.user)
-	log.Print("smtp pass: ", mailer.pass)
 	log.Print("smtp enable TLS: ", mailer.enableTls)
 
 	if mailer.enableTls {
