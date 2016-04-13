@@ -5,7 +5,7 @@ from lib import ritual
 from lib.files import instance_path
 from lib.files import instance_unique_path, wait_file_with_content
 from syncdet.case.sync import sync
-from . import assert_synced, assert_not_synced, wait_synced, wait_not_synced
+from . import wait_synced, wait_not_synced
 
 FILES = 25
 
@@ -31,16 +31,16 @@ def client():
     sync('created')
 
     wait_synced(r, instance_unique_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('foo', 'bar'))
-    assert_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('foo', 'bar'))
+    wait_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
 
     r.exclude_folder(instance_path('foo', 'bar'))
 
     wait_synced(r, instance_unique_path())
     wait_synced(r, instance_path('foo'))
-    assert_not_synced(r, instance_path('foo', 'bar'))
-    assert_not_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
+    wait_not_synced(r, instance_path('foo', 'bar'))
+    wait_not_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
 
     sync('expelled')
     r.include_folder(instance_path('foo', 'bar'))
@@ -49,8 +49,8 @@ def client():
 
     wait_synced(r, instance_path('foo', 'bar', 'baz' + str(FILES - 1)))
     wait_synced(r, instance_unique_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('foo', 'bar'))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('foo', 'bar'))
 
 
 def team_server():

@@ -5,7 +5,7 @@ from lib import ritual
 from lib.files import instance_path
 from lib.files import instance_unique_path, wait_file_with_content
 from syncdet.case.sync import sync
-from . import assert_synced, wait_synced, wait_not_synced
+from . import wait_synced
 
 FILES = 10
 
@@ -25,8 +25,6 @@ def client():
         with open(instance_path('foo', 'bar', 'baz' + str(i)), 'wb') as f:
             f.write('qux')
 
-    wait_not_synced(r, instance_path('foo', 'bar'))
-
     sync('created')
 
     for i in range(FILES):
@@ -35,8 +33,8 @@ def client():
     sync('deleted')
 
     wait_synced(r, instance_unique_path())
-    assert_synced(r, instance_path('foo', 'bar'))
-    assert_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('foo', 'bar'))
+    wait_synced(r, instance_path('foo'))
 
 
 def team_server():

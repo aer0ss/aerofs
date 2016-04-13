@@ -4,7 +4,7 @@ from core.multiroot.teamserver import ts_shared_instance_unique_path
 from lib import ritual
 from lib.files import instance_path, wait_dir, wait_file_with_content
 from syncdet.case.sync import sync
-from . import assert_synced, assert_not_synced, wait_synced, wait_not_synced
+from . import wait_synced, wait_not_synced
 
 FILES = 25
 
@@ -27,22 +27,19 @@ def client():
         with open(instance_path('foo', p, 'baz' + str(i)), 'wb') as f:
             f.write('qux')
 
-    # FIXME: this is probably racy
-    wait_not_synced(r, instance_path())
-
     sync('created')
 
     wait_synced(r, instance_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('foo', p))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('foo', p))
     for i in range(FILES):
-        assert_synced(r, instance_path('foo', p, 'baz' + str(i)))
+        wait_synced(r, instance_path('foo', p, 'baz' + str(i)))
 
     r.exclude_folder(instance_path('foo', p))
 
     wait_synced(r, instance_path())
-    assert_synced(r, instance_path('foo'))
-    assert_not_synced(r, instance_path('foo', p))
+    wait_synced(r, instance_path('foo'))
+    wait_not_synced(r, instance_path('foo', p))
 
     sync('expelled')
 

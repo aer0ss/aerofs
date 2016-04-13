@@ -6,7 +6,7 @@ from lib import ritual
 from lib.files import instance_unique_path
 from lib.files import wait_dir, instance_path
 from syncdet.case.sync import sync
-from . import assert_synced, wait_synced, wait_not_synced
+from . import wait_synced, wait_not_synced
 
 FILES = 10
 
@@ -35,9 +35,9 @@ def client():
     sync('moved')
 
     wait_synced(r, instance_unique_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('baz'))
-    assert_synced(r, instance_path('baz', 'bar'))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('baz'))
+    wait_synced(r, instance_path('baz', 'bar'))
 
 
 def team_server():

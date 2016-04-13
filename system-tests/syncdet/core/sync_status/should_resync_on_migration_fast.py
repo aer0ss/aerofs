@@ -5,7 +5,7 @@ from core.multiroot.teamserver import ts_user_instance_unique_path
 from lib import ritual
 from lib.files import instance_path, wait_file_with_content
 from syncdet.case.sync import sync
-from . import assert_synced, wait_synced, wait_not_synced
+from . import wait_synced
 
 FILES = 25
 
@@ -16,7 +16,6 @@ def client():
 
     r = ritual.connect()
 
-    print "w1"
     wait_synced(r, instance_path(), 150)
     wait_synced(r, instance_path('bar'))
     wait_synced(r, instance_path('foo'))
@@ -30,19 +29,15 @@ def client():
 
     shutil.move(instance_path('foo', 'bar'), instance_path('bar'))
 
-    print "w2"
-    wait_not_synced(r, instance_path('bar'))
-
-    print "w3"
     wait_synced(r, instance_path('foo'))
     wait_synced(r, instance_path())
-    assert_synced(r, instance_path('foo'))
-    assert_synced(r, instance_path('bar'))
-    assert_synced(r, instance_path('bar', 'bar'))
+    wait_synced(r, instance_path('foo'))
+    wait_synced(r, instance_path('bar'))
+    wait_synced(r, instance_path('bar', 'bar'))
     sync('synced')
 
     wait_file_with_content(instance_path('bar', 'bar', 'baz' + str(FILES - 1)), 'qux')
-    assert_synced(r, instance_path('bar', 'bar', 'baz' + str(FILES - 1)))
+    wait_synced(r, instance_path('bar', 'bar', 'baz' + str(FILES - 1)))
 
     sync('migrated')
 
