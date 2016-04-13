@@ -69,7 +69,8 @@ if __name__ == "__main__":
             repo=y['repo'],
             target=y['target'],
             httpd_files=get_files(join(RESOURCES, 'httpd')),
-            extra_files=get_files(argv[2])
+            extra_files=get_files(argv[2]),
+            configurable_registry=argv[6] == "1"
         ))
 
     # Render preload-cloud-config.yml

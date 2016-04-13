@@ -112,6 +112,14 @@ write_files:
       dmesg -n 1
       DONE=0
       TOTAL=0
+
+      {% if configurable_registry %}
+      if [[ ! -f {{ repo_file }} ]]; then
+          read -p "Registry IP/domain name(registry.aerofs.com): " registry
+          registry=${registry:-registry.aerofs.com}
+          echo $registry > {{ repo_file }}
+      fi
+      {% endif %}
       echo 'Loading console service...'
       read_status_json() {
          DONE=$(cat {{ httpd_status_json }} | sed -E 's/.*\"done\":([0-9]+).*/\1/')
@@ -122,19 +130,14 @@ write_files:
       {# We assume the tag file is created _after_ Loader image is pulled and repo file is created. #}
       [[ -f {{ tag_file }} ]] || { echo; echo 'Waiting for application images to be downloaded...'; }
 
-      while [[ ! -f {{ tag_file }} || (${TOTAL} == 0 || ${DONE} != ${TOTAL}) ]]
-      do
+      while [[ ! -f {{ tag_file }} || (${TOTAL} == 0 || ${DONE} != ${TOTAL}) ]]; do
             read_status_json
-            if [[  ${TOTAL} == 0 ]]
-            then
+            if [[  ${TOTAL} == 0 ]]; then
                 echo -ne "Getting list of images to download...\r"
             else
-                if [[ $new_line_flag == 1 ]]
-                then
-                    echo -ne '\n'
-                    new_line_flag=0
-                fi
+                if [[ $new_line_flag == 1 ]]; then echo -ne '\n';new_line_flag=0; fi
                 echo -ne "${DONE} of ${TOTAL} downloaded\r"
+
             fi
             sleep 5
       done
@@ -166,7 +169,16 @@ write_files:
 
       {# Write repo and target files #}
       mkdir -p {{ loader_run }}
-      [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
+      {
+        {% if configurable_registry %}
+          while true; do
+              if  [[ -f {{ repo_file }} ]];then break; fi
+              sleep 2
+          done
+        {% else %}
+          [[ -f {{ repo_file }} ]] || echo '{{ repo }}' > {{ repo_file }}
+        {% endif %}
+      }
       [[ -f {{ target_file }} ]] || echo '{{ target }}' > {{ target_file }}
 
       {# Set total to 0 if unknown #}

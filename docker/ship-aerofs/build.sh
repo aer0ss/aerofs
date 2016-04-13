@@ -19,6 +19,8 @@ THIS_DIR="$(dirname $0)"
 
 SHIP_YML="$("${THIS_DIR}/render-ship-yml.sh" $LOADER)"
 
-"${THIS_DIR}/../ship/vm/build.sh" "${OUTPUT}" "${SHIP_YML}" "" "${OUTPUT_DIR}" $@
+
+PROD_ALLOWS_CONFIGURABLE_REGISTRY=1
+"${THIS_DIR}/../ship/vm/build.sh" "${OUTPUT}" "${SHIP_YML}" "" "${OUTPUT_DIR}" "${PROD_ALLOWS_CONFIGURABLE_REGISTRY}" $@
 
 rm "${SHIP_YML}"

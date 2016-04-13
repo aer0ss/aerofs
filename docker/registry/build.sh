@@ -14,4 +14,5 @@ done
 # Verify Loader
 docker run --rm aerofs/registry.loader verify aerofs/registry.loader
 
-"${THIS_DIR}/../ship/vm/build.sh" cloudinit "${THIS_DIR}/ship.yml" "${THIS_DIR}/keys" "${THIS_DIR}/../../out.ship/registry" $@
+PROD_ALLOWS_CONFIGURABLE_REGISTRY=0
+"${THIS_DIR}/../ship/vm/build.sh" cloudinit "${THIS_DIR}/ship.yml" "${THIS_DIR}/keys" "${THIS_DIR}/../../out.ship/registry" "${PROD_ALLOWS_CONFIGURABLE_REGISTRY}" $@

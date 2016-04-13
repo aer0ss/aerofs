@@ -6,9 +6,11 @@ set -eu
 # https://github.com/docker/docker/issues/1916.
 #
 
-if [ $# != 5 ]; then
-    echo "Usage: $0 <0|1> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> <tag>"
+if [ $# != 6 ]; then
+    echo "Usage: $0 <0|1> <path_to_ship.yml> <path_to_extra_files> <path_to_output_folder> <tag> <0|1>"
     echo "          The first argument specifies whether to generate the VDI image for the Preloaded VM"
+    echo "          The last argument specifies if the cloud config file is being generated to allow a"
+    echo "          configurable registry or not."
     exit 11
 fi
 GENERATE_PRELOAD_VDI="$1"
@@ -16,12 +18,13 @@ SHIP_YML="$2"
 EXTRA_FILES="$3"
 OUT="$4"
 TAG="$5"
+CONFIGURABLE_REGISTRY="$6"
 
 DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # Generate cloud-config files
 mkdir -p "${OUT}/preloaded"
-"${DIR}/render-cloud-configs.py" "${SHIP_YML}" "${EXTRA_FILES}" "${OUT}/cloud-config.yml" "${OUT}/preload-cloud-config.yml" "${TAG}"
+"${DIR}/render-cloud-configs.py" "${SHIP_YML}" "${EXTRA_FILES}" "${OUT}/cloud-config.yml" "${OUT}/preload-cloud-config.yml" "${TAG}" "${CONFIGURABLE_REGISTRY}"
 
 # Generate VDI for Preload VM
 if [ "${GENERATE_PRELOAD_VDI}" = 1 ]; then
