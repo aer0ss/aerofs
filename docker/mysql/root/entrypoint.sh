@@ -10,6 +10,21 @@ if [ "${1:0:1}" = '-' ]; then
 fi
 
 if [ "$1" = 'mysqld_safe' ]; then
+	# Adjust mysql settings on beefy machines.
+	# N.B. This value is the host's max memory. If the container has been run
+	# with a memory modification flag (`docker run -m 1024m ...`), this is
+	# inaccurate
+	FREE_MEM=$(free -b | grep Mem: | cut -d ' ' -f 5)
+	# N.B. Though this value is accurate when the container is run with a
+	# memory limit, this value is... slightly too high... in the standard case.
+	# $ docker run --rm alpine:3.3 grep hierarchical_memory_limit /sys/fs/cgroup/memory/memory.stat
+	# hierarchical_memory_limit 9223372036854771712
+	# Yes, that's supposed to be in bytes.
+	CGROUP_MEM=$(grep hierarchical_memory_limit /sys/fs/cgroup/memory/memory.stat | cut -d ' ' -f 2)
+
+	ACTUAL_MEM_LIMIT=$(( FREE_MEM < CGROUP_MEM ? FREE_MEM : CGROUP_MEM ))
+	[ $ACTUAL_MEM_LIMIT -gt $(( 3 * 1024 * 1024 * 1024 )) ] && sed -i "s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" /etc/mysql/my.cnf
+
 	DATADIR="/var/lib/mysql/"
 	if [ ! -d "$DATADIR/mysql" ]; then
 		mkdir -p "$DATADIR"
