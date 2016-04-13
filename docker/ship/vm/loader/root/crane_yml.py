@@ -1,3 +1,4 @@
+from docker import Client
 from re import compile
 import yaml
 import jinja2
@@ -43,7 +44,10 @@ def get_port_number(subdomain, port_name, default_value):
     On PC (ie: subdomain is None), just return the default value
     """
     if subdomain:
-        r = requests.get('http://hpc-port-allocator.service/ports/{}/{}'.format(subdomain, port_name))
+        # Get the docker client
+        client = Client(base_url='unix://var/run/docker.sock', version='auto')
+        port_allocator_IP_address = client.inspect_container('hpc-port-allocator')['NetworkSettings']['IPAddress']
+        r = requests.get('http://{}/ports/{}/{}'.format(port_allocator_IP_address, subdomain, port_name))
         r.raise_for_status()
         return int(r.text)
     else:
