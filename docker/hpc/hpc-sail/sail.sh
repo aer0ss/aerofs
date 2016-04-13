@@ -40,7 +40,6 @@ IMAGE="$REPO/aerofs/loader:$TAG"
 docker run --detach                                           \
     --name $NAME                                              \
     --restart=always                                          \
-    --link=hpc-port-allocator:hpc-port-allocator.service      \
     -v /var/run/docker.sock:/var/run/docker.sock              \
     -v $DIR/repo:/repo                                        \
     -v $DIR/tag:/tag                                          \
