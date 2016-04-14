@@ -195,7 +195,7 @@ If easy, make quotas variables configurable.
 
 	* Storage quota is at the team level. Say 2Gb size limit for the free plan.
 	* Files that are shared count against the quota only once (no double couting a file shared between 2 people)
-	* When team reaches the quota, existing files still sync. New files cannot be uploaded until upgrading. 
+	* When team reaches the quota, existing files still sync, unless new versions exceed the storage limit. New files cannot be uploaded until upgrading to the paid tier. 
 
 `Message Search Quotas`
 
