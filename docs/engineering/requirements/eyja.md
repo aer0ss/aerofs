@@ -175,9 +175,40 @@ Create/Copy a link:
 
 # In Review
 
+Section is under discussion. If you need any of the things below to move forward, let's talk. 
+
+
 <br><br>
 
 
+### Quotas
+
+`Quota variables`
+
+	* storage quota
+	* message retrieval quota
+	* apps integration quota
+	
+If easy, make quotas variables configurable. 
+
+`Storage Quotas`
+
+	* Storage quota is at the team level. Say 2Gb size limit for the free plan.
+	* Files that are shared count against the quota only once (no double couting a file shared between 2 people)
+	* When team reaches the quota, existing files still sync. New files cannot be uploaded until upgrading. 
+
+`Message Search Quotas`
+
+	* Message quota is a team level.Say up to 10,000 messages searchable.
+
+`Apps Integration Quotas`
+
+	* Third-party Apps are at the team level.
+	* When team reaches the quota, existing third-party apps integrations still work. Users cannot add a new third-party app until upgrading. 
+	
+
+	
+	
 ### Product Variants from AeroFS
 
 `Remove`
