@@ -14,7 +14,7 @@
     </style>
 </%block>
 
-<form role="form" method="post" action="${request.route_path('setup_submit_data_collection_form')}">
+<form role="form" method="post" action="${request.route_path('setup_create_or_restore_appliance')}">
     ${csrf.token_input()}
     <p>Please select your next step:</p>
 
@@ -32,17 +32,6 @@
         <div class="help-block">
             Backup files are in the format of <em>${example_backup_download_file_name}</em>
         </div>
-    </div>
-
-    <hr />
-
-    <div class="checkbox">
-        <label>
-            <input type="checkbox" id="data-collection" name="data-collection" checked />
-            Allow AeroFS to collect setup experience for trial licenses.
-            <a href="https://support.aerofs.com/hc/en-us/articles/201439624"
-               target="_blank">Read more.</a>
-        </label>
     </div>
 </form>
 

@@ -159,13 +159,12 @@ def preview_license(request):
 # ------------------------------------------------------------------------
 
 @view_config(
-    route_name='setup_submit_data_collection_form',
+    route_name='setup_create_or_restore_appliance',
     permission='maintain',
     request_method='POST'
 )
-def setup_submit_data_collection_form(request):
-    enable = request.params.get('data-collection', False)
-    _set_data_collection(request, enable)
+def setup_create_or_restore_appliance(request):
+    _set_data_collection(request, "true")
     set_configuration_started()
     return HTTPFound(location=_get_hostname_page_route_path(request))
 
@@ -190,14 +189,7 @@ def _set_data_collection(request, enable):
 
 
 def _is_data_collection_enabled(conf):
-    enabled = conf['web.enable_appliance_setup_data_collection']
-    # To be safe for the customers, use False as the default
-    enabled = False if not enabled else str2bool(enabled)
-
-    if enabled:
-        # enable only for trial licenses. By default don't enable it, which is
-        # required for older licenses without the trial flag.
-        enabled = str2bool(conf.get('license_is_trial', False))
+    enabled = str2bool(conf.get('license_is_trial', False))
 
     return enabled
 

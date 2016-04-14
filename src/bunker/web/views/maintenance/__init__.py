@@ -3,7 +3,7 @@ from web.util import add_routes
 routes = [
     # Setup
     'setup',
-    'setup_submit_data_collection_form',
+    'setup_create_or_restore_appliance',
     'json_setup_set_restored_from_backup',
     'json_setup_disable_data_collection',
     'json_setup_hostname',
