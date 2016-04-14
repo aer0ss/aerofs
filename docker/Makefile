@@ -2,7 +2,7 @@ GIT_ROOT = $(shell git rev-parse --show-toplevel)
 include $(GIT_ROOT)/Makefile.common
 
 IMAGES:= \
-	aeroim \
+	../src/aeroim-client \
 	../golang/src/aerofs.com/analytics \
 	../golang/src/aerofs.com/analytics-pull \
 	../golang/src/aerofs.com/auditor \
