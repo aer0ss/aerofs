@@ -81,30 +81,30 @@ Then you run the link transform, which winds up splitting the italic-text block 
 ===Transform taxonomy===
 
 Always run:
-  * escape
-  * line-break
+* escape
+* line-break
 
 After that, if any of these match, that's the only transform for the part of the text they match:
-  * code-block
-  * code-inline
-  * emoji
+* code-block
+* code-inline
+* emoji
 
 These transforms may be run on top of each other:
-  * bold
-  * italic
+* bold
+* italic
 
 If any of these match, that's the only remaining transform for the part of the text they match:
-  * tag
-  * my tag
+* tag
+* my tag
 
 If this matches, there may be an additional match (which affects the postfix content). Otherwise no other transforms.
-  * link
-    * youtube
-    * gist
-    * spotify
-    * image
-    * giphy
-    * text
+* link
+  * youtube
+  * gist
+  * spotify
+  * image
+  * giphy
+  * text
 
 === What to do with this data structure ===
 
