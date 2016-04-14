@@ -32,10 +32,12 @@ write_done() {
 write_pulling 0 0
 LOADER_FULL_NAME=${REPO}/${LOADER}:${TAG}
 docker pull ${LOADER_FULL_NAME}
+
 [[ $? = 0 ]] || {
     write_error "Could't pull ${LOADER_FULL_NAME}"
     exit 11
 }
+docker tag -f ${LOADER_FULL_NAME} ${REPO}/${LOADER}:latest
 
 IMAGES="$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_FULL_NAME} images)"
 [[ -n "${IMAGES}" ]] || {
