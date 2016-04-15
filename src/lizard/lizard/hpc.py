@@ -192,12 +192,9 @@ def upgrade_single_instance(server_id):
     server.upgrade_status = False
     db.session.commit()
 
+
 def upgrade_deployment(deployment, server_id=None):
         current_app.logger.info('Upgrade: Backing up {}'.format(deployment.subdomain))
-
-        # Modifying the db for the upgrade
-        deployment.server_id = None
-        db.session.commit()
 
         download_backup_file(deployment.subdomain)
         current_app.logger.info('Upgrade: Deleting {}'.format(deployment.subdomain))
@@ -353,7 +350,12 @@ def delete_deployment(deployment, upgrade=False):
         db.session.delete(deployment)
         db.session.commit()
 
-    delete_server_if_empty(hosting_server_id)
+        delete_server_if_empty(hosting_server_id)
+    else:
+        # Modifying the db for the upgrade
+        deployment.server_id = None
+        db.session.commit()
+
     if deleted:
         return True
     else:
