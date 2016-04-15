@@ -1,6 +1,7 @@
 package bots
 
 import (
+	"aerofs.com/sloth/bots"
 	"aerofs.com/sloth/broadcast"
 	. "aerofs.com/sloth/constants"
 	"aerofs.com/sloth/dao"
@@ -124,7 +125,7 @@ func (ctx *context) newBot(request *restful.Request, response *restful.Response)
 	}
 
 	// Create the bot
-	bot := dao.NewBot(tx, params.Name, params.ConvoId, params.CreatorId)
+	bot := dao.NewBot(tx, params.Name, params.ConvoId, params.CreatorId, params.Type)
 	dao.CommitOrPanic(tx)
 
 	response.WriteEntity(bot)
@@ -211,11 +212,6 @@ func (ctx *context) updateAvatar(request *restful.Request, response *restful.Res
 // Send a message from a bot
 func (ctx *context) newMessage(request *restful.Request, response *restful.Response) {
 	bid := request.PathParameter("bid")
-	params := readMessageParams(request)
-	if params == nil {
-		response.WriteErrorString(400, "Request body must have \"body\" key")
-		return
-	}
 
 	// Verify bot exists
 	tx := dao.BeginOrPanic(ctx.db)
@@ -226,12 +222,19 @@ func (ctx *context) newMessage(request *restful.Request, response *restful.Respo
 		return
 	}
 
+	// Pass bot to common bot handler which should return a (string, error)
+	body, err := ioutil.ReadAll(request.Request.Body)
+	errors.PanicOnErr(err)
+	message, err := botdriver.TransformBotMessage(bot.Type, body, request.Request.Header)
+	errors.PanicOnErr(err)
+
 	// Create message
 	msg := &Message{
-		Time: time.Now(),
-		Body: params.Body,
-		From: bid,
-		To:   bot.ConvoId,
+		Time:   time.Now(),
+		Body:   string(message),
+		From:   bid,
+		To:     bot.ConvoId,
+		IsData: true,
 	}
 	msg = dao.InsertMessage(tx, msg)
 	members := dao.GetMembers(tx, bot.ConvoId)

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const BOT_QUERY_COLUMNS = "id, name, convo_id, ISNULL(avatar), creator_id, creation_time"
+const BOT_QUERY_COLUMNS = "id, name, convo_id, ISNULL(avatar), creator_id, creation_time, type"
 
 // Retrieve a list of all bot users
 func GetAllBots(tx *sql.Tx) []Bot {
@@ -20,7 +20,7 @@ func GetAllBots(tx *sql.Tx) []Bot {
 		var hasNoAvatar bool
 		var creationTime int64
 		err := rows.Scan(&bot.Id, &bot.Name, &bot.ConvoId, &hasNoAvatar, &bot.CreatorId,
-			&creationTime)
+			&creationTime, &bot.Type)
 		errors.PanicOnErr(err)
 
 		if !hasNoAvatar {
@@ -36,8 +36,8 @@ func GetAllBots(tx *sql.Tx) []Bot {
 // Retrieve a single bot user
 func GetBot(tx *sql.Tx, bid string) *Bot {
 	bot := &Bot{Id: bid}
-	err := tx.QueryRow("SELECT name, convo_id, creator_id FROM bots WHERE id=?",
-		bid).Scan(&bot.Name, &bot.ConvoId, &bot.CreatorId)
+	err := tx.QueryRow("SELECT name, convo_id, creator_id, type FROM bots WHERE id=?",
+		bid).Scan(&bot.Name, &bot.ConvoId, &bot.CreatorId, &bot.Type)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -46,20 +46,22 @@ func GetBot(tx *sql.Tx, bid string) *Bot {
 }
 
 // Create a new bot user
-func NewBot(tx *sql.Tx, name, convoId, creatorId string) *Bot {
+func NewBot(tx *sql.Tx, name, convoId, creatorId string, btype int) *Bot {
 	bot := &Bot{
 		Id:          util.GenerateRandomId(),
 		Name:        name,
 		ConvoId:     convoId,
 		CreatorId:   creatorId,
+		Type:        btype,
 		CreatedTime: time.Now(),
 	}
-	_, err := tx.Exec("INSERT INTO bots (id, name, convo_id, creator_id, creation_time) VALUES (?,?,?,?, ?)",
+	_, err := tx.Exec("INSERT INTO bots (id, name, convo_id, creator_id, creation_time, type) VALUES (?,?,?,?,?,?)",
 		bot.Id,
 		bot.Name,
 		bot.ConvoId,
 		bot.CreatorId,
 		bot.CreatedTime.UnixNano(),
+		bot.Type,
 	)
 	errors.PanicAndRollbackOnErr(err, tx)
 	return bot

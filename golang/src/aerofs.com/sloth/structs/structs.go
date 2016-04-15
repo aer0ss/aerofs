@@ -18,6 +18,7 @@ type Bot struct {
 	Id          string    `json:"id"`
 	Name        string    `json:"name"`
 	ConvoId     string    `json:"convoId"`
+	Type        int       `json:"type"`
 	AvatarPath  string    `json:"avatarPath,omitempty"`
 	CreatorId   string    `json:"creatorId"`
 	CreatedTime time.Time `json:"createdTime"`
@@ -83,6 +84,7 @@ type BotWritable struct {
 	Name      string `json:"name"`
 	ConvoId   string `json:"convoId"`
 	CreatorId string `json:"creatorId"`
+	Type      int    `json:"type"`
 }
 
 type DirectConvoWritable struct {
