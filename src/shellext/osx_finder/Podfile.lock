@@ -1,24 +1,19 @@
 PODS:
-  - CocoaAsyncSocket (7.4.2)
+  - CocoaAsyncSocket (7.4.3):
+    - CocoaAsyncSocket/All (= 7.4.3)
+  - CocoaAsyncSocket/All (7.4.3):
+    - CocoaAsyncSocket/GCD
+    - CocoaAsyncSocket/RunLoop
+  - CocoaAsyncSocket/GCD (7.4.3)
+  - CocoaAsyncSocket/RunLoop (7.4.3)
   - ProtobufObjC (0.0.1)
 
 DEPENDENCIES:
-  - CocoaAsyncSocket (from `https://github.com/robbiehanson/CocoaAsyncSocket.git`,
-    commit `6e018ddf7c456106f898efae66ea5e5c94737a96`)
+  - CocoaAsyncSocket (~> 7.4.3)
   - ProtobufObjC (~> 0.0.1)
 
-EXTERNAL SOURCES:
-  CocoaAsyncSocket:
-    :commit: 6e018ddf7c456106f898efae66ea5e5c94737a96
-    :git: https://github.com/robbiehanson/CocoaAsyncSocket.git
-
-CHECKOUT OPTIONS:
-  CocoaAsyncSocket:
-    :commit: 6e018ddf7c456106f898efae66ea5e5c94737a96
-    :git: https://github.com/robbiehanson/CocoaAsyncSocket.git
-
 SPEC CHECKSUMS:
-  CocoaAsyncSocket: 9a291421ca6c4e66ab063c19dbc7c22e911a0a68
+  CocoaAsyncSocket: a18c75dca4b08723628a0bacca6e94803d90be91
   ProtobufObjC: 2e2e5a9d39a3261db9e51f4b90301f17844b08d5
 
 COCOAPODS: 0.39.0
