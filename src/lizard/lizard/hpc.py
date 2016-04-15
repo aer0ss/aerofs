@@ -154,6 +154,7 @@ def upgrade_multiple_instances(server_list_to_upgrade=[]):
 
 @celery.task()
 def upgrade_remaining_deployments(instances_id, server_id=None):
+    current_app.logger.info("Ugrading deployments that are not on Reserved Instances")
     # Getting the id of all the instances that are On Demand Instances (the least
     # crowded instances)
 
@@ -175,6 +176,8 @@ def upgrade_remaining_deployments(instances_id, server_id=None):
 
 @celery.task()
 def upgrade_single_instance(server_id):
+    current_app.logger.info("Upgrading instance {} ".format(server_id))
+
     server = HPCServer.query.get(server_id)
     server.upgrade_status = True
     db.session.commit()
@@ -196,19 +199,40 @@ def upgrade_single_instance(server_id):
 def upgrade_deployment(deployment, server_id=None):
         current_app.logger.info('Upgrade: Backing up {}'.format(deployment.subdomain))
 
-        download_backup_file(deployment.subdomain)
-        current_app.logger.info('Upgrade: Deleting {}'.format(deployment.subdomain))
-        deleted = delete_deployment(deployment, upgrade=True)
-        if deleted:
-            current_app.logger.info('Upgrade: Deployment {} was deleted. Restoring \
-                                    it with latest version images.'.format(deployment.subdomain))
-            create_deployment(deployment.customer,
-                              deployment.subdomain,
-                              restore=True,
-                              server_id=server_id)
+        # We try to download the backup_file 10 times
+        num_retry = 0
+        while True:
+            downloaded = download_backup_file(deployment.subdomain)
+            num_retry += 1
+            if num_retry == 10 or downloaded:
+                break
+            time.sleep(POLLING_INTERVAL)
+
+        if downloaded:
+            current_app.logger.info('Upgrade: Deleting {}'.format(deployment.subdomain))
+
+            # We try to delete the deployment 10 times
+            num_retry = 0
+            while True:
+                deleted = delete_deployment(deployment, upgrade=True)
+                num_retry += 1
+                if num_retry == 10 or deleted:
+                    break
+                time.sleep(POLLING_INTERVAL)
+
+            if deleted:
+                current_app.logger.info('Upgrade: Deployment {} was deleted. Restoring \
+                                        it with latest version images.'.format(
+                    deployment.subdomain))
+                create_deployment(deployment.customer,
+                                  deployment.subdomain,
+                                  restore=True,
+                                  server_id=server_id)
+            else:
+                current_app.logger.warning('Deployment {} was NOT deleted'.format(
+                    deployment.subdomain))
         else:
-            current_app.logger.warning('Deployment {} was NOT deleted'.format(
-                deployment.subdomain))
+            current_app.logger.info("Failed to upgrade deployment {}".format(deployment.subdomain))
 
 
 def create_route53_change(deployment, delete=False):
@@ -329,7 +353,6 @@ def delete_containers(deployment):
 
 # If upgrade is set to True, we remove the containers but do not remove the
 # deployment from the db but just set the server ID to null.
-@celery.task()
 def delete_deployment(deployment, upgrade=False):
     current_app.logger.info("Deleting deployment %s", deployment.subdomain)
     try:
@@ -433,21 +456,18 @@ def check_expired_deployments():
             for admin in admins:
                 notifications.send_hpc_expired_license_email(admin)
 
-            download_backup_file(deployment)
-            backup = current_app.s3.Object(BACKUP_BUCKET, set_backup_name(deployment.subdomain))
-            try:
-                # content_length attributes throws an exception if the backup file
-                # does not exist.
-                backup.content_length
+            downloaded = download_backup_file(deployment.subdomain)
+            if downloaded:
                 # Deleting the deployment
                 delete_deployment(deployment)
-            except botocore.exceptions.ClientError:
+            else:
                 current_app.logger.info("Failed to remove deployment {}".format(
                     deployment.subdomain))
 
 
 @celery.task()
 def download_backup_file(subdomain):
+    current_app.logger.info("Downloading backup file for {}".format(subdomain))
     session = new_authed_session(subdomain)
 
     # Toggling maintenance mode
@@ -457,13 +477,14 @@ def download_backup_file(subdomain):
     # Wait for new boot id, or until we time out
     while True:
         new_id = get_boot_id(session)
-        current_app.logger.debug("New id {}".format(new_id))
+        current_app.logger.info("Backup: Waiting for reboot, new id {}".format(new_id))
         if new_id is not None and new_id != old_id:
             break
 
         time.sleep(POLLING_INTERVAL)
 
     # Generate the backup file
+    current_app.logger.info('Generating the backup file')
     session.post('/admin/json-backup')
 
     # Check when the backup file is ready
@@ -476,9 +497,10 @@ def download_backup_file(subdomain):
                 break
         else:
             current_app.logger.warn('Failed to delete deployment {}'.format(subdomain))
-            return
+            return False
 
-    #Download the backup file into tmp dir and storing it in a S3 bucket
+    current_app.logger.info("Downloading the backup file from the appliance")
+    # Download the backup file into tmp dir and storing it in a S3 bucket
     backup_file = session.get('/admin/download_backup_file')
     backup_name = set_backup_name(subdomain)
     backup_path = os.path.join("/tmp", backup_name)
@@ -486,8 +508,23 @@ def download_backup_file(subdomain):
         for chunk in backup_file.iter_content(chunk_size=1024):
             if chunk:
                 f.write(chunk)
+
+    current_app.logger.info("Uploading the backup file to S3")
     add_backup_s3(backup_name, backup_path)
     os.remove(backup_path)
+
+    # Check that the backup file has been downloaded
+    backup = current_app.s3.Object(BACKUP_BUCKET, set_backup_name(subdomain))
+    try:
+        # content_length attributes throws an exception if the backup file
+        # does not exist.
+        # TODO (DS) Better way to find if the file exists on S3
+        _ = backup.content_length
+        current_app.logger.info("The backup file has been uploaded to S3")
+        return True
+    except botocore.exceptions.ClientError:
+        current_app.logger.warning("Failed to download the backup file")
+        return False
 
 
 def set_backup_name(subdomain):
