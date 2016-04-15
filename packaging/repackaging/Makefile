@@ -21,10 +21,6 @@ endif
 	mkdir -p $(PACKAGES_DEST)
 	$(RSYNC) --link-dest=$(PACKAGES_SRC) $(PACKAGES_SRC) $(PACKAGES_DEST)
 
-	# TODO: Switch to rsync. Until then, don't fail if eyja is missing
-	mkdir -p $(PACKAGES_DEST)/eyja
-	ln -f ~/repos/aeroim-client/dist/final/* $(PACKAGES_DEST)/eyja/ ||:
-
 	mkdir -p $(AEROFS_COMMON_DEST)
 	$(RSYNC) --link-dest=$(AEROFS_COMMON_SRC) $(AEROFS_COMMON_SRC) $(AEROFS_COMMON_DEST)
 

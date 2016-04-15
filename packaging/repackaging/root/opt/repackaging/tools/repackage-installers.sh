@@ -67,33 +67,6 @@ mkdir -p $INSTALLERS/modified
 version="$(cat $INSTALLERS/original/current.ver | awk -F'=' '{print $2}')"
 echo "Repackaging version $version:"
 
-if [ -f $INSTALLERS/original/eyja/Eyja-$version.dmg ]; then
-    echo "Repackaging Eyja OSX installer..."
-    $TOOLS/osx/add_file_to_image.sh \
-        $INSTALLERS/original/eyja/Eyja-$version.dmg \
-        $INSTALLERS/modified/Eyja-$version.dmg \
-        $SITE_PROP \
-        /Eyja.app/Contents/Resources/site-config.properties # sibling to app.asar
-else
-    echo "Skipping missing Eyja OSX installer..."
-fi
-
-for arch in ia32 x64
-do
-    if [ -f $INSTALLERS/original/eyja/eyja-linux-$arch-$version.tar.bz2 ]; then
-        echo "Repackaging Eyja Linux $arch installer..."
-        $TOOLS/linux/add_file_to_tgz.sh \
-            $INSTALLERS/original/eyja/eyja-linux-$arch-$version.tar.bz2 \
-            $INSTALLERS/modified/eyja-linux-$arch-$version.tar.gz \
-            $SITE_PROP \
-            eyja-linux-$arch/resources/site-config.properties # sibling to app.asar
-    else
-        echo "Skipping missing Eyja Linux $arch installer..."
-    fi
-done
-
-# TODO: windows zip
-
 echo "Repackaging Windows installers..."
 cd $TOOLS/win
 for program in AeroFS AeroFSTeamServer
@@ -191,10 +164,6 @@ fi
 
 echo "Making symlinks to versioned packages for unversioned paths..."
 pushd $INSTALLERS/modified > /dev/null
-# Eyja
-ln -s Eyja-$version.dmg                      Eyja.dmg
-ln -s eyja-linux-ia32-$version.tar.gz        eyja-linux-ia32.tar.gz
-ln -s eyja-linux-x64-$version.tar.gz         eyja-linux-x64.tar.gz
 # Windows
 ln -s AeroFSInstall-${version}.exe           AeroFSInstall.exe
 ln -s AeroFSTeamServerInstall-${version}.exe AeroFSTeamServerInstall.exe

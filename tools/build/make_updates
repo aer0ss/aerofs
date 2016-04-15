@@ -4,12 +4,11 @@ set -eu
 include common
 
 function DieUsage {
-    echo >&2 "usage: $0 <version> <sign_mode>"
+    echo >&2 "usage: $0 <version>"
     echo >&2 "       [--build-linux] [--build-windows] [--build-osx]"
     echo >&2 "       [--build-all]"
     echo >&2 " "
     echo >&2 "<version>: formatted <major>.<minor>.<build>"
-    echo >&2 "<sign_mode>: SIGNED|UNSIGNED"
     echo >&2 "[--build-linux]: build the Linux installer .tgz"
     echo >&2 "[--build-windows]: build the Windows installer .exe "
     echo >&2 "[--build-osx]: build the OSX installer/updater packages "
@@ -24,11 +23,7 @@ case ${1:-} in
     '') DieUsage ;;
     *) readonly RELEASE_VERSION=$1 ;;
 esac
-case ${2:-} in
-    SIGNED|UNSIGNED) readonly SIGN_MODE=$2 ;;
-    *) DieUsage ;;
-esac
-shift 2
+shift 1
 
 BUILD_FLAGS=""
 while [ "${1:-}" != "" ]; do
@@ -44,8 +39,8 @@ check_version_format $RELEASE_VERSION
 
 call make_update_resources $RELEASE_VERSION
 for PROD in CLIENT TEAM_SERVER ; do
-    call make_update_manifests $PROD $RELEASE_VERSION $SIGN_MODE $BUILD_FLAGS
-    echo >&2 -e "\033[32mok: \033[0m- updated $PROD-$RELEASE_VERSION ($SIGN_MODE)"
+    call make_update_manifests $PROD $RELEASE_VERSION $BUILD_FLAGS
+    echo >&2 -e "\033[32mok: \033[0m- updated $PROD-$RELEASE_VERSION"
 done
 
 exit 0

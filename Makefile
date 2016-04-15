@@ -99,11 +99,8 @@ endif
 	$(call success,"package_clients")
 
 package_updates: _clean_updates
-ifeq ($(SIGNED),)
-	$(error "SIGNED must be defined to run package_updates.")
-endif
-	$(eval SIGNED_ARG := $(shell [ $(SIGNED) = true ] && echo "SIGNED" || echo "UNSIGNED"))
-	$(GIT_ROOT)/tools/build/bootstrap make_updates $(VERSION) $(SIGNED_ARG) --build-all
+	make -j4 -C $(GIT_ROOT)/src/aeroim-client packages
+	$(GIT_ROOT)/tools/build/bootstrap make_updates $(VERSION) --build-all
 	$(call success,"package_updates")
 
 prepare_syncdet:

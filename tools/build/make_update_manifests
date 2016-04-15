@@ -8,13 +8,12 @@ set -eu
 #########################################################################
 
 function DieUsage {
-    echo >&2 "usage: $0 <build_product> <release_version> <sign_mode>"
+    echo >&2 "usage: $0 <build_product> <release_version>"
     echo >&2 "       [--build-linux] [--build-windows] [--build-osx]"
     echo >&2 "       [--build-all]"
     echo >&2 " "
     echo >&2 "<build_product>: CLIENT|TEAM_SERVER"
     echo >&2 "<release_version>: release version (for example: 0.1.0)"
-    echo >&2 "<sign_mode>: SIGNED|UNSIGNED"
     echo >&2 "[--build-linux]: build the Linux update"
     echo >&2 "[--build-windows]: build the Windows update"
     echo >&2 "[--build-osx]: build the OSX update"
@@ -33,12 +32,7 @@ case ${2:-} in
     '') DieUsage ;;
     *) readonly RELEASE_VERSION=$2 ;;
 esac
-case ${3:-} in
-    SIGNED) readonly SIGNED=true ;;
-    UNSIGNED) readonly SIGNED=false ;;
-    *) DieUsage ;;
-esac
-shift 3
+shift 2
 
 BUILD_LINUX=false
 BUILD_WINDOWS=false
@@ -83,8 +77,16 @@ function make_linux_product_dir() {
 function make_linux_update() {
     local ARCH="$1"
 
-    if is_storage_agent ; then
-        SA_DIR="${CLIENT_LINUX_TEMPLATES_DIR}/storage-agent"
+    if is_client ; then
+        if [[ "$ARCH" == "i386" ]] ; then
+            local ELECTRON_ARCH=ia32
+        elif [[ "$ARCH" == "amd64" ]] ; then
+            local ELECTRON_ARCH=x64
+        else
+            echo "unsupported arch $ARCH"
+            exit 1
+        fi
+        local EYJA_DIR="${GIT_ROOT}/src/aeroim-client/dist/eyja-linux-${ELECTRON_ARCH}"
     fi
 
     $MANIFEST create \
@@ -94,10 +96,10 @@ function make_linux_update() {
         "${LOCAL_LINUX_PRODUCT_DIR}" \
         "${CLIENT_LINUX_RESOURCES_DIR}/shared" \
         "${CLIENT_LINUX_RESOURCES_DIR}/${ARCH}" \
-        ${SA_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
-        "${OTHER_RESOURCES_DIR}:lib"
+        "${OTHER_RESOURCES_DIR}:lib" \
+        ${EYJA_DIR:-}
 }
 
 function make_osx_product_dir() {
@@ -111,7 +113,8 @@ function make_osx_update() {
     # NB: this is the pre-Yosemite shellext which injects code into Finder
     # not the Finder Sync extension which needs to be inside the app bundle
     if is_client ; then
-        SHELLEXT_DIR="${CLIENT_OSX_SHELLEXT_DIR}"
+        local SHELLEXT_DIR="${CLIENT_OSX_SHELLEXT_DIR}"
+        local EYJA_DIR="${GIT_ROOT}/src/aeroim-client/dist/Eyja-mas-x64"
     fi
 
     $MANIFEST create \
@@ -123,7 +126,8 @@ function make_osx_update() {
         ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
-        "${OTHER_RESOURCES_DIR}:lib"
+        "${OTHER_RESOURCES_DIR}:lib" \
+        ${EYJA_DIR:-}
 
     # rename launcher binary to the appropriate name
     sed "s/\"aerofs\":/\"${AEROFS_PRODUCT_UNIX}\":/" \
@@ -135,7 +139,8 @@ function make_osx_update() {
 
 function make_windows_update() {
     if is_client ; then
-        SHELLEXT_DIR="${CLIENT_WIN_SHELLEXT_DIR}"
+        local SHELLEXT_DIR="${CLIENT_WIN_SHELLEXT_DIR}"
+        local EYJA_DIR="${GIT_ROOT}/src/aeroim-client/dist/eyja-win32-ia32"
     fi
 
     $MANIFEST create \
@@ -146,7 +151,8 @@ function make_windows_update() {
         ${SHELLEXT_DIR:-} \
         "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
-        "${OTHER_RESOURCES_DIR}:lib"
+        "${OTHER_RESOURCES_DIR}:lib" \
+        ${EYJA_DIR:-}
 
     # rename launcher binary to the appropriate name
     sed "s/\"aerofs\\.exe\":/\"${AEROFS_PRODUCT_UNIX}.exe\":/" \
