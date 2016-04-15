@@ -5,7 +5,7 @@ from lib import ritual
 from lib.files import instance_path
 from lib.files import instance_unique_path, wait_file_with_content
 from syncdet.case.sync import sync
-from . import wait_synced
+from . import wait_synced, wait_not_synced
 
 FILES = 25
 
