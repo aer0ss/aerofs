@@ -233,7 +233,8 @@ class BaseAeroFSInstaller(object):
 
     def install(self, transport=None, clean_install=True):
         aerofs_proc.stop_all()
-        os.remove(os.path.join(self.get_approot(), "manifest.json"))
+        # no need to remove the full approot
+        rm_rf(os.path.join(self.get_approot(), "manifest.json"))
         #self.remove_approot()
         if clean_install:
             self.remove_root_anchor()
@@ -317,9 +318,10 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
 
     def run_installer(self):
         print 'untaring tgz installer...'
-        rm_rf(self.get_untar_dir())
+        td = self.get_untar_dir()
+        rm_rf(td)
         with tarfile.open(self.get_installer_path()) as tar:
-            tar.extractall(path=os.path.dirname(self.get_untar_dir()))
+            tar.extractall(path=os.path.dirname(td))
 
         if "storage" in self.get_ui_name():
             setup_cmd = ["python {} -f {} -a {} -c {}".format(os.path.join("syncdet", "deploy", "setup_storage_agent.py"),\
@@ -327,11 +329,14 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
             print setup_cmd
             subprocess.check_call(setup_cmd, shell=True)
             # This is overriding default location of the storage_agent.conf file.
-        ensure_site_config_present(self.get_untar_dir())
+        ensure_site_config_present(td)
 
         print 'launch aerofs...'
-        os.rename(self.get_untar_dir(), self.get_approot())
-        untarred_cli_path = os.path.join(self.get_approot(), self.get_ui_name())
+        approot = self.get_approot()
+        for c in os.listdir(td):
+            rm_rf(os.path.join(approot, c))
+            os.rename(os.path.join(td, c), os.path.join(approot, c))
+        untarred_cli_path = os.path.join(approot, self.get_ui_name())
         case.background.start_process([untarred_cli_path], key=get_cfg().get_ui_name())
 
 
