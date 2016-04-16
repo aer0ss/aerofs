@@ -49,9 +49,9 @@ def down_and_up():
     with open(mf, "r") as f:
         m = json.load(f)
 
-    print m["version"]
-    m["version"][1] = hn
-    print m["version"]
+    print m["files"]["version"]
+    m["files"]["version"][1] = hn
+    print m["files"]["version"]
 
     with open(mf, "w") as f:
         json.dump(m, f)
