@@ -32,7 +32,7 @@ func Hash(path string) (string, error) {
 
 func LinkOrCopy(dst, src string) (err error) {
 	if err = os.Link(src, dst); err != nil {
-		_, err = CopyFile(dst, src)
+		_, err = CopyFile(dst, src, nil, nil)
 	}
 	return err
 }
@@ -43,7 +43,7 @@ func UpdateFile(dst, h string, fetcher ContentFetcher) error {
 		return fmt.Errorf("Could not fetch update:\n%s", err.Error())
 	}
 	if err = os.Rename(tmp, dst); err != nil {
-		_, err = CopyFile(dst, tmp)
+		_, err = CopyFile(dst, tmp, nil, nil)
 		os.Remove(tmp)
 	}
 	return err

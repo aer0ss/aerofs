@@ -118,6 +118,9 @@ func ApplyManifest(manifestFile, data, src, dst string) {
 	if err != nil {
 		log.Fatal("failed to read manifest: %s\n", err.Error())
 	}
+	fetcher.SetFormat(manifest["format"].(string))
+	manifest = manifest["files"].(map[string]interface{})
+
 	_, err = os.Stat(dst)
 	if err == nil {
 		if children, err := ioutil.ReadDir(dst); err != nil || len(children) > 0 {
@@ -157,13 +160,13 @@ func SubManifestAt(m Manifest, path string) (Manifest, error) {
 }
 
 func CreateManifest(manifestFile, data string, srcs []string) {
-	var err error
-	store := &LocalStore{
-		BasePath: data,
+	store, err := NewLocalStore(data)
+	if err != nil {
+		log.Fatalf("Invalid store: %s\n", err.Error())
 	}
 	manifest := make(Manifest)
 
-	if err = os.MkdirAll(data, 0755); err != nil && !os.IsExist(err) {
+	if err = os.MkdirAll(store.BasePath, 0755); err != nil && !os.IsExist(err) {
 		log.Fatalf("fail to create data store: %s\n", err.Error())
 	}
 
@@ -181,7 +184,10 @@ func CreateManifest(manifestFile, data string, srcs []string) {
 		}
 	}
 
-	d, err := json.Marshal(&manifest)
+	d, err := json.Marshal(map[string]interface{}{
+		"format": store.Format,
+		"files":  &manifest,
+	})
 	if err != nil {
 		log.Fatalf("failed to serialize %s: %s\n", manifestFile, err.Error())
 	}

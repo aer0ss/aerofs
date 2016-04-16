@@ -47,7 +47,7 @@ func Create(src string, manifest Manifest, store ContentStore) error {
 			}
 			h, err := store.Store(p)
 			if err != nil {
-				return fmt.Errorf("Could not open store:\n%s", err.Error())
+				return fmt.Errorf("Could not store %s\n%s", p, err.Error())
 			}
 			manifest[n] = []interface{}{
 				strconv.FormatInt(int64(c.Mode()&os.ModePerm), 8),

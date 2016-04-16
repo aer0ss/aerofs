@@ -43,6 +43,7 @@ func LaunchIfMatching(approot, launcher string, args []string) {
 		return
 	}
 
+	manifest = manifest["files"].(map[string]interface{})
 	if Match(filepath.Join(approot, "current"), manifest) {
 		log.Println("Matching approot for manifest")
 		if err = Launch(launcher, args); err != nil {
@@ -106,7 +107,7 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 
 	log.Println("Downloading manifest...")
 	manifestUrl := url.Scheme + "://" + url.Host + "/static/updates/" + manifestName
-	manifestFile := filepath.Join(approot, MANIFEST)
+	manifestFile := filepath.Join(approot, MANIFEST+".cand")
 	manifest, err := Download(manifestUrl, manifestFile, transport)
 	if err != nil {
 		return "", fmt.Errorf("Could not download manifests:\n%s", err.Error())
@@ -117,6 +118,12 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 		Transport: transport,
 		TmpDir:    filepath.Join(approot, "dl"),
 	}
+
+	format := manifest["format"].(string)
+	if err = fetcher.SetFormat(format); err != nil {
+		return "", fmt.Errorf("Unsupported data format %s", format)
+	}
+	manifest = manifest["files"].(map[string]interface{})
 
 	current := InstallPath(approot, version)
 	next := InstallPath(approot, version+1)
@@ -152,6 +159,8 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 	} else {
 		log.Printf("Failed to remove current symlink: %s\n", err.Error())
 	}
+
+	os.Rename(manifestFile, filepath.Join(approot, MANIFEST))
 
 	log.Println("Launching...")
 

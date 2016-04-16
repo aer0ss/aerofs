@@ -66,6 +66,8 @@ case $(uname) in
     *) echo >&2 "unsupported platform $(uname)" ; exit 1 ;;
 esac
 
+DFMT=gz
+
 LOCAL_LINUX_PRODUCT_DIR="${LOCAL_RELEASE_DIR}/${LOWERCASE_PRODUCT}-linux"
 LOCAL_OSX_PRODUCT_DIR="${LOCAL_RELEASE_DIR}/${LOWERCASE_PRODUCT}-osx"
 
@@ -87,7 +89,7 @@ function make_linux_update() {
 
     $MANIFEST create \
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-linux-${ARCH}.json" \
-        "${UPDATES_DIR}/data" \
+        "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${LOCAL_LINUX_PRODUCT_DIR}" \
         "${CLIENT_LINUX_RESOURCES_DIR}/shared" \
@@ -114,7 +116,7 @@ function make_osx_update() {
 
     $MANIFEST create \
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-osx.json.base" \
-        "${UPDATES_DIR}/data" \
+        "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${LOCAL_OSX_PRODUCT_DIR}" \
         "${CLIENT_OSX_RESOURCES_DIR}" \
@@ -138,7 +140,7 @@ function make_windows_update() {
 
     $MANIFEST create \
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base" \
-        "${UPDATES_DIR}/data" \
+        "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${CLIENT_WIN_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
