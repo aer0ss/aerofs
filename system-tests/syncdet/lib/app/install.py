@@ -233,7 +233,8 @@ class BaseAeroFSInstaller(object):
 
     def install(self, transport=None, clean_install=True):
         aerofs_proc.stop_all()
-        self.remove_approot()
+        os.remove(os.path.join(self.get_approot(), "manifest.json"))
+        #self.remove_approot()
         if clean_install:
             self.remove_root_anchor()
             self.remove_rtroot()
