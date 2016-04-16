@@ -1,4 +1,4 @@
-FROM registry:2
+FROM registry:2.4
 
 MAINTAINER AeroFS "support@aerofs.com"
 
