@@ -26,21 +26,20 @@ public class SyncStatusPresenceListener implements DeviceAvailabilityListener
 {
     private final static Logger l = Loggers.getLogger(SyncStatusPresenceListener.class);
 
-    private final SyncStatusPropagator _syncStatusPropagator;
     private final SyncStatusOnline _syncStatusOnline;
     private final UserAndDeviceNames _uadn;
 
-    private final Set<DID> reachableStorageAgentDevices;
+    private final Set<DID> _reachableStorageAgentDevices;
 
     @Inject
-    public SyncStatusPresenceListener(SyncStatusPropagator syncStatusPropagator,
-            SyncStatusOnline syncStatusOnline, UserAndDeviceNames uadn, Devices devices) {
-        this._syncStatusPropagator = syncStatusPropagator;
+    public SyncStatusPresenceListener(SyncStatusOnline syncStatusOnline, UserAndDeviceNames uadn,
+            Devices devices) {
         this._syncStatusOnline = syncStatusOnline;
-        this.reachableStorageAgentDevices = ConcurrentHashMap.newKeySet();
         this._uadn = uadn;
 
         devices.addListener_(this);
+
+        this._reachableStorageAgentDevices = ConcurrentHashMap.newKeySet();
     }
 
     @Override
@@ -69,19 +68,11 @@ public class SyncStatusPresenceListener implements DeviceAvailabilityListener
         }
 
         if (isPotentiallyAvailable) {
-            reachableStorageAgentDevices.add(did);
+            _reachableStorageAgentDevices.add(did);
         } else {
-            reachableStorageAgentDevices.remove(did);
+            _reachableStorageAgentDevices.remove(did);
         }
 
-        boolean syncStatusEnabled = reachableStorageAgentDevices.size() > 0;
-        if (_syncStatusOnline.set(syncStatusEnabled)) {
-            l.trace("updateAvailableStorageAgentDIDs_: changed");
-            try {
-                _syncStatusPropagator.notifyRootSyncStatus_();
-            } catch (SQLException e) {
-                l.error("error notifying root sync status", e);;
-            }
-        }
+        _syncStatusOnline.set(_reachableStorageAgentDevices.size() > 0);
     }
 }

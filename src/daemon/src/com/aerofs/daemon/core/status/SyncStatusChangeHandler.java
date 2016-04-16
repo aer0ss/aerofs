@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.status;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
@@ -49,7 +50,7 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
 
     @Override
     public void objectCreated_(SOID soid, OID parent, Path pathTo, Trans t) throws SQLException {
-        logger.trace("ENTER objectCreated_: {}, {}", soid, pathTo);
+        logger.debug("ENTER objectCreated_: {}, {}", soid, pathTo);
         if (this._cfqdb.exists_(soid.sidx(), soid.oid())) {
             if (pathTo instanceof ResolvedPath) {
                 _syncStatusPropagator.updateSyncStatus_(soid, pathTo, false, t);
@@ -61,14 +62,14 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
             // requested its status before the OA was created
             _syncStatusPropagator.forceNotifyListeners(pathTo, IN_SYNC);
         }
-        logger.trace("EXIT objectCreated_: {}, {}", soid, pathTo);
+        logger.debug("EXIT objectCreated_: {}, {}", soid, pathTo);
     }
 
     @Override
     public void objectDeleted_(SOID soid, OID parent, Path pathFrom, Trans t) throws SQLException {
-        logger.trace("ENTER objectDeleted_: {}, {}", soid, pathFrom);
         OA oa = _ds.getOA_(soid);
-        logger.trace("synced: {}, oosChildren: {}", oa.synced(), oa.oosChildren());
+        logger.debug("objectDeleted_: {}, {}, synced: {}, oosChildren: {}", soid, pathFrom, oa.synced(),
+                oa.oosChildren());
         if (oa.isExpelled() && !_syncStatusPropagator.getSync_(oa, t).equals(IN_SYNC)) {
             Path parentPath = pathFrom.removeLast();
             SOID parentSoid = _ds.resolveNullable_(parentPath);
@@ -78,52 +79,51 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
             }
             _syncStatusPropagator.propagateSyncStatus_(parentSoid, parentPath, -1, t);
         }
-        logger.trace("EXIT objectDeleted_: {}, {}", soid, pathFrom);
+        logger.debug("EXIT objectDeleted_: {}, {}", soid, pathFrom);
     }
 
     @Override
     public void objectMoved_(SOID soid, OID parentFrom, OID parentTo, Path pathFrom, Path pathTo,
             Trans t) throws SQLException {
-        logger.trace("ENTER objectMoved_: {}, {} -> {}", soid, pathFrom, pathTo);
+        logger.debug("ENTER objectMoved_: {}, {} -> {}", soid, pathFrom, pathTo);
         if (_syncStatusPropagator.getSync_(soid, t) != IN_SYNC && !parentFrom.equals(parentTo)) {
             _syncStatusPropagator.propagateSyncStatus_(new SOID(soid.sidx(), parentFrom),
                     pathFrom.removeLast(), -1, t);
             _syncStatusPropagator.propagateSyncStatus_(new SOID(soid.sidx(), parentTo),
                     pathTo.removeLast(), 1, t);
         }
-        logger.trace("EXIT objectMoved_: {}, {} -> {}", soid, pathFrom, pathTo);
+        logger.debug("EXIT objectMoved_: {}, {} -> {}", soid, pathFrom, pathTo);
     }
 
     @Override
     public void objectContentCreated_(SOKID sokid, Path path, Trans t) throws SQLException {
-        logger.trace("ENTER objectContentCreated_: {}, {}", sokid.soid(), path);
+        logger.debug("ENTER objectContentCreated_: {}, {}", sokid.soid(), path);
         _syncStatusPropagator.updateSyncStatus_(sokid.soid(), path, false, t);
-        logger.trace("EXIT objectContentCreated_: {}, {}", sokid.soid(), path);
+        logger.debug("EXIT objectContentCreated_: {}, {}", sokid.soid(), path);
     }
 
     @Override
     public void objectContentModified_(SOKID sokid, Path path, Trans t) throws SQLException {
-        logger.trace("ENTER objectContentModified_: {}, {}", sokid.soid(), path);
+        logger.debug("ENTER objectContentModified_: {}, {}", sokid.soid(), path);
         _syncStatusPropagator.updateSyncStatus_(sokid.soid(), path, false, t);
-        logger.trace("EXIT objectContentModified_: {}, {}", sokid.soid(), path);
+        logger.debug("EXIT objectContentModified_: {}, {}", sokid.soid(), path);
     }
 
     @Override
     public void objectContentDeleted_(SOKID sokid, Trans t) throws SQLException {
-        if (logger.isTraceEnabled()) {
-            logger.trace("ENTER objectContentDeleted_: {}, {}", sokid.soid(),
+        if (logger.isDebugEnabled()) {
+            logger.debug("ENTER objectContentDeleted_: {}, {}", sokid.soid(),
                     _ds.resolve_(sokid.soid()));
         }
         _syncStatusPropagator.updateSyncStatus_(sokid.soid(), false, t);
-        logger.trace("EXIT objectContentDeleted_");
+        logger.debug("EXIT objectContentDeleted_");
     }
 
     @Override
     public void objectObliterated_(OA oa, Trans t) throws SQLException {
-        logger.trace("ENTER objectObliterated_: {}, {}", oa.soid(), oa);
         ResolvedPath path = _ds.resolve_(oa);
         SOID soid = _ds.resolveNullable_(path);
-        logger.trace("objectObliterated_: path: {}, current soid: {}", path, soid);
+        logger.debug("ENTER objectObliterated_: {}, path: {}, current soid: {}", oa.soid(), path, soid);
         if (_syncStatusPropagator.getSync_(oa, t) != IN_SYNC || !oa.synced() && soid != null) {
             SOID parentSoid = new SOID(oa.soid().sidx(), oa.parent());
             Path parentPath = _ds.resolveNullable_(parentSoid);
@@ -131,19 +131,22 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
                 _syncStatusPropagator.propagateSyncStatus_(parentSoid, parentPath, -1, t);
             }
         }
-        logger.trace("EXIT objectObliterated_: {}", oa.soid());
+        logger.debug("EXIT objectObliterated_: {}", oa.soid());
     }
 
     @Override
     public void objectExpelled_(SOID soid, Trans t) throws SQLException {
-        logger.trace("ENTER objectExpelled: {}", soid);
-        OA oa = _ds.getOANullable_(soid);
+        OA oa;
+        ResolvedPath expelled;
+        try {
+            oa = _ds.getOAThrows_(soid);
+            expelled = _ds.resolveThrows_(soid);
+        } catch (ExNotFound e) {
+            logger.error("unexpected error resolving soid", e);
+            return;
+        }
 
-        if (oa == null) return;
-
-        ResolvedPath expelled = _ds.resolveNullable_(soid);
-
-        logger.trace("objectExpelled_ path: {}", expelled);
+        logger.debug("ENTER objectExpelled_ soid: {} path: {}", soid, expelled);
 
         Sync sync = _syncStatusPropagator.getSync_(oa, t);
 
@@ -157,21 +160,18 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
         } else {
             logger.debug("objectExpelled_: NOP");
         }
-        logger.trace("EXIT objectExpelled");
+        logger.debug("EXIT objectExpelled");
     }
 
     @Override
     public void objectAdmitted_(SOID soid, Trans t) throws SQLException {
-        logger.trace("ENTER objectAdmitted_, {}", soid);
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
 
-        if (oa == null) return;
-
-        logger.trace("objectAdmitted_: {}", oa);
+        logger.debug("ENTER objectAdmitted_, {}", soid);
 
         // no op if object isn't out of sync or wasn't expelled
         // N.B. this works because the oa cache entry is not invalidated until
-        // after the listener is notified of the expulsion
+        // after the listener is notified of the admission
         if (!oa.synced() && oa.isExpelled()) {
             logger.debug("propagating status for admitted soid");
             ResolvedPath path = _ds.resolve_(oa);
@@ -180,13 +180,13 @@ public class SyncStatusChangeHandler implements IDirectoryServiceListener, ICont
         } else {
             logger.debug("objectAdmitted_: NOP");
         }
-        logger.trace("EXIT objectAdmitted_, {}", soid);
+        logger.debug("EXIT objectAdmitted_, {}", soid);
     }
 
     @Override
     public void onInsert_(SIndex sidx, OID oid, Trans t) throws SQLException {
-        logger.trace("ENTER onInsert_");
+        logger.debug("ENTER onInsert_");
         _syncStatusPropagator.updateSyncStatus_(new SOID(sidx, oid), false, t);
-        logger.trace("EXIT onInsert_");
+        logger.debug("EXIT onInsert_");
     }
 }

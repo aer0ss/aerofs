@@ -19,6 +19,7 @@ import com.aerofs.ids.UserID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
@@ -76,17 +77,21 @@ public class SyncStatusContentVersionListener implements IContentVersionListener
 
         RemoteContent max = _rcdb.getMaxRow_(sidx, oid);
 
-        if (max == null) return;
+        if (max == null) {
+            l.warn("No remote content found for {}, skipping version {}", soid, v);
+            return;
+        }
 
         UserID user = _d2u.getUserIDForDIDNullable_(max.originator);
         if (user != null && user.isTeamServerID() && max.version == v) {
-            l.trace("latest version from SA");
+            l.debug("latest version from SA, version: {}", v);
             _syncStatusPropagator.updateSyncStatus_(soid, true, t);
         } else {
-            l.trace("not latest version from SA, setting synced=false");
+            l.debug("not latest version from SA, setting synced=false. version:{}, from user: {}", v,
+                    user);
             _syncStatusPropagator.updateSyncStatus_(soid, false, t);
             if (max.version == v) {
-                l.trace("latest version, determining status");
+                l.debug("latest version, determining status");
                 _determineSyncStatusTransLocal.get(t).put(soid, v);
             }
         }
@@ -143,10 +148,12 @@ public class SyncStatusContentVersionListener implements IContentVersionListener
                 Entry<SOID, Long> op = opsIterator.next();
                 SOID soid = op.getKey();
                 if (_syncStatusRequests.deleteSyncRequestIfVersionMatches(soid, op.getValue())) {
-                    l.trace("found matching request, updating sync status");
+                    l.debug("found matching request for {} version {}, updating sync status", soid,
+                            op.getValue());
                     _syncStatusPropagator.updateSyncStatus_(soid, backedUp, t);
                 } else {
-                    l.trace("did not find matching request, skipping sync status update");
+                    l.debug("did not find matching request for {} version {}, skipping sync status update",
+                            soid, op.getValue());
                 }
             }
             t.commit_();

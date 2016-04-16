@@ -16,6 +16,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.PreparedStatementWrapper;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
@@ -83,12 +84,12 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
     @Test
     public void shouldMarkFilesSyncedWhenBackedUp() throws SQLException {
-        mockPolarisResponse(syncedLocationBatchResult());
+        mockHttpResponse(syncedLocationBatchResult());
 
         statusChecker.completed = false;
         verifier.scheduleVerifyUnsyncedFilesImmediate(0L);
 
-        pause(2);
+        runScheduled_();
 
         assertTrue(directoryService.getOA_(baz).synced());
         assertTrue(directoryService.getOA_(qux).synced());
@@ -105,12 +106,12 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
     @Test
     public void shouldNotMarkFilesSyncedWhenNotBackedUp() throws Exception {
-        mockPolarisResponse(notSyncedLocationBatchResult());
+        mockHttpResponse(notSyncedLocationBatchResult());
 
         statusChecker.completed = false;
         verifier.scheduleVerifyUnsyncedFilesImmediate(0L);
 
-        pause(2);
+        runScheduled_();
 
         assertTrue(directoryService.getOA_(empty).synced());
         assertTrue(directoryService.getOA_(anchor).synced());
@@ -128,6 +129,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
     @Test
     @SuppressWarnings("unchecked")
     public void shouldSubmitSeparateRequestsForSeparatePagesWhenEnoughOOSFiles() throws Exception {
+
         try (Trans trans = transManager.begin_()) {
             for (int i = 0; i < 100; i++) {
                 OID oid = OID.generate();
@@ -143,31 +145,34 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
         List<Set<String>> statusQueries = new ArrayList<>();
         doAnswer(invocation -> {
-            polarisExecutor.submit(() -> {
+            Object[] arg = invocation.getArguments();
+            try {
+                Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
 
-                Object[] arg = invocation.getArguments();
-                try {
-                    Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
+                HttpRequest request = (HttpRequest) arg[0];
+                ChannelBuffer content = request.getContent();
+                String json = content.toString(Charset.defaultCharset());
+                LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
 
-                    HttpRequest request = (HttpRequest) arg[0];
-                    ChannelBuffer content = request.getContent();
-                    String json = content.toString(Charset.defaultCharset());
-                    LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
+                Set<String> oids = new HashSet<String>();
+                batch.objects.forEach(op -> oids.add(op.oid));
+                statusQueries.add(oids);
+                l.trace("querying waldo for {} locations", batch.objects.size());
 
-                    Set<String> oids = new HashSet<String>();
-                    batch.objects.forEach(op -> oids.add(op.oid));
-                    statusQueries.add(oids);
-                    l.trace("querying polaris for {} locations", batch.objects.size());
-
-                    schedExecutor.submit(() -> {
-                        ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(polarisResponse(
-                                halfSyncedLocationBatchResult(batch.objects.size()))));
-                        return null;
-                    });
-                } catch (Throwable t) {
-                    ((AsyncTaskCallback) arg[1]).onFailure_(t);
-                }
-            });
+                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_() {
+                        try {
+                            ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(
+                                    httpResponse(halfSyncedLocationBatchResult(batch.objects.size()))));
+                        } catch (Throwable t) {
+                            ((AsyncTaskCallback) arg[1]).onFailure_(t);
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                ((AsyncTaskCallback) arg[1]).onFailure_(t);
+            }
             return null;
         }).when(waldoClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
 
@@ -176,7 +181,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
         verifier.scheduleVerifyUnsyncedFilesImmediate(0L);
 
-        pause(8);
+        runScheduled_();
 
         Set<String> combined = new HashSet<>();
         statusQueries.forEach(oids -> combined.addAll(oids));
@@ -214,35 +219,39 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
 
         List<Set<String>> statusQueries = new ArrayList<>();
         doAnswer(invocation -> {
-            polarisExecutor.submit(() -> {
-                Object[] arg = invocation.getArguments();
-                try {
-                    Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
+            Object[] arg = invocation.getArguments();
+            try {
+                Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
 
-                    HttpRequest request = (HttpRequest) arg[0];
-                    ChannelBuffer content = request.getContent();
-                    String json = content.toString(Charset.defaultCharset());
-                    LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
+                HttpRequest request = (HttpRequest) arg[0];
+                ChannelBuffer content = request.getContent();
+                String json = content.toString(Charset.defaultCharset());
+                LocationStatusBatch batch = new Gson().fromJson(json, LocationStatusBatch.class);
 
-                    Set<String> oids = new HashSet<String>();
-                    batch.objects.forEach(op -> oids.add(op.oid));
-                    statusQueries.add(oids);
+                Set<String> oids = new HashSet<String>();
+                batch.objects.forEach(op -> oids.add(op.oid));
+                statusQueries.add(oids);
 
-                    schedExecutor.submit(() -> {
-                        ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(polarisResponse(
-                                halfSyncedLocationBatchResult(batch.objects.size()))));
-                        return null;
-                    });
-                } catch (Throwable t) {
-                    ((AsyncTaskCallback) arg[1]).onFailure_(t);
-                }
-            });
+                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_() {
+                        try {
+                            ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(
+                                    httpResponse(halfSyncedLocationBatchResult(batch.objects.size()))));
+                        } catch (Throwable t) {
+                            ((AsyncTaskCallback) arg[1]).onFailure_(t);
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                ((AsyncTaskCallback) arg[1]).onFailure_(t);
+            }
             return null;
         }).when(waldoClient).send(any(HttpRequest.class), any(AsyncTaskCallback.class), any());
 
         verifier.scheduleVerifyUnsyncedFilesImmediate(0L);
 
-        pause(10);
+        runScheduled_();
 
         Set<String> combined = new HashSet<>();
         statusQueries.forEach(oid -> combined.addAll(oid));
@@ -261,7 +270,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
     }
 
     @Test
-    public void shouldNotQueryPolarisForTSUploads() throws Exception {
+    public void shouldNotQueryWaldoForTSUploads() throws Exception {
         try (Trans trans = transManager.begin_()) {
             propagator.updateSyncStatus_(moria, false, trans);
             trans.commit_();
@@ -287,31 +296,36 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
     }
 
     @SuppressWarnings("unchecked")
-    private void mockPolarisResponse(LocationStatusBatchResult result) {
+    private void mockHttpResponse(LocationStatusBatchResult result) {
         doAnswer(invocation -> {
-            polarisExecutor.submit(() -> {
-                Object[] arg = invocation.getArguments();
-                try {
-                    Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
+            Object[] arg = invocation.getArguments();
+            try {
+                Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
 
-                    schedExecutor.submit(() -> {
-                        ((AsyncTaskCallback) arg[1]).onSuccess_(function.apply(polarisResponse(result)));
-                        return null;
-                    });
-                } catch (Throwable t) {
-                    ((AsyncTaskCallback) arg[1]).onFailure_(t);
-                }
-            });
+                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_() {
+                        try {
+                            ((AsyncTaskCallback) arg[1])
+                                    .onSuccess_(function.apply(httpResponse(result)));
+                        } catch (Throwable t) {
+                            ((AsyncTaskCallback) arg[1]).onFailure_(t);
+                        }
+                    }
+                });
+            } catch (Throwable t) {
+                ((AsyncTaskCallback) arg[1]).onFailure_(t);
+            }
             return null;
         }).when(waldoClient).send(any(), any(AsyncTaskCallback.class), any());
     }
 
-    private HttpResponse polarisResponse(LocationStatusBatchResult result) {
-        HttpResponse polarisResponse = mock(HttpResponse.class);
-        doReturn(HttpResponseStatus.OK).when(polarisResponse).getStatus();
+    private HttpResponse httpResponse(LocationStatusBatchResult result) {
+        HttpResponse httpResponse = mock(HttpResponse.class);
+        doReturn(HttpResponseStatus.OK).when(httpResponse).getStatus();
         doReturn(ChannelBuffers.copiedBuffer(new Gson().toJson(result), Charset.defaultCharset()))
-                .when(polarisResponse).getContent();
-        return polarisResponse;
+                .when(httpResponse).getContent();
+        return httpResponse;
     }
 
     private LocationStatusBatchResult notSyncedLocationBatchResult() {
@@ -327,11 +341,6 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
         for (int i = 0; i < size; i += 2)
             results.add(true);
         return new LocationStatusBatchResult(results);
-    }
-
-    private void pause(int seconds) {
-        long currentTimeMillis = System.currentTimeMillis();
-        while (System.currentTimeMillis() - currentTimeMillis < seconds * 1000);
     }
 
     // SyncStatusVerifier ignores files recently marked out-of-sync, so this is

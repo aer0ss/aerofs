@@ -20,8 +20,6 @@ import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreCreationOperators;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
-import com.aerofs.daemon.core.update.DPUTUtil;
-import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.SIDDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
@@ -46,13 +44,16 @@ import org.mockito.Mock;
 import org.slf4j.Logger;
 
 import java.sql.SQLException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AbstractSyncStatusTest extends AbstractTest
 {
@@ -67,8 +68,7 @@ public class AbstractSyncStatusTest extends AbstractTest
     TransManager transManager;
     @Mock CoreScheduler coreScheduler;
 
-    ExecutorService schedExecutor = Executors.newSingleThreadExecutor();
-    ExecutorService polarisExecutor = Executors.newSingleThreadExecutor();
+    Queue<AbstractEBSelfHandling> scheduled = new ArrayDeque<>();
 
     SID rootSID = SID.generate();
     SIndex rootSIndex = new SIndex(1);
@@ -117,9 +117,6 @@ public class AbstractSyncStatusTest extends AbstractTest
     public void commonSetup() throws Exception {
         dbcw = new InMemoryCoreDBCW();
         dbcw.init_();
-        DPUTUtil.runDatabaseOperationAtomically_(dbcw, s -> {
-            CoreSchema.createOutOfSyncFilesTable(s, dbcw);
-        });
         transManager = new TransManager(new Trans.Factory(dbcw));
         sco = new StoreCreationOperators();
         metaDatabase = new MetaDatabase(dbcw, sco);
@@ -146,24 +143,14 @@ public class AbstractSyncStatusTest extends AbstractTest
 
         doReturn(UserID.DUMMY).when(cfgLocalUser).get();
 
-        // submits tasks to the single-threaded executorService one at a time,
-        // and waits for completion
         doAnswer(invocation -> {
-            schedExecutor.submit(() -> {
-                ((AbstractEBSelfHandling) invocation.getArguments()[0]).handle_();
-                return null;
-            });
+            scheduled.add((AbstractEBSelfHandling) invocation.getArguments()[0]);
             return null;
         }).when(coreScheduler).schedule_(any(IEvent.class));
 
-        // submits tasks to the single-threaded executorService one at a time,
-        // and waits for completion
         doAnswer(invocation -> {
             if ((long) invocation.getArguments()[1] == 0) {
-                schedExecutor.submit(() -> {
-                    ((AbstractEBSelfHandling) invocation.getArguments()[0]).handle_();
-                    return null;
-                });
+                scheduled.add((AbstractEBSelfHandling) invocation.getArguments()[0]);
             }
             return null;
         }).when(coreScheduler).scheduleCancellable(any(IEvent.class), anyLong());
@@ -249,6 +236,12 @@ public class AbstractSyncStatusTest extends AbstractTest
             oosCount++;
         }
         return oosCount;
+    }
+
+    protected void runScheduled_() {
+        AbstractEBSelfHandling ev;
+        while ((ev = scheduled.poll()) != null)
+            ev.handle_();
     }
 
     static class TestingBatchStatusChecker extends SyncStatusBatchStatusChecker

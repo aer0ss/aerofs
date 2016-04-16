@@ -15,12 +15,15 @@ import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferredItem;
 import com.aerofs.daemon.core.transfers.download.DownloadState;
 import com.aerofs.daemon.core.transfers.upload.UploadState;
+import com.aerofs.ids.OID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.cfg.CfgSyncStatusEnabled;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.aerofs.ritual_notification.RitualNotificationServer;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
@@ -49,28 +52,34 @@ public class PathStatusNotifier implements IConflictStateListener, ISnapshotable
 
     @Inject
     public PathStatusNotifier(RitualNotificationServer rns, DirectoryService ds, PathStatus ps,
-            ISyncStatusPropagator ssp, SyncStatusOnline sso, CfgSyncStatusEnabled sse, DownloadState dls,
+            ISyncStatusPropagator ssp, SyncStatusOnline sso, DownloadState dls,
             UploadState uls) {
         _ps = ps;
         _ds = ds;
         _rns = rns;
 
-        if (sse.get()) {
-            ssp.addListener((updates) -> {
-                Map<Path, PBPathStatus> pathStatuses = Maps.newHashMapWithExpectedSize(updates.size());
-                for (Entry<Path, Sync> update : updates.entrySet()) {
-                    try {
-                        pathStatuses.put(update.getKey(), _ps.getStatus_(update.getKey(), update.getValue()));
-                    } catch (Exception e) {
-                        // Swallow exception to minimize front-end inaccuracy
-                        l.warn("error sending notification", e);
-                    }
+        ssp.addListener((updates) -> {
+            Map<Path, PBPathStatus> pathStatuses = Maps.newHashMapWithExpectedSize(updates.size());
+            for (Entry<Path, Sync> update : updates.entrySet()) {
+                try {
+                    pathStatuses.put(update.getKey(), _ps.getStatus_(update.getKey(), update.getValue()));
+                } catch (Exception e) {
+                    // Swallow exception to minimize front-end inaccuracy
+                    l.warn("error sending notification", e);
                 }
-                sendPathStatusNotification_(pathStatuses);
-            });
-            sso.addListener((online) -> _rns.getRitualNotifier()
-                    .sendNotification(Notifications.newPathStatusOutOfDateNotification()));
-        }
+            }
+            sendPathStatusNotification_(pathStatuses);
+        });
+        sso.addListener((online) -> {
+                _rns.getRitualNotifier().sendNotification(Notifications.newPathStatusOutOfDateNotification());
+                try {
+                    Path rootPath = _ds.resolve_(new SOID(new SIndex(1), OID.ROOT));
+                    sendPathStatusNotification_(ImmutableMap.of(rootPath, _ps.getStatus_(rootPath)));
+                } catch (Exception e) {
+                    // Swallow exception to minimize front-end inaccuracy
+                    l.warn("error sending notification", e);
+                }
+        });
 
         uls.addListener_(
                 (item, progress) -> onStateChanged_(item, progress, PathFlagAggregator.Uploading));

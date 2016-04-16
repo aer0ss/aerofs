@@ -159,7 +159,7 @@ public class TestSyncStatusPropagator extends AbstractSyncStatusTest
             propagator.updateSyncStatus_(baz, false, trans);
             trans.commit_();
         }
-        assertEquals(2, listener.notifications);
+        assertEquals(1, listener.notifications);
         assertEquals(4, listener.filesNotified);
     }
 
@@ -203,7 +203,7 @@ public class TestSyncStatusPropagator extends AbstractSyncStatusTest
             propagator.updateSyncStatus_(qux, false, trans);
             trans.commit_();
         }
-        assertEquals(2, listener.notifications);
+        assertEquals(1, listener.notifications);
         assertEquals(3, listener.filesNotified);
     }
 

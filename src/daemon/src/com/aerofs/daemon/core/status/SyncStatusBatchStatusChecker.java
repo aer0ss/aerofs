@@ -46,7 +46,7 @@ public class SyncStatusBatchStatusChecker
         if (code >= HttpResponseStatus.OK.getCode()
                 && code < HttpResponseStatus.MULTIPLE_CHOICES.getCode()) {
             String content = response.getContent().toString(BaseUtil.CHARSET_UTF);
-            l.trace("batch status response: {}", content);
+            l.debug("batch status response: {}", content);
             LocationStatusBatchResult batchResult = GSON.fromJson(content,
                     LocationStatusBatchResult.class);
 

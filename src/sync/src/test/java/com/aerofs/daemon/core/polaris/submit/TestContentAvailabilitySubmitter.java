@@ -25,15 +25,13 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.log.LogUtil;
-import com.aerofs.lib.log.LogUtil.Level;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.testlib.InMemorySQLiteDBCW;
 import com.google.gson.Gson;
+
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -68,20 +66,9 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     SIndex sidx = new SIndex(1);
     SID sid = SID.rootSID(UserID.fromInternal("foo@bar.baz"));
 
-    @After
-    public void tearDown() {
-        LogUtil.setLevel(Level.NONE);
-    }
-
-    private void runScheduled_() {
-        AbstractEBSelfHandling ev;
-        while ((ev = scheduled.poll()) != null) ev.handle_();
-    }
-
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
-        LogUtil.setLevel(Level.TRACE);
         InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
         dbcw.init_();
         try (Statement s = dbcw.getConnection().createStatement()) {
@@ -151,26 +138,14 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
             for (int i = 0; i < 10; i++)
                 submitter.onSetVersion_(sidx, OID.generate(), 1, t);
 
-            int count = 0;
-            try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
-                while (list.next_()) {
-                    list.get_();
-                    count++;
-                }
-            }
+            int count = countAcdb();
             assertEquals(10, count);
             t.commit_();
         }
 
         runScheduled_();
 
-        int count = 0;
-        try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
-            while (list.next_()) {
-                list.get_();
-                count++;
-            }
-        }
+        int count = countAcdb();
 
         assertEquals(2, calls.size());
         assertEquals(10, (int) calls.get(0));
@@ -180,17 +155,11 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
     @Test
     public void shouldLimitSubmittedBatchSizeAndImmediatelyReschedule() throws Exception {
-        int count = 0;
         try (Trans t = tm.begin_()) {
             for (int i = 0; i < 100; i++)
                 submitter.onSetVersion_(sidx, OID.generate(), 1, t);
 
-            try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
-                while (list.next_()) {
-                    list.get_();
-                    count++;
-                }
-            }
+            int count = countAcdb();
 
             assertEquals(100, count);
             t.commit_();
@@ -199,13 +168,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         // process
         runScheduled_();
 
-        count = 0;
-        try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
-            while (list.next_()) {
-                list.get_();
-                count++;
-            }
-        }
+        int count = countAcdb();
 
         assertEquals(4, calls.size());
         assertEquals(42, (int) calls.get(0));
@@ -233,27 +196,15 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
             }
         });
 
-        int total = 0;
-        for (int i = 0; i < 50 && total != 200 + calls.size() - 1; i++) {
-            runScheduled_();
-            total = 0;
-            for (Integer call : calls)
-                total += call;
-        }
+        runScheduled_();
 
-        int count = 0;
-        IDBIterator<AvailableContent> list = acdb.listContent_();
-        while (list.next_()) {
-            list.get_();
-            count++;
-        }
+        int total = 0;
+        for (Integer call : calls) total += call;
+
+        int count = countAcdb();
 
         l.trace("availability count: {}", count);
         l.trace("calls: {}", calls.size());
-
-        total = 0;
-        for (Integer call : calls)
-            total += call;
 
         assertEquals(0, count);
         assertEquals(200 + calls.size() - 1, total);
@@ -280,5 +231,21 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         doReturn(ChannelBuffers.copiedBuffer(new Gson().toJson(result), Charset.defaultCharset()))
                 .when(polarisResponse).getContent();
         return polarisResponse;
+    }
+
+    private void runScheduled_() {
+        AbstractEBSelfHandling ev;
+        while ((ev = scheduled.poll()) != null) ev.handle_();
+    }
+
+    private int countAcdb() throws SQLException {
+        int count = 0;
+        try (IDBIterator<AvailableContent> list = acdb.listContent_()) {
+            while (list.next_()) {
+                list.get_();
+                count++;
+            }
+        }
+        return count;
     }
 }

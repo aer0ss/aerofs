@@ -71,7 +71,7 @@ public class OutOfSyncFilesDatabase extends AbstractDatabase
         };
     }
 
-    public class OutOfSyncFile
+    public static class OutOfSyncFile
     {
         public final long idx;
         public final SIndex sidx;

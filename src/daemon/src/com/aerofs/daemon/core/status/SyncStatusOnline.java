@@ -37,14 +37,13 @@ public class SyncStatusOnline implements PauseSync.Listener
      * @param storageAgentReachable
      * @return true if value was changed
      */
-    protected boolean set(boolean storageAgentReachable) {
+    protected void set(boolean storageAgentReachable) {
         l.trace("set: {}", storageAgentReachable, _storageAgentReachable.get(), _pauseSync.isPaused());
         boolean changed = _storageAgentReachable.compareAndSet(!storageAgentReachable,
                 storageAgentReachable);
         if (changed && !_pauseSync.isPaused()) {
             notifyListeners_();
         }
-        return changed;
     }
 
     public boolean get() {
@@ -58,8 +57,8 @@ public class SyncStatusOnline implements PauseSync.Listener
     }
 
     private void notifyListeners_() {
-        l.trace("notifyListeners_: {}", _listeners.size());
         boolean online = get();
+        l.debug("online: {}", online);
         _listeners.forEach(l -> l.onSyncStatusOnline_(online));
     }
 

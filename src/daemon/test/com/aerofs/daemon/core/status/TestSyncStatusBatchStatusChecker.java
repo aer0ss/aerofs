@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.polaris.api.LocationStatusBatchResult;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;

@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * unsynced files really are out of sync. This results in eventual consistency
  * even if SSMP 'synced' notifications are missed for any reason.
  *
- * In order to reduce load on Waldo by allowing time for the normal sync
- * process to work, files recently marked out-of-sync are ignored.
+ * In order to reduce load on Waldo by allowing time for the normal sync process
+ * to work, files recently marked out-of-sync are ignored.
  */
 public class SyncStatusVerifier
         implements IShareListener, IDirectoryServiceListener, SyncStatusOnline.Listener
@@ -88,7 +88,7 @@ public class SyncStatusVerifier
 
     @Override
     public void onSyncStatusOnline_(boolean online) {
-        l.trace("onSyncStatusOnline_: {}", online);
+        l.debug("onSyncStatusOnline_: {}", online);
         if (online) {
             scheduleVerifyUnsyncedFilesImmediate(0L);
         } else {
@@ -146,7 +146,8 @@ public class SyncStatusVerifier
 
     /*
      * Retrieves list of unsynced files from the OutOfSyncFilesDatabase, creates
-     * a single request for waldo, and checks to make sure they are really out of sync.
+     * a single request for waldo, and checks to make sure they are really out
+     * of sync.
      */
     protected void batchUpdateSyncStatus_(long nextPageStartingAfterIdx, long ignoreWindow, Trans trans)
             throws SQLException {
@@ -158,16 +159,15 @@ public class SyncStatusVerifier
         nextPageStartingAfterIdx = populateOutOfSyncsListAndReturnLastIdx_(paths, operations,
                 nextPageStartingAfterIdx, ignoreWindow, trans);
 
-        l.trace("operations.size: {}, nextPageStartingAfterIdx: {}", operations.size(),
-                nextPageStartingAfterIdx);
+        l.debug("batchUpdateSyncStatus_ operations.size: {}, nextPageStartingAfterIdx: {}",
+                operations.size(), nextPageStartingAfterIdx);
         if (!operations.isEmpty()) {
             storePendingRequests_(trans, operations);
             boolean hasMore = nextPageStartingAfterIdx < Long.MAX_VALUE;
-            _syncStatusBatchStatusChecker
-                    .submitLocationStatusBatch(new LocationStatusBatch(operations.values()),
-                            new PageableCallback(
-                                    nextPageStartingAfterIdx),
-                    batchResult -> scheduleUpdateSyncStatus_(operations, paths, batchResult, hasMore));
+            _syncStatusBatchStatusChecker.submitLocationStatusBatch(
+                    new LocationStatusBatch(operations.values()),
+                    new PageableCallback(nextPageStartingAfterIdx),
+                    batchResult -> updateSyncStatusBatch_(operations, paths, batchResult, hasMore));
         } else if (nextPageStartingAfterIdx == Long.MAX_VALUE) {
             scheduleVerifyUnsyncedFilesDelay();
         } else {
@@ -179,8 +179,8 @@ public class SyncStatusVerifier
     }
 
     protected long populateOutOfSyncsListAndReturnLastIdx_(Map<SOID, ResolvedPath> paths,
-            Map<SOID, LocationStatusObject> operations, long nextPageStartingAfterIdx,
-            long ignoreWindow, Trans t) throws SQLException {
+            Map<SOID, LocationStatusObject> operations, long nextPageStartingAfterIdx, long ignoreWindow,
+            Trans t) throws SQLException {
         l.trace("enter populateOutOfSyncsListAndReturnLastIdx_: {}, {}", nextPageStartingAfterIdx,
                 ignoreWindow);
         do {
@@ -204,25 +204,23 @@ public class SyncStatusVerifier
 
                     OA oa = _ds.getOANullable_(soid);
                     l.trace("oa: {}", oa);
-                    boolean added = false;
                     if (oa != null && !oa.isExpelled()) {
                         ResolvedPath path = _ds.resolve_(oa);
                         Long version = _cvdb.getVersion_(soid.sidx(), soid.oid());
                         l.trace("path: {}, version: {}", path, version);
-                        if (version != null) {
-                            operations.put(soid, new LocationStatusObject(
-                                    soid.oid().toStringFormal(), version));
+                        if (version != null
+                                && !version.equals(_syncStatusRequests.getSyncRequestVersion(soid))) {
+                            operations.put(soid,
+                                    new LocationStatusObject(soid.oid().toStringFormal(), version));
                             paths.put(soid, path);
-                            added = true;
                         }
-                    }
-                    if (!added) invalidSOIDs.add(soid);
+                    } else invalidSOIDs.add(soid);
                 }
                 if (operations.size() != MAX_BATCH_SIZE && count != PAGE_SIZE)
                     nextPageStartingAfterIdx = Long.MAX_VALUE;
             }
             for (SOID invalid : invalidSOIDs) {
-                l.trace("removing {} from outOfSyncDatabase", invalid.toString());
+                l.debug("removing {} from outOfSyncDatabase", invalid);
                 _outOfSyncDatabase.delete_(invalid.sidx(), invalid.oid(), t);
             }
         } while (operations.isEmpty() && nextPageStartingAfterIdx < Long.MAX_VALUE);
@@ -237,39 +235,31 @@ public class SyncStatusVerifier
                 .forEach(op -> _syncStatusRequests.setSyncRequest(op.getKey(), op.getValue().version));
     }
 
-    protected Boolean scheduleUpdateSyncStatus_(Map<SOID, LocationStatusObject> operations,
+    protected Boolean updateSyncStatusBatch_(Map<SOID, LocationStatusObject> operations,
             Map<SOID, ResolvedPath> paths, LocationStatusBatchResult batchResult, boolean hasMore)
-                    throws SQLException {
-        l.trace("enter scheduleUpdateSyncStatus_");
+            throws SQLException {
+        l.trace("enter updateSyncStatusBatch_");
         try (Trans t = _tm.begin_()) {
-            updateSyncStatusBatch_(operations, paths, batchResult, t);
+            Iterator<Entry<SOID, LocationStatusObject>> opsIterator = operations.entrySet().iterator();
+            for (boolean backedUp : batchResult.results) {
+                Entry<SOID, LocationStatusObject> operation = opsIterator.next();
+                SOID soid = operation.getKey();
+                if (_syncStatusRequests.deleteSyncRequestIfVersionMatches(soid,
+                        operation.getValue().version)) {
+                    l.debug("found matching request for {}, updating sync status", soid);
+                    OA oa = _ds.getOANullable_(soid);
+                    if (oa != null && !oa.isExpelled()) {
+                        l.trace("updateSyncStatusBatch_ {}: {}", oa.soid(), backedUp);
+                        _syncStatusPropagator.updateSyncStatus_(soid, paths.get(soid), backedUp, t);
+                    }
+                } else {
+                    l.debug("did not find matching request for {}, skipping sync status update", soid);
+                }
+            }
             t.commit_();
         }
-        return hasMore;
-    }
-
-    protected void updateSyncStatusBatch_(Map<SOID, LocationStatusObject> operations,
-            Map<SOID, ResolvedPath> paths, LocationStatusBatchResult batchResult, Trans t)
-                    throws SQLException {
-        l.trace("enter updateSyncStatusBatch_");
-        Iterator<Entry<SOID, LocationStatusObject>> opsIterator = operations.entrySet()
-                .iterator();
-        for (boolean backedUp : batchResult.results) {
-            Entry<SOID, LocationStatusObject> operation = opsIterator.next();
-            SOID soid = operation.getKey();
-            if (_syncStatusRequests.deleteSyncRequestIfVersionMatches(soid,
-                    operation.getValue().version)) {
-                l.trace("found matching request, updating sync status");
-                OA oa = _ds.getOANullable_(soid);
-                if (oa != null && !oa.isExpelled()) {
-                    l.trace("updateSyncStatusBatch_ {}: {}", oa.soid(), backedUp);
-                    _syncStatusPropagator.updateSyncStatus_(soid, paths.get(soid), backedUp, t);
-                }
-            } else {
-                l.trace("did not find matching request, skipping sync status update");
-            }
-        }
         l.trace("leave updateSyncStatusBatch_");
+        return hasMore;
     }
 
     private class PageableBatchUpdateEvent extends AbstractEBSelfHandling

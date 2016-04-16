@@ -193,10 +193,10 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
                     _acdb.deleteContent_(sidx, oid, op.version, t);
                     notifyWaiter_(new SOID(sidx, oid), null);
 
-                    l.trace("updateAvailableContentDatabase delete {}{} {} successful", sidx,
+                    l.debug("updateAvailableContentDatabase delete {}{} {} successful", sidx,
                             op.oid, op.version);
                 } else {
-                    l.trace("updateAvailableContentDatabase not deleting {}{} {}", sidx,
+                    l.debug("updateAvailableContentDatabase not deleting {}{} {}", sidx,
                             op.oid, op.version);
                 }
             }

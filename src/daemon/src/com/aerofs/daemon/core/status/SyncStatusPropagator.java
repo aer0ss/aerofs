@@ -4,7 +4,6 @@ package com.aerofs.daemon.core.status;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.status.db.OutOfSyncFilesDatabase;
 import com.aerofs.daemon.core.status.db.SyncStatusRequests;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -13,7 +12,6 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
-import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
@@ -80,8 +78,7 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
     private final OutOfSyncFilesDatabase _outOfSyncFilesDatabase;
 
     private final List<ISyncStatusListener> _listeners;
-    private final TransLocal<Map<Path, Sync>> _transUpdatedFiles;
-    private final TransLocal<Map<SOID, SyncStatus>> _transUpdatedFolders;
+    private final TransLocal<Map<SOID, SyncStatus>> _transactionUpdates;
 
     @Inject
     public SyncStatusPropagator(DirectoryService directoryService, IMapSIndex2SID sidx2sid,
@@ -93,37 +90,21 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
         _syncStatusRequests = syncStatusRequests;
         _outOfSyncFilesDatabase = outOfSyncFilesDatabase;
         _listeners = new ArrayList<>();
-        _transUpdatedFiles = new TransLocal<Map<Path, Sync>>() {
-            @Override
-            protected Map<Path, Sync> initialValue(Trans t) {
-                Map<Path, Sync> syncNotifications = new ConcurrentHashMap<>();
-                t.addListener_(new AbstractTransListener() {
-                    @Override
-                    public void committing_(Trans t) throws SQLException {
-                        if (!syncNotifications.isEmpty() || !_transUpdatedFiles.get(t).isEmpty()) {
-                            notifyRootSyncStatus_(t);
-                        }
-                    }
 
-                    @Override
-                    public void committed_() {
-                        l.trace("updatedFiles.committed: {}", syncNotifications.size());
-                        if (syncNotifications.isEmpty()) return;
-                        notifyListeners(syncNotifications);
-                    }
-                });
-                return syncNotifications;
-            }
-        };
-        _transUpdatedFolders = new TransLocal<Map<SOID, SyncStatus>>() {
+        _transactionUpdates = new TransLocal<Map<SOID, SyncStatus>>() {
             @Override
             protected Map<SOID, SyncStatus> initialValue(Trans t) {
-                Map<SOID, SyncStatus> updatedFolders = new ConcurrentHashMap<>();
+                Map<SOID, SyncStatus> updates = new ConcurrentHashMap<>();
+
                 t.addListener_(new AbstractTransListener() {
                     @Override
                     public void committing_(Trans t) throws SQLException {
-                        l.trace("updatedFolders.committing: {}", updatedFolders.size());
-                        for (Entry<SOID, SyncStatus> statusChange : updatedFolders.entrySet()) {
+                        l.trace("_transactionUpdates.committing: {}", updates.size());
+                        if (updates.isEmpty()) return;
+
+                        for (Entry<SOID, SyncStatus> statusChange : updates.entrySet()) {
+                            if (statusChange.getValue().persisted) continue;
+
                             _ds.setOASyncAttributes(statusChange.getKey(),
                                     statusChange.getValue().synced, statusChange.getValue().oosChildren,
                                     t);
@@ -132,16 +113,16 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
 
                     @Override
                     public void committed_() {
-                        l.trace("updatedFolders.committed: {}", updatedFolders.size());
-                        if (updatedFolders.isEmpty()) return;
+                        l.debug("_transactionUpdates.committed: {}", updates.size());
+                        if (updates.isEmpty()) return;
 
-                        Map<Path, Sync> updates = new HashMap<>();
-                        updatedFolders
-                                .forEach((k, v) -> updates.put(v.path, v.synced ? IN_SYNC : UNKNOWN));
-                        notifyListeners(updates);
+                        Map<Path, Sync> notifications = new HashMap<>();
+                        updates.forEach(
+                                (k, v) -> notifications.put(v.path, v.synced ? IN_SYNC : UNKNOWN));
+                        notifyListeners(notifications);
                     }
                 });
-                return updatedFolders;
+                return updates;
             }
         };
     }
@@ -191,7 +172,7 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
         if (oa != null && oa.synced()) {
             sync = IN_SYNC;
         }
-        l.trace("getSync {}: {}", oa.soid(), sync);
+        l.debug("getSync {}: {}", oa.soid(), sync);
         return sync;
     }
 
@@ -201,21 +182,16 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
 
         OA oa = _ds.getOA_(soid);
 
-        if (oa.isDirOrAnchor() && _transUpdatedFolders.get(t).containsKey(soid)) {
-            SyncStatus syncStatus = _transUpdatedFolders.get(t).get(soid);
-            l.trace("returning transLocal syncStatus.synced: {}", syncStatus.synced);
-            return syncStatus.synced ? IN_SYNC : UNKNOWN;
-        }
-
-        return getSync_(oa);
+        return getSync_(oa, t);
     }
 
     protected Sync getSync_(OA oa, Trans t) throws SQLException {
         l.trace("getSync with trans, soid = {}", oa.soid());
 
-        if (oa.isDirOrAnchor() && _transUpdatedFolders.get(t).containsKey(oa.soid())) {
-            SyncStatus syncStatus = _transUpdatedFolders.get(t).get(oa.soid());
-            l.trace("returning transLocal syncStatus.synced: {}", syncStatus.synced);
+        if (oa.isDirOrAnchor() && _transactionUpdates.get(t).containsKey(oa.soid())) {
+            SyncStatus syncStatus = _transactionUpdates.get(t).get(oa.soid());
+            l.debug("returning transLocal syncStatus.synced: {}, soid: {}", syncStatus.synced,
+                    oa.soid());
             return syncStatus.synced ? IN_SYNC : UNKNOWN;
         }
 
@@ -229,17 +205,17 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
         if (oa == null || oa.isExpelled() || oa.isDirOrAnchor()) {
             l.trace("Invalid oa, returning. soid: {}, null? {}, expelled? {}, dir? {}", soid, oa == null,
                     oa == null ? null : oa.isExpelled(), oa == null ? null : oa.isDirOrAnchor());
+            updateOutOfSyncFilesDatabase(soid, t, true);
             return;
         }
 
-        if (path == null) path = _ds.resolveNullable_(soid);
-
-        Sync updatedStatus = _transUpdatedFiles.get(t).get(path);
+        SyncStatus syncStatus = _transactionUpdates.get(t).get(soid);
         int oosChange = 0;
-        boolean wasSynced = updatedStatus != null ? updatedStatus == IN_SYNC : oa.synced();
+        boolean wasSynced = syncStatus != null ? syncStatus.synced : oa.synced();
         boolean isSynced = newStatus == IN_SYNC;
 
-        l.trace("{}, {} wasSynced: {}, isSynced: {}", soid, path, wasSynced, isSynced);
+        l.debug("updateSyncStatus: {}, {} wasSynced: {}, isSynced: {}", soid,
+                path != null ? path : oa.name(), wasSynced, isSynced);
 
         updateOutOfSyncFilesDatabase(soid, t, isSynced);
 
@@ -247,13 +223,14 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
         else if (!wasSynced && isSynced) oosChange = -1;
 
         if (oosChange != 0) {
+            if (path == null) path = _ds.resolveNullable_(soid);
             _ds.setOASyncAttributes(soid, isSynced, 0, t);
-            _transUpdatedFiles.get(t).put(path, newStatus);
+            _transactionUpdates.get(t).put(soid, new SyncStatus(path, newStatus == IN_SYNC, true, 0));
             propagateSyncStatus_(new SOID(soid.sidx(), oa.parent()), path.removeLast(), oosChange, t);
         } else if (isSynced) {
             // notify synced even if it's not changed to make sure that the gui
             // isn't out of sync
-            _transUpdatedFiles.get(t).put(path, newStatus);
+            _transactionUpdates.get(t).put(soid, new SyncStatus(path, newStatus == IN_SYNC, true, 0));
         }
         l.trace("EXIT updateSyncStatus_, {}, {}: {}", soid, path, newStatus);
     }
@@ -271,8 +248,6 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
      * status and the number of out-of-sync children as necessary. stops when
      * the folder's sync status is unaffected by the change to its number of
      * out-of-sync children
-     *
-     * @param oa
      */
     protected void propagateSyncStatus_(SOID soid, Path path, int oosChange, Trans t)
             throws SQLException {
@@ -290,9 +265,9 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
 
             l.trace("propagating {}, {}", path, soid);
 
-            Map<SOID, SyncStatus> transUpdatedFolders = _transUpdatedFolders.get(t);
-            long thisFileOOSChildren = transUpdatedFolders.containsKey(soid)
-                    ? transUpdatedFolders.get(soid).oosChildren : oa.oosChildren();
+            Map<SOID, SyncStatus> transactionUpdates = _transactionUpdates.get(t);
+            long thisFileOOSChildren = transactionUpdates.containsKey(soid)
+                    ? transactionUpdates.get(soid).oosChildren : oa.oosChildren();
             int parentOOSChildrenChange = calcParentOOSChildrenChange(oosChange, thisFileOOSChildren);
 
             if (thisFileOOSChildren + oosChange < 0) {
@@ -303,10 +278,11 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
 
             thisFileOOSChildren += oosChange;
 
-            SyncStatus status = new SyncStatus(path, thisFileOOSChildren == 0, thisFileOOSChildren);
-            transUpdatedFolders.put(soid, status);
+            SyncStatus status = new SyncStatus(path, thisFileOOSChildren == 0, false,
+                    thisFileOOSChildren);
+            transactionUpdates.put(soid, status);
 
-            l.trace("propagating {} - synced: {}, oosChildren: {}", path, status.synced,
+            l.debug("propagating {} - synced: {}, oosChildren: {}", path, status.synced,
                     status.oosChildren);
 
             oosChange = parentOOSChildrenChange;
@@ -348,27 +324,6 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
         return parentOOSChildrenChange;
     }
 
-    protected void notifyRootSyncStatus_() throws SQLException {
-        l.trace("enter notifyRootSyncStatus_");
-        SOID rootSoid = new SOID(new SIndex(1), OID.ROOT);
-        notifyListeners(ImmutableMap.of(_ds.resolve_(rootSoid),
-                _ds.getOA_(rootSoid).synced() ? IN_SYNC : UNKNOWN));
-        l.trace("leave notifyRootSyncStatus_");
-    }
-
-    private void notifyRootSyncStatus_(Trans t) throws SQLException {
-        l.trace("enter notifyRootSyncStatus_");
-        SOID rootSoid = new SOID(new SIndex(1), OID.ROOT);
-
-        // add to updatedFiles transLocal to force notification
-        Map<Path, Sync> transLocalFolders = _transUpdatedFiles.get(t);
-        ResolvedPath rootPath = _ds.resolve_(rootSoid);
-        if (transLocalFolders.containsKey(rootPath)) {
-            transLocalFolders.put(rootPath, getSync_(rootSoid, t));
-        }
-        l.trace("leave notifyRootSyncStatus_");
-    }
-
     public void forceNotifyListeners(Path path, Sync syncStatus) {
         notifyListeners(ImmutableMap.of(path, syncStatus));
     }
@@ -377,11 +332,13 @@ public class SyncStatusPropagator implements ISyncStatusPropagator
     {
         public final Path path;
         public final boolean synced;
+        public final boolean persisted;
         public final long oosChildren;
 
-        public SyncStatus(Path path, boolean synced, long oosChildren) {
+        public SyncStatus(Path path, boolean synced, boolean persisted, long oosChildren) {
             this.path = path;
             this.synced = synced;
+            this.persisted = persisted;
             this.oosChildren = oosChildren;
         }
     }

@@ -17,8 +17,7 @@ public class TestSyncStatusPresenceListener extends AbstractSyncStatusTest
 
     @Before
     public void before() throws Exception {
-        listener = new SyncStatusPresenceListener(propagator, syncStatusOnline, userAndDeviceNames,
-                devices);
+        listener = new SyncStatusPresenceListener(syncStatusOnline, userAndDeviceNames, devices);
         syncStatusOnline.set(false);
     }
 
