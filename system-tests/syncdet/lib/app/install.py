@@ -333,6 +333,7 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
 
         print 'launch aerofs...'
         approot = self.get_approot()
+        mkdir_p(approot)
         for c in os.listdir(td):
             rm_rf(os.path.join(approot, c))
             os.rename(os.path.join(td, c), os.path.join(approot, c))
