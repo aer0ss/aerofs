@@ -631,6 +631,7 @@ public class GUI implements IUI
             if (st() != null) st().dispose();
 
             if (UIGlobals.dm() != null) UIGlobals.dm().stopIgnoreException();
+            if (UIGlobals.chat() != null) UIGlobals.chat().stop();
         });
 
         ExitCode.NORMAL_EXIT.exit();

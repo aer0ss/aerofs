@@ -23,6 +23,7 @@ public class UnlinkUtil
         UIGlobals.rap().stop();
         UIGlobals.rnc().stop();
         UIGlobals.dm().stopIgnoreException();
+        UIGlobals.chat().stop();
 
         cleanRtRootAndAuxRoots();
     }

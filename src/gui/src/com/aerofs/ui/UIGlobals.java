@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.LaunchArgs;
 import com.aerofs.base.Lazy;
 import com.aerofs.gui.TransferState;
+import com.aerofs.gui.chat.ChatProgramMonitor;
 import com.aerofs.gui.notif.NotifService;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.gui.tray.Progresses;
@@ -50,6 +51,7 @@ public final class UIGlobals
     private static final UIScheduler s_sched = new UIScheduler();
 
     private static Factory _idm;
+    private static ChatProgramMonitor _chat = new ChatProgramMonitor();
 
     public static void initialize_(boolean createServices, LaunchArgs launchArgs)
     {
@@ -81,6 +83,8 @@ public final class UIGlobals
     public static UINotifier notifier() { return s_notifier; }
 
     public static IDaemonMonitor dm() { return _idm.get(); }
+
+    public static ChatProgramMonitor chat() { return _chat; }
 
     public static UIScheduler scheduler() { return s_sched; }
 

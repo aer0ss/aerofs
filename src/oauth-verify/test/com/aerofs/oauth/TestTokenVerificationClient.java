@@ -2,7 +2,7 @@ package com.aerofs.oauth;
 
 import com.aerofs.base.TimerUtil;
 import com.aerofs.bifrost.server.BifrostTest;
-import com.aerofs.oauth.SimpleHttpClient.UnexpectedResponse;
+import com.aerofs.base.SimpleHttpClient.UnexpectedResponse;
 import com.google.common.collect.ImmutableSet;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 import org.junit.Assert;

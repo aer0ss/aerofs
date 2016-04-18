@@ -19,7 +19,7 @@ import com.aerofs.havre.EndpointConnector;
 import com.aerofs.havre.Version;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
-import com.aerofs.oauth.SimpleHttpClient;
+import com.aerofs.base.SimpleHttpClient;
 import com.aerofs.testlib.AbstractBaseTest;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gson.FieldNamingPolicy;
@@ -61,8 +61,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
-import static org.hamcrest.Matchers.isEmptyString;
 
 public class TestHttpProxyServer extends AbstractBaseTest
 {

@@ -13,6 +13,7 @@ import com.aerofs.gui.unsyncablefiles.DlgUnsyncableFiles;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ritual_notification.IRitualNotificationListener;
@@ -99,6 +100,24 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
 
         // Open AeroFS folder
         addOpenFolderMenuItem(trayMenuPopulator);
+
+        // TODO: remove check after hard fork
+        if (Cfg.user().isAeroFSUser()) {
+            trayMenuPopulator.addMenuItem("Messaging...",
+                    new AbstractListener() {
+                        @Override
+                        protected void handleEventImpl(Event event)
+                        {
+                            try {
+                                UIGlobals.chat().start();
+                            } catch (Exception e) {
+                                UI.get().notify(MessageType.ERROR,
+                                        "Failed to start chat:\n" + e.getCause());
+                            }
+                        }
+                    });
+        }
+
         trayMenuPopulator.addMenuSeparator();
 
         trayMenuPopulator.addInviteCoworkerMenuItem();

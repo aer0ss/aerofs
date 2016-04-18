@@ -1,8 +1,8 @@
-package com.aerofs.oauth;
+package com.aerofs.base;
 
-import com.aerofs.base.*;
 import com.aerofs.base.net.NettyUtil;
 import com.aerofs.base.ssl.ICertificateProvider;
+import com.aerofs.base.ssl.IPrivateKeyProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -69,9 +69,9 @@ public class SimpleHttpClient<Q,R> extends IdleStateAwareChannelHandler
 
     private static class ClientSSLEngineFactory extends SSLEngineFactory
     {
-        public ClientSSLEngineFactory(ICertificateProvider trustedCA)
+        public ClientSSLEngineFactory(ICertificateProvider cacert, IPrivateKeyProvider key)
         {
-            super(Mode.Client, Platform.Desktop, null, trustedCA, null);
+            super(Mode.Client, Platform.Desktop, key, cacert, null);
         }
 
         @Override
@@ -84,10 +84,15 @@ public class SimpleHttpClient<Q,R> extends IdleStateAwareChannelHandler
     }
 
     public SimpleHttpClient(URI endpoint, final ICertificateProvider cacert,
+                            ClientSocketChannelFactory clientChannelFactory, final Timer timer) {
+        this(endpoint, cacert, null, clientChannelFactory, timer);
+    }
+
+    public SimpleHttpClient(URI endpoint, ICertificateProvider cacert, IPrivateKeyProvider key,
                             ClientSocketChannelFactory clientChannelFactory, final Timer timer)
     {
         _endpoint = fixPort(endpoint);
-        _sslEngineFactory = new ClientSSLEngineFactory(cacert);
+        _sslEngineFactory = new ClientSSLEngineFactory(cacert, key);
         _bootstrap = new ClientBootstrap(clientChannelFactory);
         _bootstrap.setPipelineFactory(() -> {
             ChannelPipeline p = Channels.pipeline(

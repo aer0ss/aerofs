@@ -70,6 +70,8 @@ public class CfgDatabase extends ICfgStore
     // first start of the daemon
     public static final CfgKey FIRST_START = new CfgKey("first_start", true);
 
+    public static final CfgKey OAUTH_TOKEN = new CfgKey("oauth_token", null);
+
 
     // all the variables are protected by synchronized (this)
     private final IDBCW _dbcw;

@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase;
 import com.aerofs.daemon.core.store.IStoreJoiner.StoreInfo;
-import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;

@@ -2,6 +2,7 @@ package com.aerofs.oauth;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.base.SimpleHttpClient;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;

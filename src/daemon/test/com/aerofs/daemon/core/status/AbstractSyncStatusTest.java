@@ -39,7 +39,6 @@ import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.log.LogUtil;
 import com.aerofs.testlib.AbstractTest;
 
 import org.junit.Before;
