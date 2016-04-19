@@ -12,7 +12,7 @@
     <ul class="nav nav-list left-nav">
         <li class="nav-header">Settings</li>
         <%
-            non_maintenance_links = ['status','registered_apps', 'storage_agent_setup']
+            non_maintenance_links = ['status','registered_apps']
 
             # Please make alphabetical by display name.
             links = [
@@ -30,7 +30,6 @@
                 ('registered_apps', _("Registered apps")),
                 ('session_management', _("Session management")),
                 ('setup', _("Setup")),
-                ('storage_agent_setup', _("Storage servers")),
                 ('sync_settings', _("Sync settings")),
                 ('toggle_maintenance_mode', _("System maintenance")),
                 ('status', _("System status")),
