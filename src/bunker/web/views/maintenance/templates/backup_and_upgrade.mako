@@ -340,7 +340,7 @@
         ## upgrade attempt.
         function onBackupInProgress() {
             $('#backup-upgrade-progress-modal').modal('show');
-            waitForBackup(switchToLatest, $('#backup-upgrade-progress-modal'));
+            waitForBackup(switchToLatest, 'maintenance', $('#backup-upgrade-progress-modal'));
         }
 
         ## Function that starts a new upgrade if no upgrade in progress,
@@ -445,7 +445,7 @@
         }
 
         ## @param onBackupDone: a callback when backup succeeds. Expected signature:
-        ##          function onBackupDone(onSuccess, onFailure),
+        ##          function onBackupDone(targetToRebootTo, onSuccess, onFailure),
         ## where onSuccess and onFailure are the methods to be called when onBackupDone succeeds or
         ## fails.
         ##
@@ -453,20 +453,25 @@
         ## responsibility to exit the mode if necessary.
         function backup(onBackupDone, progressModal) {
             progressModal.modal('show');
-            reboot('maintenance', function() {
-                performBackup(onBackupDone, progressModal);
-            }, handleFailed);
-        }
-
-        function performBackup(onBackupDone, progressModal) {
-            console.log("start backup");
-            $.post("${request.route_path('json-backup')}")
-            .done(function() {
-                waitForBackup(onBackupDone, progressModal);
+            $.get("${request.route_path('json-get-boot')}")
+            .done(function(resp) {
+                var current = resp['target'];
+                console.log("current target is " + current);
+                reboot('maintenance', function() {
+                    performBackup(onBackupDone, current, progressModal);
+                }, handleFailed);
             }).fail(handleFailed);
         }
 
-        function waitForBackup(onBackupDone, progressModal) {
+        function performBackup(onBackupDone, target, progressModal) {
+            console.log("start backup");
+            $.post("${request.route_path('json-backup')}")
+            .done(function() {
+                waitForBackup(onBackupDone, target, progressModal);
+            }).fail(handleFailed);
+        }
+
+        function waitForBackup(onBackupDone, target, progressModal) {
             console.log("wait for backup done");
             var interval = window.setInterval(function() {
                 $.get("${request.route_path('json-backup')}")
@@ -478,7 +483,7 @@
                         window.clearInterval(interval);
                         if(onBackupDone)onBackupDone(function() {
                             download(progressModal);
-                        }, handleFailed);
+                        }, target, handleFailed);
                     } else {
                         console.log('backup failed');
                         window.clearInterval(interval);
@@ -547,13 +552,13 @@
             $('#shutdown-modal').modal('show');
         }
 
-        function switchToLatest(onSuccess, onFailure) {
+        function switchToLatest(onSuccess, target, onFailure) {
             onSuccess();
             var $modal = $('#backup-done-confirm-modal');
             $('#backup-done-confirm-btn').off().on('click', function() {
                 $modal.modal('hide');
                 console.log("start switching appliance");
-                switchAppliance(onFailure);
+                switchAppliance(target, onFailure);
             });
             $modal.modal('show');
         }

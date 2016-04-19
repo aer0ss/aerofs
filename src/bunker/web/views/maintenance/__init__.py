@@ -23,7 +23,6 @@ routes = [
     'json-has-disk-space',
     'json-needs-upgrade',
     'json-pull-images',
-    'json-switch-appliance',
     'json-gc',
     'json-update-os',
     'json-reboot-vm',
@@ -103,3 +102,4 @@ def includeme(config):
     config.add_route('maintenance_home', '/')
 
     config.add_route('json-boot', 'json-boot/{target}')
+    config.add_route('json-switch-appliance','json-switch-appliance/{target}')

@@ -242,14 +242,14 @@
         }
 
         ## Switch existing appliance to latest version and garbage clean old unused version images once switched.
-        function switchAppliance(handleFailed) {
+        function switchAppliance(target, handleFailed) {
             $('#switch-wait-modal').modal('show');
             console.log("wait for appliance switching")
             $.get("${request.route_path('json-get-boot')}")
             .done(function(resp) {
                 var bootID = resp['id'];
                 console.log("old bootid " + bootID);
-                $.post("${request.route_path('json-switch-appliance')}")
+                $.post("${request.route_path('json-switch-appliance', target='')}" + target)
                 .done(function() {
                     console.log("switching appliance...");
                     waitForReboot(bootID, function() {
