@@ -97,7 +97,7 @@ def create_deployment(customer, subdomain, delay=0, restore=False, server_id=Non
     create_subdomain(deployment)
 
     # Start a chain of celery tasks to configure the deployment
-    (
+    create_deployment_task = (
         sail.si(subdomain) |
         configure_deployment.si(subdomain, restore) |
         reboot.si(subdomain) |
@@ -105,6 +105,7 @@ def create_deployment(customer, subdomain, delay=0, restore=False, server_id=Non
 
     ).apply_async(link_error=save_error.si(subdomain), countdown=delay)
 
+    return create_deployment_task
 
 @celery.task()
 def save_error(subdomain):
@@ -224,10 +225,15 @@ def upgrade_deployment(deployment, server_id=None):
                 current_app.logger.info('Upgrade: Deployment {} was deleted. Restoring \
                                         it with latest version images.'.format(
                     deployment.subdomain))
-                create_deployment(deployment.customer,
-                                  deployment.subdomain,
-                                  restore=True,
-                                  server_id=server_id)
+                create_deployment_task = create_deployment(deployment.customer,
+                                                           deployment.subdomain,
+                                                           restore=True,
+                                                           server_id=server_id)
+                # When upgrading we don't want to upgrade deployments in parallel so we wait
+                # till the new deployment is ready before releasing the thread
+                create_deployment_task.get()
+                current_app.logger.info('Deployment {} was restored'.format(
+                    deployment.subdomain))
             else:
                 current_app.logger.warning('Deployment {} was NOT deleted'.format(
                     deployment.subdomain))
@@ -346,9 +352,11 @@ def delete_containers(deployment):
     assert len(containers) < 40
 
     # Remove the containers
+    current_app.logger.info("Deleting containers for {}".format(deployment.subdomain))
     for container in containers:
-        current_app.logger.info("Deleting container %s", container)
         docker.remove_container(container['Id'], force=True)
+    current_app.logger.info("All containers has been deleted for {}".format(
+        deployment.subdomain))
 
 
 # If upgrade is set to True, we remove the containers but do not remove the
@@ -366,14 +374,19 @@ def delete_deployment(deployment, upgrade=False):
                 while deleting containers. ", ex)
         deleted = False
 
-    delete_subdomain(deployment)
-    hosting_server_id = deployment.server_id
+    try:
+        delete_subdomain(deployment)
+        hosting_server_id = deployment.server_id
+    except Exception as ex:
+        hosting_server_id = None
+        current_app.logger.warn("Failed to delete the subdomain: {}".format(deployment.subdomain))
 
     if not upgrade:
         db.session.delete(deployment)
         db.session.commit()
 
-        delete_server_if_empty(hosting_server_id)
+        if hosting_server_id:
+            delete_server_if_empty(hosting_server_id)
     else:
         # Modifying the db for the upgrade
         deployment.server_id = None
@@ -477,14 +490,14 @@ def download_backup_file(subdomain):
     # Wait for new boot id, or until we time out
     while True:
         new_id = get_boot_id(session)
-        current_app.logger.info("Backup: Waiting for reboot, new id {}".format(new_id))
+        current_app.logger.info("Backup {}: Waiting for reboot".format(subdomain))
         if new_id is not None and new_id != old_id:
             break
 
         time.sleep(POLLING_INTERVAL)
 
     # Generate the backup file
-    current_app.logger.info('Generating the backup file')
+    current_app.logger.info('Generating the backup file for {}'.format(subdomain))
     session.post('/admin/json-backup')
 
     # Check when the backup file is ready
@@ -492,14 +505,14 @@ def download_backup_file(subdomain):
         backup_request = session.get('/admin/json-backup')
         if backup_request.status_code == 200:
             status = backup_request.json()
-            current_app.logger.info(status)
             if status['succeeded']:
                 break
         else:
             current_app.logger.warn('Failed to delete deployment {}'.format(subdomain))
             return False
 
-    current_app.logger.info("Downloading the backup file from the appliance")
+    current_app.logger.info("Downloading the backup file {} from the appliance".format(
+        subdomain))
     # Download the backup file into tmp dir and storing it in a S3 bucket
     backup_file = session.get('/admin/download_backup_file')
     backup_name = set_backup_name(subdomain)

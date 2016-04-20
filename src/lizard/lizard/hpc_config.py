@@ -139,32 +139,35 @@ def configure_deployment(self, subdomain, restore=False):
                     status = status.json()
                     logger.info(status)
                     if status['succeeded']:
+                        restore_succeeded = True
                         break
                 except ValueError:
-                    logger.info('Failed to restore deployment')
+                    restore_succeeded = False
+                    logger.info('Failed to restore deployment {}'.format(subdomain))
+                    break
                 time.sleep(POLLING_INTERVAL)
 
-            # Configure email settings
-            r = session.post("/admin/json_setup_email",
-                             data={'email-server': 'local',
-                                   'base-www-support-email-address': 'support@aerofs.com'})
-            r.raise_for_status()
+            if restore_succeeded:
+                # Configure email settings
+                r = session.post("/admin/json_setup_email",
+                                 data={'email-server': 'local',
+                                       'base-www-support-email-address': 'support@aerofs.com'})
+                r.raise_for_status()
 
-            # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
-            r = session.post("/admin/json_setup_hpc",
-                             data={'zephyr.address': 'zephyr.aerofs.com:8888'})
+                # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+                r = session.post("/admin/json_setup_hpc",
+                                 data={'zephyr.address': 'zephyr.aerofs.com:8888'})
 
-            # Setup the restored session
-            session.post('/admin/json_setup_set_restored_from_backup')
+                # Setup the restored session
+                session.post('/admin/json_setup_set_restored_from_backup')
 
-            os.remove(backup_file_path)
+                os.remove(backup_file_path)
 
         except Exception as e:
             # Many errors are due to the fact that DNS hasn't propagated yet or
             # the server is busy pulling Docker images
             # Wait 30s and retry
             raise self.retry(exc=e, countdown=30, max_retries=10)
-
 
 
 @celery.task(bind=True)
@@ -205,7 +208,7 @@ def reboot(self, subdomain):
             time.sleep(2)
 
     except Exception as e:
-        raise self.retry(exc=e, countdown=40, max_retries=10)
+        raise self.retry(exc=e, countdown=50, max_retries=10)
 
 
 def get_boot_id(session):
