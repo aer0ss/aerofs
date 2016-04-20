@@ -62,13 +62,13 @@ func (ctx *context) updateConvo(request *restful.Request, response *restful.Resp
 			added := newMembers.Diff(oldMembers)
 			removed := oldMembers.Diff(newMembers)
 			for uid := range added {
-				err := ctx.spartaClient.AddSharedFolderMember(c.Sid, uid)
+				err := ctx.spartaClient.AddSharedFolderMember(c.Sid, uid, caller)
 				if err != nil {
 					log.Printf("err adding %v to %v: %v\n", uid, c.Sid, err)
 				}
 			}
 			for uid := range removed {
-				err := ctx.spartaClient.RemoveSharedFolderMember(c.Sid, uid)
+				err := ctx.spartaClient.RemoveSharedFolderMember(c.Sid, uid, caller)
 				if err != nil {
 					log.Printf("err removing %v from %v: %v\n", uid, c.Sid, err)
 				}

@@ -289,7 +289,7 @@ func (ctx *context) addMember(request *restful.Request, response *restful.Respon
 	if convo.Sid != "" {
 		go func() {
 			log.Printf("adding %v to %v on sparta\n", uid, convo.Sid)
-			err := ctx.spartaClient.AddSharedFolderMember(convo.Sid, uid)
+			err := ctx.spartaClient.AddSharedFolderMember(convo.Sid, uid, caller)
 			if err != nil {
 				log.Printf("err adding %v to sid %v: %v\n", uid, convo.Sid, err)
 			}
@@ -357,7 +357,7 @@ func (ctx *context) removeMember(request *restful.Request, response *restful.Res
 	if convo.Sid != "" {
 		go func() {
 			log.Printf("removing %v from %v on sparta\n", uid, convo.Sid)
-			err := ctx.spartaClient.RemoveSharedFolderMember(convo.Sid, uid)
+			err := ctx.spartaClient.RemoveSharedFolderMember(convo.Sid, uid, caller)
 			if err != nil {
 				log.Printf("err removing %v from sid %v: %v\n", uid, convo.Sid, err)
 			}

@@ -116,7 +116,7 @@ func (c *Client) createSharedFolder(uids []string, owner, name string, isLocked 
 	return response.Id, nil
 }
 
-func (c *Client) AddSharedFolderMember(sid, uid string) error {
+func (c *Client) AddSharedFolderMember(sid, uid, caller string) error {
 	url := fmt.Sprint(BASE_URL, "/shares/", sid, "/members")
 	body, err := json.Marshal(map[string]interface{}{
 		"email":       uid,
@@ -129,7 +129,15 @@ func (c *Client) AddSharedFolderMember(sid, uid string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", getDelegatedAuthHeader(uid, c.deploymentSecret))
+
+	// To maintain a 'clean' audit trail, delegate the add call to the user making the request.
+	// A user cannot add him/herself to a shared folder, so the TS user is used.
+	if uid == caller {
+		req.Header.Add("Authorization", getDelegatedAuthHeader(":2", c.deploymentSecret))
+	} else {
+		req.Header.Add("Authorization", getDelegatedAuthHeader(caller, c.deploymentSecret))
+	}
+
 	req.Header.Add("Content-Type", "application/json")
 	resp := <-c.pool.Do(req)
 	if resp.Err != nil {
@@ -141,13 +149,14 @@ func (c *Client) AddSharedFolderMember(sid, uid string) error {
 	return nil
 }
 
-func (c *Client) RemoveSharedFolderMember(sid, uid string) error {
+func (c *Client) RemoveSharedFolderMember(sid, uid, caller string) error {
 	url := fmt.Sprint(BASE_URL, "/shares/", sid, "/members/", uid)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Authorization", getDelegatedAuthHeader(uid, c.deploymentSecret))
+
+	req.Header.Add("Authorization", getDelegatedAuthHeader(caller, c.deploymentSecret))
 	resp := <-c.pool.Do(req)
 	if resp.Err != nil {
 		return resp.Err
