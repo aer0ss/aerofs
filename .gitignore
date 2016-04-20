@@ -71,6 +71,22 @@ project.xcworkspace
 .gradle
 local.properties
 *.iml
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+build/
+local.properties
+proguard/
+*.log
+.navigation/
+captures/
+*.iml
+*.jks
 
 # React Native iOS
 .flowconfig
