@@ -92,7 +92,6 @@
                 if (request.status === 200) {
                     var data = JSON.parse(request.responseText);
                     if (data.id != oldBootID) {
-                        window.clearInterval(interval);
                         onSuccess();
                         return;
                     }
