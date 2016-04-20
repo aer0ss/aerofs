@@ -42,17 +42,23 @@ installers. To do this, run the following commands:
 4. Build using
 
        invoke --signed clean proto build_client package_clients package_updates \
-          build_images build_vm build_sa_images build_sa_vm tag_release push_vm
+          build_images build_vm build_sa_images build_sa_vm tag_release
 
    *Note: you will not be able to successfully build the appliance if the keys for
    building the Eyja iOS app are present on the build machine. See below.
 
-5. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
+5. Push VM to S3 and images to registry using:
 
-6. When you are ready to push the docker images, ssh into `buildmachine@buildmachine.arrowfs.org`
+       invoke --push-repo registry.aerofs.com push_vm push_sa_vm push_images push_sa_images
+       
+       *Note: this will not release new version to public.
+
+6. [QA the VMs](../testing/private-cloud-manual-test-plan.html)
+
+7. When you are ready to release the docker images, ssh into `buildmachine@buildmachine.arrowfs.org`
 and run:
 
-        cd <TeamCity working directory> && ./invoke --push-repo registry.aerofs.com push_images push_sa_images push_sa_vm
+        cd <TeamCity working directory> && ./invoke --push-repo registry.aerofs.com release_images release_sa_images
 
    When everything is pushed, go ahead and tag the release.
    Note: If the build is done through TeamCity, you can find the working directory in the TeamCity's
@@ -62,7 +68,7 @@ build log under `Signed`.
 
    This will upload the artifacts to S3 and the docker registry and send corresponding slack
    notifications. The docker registry images will be available to the public immediately. The S3
-   artifacts need to be released manually by updating the version on the [Private Cloud Admin
+   artifacts need to be released mansually by updating the version on the [Private Cloud Admin
    Portal](http://enterprise.aerofs.com:8000/release).
 
    If for any reason, a release needs to be pulled from the registry, tag the loader that should be
@@ -77,7 +83,7 @@ build log under `Signed`.
 
    The loader image will now be set to latest.
 
-7. After releasing, write the [Release
+8. After releasing, write the [Release
    Notes](https://support.aerofs.com/hc/en-us/articles/201439644-AeroFS-Release-Notes), the
    Internal Release notes for product updates released only to the AeroFS team (Slack channel
    [#srs-bizness](https://aerofs.slack.com/messages/srs-bizness)), and go through the JIRA ENG
@@ -86,7 +92,7 @@ build log under `Signed`.
    the Customer Success Team who should follow-up with their customers to inform them of the bug
    fix.
 
-8. Deploy the release notes. A notification will be sent to the
+9. Deploy the release notes. A notification will be sent to the
    [#success](https://aerofs.slack.com/messages/success) channel on slack.
 
        cd ~/repos/support-website && python deploy.py

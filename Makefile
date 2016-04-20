@@ -142,6 +142,20 @@ push_vm:
 	$(GIT_ROOT)/tools/build/bootstrap push_vm aerofs/loader
 	$(call success,"push_vm")
 
+release_images:
+ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
+	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
+endif
+	$(GIT_ROOT)/docker/ship-aerofs/release-images.sh aerofs/loader $(PUSH_REPO)
+	$(call success,"release_images")
+
+release_sa_images:
+ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
+	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
+endif
+	$(GIT_ROOT)/docker/ship-aerofs/release-images.sh aerofs/sa-loader $(PUSH_REPO)
+	$(call success,"release_sa_images")
+
 setupenv:
 ifeq ($(OS),)
 	$(error "OS must be defined to run setupenv.")

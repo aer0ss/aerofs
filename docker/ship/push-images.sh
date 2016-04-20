@@ -7,41 +7,16 @@ if [ $# != 1 ]; then
 fi
 
 SHIP_YML="$1"
+THIS_DIR="$(dirname $0)"
 
-# Return the value of the given key specified in ship.yml
-yml() {
-    grep "^$1:" "${SHIP_YML}" | sed -e "s/^$1: *//" | sed -e 's/ *$//'
-}
+LOADER_IMAGE=$(${THIS_DIR}/yml.sh ${SHIP_YML} 'loader')
 
-LOADER_IMAGE=$(yml 'loader')
 TAG=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} tag)
 
-PUSH_REPO=$(yml 'push-repo')
+PUSH_REPO=$(${THIS_DIR}/yml.sh ${SHIP_YML} 'push-repo')
 if [ -z "${PUSH_REPO}" ]; then
-    PUSH_REPO=$(yml 'repo')
+    PUSH_REPO=$(${THIS_DIR}/yml.sh ${SHIP_YML} 'repo')
 fi
-
-# Retry 'docker push $0' with exponential backoff. Needed as some docker registries are not reliably reachable.
-push() {
-    (set +e
-        RETRY=0
-        TIMEOUT=1
-        while true; do
-            docker push $1
-            if [ $? = 0 ]; then
-                break
-            elif [ ${RETRY} = 6 ]; then
-                echo "ERROR: Retried too many times. I gave up."
-                exit 22
-            else
-                echo "Retry #${RETRY} in ${TIMEOUT} seconds..."
-                sleep ${TIMEOUT}
-                TIMEOUT=$[TIMEOUT * 2]
-                RETRY=$[RETRY + 1]
-            fi
-        done
-    )
-}
 
 # Add repo name only when pushing to aerofs registry. For pushing images
 # to docker hub adding repo name(registry.hub.docker.com) complains of
@@ -52,6 +27,9 @@ else
     PUSH_IMAGE_PREFIX=""
 fi
 
+# Tag all images with the next latest version and push it to the registry.
+# Images pushed to the registry are not immediately available to the public
+# until the loader image is tag with "latest".
 for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
     echo "============================================================"
     echo " Pushing ${i}:${TAG} to ${PUSH_REPO}..."
@@ -59,20 +37,7 @@ for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER
     PUSH_IMAGE="${PUSH_IMAGE_PREFIX}${i}:${TAG}"
     docker tag -f "${i}" "${PUSH_IMAGE}"
     docker tag -f "${i}" "${PUSH_IMAGE_PREFIX}${i}:latest"
-    push "${PUSH_IMAGE}"
+    ${THIS_DIR}/push-docker-image.sh "${PUSH_IMAGE}"
     docker rmi "${PUSH_IMAGE}"
 done
-
-echo "============================================================"
-echo " Pushing ${LOADER_IMAGE}:latest to ${PUSH_REPO}..."
-echo "============================================================"
-LOADER_PUSH_IMAGE=$PUSH_IMAGE_PREFIX${LOADER_IMAGE}
-docker tag -f ${LOADER_IMAGE} ${LOADER_PUSH_IMAGE}
-push ${LOADER_PUSH_IMAGE}
-docker rmi ${LOADER_PUSH_IMAGE}
-
-
-echo
-echo ">>> New version successfully released: ${TAG}"
-echo
 
