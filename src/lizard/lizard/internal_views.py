@@ -3,12 +3,15 @@ import datetime
 import stripe
 import tarfile
 import requests
+import base64
+import os
 from StringIO import StringIO
 from hpc_config import reboot, new_authed_session
 from aerofs_licensing import unicodecsv
 from lizard import db, csrf, appliance, notifications, forms, models, hpc
 from flask import Blueprint, current_app, url_for, render_template, redirect, Response, request, \
     flash, jsonify
+from werkzeug.datastructures import MultiDict
 
 blueprint = Blueprint('internal', __name__, template_folder='templates')
 
@@ -411,6 +414,64 @@ def delete_customer_account(org_id):
     flash(u'Customer account deleted.', 'success')
 
     return redirect(url_for("internal.all_accounts"))
+
+# Render a form for adding a new user for a new organization
+@blueprint.route("/create_account", methods=["GET", "POST"])
+def create_account():
+    form = forms.NewAccountCreationForm()
+
+    if form.validate_on_submit():
+        # look to see if we have someone with that email address already. If the account email is
+        # already an admin, let the user know
+        admin = models.Admin.query.filter_by(email=form.email.data).first()
+        if admin:
+            # NB: We don't clear the form in this case. If the email address is already an admin for
+            # an org, the fields stay populated so the AeroFS user has the information to
+            # discuss the already existing account with the customer
+            flash("A user with that email address already exists", "error")
+            return render_template('create_account.html', form=form)
+
+        # if there is an UnboundSignup for this email address, send the email using it
+        record = models.UnboundSignup.query.filter_by(email=form.email.data).first()
+        if record:
+            flash("The user was already invited - resending signup email", "success")
+        # if there is not an UnboundSignup for this email address, create one
+        else:
+            # create a signup
+            signup_code = base64.urlsafe_b64encode(os.urandom(30))
+            record = models.UnboundSignup()
+            record.signup_code=signup_code
+            record.email=form.email.data
+            record.first_name = form.first_name.data.capitalize()
+            record.last_name = form.last_name.data.capitalize()
+            record.company_name = form.company_name.data
+            record.phone_number = form.phone_number.data
+            record.job_title = form.job_title.data
+            db.session.add(record)
+            db.session.commit()
+
+            # send this user to pardot, because we had no record of the email address
+            pardot_params = {
+                'first_name': record.first_name.encode('utf-8'),
+                'last_name': record.last_name.encode('utf-8'),
+                'email': record.email.encode('utf-8'),
+                'company': record.company_name.encode('utf-8'),
+                'phone': record.phone_number.encode('utf-8'),
+                'job_title': record.job_title.encode('utf-8'),
+                'company_size': form.company_size.data.encode('utf-8'),
+                'current_fss': form.current_fss.data.encode('utf-8'),
+                'country': form.country.data.encode('utf-8')
+            }
+            response = requests.get("https://go.pardot.com/l/32882/2014-03-27/bjxp", params=pardot_params)
+
+            flash("Sending signup email", "success")
+
+        # Clear the form and send the email
+        form.process(MultiDict([]))
+        notifications.send_account_created_email(record)
+
+    return render_template('create_account.html', form=form)
+
 
 @blueprint.route("/hpc_deployments", methods=["GET", "POST"])
 def hpc_deployments():

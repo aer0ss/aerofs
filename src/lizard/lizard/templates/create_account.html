@@ -1,0 +1,21 @@
+{% extends "admin.html" %}
+{% from "_formhelpers.html" import render_field, submit_button %}
+
+{% block title %}Create Account | Licensing Admin{% endblock %}
+
+{% block content %}
+<h3>Create Account</h3>
+<form role="form" action="" method="post">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.first_name) }}
+    {{ render_field(form.last_name) }}
+    {{ render_field(form.email) }}
+    {{ render_field(form.company_name) }}
+    {{ render_field(form.phone_number) }}
+    {{ render_field(form.job_title) }}
+    {{ render_field(form.company_size) }}
+    {{ render_field(form.current_fss) }}
+    {{ render_field(form.country) }}
+    {{ submit_button("Create Account") }}
+</form>
+{% endblock %}

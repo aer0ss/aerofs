@@ -1,0 +1,10 @@
+Hi {{ admin.first_name }},
+
+Thanks for your interest in AeroFS.
+
+We've created an AeroFS account for you. Please complete your AeroFS signup by following this link:
+
+{{ signup_url }}
+
+Regards,
+The AeroFS Team

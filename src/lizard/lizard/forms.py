@@ -33,6 +33,33 @@ class SignupForm(Form):
     demandramp_rm__person_id__c = HiddenField("demandramp_rm__person_id__c", validators=[Optional()])
     demandramp_rm__session_id__c = HiddenField("demandramp_rm__session_id__c", validators=[Optional()])
 
+class NewAccountCreationForm(Form):
+    first_name = StringField('First Name', validators=[InputRequired()])
+    last_name = StringField('Last Name', validators=[InputRequired()])
+    email = StringField('Email', validators = [InputRequired(), Email()])
+    company_name = StringField('Company', validators=[InputRequired()])
+    phone_number = StringField("Phone", validators=[InputRequired()])
+    job_title = StringField("Job Title", validators=[InputRequired()])
+    company_size = SelectField("Company Size", choices=[
+            ('0-74', '0-74'),
+            ('75-149', '75-149'),
+            ('150-499', '150-499'),
+            ('500-999', '500-999'),
+            ('1000- 2499', '1000-2499'), # the extra space matches the marketing form
+            ('2500-4999', '2500-4999'),
+            ('5000+', '5000+')
+        ], validators=[InputRequired()], default="0-74")
+    current_fss = SelectField("Current file sharing solution", choices=[
+            ('SharePoint', 'SharePoint'),
+            ('Box', 'Box'),
+            ('Dropbox', 'Dropbox'),
+            ('File Server', 'File Server'),
+            ('Other', 'Other'),
+            ('None', 'None'),
+            ("Don't know", "Don't know")
+        ], validators=[InputRequired()], default="Other")
+    country = StringField("Country", validators=[InputRequired()], default="United States")
+
 class CompleteSignupForm(Form):
     password = PasswordField('Password', validators=[InputRequired(), Length(min=6)])
 

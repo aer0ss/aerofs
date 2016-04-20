@@ -12,10 +12,10 @@ SLACK_WEBHOOK="https://hooks.slack.com/services/T027U3FMY/B03U7PCBV/OJyRoIrtlMmX
 FAQS_URL = "https://support.aerofs.com/hc/en-us/articles/204592794"
 CONTACT_URL = "https://support.aerofs.com/hc/en-us/articles/201440860"
 
-def _make_email_message(email_address, subject, text_body, html_body):
+def _make_email_message(email_address, subject, text_body, html_body, from_address=SUPPORT_ADDR):
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = SUPPORT_ADDR
+    msg["From"] = from_address
     msg["To"] = email_address
 
     # Record the MIME types of both parts
@@ -108,6 +108,26 @@ def _license_available_email_for(admin):
     html_body = render_template("emails/license_ready_email.html", **template_args)
     return _make_email_message(admin.email, "Your AeroFS Private Cloud License is ready",
             text_body, html_body)
+
+def _account_created_email_for(unbound_signup):
+    # We can't use url_for() here because it's not part of this server instance
+    # (this email is sent from internal app - links would point to the internal
+    # app, rather than the user-facing one)
+
+    signup_url = "https://enterprise.aerofs.com/signup?signup_code={}".format(unbound_signup.
+                                                                              signup_code)
+
+    print u"will email account created email to {}, link {}".format(unbound_signup.email,
+                                                                    signup_url)
+    text_body = render_template("emails/account_create_email.txt",
+            signup_url=signup_url,
+            admin=unbound_signup)
+    html_body = render_template("emails/account_create_email.html",
+            signup_url=signup_url,
+            admin=unbound_signup
+    )
+    return _make_email_message(unbound_signup.email, "Complete your AeroFS signup",
+            text_body, html_body, SALES_ADDR)
 
 def _password_reset_email_for(admin, link):
     text_body = render_template("emails/password_reset_email.txt",
@@ -258,3 +278,7 @@ def send_internal_appliance_release_notification(appliance_version):
         # N.B. Slack is super picky about the format of the JSON payload. Requests doesn't do it in
         # a way that makes Slack happy, but json.dumps does.
         requests.post(SLACK_WEBHOOK, data=json.dumps(payload), headers=headers)
+
+def send_account_created_email(unbound_signup):
+    msg = _account_created_email_for(unbound_signup)
+    _send_email(unbound_signup.email, msg)
