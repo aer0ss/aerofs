@@ -170,11 +170,9 @@
                     console.log("Repackaging installers...");
                     waitForRepackaging(handleFailed);
                 }).fail(function(xhr) {
-                    window.clearInterval(interval);
                     if (handleFailed) handleFailed(xhr);
                 });
             }).fail(function(xhr) {
-                    window.clearInterval(interval);
                     if (handleFailed) handleFailed(xhr);
             });
         }
