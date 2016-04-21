@@ -20,12 +20,14 @@ package com.aerofs.bifrost.oaaas.model;
 
 import com.aerofs.ids.MDID;
 import com.aerofs.bifrost.oaaas.auth.principal.PrincipalUtils;
+import com.aerofs.ids.UniqueID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
@@ -90,7 +92,12 @@ public class AccessToken extends AbstractEntity
     private String mdid;
 
     public AccessToken(String token, AuthenticatedPrincipal principal, Client client, long expires,
-            Set<String> scopes, String refreshToken)
+            Set<String> scopes, String refreshToken) {
+        this(token, principal, client, expires, scopes, refreshToken, null);
+    }
+
+    public AccessToken(String token, AuthenticatedPrincipal principal, Client client, long expires,
+                       Set<String> scopes, String refreshToken, @Nullable UniqueID mdid)
     {
         super();
         Preconditions.checkNotNull(principal);
@@ -103,7 +110,7 @@ public class AccessToken extends AbstractEntity
         this.expires = expires;
         this.scopes = ImmutableSet.copyOf(scopes);
         this.refreshToken = refreshToken;
-        this.mdid = MDID.generate().toStringFormal();
+        this.mdid = (mdid != null ? mdid : MDID.generate()).toStringFormal();
         invariant();
     }
 

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.sp.sparta.providers;
+package com.aerofs.sp;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
@@ -12,8 +12,6 @@ import com.aerofs.ids.DID;
 import com.aerofs.ids.ExInvalidID;
 import com.aerofs.ids.UserID;
 import com.aerofs.rest.auth.AuthTokenExtractor;
-import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.sp.sparta.CertAuthToken;
 import com.google.inject.Inject;
 import com.sun.jersey.api.core.HttpContext;
 import com.sun.jersey.api.core.HttpRequestContext;
@@ -44,7 +42,7 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
 {
     private final Logger l = Loggers.getLogger(CertAuthExtractor.class);
 
-    private CertificateDatabase _certdb;
+    private CertificateRevocationChecker _crc;
 
     private final static Base64.Decoder base64 = Base64.getDecoder();
 
@@ -58,10 +56,14 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
     private final static Pattern DEVICE_CERT_PATTERN =
             Pattern.compile("Aero-Device-Cert ([0-9a-zA-Z+/]+=*) ([0-9a-f]{32})");
 
+    public interface CertificateRevocationChecker {
+        boolean isRevoked(long serial) throws ExNotFound, SQLException;
+    }
+
     @Inject
-    public CertAuthExtractor(CertificateDatabase certdb)
+    public CertAuthExtractor(CertificateRevocationChecker crc)
     {
-        _certdb = certdb;
+        _crc = crc;
     }
 
     @Override
@@ -239,7 +241,7 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
             throws InternalFailureException
     {
         try {
-            if (_certdb.isRevoked(serial)) {
+            if (_crc.isRevoked(serial)) {
                 throw invalidAuthorizationException("Certificate " + serial + " is revoked");
             }
         } catch (SQLException e) {

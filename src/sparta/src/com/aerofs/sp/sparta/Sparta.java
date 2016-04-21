@@ -35,11 +35,12 @@ import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.sp.CertAuthExtractor.CertificateRevocationChecker;
 import com.aerofs.sp.authentication.Authenticator;
 import com.aerofs.sp.authentication.AuthenticatorFactory;
 import com.aerofs.sp.server.Zelda;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.sp.sparta.providers.CertAuthExtractor;
+import com.aerofs.sp.CertAuthExtractor;
 import com.aerofs.sp.sparta.providers.TransactionWrapper;
 import com.aerofs.sp.sparta.providers.WirableMapper;
 import com.aerofs.sp.sparta.resources.*;
@@ -266,6 +267,7 @@ public class Sparta extends Service
                 bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
                 bind(Configuration.class).to(SpartaConfiguration.class);
                 bind(Timer.class).toInstance(timer);
+                bind(CertificateRevocationChecker.class).to(CertificateDatabase.class);
                 bind(TokenVerifier.class).toInstance(new TokenVerifier(
                         getStringProperty("sparta.oauth.id"),
                         getStringProperty("sparta.oauth.secret"),

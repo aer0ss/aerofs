@@ -37,6 +37,7 @@ import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
 import com.aerofs.rest.auth.DelegatedUserToken;
 import com.aerofs.rest.auth.IAuthToken;
+import com.aerofs.rest.auth.IUserAuthToken;
 import com.aerofs.rest.auth.PrivilegedServiceToken;
 import com.aerofs.restless.Auth;
 import com.google.common.base.Objects;
@@ -213,7 +214,7 @@ public class TokenResource
                     .header(WWW_AUTHENTICATE, BASIC_REALM)
                     .build();
         }
-        AccessToken token = createAccessToken(request, false);
+        AccessToken token = createAccessToken(request, false, null);
         l.info("created token {} for {}", token.getToken(), token.getClientId());
 
         AccessTokenResponse response = new AccessTokenResponse(
@@ -259,7 +260,7 @@ public class TokenResource
         request = authRequestFromClient(accessTokenRequest);
         request.setPrincipal(new AuthenticatedPrincipal(userID.getString(), userID, OrganizationID.PRIVATE_ORGANIZATION));
 
-        AccessToken token = createAccessToken(request, false);
+        AccessToken token = createAccessToken(request, false, authToken);
         l.info("created token {} for {}", token.getToken(), token.getClientId());
 
         AccessTokenResponse response = new AccessTokenResponse(
@@ -268,6 +269,7 @@ public class TokenResource
                 Objects.firstNonNull(request.expiresInSeconds, request.getClient().getExpireDuration()),
                 token.getRefreshToken(),
                 StringUtils.join(token.getScopes(), ','));
+
 
         return Response.ok().entity(response).build();
     }
@@ -445,7 +447,8 @@ public class TokenResource
         return client;
     }
 
-    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant)
+    private AccessToken createAccessToken(AuthorizationRequest request, boolean isImplicitGrant,
+                                          @Nullable IAuthToken token)
     {
         Client client = request.getClient();
         long expireDurationSeconds =
@@ -455,6 +458,10 @@ public class TokenResource
         String refreshToken = (client.isUseRefreshTokens() && !isImplicitGrant) ?
                 newTokenValue() : null;
         AuthenticatedPrincipal principal = request.getPrincipal();
+        UniqueID mdid = null;
+        if (token instanceof IUserAuthToken) {
+            mdid = ((IUserAuthToken) token).uniqueId();
+        }
         return accessTokenRepository.save(
                 new AccessToken(
                         newTokenValue(),
@@ -462,7 +469,8 @@ public class TokenResource
                         client,
                         expiresMilli,
                         request.getGrantedScopes(),
-                        refreshToken)
+                        refreshToken,
+                        mdid)
         );
     }
 
@@ -490,6 +498,8 @@ public class TokenResource
     {
         if (token instanceof DelegatedUserToken) {
             return ((DelegatedUserToken) token).getUser();
+        } else if (token instanceof IUserAuthToken) {
+            return ((IUserAuthToken) token).user();
         } else {
             return null;
         }

@@ -18,6 +18,7 @@ import com.sun.jersey.spi.inject.InjectableProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,9 @@ public class AuthProvider implements InjectableProvider<Auth, Parameter>
     @SuppressWarnings("varargs")
     public AuthProvider(AuthTokenExtractor<? extends IAuthToken> ...providers)
     {
-        _providers = ImmutableList.copyOf(providers);
+        _providers = ImmutableList.<AuthTokenExtractor<? extends IAuthToken>>builder()
+                .addAll(Arrays.asList(providers).stream().filter(p -> p != null).iterator())
+                .build();
     }
 
     @Override
@@ -52,7 +55,7 @@ public class AuthProvider implements InjectableProvider<Auth, Parameter>
         // TODO: cache by param class?
         List<AuthTokenExtractor<? extends IAuthToken>> l = _providers.stream()
                 .filter(p -> match(p.getClass(), param))
-                .collect(Collectors.<AuthTokenExtractor<? extends IAuthToken>>toList());
+                .collect(Collectors.toList());
 
         if (l.size() == 0) return null;
         return new InjectableAuth(l);

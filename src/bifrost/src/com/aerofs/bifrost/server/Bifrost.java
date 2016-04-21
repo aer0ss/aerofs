@@ -4,6 +4,7 @@
 
 package com.aerofs.bifrost.server;
 
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.bifrost.module.AccessTokenRepositoryImpl;
 import com.aerofs.bifrost.module.AuthorizationRequestRepositoryImpl;
 import com.aerofs.bifrost.module.ClientRepositoryImpl;
@@ -23,21 +24,25 @@ import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
+import com.aerofs.rest.auth.AuthTokenExtractor;
 import com.aerofs.rest.auth.DelegatedUserExtractor;
 import com.aerofs.rest.auth.SharedSecretExtractor;
 import com.aerofs.rest.providers.AuthProvider;
 import com.aerofs.restless.Configuration;
 import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.db.sql.IDataSourceProvider;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.sp.CertAuthExtractor;
+import com.aerofs.sp.CertAuthExtractor.CertificateRevocationChecker;
+import com.aerofs.sp.CertAuthToken;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Module;
+import com.google.inject.*;
 import com.google.inject.internal.Scoping;
 import org.hibernate.SessionFactory;
 
 import java.net.InetSocketAddress;
+import java.sql.SQLException;
 import java.util.Set;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
@@ -49,9 +54,35 @@ public class Bifrost extends Service
     {
         super("bifrost", new InetSocketAddress(getIntegerProperty("bifrost.port", 8700)), injector);
 
+        AuthTokenExtractor<CertAuthToken> certExtractor = null;
+        try {
+            // FIXME: burn hibernate in favor of libservlet-style explicit SQL
+            // this would allow unified transaction and avoid this weird mixed trans business
+            certExtractor = new CertAuthExtractor(new CertificateRevocationChecker() {
+                private final SQLThreadLocalTransaction trans
+                        = injector.getInstance(SQLThreadLocalTransaction.class);
+                private final CertificateDatabase certdb
+                        = injector.getInstance(CertificateDatabase.class);
+                @Override
+                public boolean isRevoked(long serial) throws ExNotFound, SQLException {
+                    l.debug("check revocation {}", serial);
+                    trans.begin();
+                    try {
+                        return certdb.isRevoked(serial);
+                    } finally {
+                        trans.rollback();
+                    }
+                }
+            });
+            l.info("cert auth");
+        } catch (ConfigurationException e) {
+            l.info("no cert auth");
+        }
+
         addResource(new AuthProvider(
                 new SharedSecretExtractor(deploymentSecret),
-                new DelegatedUserExtractor(deploymentSecret)
+                new DelegatedUserExtractor(deploymentSecret),
+                certExtractor
         ));
 
         addResource(AuthorizeResource.class);

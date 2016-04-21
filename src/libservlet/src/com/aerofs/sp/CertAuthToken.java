@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2014.
  */
 
-package com.aerofs.sp.sparta;
+package com.aerofs.sp;
 
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
