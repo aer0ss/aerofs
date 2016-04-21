@@ -10,7 +10,8 @@ import time
 from celery import chord, group
 from docker import Client, tls
 from flask import current_app
-from hpc_config import configure_deployment, get_boot_id, new_authed_session, reboot, repackage
+from hpc_config import configure_deployment, get_boot_id, new_authed_session, \
+    reboot, repackage, _restore_deployment, _repackage, _reboot
 from lizard import celery, db, notifications
 from models import HPCDeployment, HPCServer, Admin
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +19,8 @@ from sqlalchemy.exc import IntegrityError
 EXPIRING_LICENSE_NOTIFICATION_BUFFER = 7
 MONITORING_PORT = 5000
 POLLING_INTERVAL = 2
+RETRY_INTERVAL = 40
+MAX_RETRY = 10
 
 # This variable is only for testing purpose
 NUM_RESERVED_INSTANCES = 2
@@ -60,22 +63,18 @@ def get_docker_client(deployment):
 
 
 # If restore is True, we have to upgrade the deployment.
-def create_deployment(customer, subdomain, delay=0, restore=False, server_id=None):
+def create_deployment(customer, subdomain, delay=0, server_id=None):
     """
     Create a new deployment for a given customer at a given subdomain.
     """
 
-    if not restore:
-        # Adding the deployment to the db
-        deployment = HPCDeployment()
-        deployment.customer = customer
-        deployment.subdomain = subdomain
-        deployment.set_days_until_expiry(30)
-        deployment.setup_status = HPCDeployment.status.IN_PROGRESS
-    else:
-        # If we are restoring the deployment we just change the server on which
-        # the deployment is.
-        deployment = HPCDeployment.query.get(subdomain)
+    # Adding the deployment to the db
+    deployment = HPCDeployment()
+    deployment.customer = customer
+    deployment.subdomain = subdomain
+    deployment.set_days_until_expiry(30)
+    deployment.setup_status = HPCDeployment.status.IN_PROGRESS
+
 
     if server_id:
         deployment.server = HPCServer.query.get(server_id)
@@ -99,13 +98,98 @@ def create_deployment(customer, subdomain, delay=0, restore=False, server_id=Non
     # Start a chain of celery tasks to configure the deployment
     create_deployment_task = (
         sail.si(subdomain) |
-        configure_deployment.si(subdomain, restore) |
+        configure_deployment.si(subdomain) |
         reboot.si(subdomain) |
         repackage.si(subdomain)
 
     ).apply_async(link_error=save_error.si(subdomain), countdown=delay)
 
     return create_deployment_task
+
+def restore_deployment(subdomain, server_id=None):
+    # If we are restoring the deployment we just change the server on which
+    # the deployment is.
+    deployment = HPCDeployment.query.get(subdomain)
+
+    if server_id:
+        deployment.server = HPCServer.query.get(server_id)
+    else:
+        server = pick_server()
+        deployment.server = server
+
+    # Commit the changes to DB.
+    db.session.add(deployment)
+    # If the subdomain already exists, try to throw a more useful exception
+    # type than IntegrityError
+    try:
+        db.session.commit()
+    except IntegrityError as ex:
+        db.session.rollback()
+        # Parse the error message... yes it's dirty but it's the only way
+        raise DeploymentAlreadyExists() if re.match('UNIQUE.*subdomain', ex.orig.message) else ex
+
+    # Create the subdomain on Route 53
+    create_subdomain(deployment)
+
+    # Configure the deployment
+    sail(subdomain)
+
+    # For each of these steps we try to retry 10 times.
+    num_retry = 0
+    while True:
+        try:
+            current_app.logger.info('Configuring deployment {}'.format(subdomain))
+            _restore_deployment(subdomain)
+            configured = True
+            break
+        except Exception as e:
+            configured = False
+            current_app.logger.info('Failed to configure deployment: {}\
+                                    \n Retrying in {} seconds.'.format(e, RETRY_INTERVAL))
+            if num_retry == MAX_RETRY:
+                current_app.logger.info('Configure deployment {} failed 10 times: {}.'\
+                                        .format(subdomain, e))
+                break
+            num_retry += 1
+            time.sleep(RETRY_INTERVAL)
+
+    if configured:
+        num_retry = 0
+        while True:
+            try:
+                current_app.logger.info('Rebooting deployment'.format(subdomain))
+                _reboot(subdomain)
+                rebooted = True
+                break
+            except Exception as e:
+                rebooted = False
+                current_app.logger.info('Failed to reboot deployment: {}\
+                                        \n Retrying in {} seconds.'.format(e, RETRY_INTERVAL))
+                if num_retry == MAX_RETRY:
+                    current_app.logger.info('Reboot deployment {} failed 10 times: {}.\
+                    '.format(subdomain, e))
+                    break
+                num_retry += 1
+                time.sleep(RETRY_INTERVAL)
+
+        if rebooted:
+            num_retry = 0
+            while True:
+                try:
+                    current_app.logger.info('Repackaging deployment {}'.format(subdomain))
+                    _repackage(subdomain)
+                    break
+                except Exception as e:
+                    current_app.logger.info('Failed to repackage deployment: {}\
+                                            \n Retrying in {} seconds.'.format(e, RETRY_INTERVAL))
+                    if num_retry == MAX_RETRY:
+                        current_app.logger.info('Repackaging deployment {} failed 10 times: {}\
+                        '.format(subdomain, e))
+                        break
+                    num_retry += 1
+                    time.sleep(RETRY_INTERVAL)
+
+
 
 @celery.task()
 def save_error(subdomain):
@@ -224,14 +308,11 @@ def upgrade_deployment(deployment, server_id=None):
             if deleted:
                 current_app.logger.info('Upgrade: Deployment {} was deleted. Restoring \
                                         it with latest version images.'.format(
-                    deployment.subdomain))
-                create_deployment_task = create_deployment(deployment.customer,
-                                                           deployment.subdomain,
-                                                           restore=True,
-                                                           server_id=server_id)
+                     deployment.subdomain))
+                restore_deployment(deployment.subdomain,
+                                   server_id=server_id)
                 # When upgrading we don't want to upgrade deployments in parallel so we wait
                 # till the new deployment is ready before releasing the thread
-                create_deployment_task.get()
                 current_app.logger.info('Deployment {} was restored'.format(
                     deployment.subdomain))
             else:

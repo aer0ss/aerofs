@@ -80,95 +80,88 @@ def new_authed_session(subdomain):
 
 
 @celery.task(bind=True)
-def configure_deployment(self, subdomain, restore=False):
+def configure_deployment(self, subdomain):
     """
     Performs the appliance setup (hostname, certificates, email, etc..)
     """
     logger.info("Configuring deployment for subdomain: {}".format(subdomain))
 
-    if not restore:
+    try:
+        session = new_authed_session(subdomain)
+
+        # Set the hostname (step 1 of setup)
+        r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
+        r.raise_for_status()
+
+        # Set the certificate (step 2 of setup)
+        r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
+        r.raise_for_status()
+
+        # Configure email settings (step 3 of setup)
+        r = session.post("/admin/json_setup_email",
+                         data={'email-server': 'local',
+                               'base-www-support-email-address': 'support@aerofs.com'})
+        r.raise_for_status()
+
+        # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+        r = session.post("/admin/json_setup_hpc",
+                         data={'zephyr.address': 'zephyr.aerofs.com:8888'})
+        r.raise_for_status()
+
+    except Exception as e:
+        # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
+        # Wait 30s and retry
+        raise self.retry(exc=e, countdown=30, max_retries=10)
+
+
+def _restore_deployment(subdomain):
+    session = new_authed_session(subdomain)
+
+    # Download the backup file from s3 to a temp path
+    backup_date = datetime.today().strftime("%Y%m%d")
+    backup_file_name = '{}_backup_{}'.format(subdomain, backup_date)
+    backup_file_path = os.path.join('/tmp', backup_file_name)
+    current_app.s3.meta.client.download_file(
+        BACKUP_BUCKET, backup_file_name, backup_file_path)
+
+    backup_file = {'backup-file': open(backup_file_path, 'rb')}
+
+    # Upload backup file
+    session.post('/admin/json_upload_backup', files=backup_file)
+
+    # Restore the session from the backup file
+    session.post('/admin/json-restore')
+
+    # Wait until it have restored
+    while True:
+        status = session.get('/admin/json-restore')
         try:
-            session = new_authed_session(subdomain)
+            status = status.json()
+            logger.info(status)
+            if status['succeeded']:
+                restore_succeeded = True
+                break
+        except ValueError:
+            restore_succeeded = False
+            logger.info('Failed to restore deployment {}'.format(subdomain))
+            break
+        time.sleep(POLLING_INTERVAL)
 
-            # Set the hostname (step 1 of setup)
-            r = session.post("/admin/json_setup_hostname", data={'base.host.unified': session.deployment.full_hostname()})
-            r.raise_for_status()
+    if restore_succeeded:
+        # Configure email settings
+        r = session.post("/admin/json_setup_email",
+                         data={'email-server': 'local',
+                               'base-www-support-email-address': 'support@aerofs.com'})
+        r.raise_for_status()
 
-            # Set the certificate (step 2 of setup)
-            r = session.post("/admin/json_setup_certificate", data={'cert.option': 'existing'})
-            r.raise_for_status()
+        # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
+        r = session.post("/admin/json_setup_hpc",
+                         data={'zephyr.address': 'zephyr.aerofs.com:8888'})
 
-            # Configure email settings (step 3 of setup)
-            r = session.post("/admin/json_setup_email",
-                             data={'email-server': 'local',
-                                   'base-www-support-email-address': 'support@aerofs.com'})
-            r.raise_for_status()
+        # Setup the restored session
+        session.post('/admin/json_setup_set_restored_from_backup')
 
-            # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
-            r = session.post("/admin/json_setup_hpc",
-                             data={'zephyr.address': 'zephyr.aerofs.com:8888'})
-            r.raise_for_status()
-
-        except Exception as e:
-            # Many errors are due to the fact that DNS hasn't propagated yet or the server is busy pulling Docker images
-            # Wait 30s and retry
-            raise self.retry(exc=e, countdown=30, max_retries=10)
-    else:
-        try:
-            session = new_authed_session(subdomain)
-
-            # Download the backup file from s3 to a temp path
-            backup_date = datetime.today().strftime("%Y%m%d")
-            backup_file_name = '{}_backup_{}'.format(subdomain, backup_date)
-            backup_file_path = os.path.join('/tmp', backup_file_name)
-            current_app.s3.meta.client.download_file(
-                BACKUP_BUCKET, backup_file_name, backup_file_path)
-
-            backup_file = {'backup-file': open(backup_file_path, 'rb')}
-
-            # Upload backup file
-            session.post('/admin/json_upload_backup', files=backup_file)
-
-            # Restore the session from the backup file
-            session.post('/admin/json-restore')
-
-            # Wait until it have restored
-            while True:
-                status = session.get('/admin/json-restore')
-                try:
-                    status = status.json()
-                    logger.info(status)
-                    if status['succeeded']:
-                        restore_succeeded = True
-                        break
-                except ValueError:
-                    restore_succeeded = False
-                    logger.info('Failed to restore deployment {}'.format(subdomain))
-                    break
-                time.sleep(POLLING_INTERVAL)
-
-            if restore_succeeded:
-                # Configure email settings
-                r = session.post("/admin/json_setup_email",
-                                 data={'email-server': 'local',
-                                       'base-www-support-email-address': 'support@aerofs.com'})
-                r.raise_for_status()
-
-                # Set other HPC-related parameters (currently the Zephyr address, maybe more in the future)
-                r = session.post("/admin/json_setup_hpc",
-                                 data={'zephyr.address': 'zephyr.aerofs.com:8888'})
-
-                # Setup the restored session
-                session.post('/admin/json_setup_set_restored_from_backup')
-
-                os.remove(backup_file_path)
-
-        except Exception as e:
-            # Many errors are due to the fact that DNS hasn't propagated yet or
-            # the server is busy pulling Docker images
-            # Wait 30s and retry
-            raise self.retry(exc=e, countdown=30, max_retries=10)
-
+        os.remove(backup_file_path)
 
 @celery.task(bind=True)
 def reboot(self, subdomain):
@@ -176,39 +169,46 @@ def reboot(self, subdomain):
     Reboot the appliance in default (ie: non-maintenance) mode
     """
     try:
-        logger.info("Rebooting appliance at {}".format(subdomain))
-
-        deadline = datetime.now() + timedelta(seconds=120)
-        session = new_authed_session(subdomain)
-
-        old_id = get_boot_id(session)
-        if old_id is None:
-            raise Exception("Couldn't get boot id from appliance at {}".format(session.base_url))
-
-        logger.debug("Old boot id {}".format(old_id))
-
-        # Reboot the appliance in default mode
-        try:
-            r = session.post("/admin/json-boot/default")
-            if 400 <= r.status_code < 500:
-                raise Exception("Rebooting appliance at {} failed with HTTP status code  {}".format(session.base_url, r.status_code))
-        except requests.exceptions.RequestException:
-            pass  # Ignore connection errors since the server might be killed before replying.
-
-        # Wait for new boot id, or until we time out
-        while True:
-            new_id = get_boot_id(session)
-            logger.debug("New id {}".format(new_id))
-            if new_id is not None and new_id != old_id:
-                break
-
-            if datetime.now() > deadline:
-                raise Exception("Timed out while waiting for appliance at {} to reboot".format(session.base_url))
-
-            time.sleep(2)
+        _reboot(subdomain)
 
     except Exception as e:
         raise self.retry(exc=e, countdown=50, max_retries=10)
+
+
+# The purpose of this function is to be used both in a celery task or directly in
+# Python. We have to separate these two usages because the function `self.retry()`
+# is specific to celery
+def _reboot(subdomain):
+    logger.info("Rebooting appliance at {}".format(subdomain))
+
+    deadline = datetime.now() + timedelta(seconds=120)
+    session = new_authed_session(subdomain)
+
+    old_id = get_boot_id(session)
+    if old_id is None:
+        raise Exception("Couldn't get boot id from appliance at {}".format(session.base_url))
+
+    logger.debug("Old boot id {}".format(old_id))
+
+    # Reboot the appliance in default mode
+    try:
+        r = session.post("/admin/json-boot/default")
+        if 400 <= r.status_code < 500:
+            raise Exception("Rebooting appliance at {} failed with HTTP status code  {}".format(session.base_url, r.status_code))
+    except requests.exceptions.RequestException:
+        pass  # Ignore connection errors since the server might be killed before replying.
+
+    # Wait for new boot id, or until we time out
+    while True:
+        new_id = get_boot_id(session)
+        logger.debug("New id {}".format(new_id))
+        if new_id is not None and new_id != old_id:
+            break
+
+        if datetime.now() > deadline:
+            raise Exception("Timed out while waiting for appliance at {} to reboot".format(session.base_url))
+
+        time.sleep(2)
 
 
 def get_boot_id(session):
@@ -225,25 +225,28 @@ def get_boot_id(session):
 @celery.task(bind=True)
 def repackage(self, subdomain):
     try:
-        session = new_authed_session(subdomain)
-        wait_for_services_ready(session)
-        do_repackaging(session)
-        session.post("/admin/json-set-configuration-completed")
-
-        # Consider the appliance set up and running
-        session.deployment.appliance_setup_date = datetime.today()
-        session.deployment.set_days_until_expiry(30)
-        session.deployment.setup_status = models.HPCDeployment.status.UP
-        db.session.commit()
-
-        #Let them know they have an appliance
-        admins = models.Admin.query.filter_by(
-            customer_id=session.deployment.customer_id).all()
-        for admin in admins:
-            notifications.send_hpc_trial_setup_email(admin, session.base_url)
-
+        _repackage(subdomain)
     except Exception as e:
         raise self.retry(exc=e, countdown=30, max_retries=10)
+
+
+def _repackage(subdomain):
+    session = new_authed_session(subdomain)
+    wait_for_services_ready(session)
+    do_repackaging(session)
+    session.post("/admin/json-set-configuration-completed")
+
+    # Consider the appliance set up and running
+    session.deployment.appliance_setup_date = datetime.today()
+    session.deployment.set_days_until_expiry(30)
+    session.deployment.setup_status = models.HPCDeployment.status.UP
+    db.session.commit()
+
+    #Let them know they have an appliance
+    admins = models.Admin.query.filter_by(
+        customer_id=session.deployment.customer_id).all()
+    for admin in admins:
+        notifications.send_hpc_trial_setup_email(admin, session.base_url)
 
 
 def wait_for_services_ready(session):
