@@ -87,7 +87,7 @@ def json_needs_upgrade_get(request):
 def json_switch_appliance_post(request):
     latest = _latest_version_from_registry()
     log.info("Switching to appliance {}".format(latest))
-    r = requests.post("{}/switch/{}/{}/{}".format(LOADER_URL, REG, latest, request.matchdict("target")))
+    r = requests.post("{}/switch/{}/{}/{}".format(LOADER_URL, REG, latest, request.matchdict["target"]))
     r.raise_for_status()
     return {}
 
