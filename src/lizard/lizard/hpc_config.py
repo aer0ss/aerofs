@@ -181,7 +181,7 @@ def reboot(self, subdomain):
 def _reboot(subdomain):
     logger.info("Rebooting appliance at {}".format(subdomain))
 
-    deadline = datetime.now() + timedelta(seconds=120)
+    deadline = datetime.now() + timedelta(seconds=300)
     session = new_authed_session(subdomain)
 
     old_id = get_boot_id(session)
