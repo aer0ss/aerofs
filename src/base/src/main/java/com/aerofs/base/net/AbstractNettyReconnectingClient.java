@@ -109,7 +109,7 @@ public abstract class AbstractNettyReconnectingClient
      */
     public synchronized void stop()
     {
-        Preconditions.checkState(_running);
+        if (!_running) return;
         Channel c = _channel;
         _closeRequested = true;
         if (c != null) {

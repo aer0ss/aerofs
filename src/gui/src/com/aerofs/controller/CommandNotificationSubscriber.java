@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
@@ -15,10 +16,7 @@ import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.defects.CommandDefect.Factory;
 import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.StorageType;
-import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -49,7 +47,9 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
 import static com.aerofs.defects.Defects.newDefectWithLogs;
@@ -235,8 +235,7 @@ public final class CommandNotificationSubscriber implements EventHandler
 
     private void scheduleSingleCommandExecution(final Command command)
     {
-        _scheduler.schedule(new AbstractEBSelfHandling()
-        {
+        _scheduler.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {
@@ -244,11 +243,9 @@ public final class CommandNotificationSubscriber implements EventHandler
                 try {
                     processCommand(command);
                 } catch (Exception e) {
+                    SystemUtil.fatalOnUncheckedException(e);
                     error = true;
-
-                    // Use toString()'s in this function for cleaner logs. Only show full stack
-                    // traces when the exponential retry class is in full swing.
-                    l.error("cmd: unable to process single: " + e.toString());
+                    l.error("cmd: unable to process single: ", BaseLogUtil.suppress(e));
                 }
 
                 AckCommandQueueHeadReply ack = null;
@@ -256,8 +253,9 @@ public final class CommandNotificationSubscriber implements EventHandler
                     SPBlockingClient sp = newAuthenticatedSPClient();
                     ack = sp.ackCommandQueueHead(BaseUtil.toPB(Cfg.did()), command.getEpoch(), error);
                 } catch (Exception e) {
+                    SystemUtil.fatalOnUncheckedException(e);
                     error = true;
-                    l.error("cmd: unable to ack: " + e.toString());
+                    l.error("cmd: unable to ack: ", BaseLogUtil.suppress(e));
                 }
 
                 if (error || ack.hasCommand()) {
@@ -372,8 +370,12 @@ public final class CommandNotificationSubscriber implements EventHandler
                 try {
                     // give the daemon some room to create the seed file before making the SP call
                     reply.get(SEED_FILE_CREATION_TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+                    l.info("seed creation timed out: {}", sid);
+                } catch (ExecutionException e) {
+                    l.info("seed creation failed {}", sid, BaseLogUtil.suppress(e.getCause()));
                 } catch (Exception e) {
-                    l.info("failed to create seed file for {}", sid, e);
+                    l.info("seed creation failed {}", sid, e);
                 }
             }
         }

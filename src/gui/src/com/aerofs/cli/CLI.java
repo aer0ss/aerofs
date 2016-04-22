@@ -420,6 +420,7 @@ public class CLI implements IUI {
     @Override
     public void shutdown()
     {
+        l.info("shutting down.");
         UIGlobals.dm().stopIgnoreException();
         ExitCode.NORMAL_EXIT.exit();
     }
