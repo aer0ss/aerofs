@@ -203,6 +203,7 @@ public final class CommandNotificationSubscriber implements EventHandler
             try {
                 processCommand(command);
             } catch (Exception e) {
+                SystemUtil.fatalOnUncheckedException(e);
                 error = true;
                 errorCount++;
                 l.error("cmd: unable to process in sync:", e);
