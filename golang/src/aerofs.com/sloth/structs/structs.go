@@ -129,7 +129,7 @@ type CommandWritable struct {
 //
 
 type ConvoList struct {
-	Convos map[string]Convo `json:"convos"`
+	Convos map[string]*Convo `json:"convos"`
 }
 
 type UserList struct {

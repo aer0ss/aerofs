@@ -25,8 +25,8 @@ const (
 
 // GetAllConvos returns the all public convos and all convos of which the
 // caller is a member. It returns a map of convo id to Convo struct.
-func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
-	convos := make(map[string]Convo)
+func GetAllConvos(tx *sql.Tx, caller string) map[string]*Convo {
+	convos := make(map[string]*Convo)
 
 	// query convos table
 	// Retrieve the following:
@@ -41,7 +41,7 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 	errors.PanicAndRollbackOnErr(err, tx)
 	for rows.Next() {
 		c := parseConvoRow(tx, rows)
-		convos[c.Id] = *c
+		convos[c.Id] = c
 	}
 	rows.Close()
 
@@ -52,9 +52,7 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 		var cid string
 		err := rows.Scan(&cid)
 		errors.PanicAndRollbackOnErr(err, tx)
-		c := convos[cid]
-		c.IsPinned = true
-		convos[cid] = c
+		convos[cid].IsPinned = true
 	}
 	rows.Close()
 
@@ -69,11 +67,8 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 		var uid, cid string
 		err := rows.Scan(&uid, &cid)
 		errors.PanicAndRollbackOnErr(err, tx)
-		members := convos[cid].Members
-		members = append(members, uid)
 		c := convos[cid]
-		c.Members = members
-		convos[cid] = c
+		c.Members = append(c.Members, uid)
 	}
 	rows.Close()
 
@@ -86,11 +81,8 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]Convo {
 		var bid, cid string
 		err := rows.Scan(&bid, &cid)
 		errors.PanicAndRollbackOnErr(err, tx)
-		bots := convos[cid].Bots
-		bots = append(bots, bid)
-		convo := convos[cid]
-		convo.Bots = bots
-		convos[cid] = convo
+		c := convos[cid]
+		c.Bots = append(c.Bots, bid)
 	}
 	rows.Close()
 
