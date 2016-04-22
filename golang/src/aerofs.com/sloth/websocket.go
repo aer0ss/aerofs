@@ -32,11 +32,15 @@ func NewMultiplexingHandler(verifier auth.TokenVerifier, broadcaster broadcast.B
 
 func (h *websocketMultiplexingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// check to see if websocket upgrade is requested
-	if r.Header.Get("Connection") == "Upgrade" && r.Header.Get("Upgrade") == "websocket" {
-		handleWebsocket(w, r, &h.wsUpgrader, h.verifier, h.broadcaster)
-	} else {
-		h.defaultHandler.ServeHTTP(w, r)
+	// NB: The Connection header can be a comma-separated a list
+	cc := strings.Split(r.Header.Get("Connection"), ",")
+	for _, c := range cc {
+		if strings.Trim(c, " ") == "Upgrade" && r.Header.Get("Upgrade") == "websocket" {
+			handleWebsocket(w, r, &h.wsUpgrader, h.verifier, h.broadcaster)
+			return
+		}
 	}
+	h.defaultHandler.ServeHTTP(w, r)
 }
 
 // Listen to one incoming message on `conn` for "AUTH <token>" packets.
