@@ -23,7 +23,7 @@ public class AeroOAuthPrincipal implements AeroPrincipal
     {
         this.user = userID;
         this.name = name;
-        this.did = new MDID(UniqueID.fromStringFormal(mdid));
+        this.did = new DID(UniqueID.fromStringFormal(mdid));
         this.audience = audience;
         this.tokenScope = OAuthScopeParsingUtil.parseScopes(tokenScope);
     }

@@ -11,7 +11,7 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class MDID extends DID
 {
-    public MDID(UniqueID id)
+    protected MDID(UniqueID id)
     {
         super(id);
         checkArgument(isMobileDevice());

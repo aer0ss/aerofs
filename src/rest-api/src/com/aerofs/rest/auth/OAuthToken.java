@@ -37,7 +37,7 @@ public class OAuthToken implements IUserAuthToken
     {
         issuer = response.principal.getIssuingUserID();
         user = response.principal.getEffectiveUserID();
-        did = new MDID(UniqueID.fromStringFormal(response.mdid));
+        did = new DID(UniqueID.fromStringFormal(response.mdid));
         scopes = OAuthScopeParsingUtil.parseScopes(response.scopes);
         app = response.audience;
     }
