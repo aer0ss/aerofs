@@ -93,7 +93,7 @@ func (idx *Index) initIndex(db *sql.DB, lastOnlineTimes *lastOnline.Times) {
 		if !convo.IsPublic {
 			continue
 		}
-		err := batch.Index(indexKey(convo.Id, CONVO), convoValue(convo))
+		err := batch.Index(indexKey(convo.Id, CONVO), convoValue(*convo))
 		errors.PanicOnErr(err)
 	}
 
