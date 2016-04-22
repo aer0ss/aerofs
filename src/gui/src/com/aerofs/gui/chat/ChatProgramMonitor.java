@@ -166,6 +166,7 @@ public class ChatProgramMonitor {
     }
 
     public void stop() {
+        if (_t == null) return;
         if (_p.isAlive()) _p.destroy();
         try {
             _t.join();
