@@ -8,10 +8,11 @@ from web.error import expected_error
 from web.version import get_private_version
 from distutils.version import LooseVersion
 from web.analytics import send_analytics_event
+from web.views.maintenance.maintenance_util import get_conf
 
 log = logging.getLogger(__name__)
 
-REG = "registry.aerofs.com"
+
 LOADER_URL = 'http://loader.service/v1'
 
 
@@ -58,9 +59,9 @@ def post_boot(request):
 
 
 def _latest_version_from_registry():
-    r = requests.get("{}/tags/latest/{}".format(LOADER_URL, REG))
+    r = requests.get("{}/tags/latest".format(LOADER_URL))
     r.raise_for_status()
-    return str(r.json())
+    return r.text
 
 
 @view_config(
@@ -72,6 +73,7 @@ def _latest_version_from_registry():
 def json_needs_upgrade_get(request):
     current_version = get_private_version(request.registry.settings)
     latest = _latest_version_from_registry()
+
     log.info("GET needs upgrade current {} latest {}".format(current_version, latest))
     return {
         'needs-upgrade': LooseVersion(latest) > LooseVersion(current_version)
@@ -85,9 +87,8 @@ def json_needs_upgrade_get(request):
     renderer='json'
 )
 def json_switch_appliance_post(request):
-    latest = _latest_version_from_registry()
-    log.info("Switching to appliance {}".format(latest))
-    r = requests.post("{}/switch/{}/{}/{}".format(LOADER_URL, REG, latest, request.matchdict["target"]))
+    log.info("Switch to new appliance version...")
+    r = requests.post("{}/switch/{}".format(LOADER_URL, request.matchdict["target"]))
     r.raise_for_status()
     return {}
 
@@ -108,15 +109,13 @@ def json_pull_images_post(request):
     pull_stats = _pull_images_status()
     if pull_stats.get("status", "") == "pulling":
         expected_error('Upgrade in progress')
-    latest = _latest_version_from_registry()
-    log.info("Pull new images for version {}".format(latest))
 
-    r = requests.post("{}/images/pull/{}/{}".format(LOADER_URL, REG, latest))
+    log.info("Starting a fresh image pull...")
+    r = requests.post("{}/images/pull".format(LOADER_URL))
     if r.status_code == 409:
         log.info("A pull is already in progress.")
     elif r.status_code != 200:
         log.info("Pulling images failed with message: {}".format(json.loads(r.text)))
-
     return {"status_code": r.status_code}
 
 

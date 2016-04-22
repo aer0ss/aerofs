@@ -82,7 +82,7 @@ routes = [
     'session_management',
     'link_settings',
     'json_set_require_login',
-    'onsite_log_server',
+    'onsite_server',
     'json_save_configuration',
     'storage_agent_setup',
     'enable_onboard_sa',

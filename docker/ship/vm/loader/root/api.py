@@ -40,10 +40,34 @@ _tag = None
 _update_proc = None
 _start = None
 
+# This file exists because:
+# 1. We want to have a configurable registry endpoint for the appliance such that when the appliance
+# upgrades next, it uses this configurable registry endpoint.
+# 2. This endpoint is configurable from bunker(and getty). If bunker modifies the registry endpoint,
+# we have to store this somewhere in the loader.
+# 3. If we were to overwrite the repo file simply, when the loader restarts next(for example if appliance
+# maintenance mode is toggled), then we will incorrectly modify the "modified-yml" file with the new registry
+# endpoint eventhough we haven't upgraded yet.
+# 4. So, use this file to track the new registry endpoint so that we only change the actual repo file only
+# when we switch to a version downloaded from this new registry endpoint.
+# 5. The switch function empties this file.
+_custom_repo_file = "/custom.repo"
+
+
 def start(current_repo, current_target, repo_file, tag_file, target_file, tag):
-    global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag
+    global _current_repo, _current_target, _repo_file, _tag_file, _target_file, _tag, _custom_repo_file
     # Save data in RAM rather than reading files on demand as their content may change _after_ we launch.
-    _current_repo = current_repo
+
+    # Make sure _current_repo points to the new registry endpoint if it exists
+    # otherwise make it point to the registry in the repo file. This is because
+    #
+    with open(_custom_repo_file) as f:
+        custom_repo = f.read().strip()
+    if custom_repo:
+        _current_repo = custom_repo
+    else:
+        _current_repo = current_repo
+
     _current_target = current_target
     _repo_file = repo_file
     _tag_file = tag_file
@@ -74,6 +98,24 @@ def post_boot(target=CURRENT):
     kill_other_containers()
     return restart_to(target)
 
+
+@app.route(PREFIX + "/repo/<repo>", methods=["POST"])
+def post_repo(repo):
+    global _custom_repo_file, _current_repo
+
+    if _custom_repo_file and os.path.isfile(_custom_repo_file):
+        with open(_custom_repo_file, 'w') as f:
+            f.write(repo)
+        _current_repo = repo
+    else:
+        return make_response("Repo file not found", 500)
+    return make_response("Registry changed to {}".format(repo), 200)
+
+
+@app.route(PREFIX + "/repo", methods=["GET"])
+def get_repo():
+    global _current_repo
+    return jsonify(repo=_current_repo)
 
 def kill_other_containers():
     call_crane('kill', _current_target)
@@ -116,10 +158,38 @@ def get_containers():
     return json.dumps(ret)
 
 
-@app.route(PREFIX + "/tags/latest/<repo>", methods=["GET"])
-def get_latest_tag(repo):
-    if not repo:
-        repo = _current_repo
+def _get_img_id(url, tag):
+    # Get image id. Unfortunately as of this writing no easy way to get it for v2.
+    r  = requests.get("{}/manifests/{}".format(url, tag))
+    r.raise_for_status()
+    return json.loads(str(r.json()['history'][0]['v1Compatibility'])).get('id', None)
+
+
+def _get_latest_tag_from_v2_registry(repo):
+    url = "https://{}/v2/{}".format(repo, my_image_name())
+    print "Querying latest tag at {}...".format(url)
+    r = requests.get("{}/tags/list".format(url))
+    r.raise_for_status()
+
+    # Remove latest from the list
+    tags = r.json()['tags']
+    tags.remove('latest')
+    # Sort in descending order so that we can return ASAP
+    tags.sort(reverse=True)
+
+    latest_img_id = _get_img_id(url, "latest")
+    if not latest_img_id:
+        return "Unable to get the latest image id from registry", 500
+
+    for tag in tags:
+        img_id = _get_img_id(url, tag)
+        if img_id == latest_img_id:
+            return tag, 200
+
+    return "Unable to get the latest tag from registry", 500
+
+
+def _get_latest_tag_from_v1_registry(repo):
     url = 'https://{}/v1/repositories/{}/tags'.format(repo, my_image_name())
     print "Querying latest tag at {}...".format(url)
     r = requests.get(url)
@@ -128,16 +198,60 @@ def get_latest_tag(repo):
         ret = r.json()
         for k, v in ret.iteritems():
             if k != 'latest' and v == ret['latest']:
-                return '"{}"'.format(k)
-        return '"The latest tag does not correspond to a version."', 502
+                return k, 200
+        return "The latest tag does not correspond to a version.", 500
     else:
         return r.text, r.status_code
 
 
+def _is_v2_registry(repo):
+    url = "https://{}/v2/".format(repo)
+    return requests.get(url).status_code == 200
+
+
+def _is_v1_registry(repo):
+    url = "https://{}/v1/_ping".format(repo)
+    return requests.get(url).status_code == 200
+
+
+def _get_latest_tag(repo):
+    if not repo:
+        if not _current_repo:
+            return "Unable to find repo", 500
+        repo = _current_repo
+
+    if _is_v2_registry(repo):
+        return _get_latest_tag_from_v2_registry(repo)
+
+    elif _is_v1_registry(repo):
+        return _get_latest_tag_from_v1_registry(repo)
+    else:
+        return "Invalid registry", 500
+
+
+@app.route(PREFIX + "/tags/latest", methods=["GET"])
+@app.route(PREFIX + "/tags/latest/<repo>", methods=["GET"])
+def get_latest_tag(repo=None):
+    text, status = _get_latest_tag(repo)
+    return make_response(text, status)
+
+
 PULL_JSON = '/pull.json'
 
+@app.route(PREFIX + "/images/pull", methods=["POST"])
 @app.route(PREFIX + "/images/pull/<repo>/<tag>", methods=["POST"])
-def post_images_pull(repo, tag):
+def post_images_pull(repo=None, tag=None):
+    if not repo:
+        repo = _current_repo
+
+    if not tag:
+        tag, _ = _get_latest_tag(repo)
+
+    # If tag and repo are still empty or non return 500
+    if not repo or not tag:
+        fail = "Repo is None or empty" if not repo else "Tag is None or empty"
+        return make_response(fail, 500)
+
     if not exists(PULL_JSON):
         pulling = False
     else:
@@ -147,7 +261,7 @@ def post_images_pull(repo, tag):
                 pull_status.get("status", "error") == 'pulling'
 
     if pulling:
-        return '"Pulling is already in progress."', 409
+        return make_response("Pulling is already in progress.", 409)
     else:
         print "Pulling from {} tag {} ... The following output is from pull.sh:".format(repo, tag)
         # N.B. there is a small chance of race condition that this path is called again before
@@ -156,7 +270,7 @@ def post_images_pull(repo, tag):
         # Pass in BOOT_ID so that if container is killed while pulling new images, new restarted
         # container can compare BOOT_ID.
         subprocess.Popen(['/pull.sh', repo, my_image_name(), tag, PULL_JSON, BOOT_ID])
-        return '"Pulling started successfully."'
+        return make_response("Pulling started successfully.", 200)
 
 
 @app.route(PREFIX + "/images/pull", methods=["GET"])
@@ -174,10 +288,37 @@ def get_images_pull():
     return jsonify(status='done')
 
 
-@app.route(PREFIX + "/switch/<repo>/<tag>/<target>", methods=["POST"])
-def switch(repo, tag, target):
-    kill_other_containers()
+@app.route(PREFIX + "/switch/<target>", methods=["POST"])
+def switch(target):
+    repo = request.args.get("repo")
+    tag =  request.args.get("tag")
 
+    if not exists(PULL_JSON):
+        fail = "Please pull new images before trying to switch"
+        print fail
+        return make_response(fail, 500)
+    else:
+        with open(PULL_JSON) as f:
+            pull_status = json.load(f)
+            pulled = pull_status.get("status", "error") == 'done'
+            tag = pull_status.get("tag", None) if pulled else None
+
+    if not tag:
+        fail = "A pull is already in progress or failed. Wait for pull images to finish or retry pulling images."
+        print fail
+        return make_response(fail, 500)
+
+    if not repo:
+        if not _current_repo:
+            fail = "Repo not found. Cannot switch."
+            print "{}. Are you trying to switch appliances/IPU your local dk appliance? This is not possible".format(fail)
+            return make_response(fail, 500)
+        else:
+            repo = _current_repo
+
+
+    kill_other_containers()
+    print "Switching to version: {}".format(tag)
     print 'Computing data volumes to be copied from the old containers...'
 
     # List old containers
@@ -250,6 +391,12 @@ def switch(repo, tag, target):
 
     with open(_repo_file, 'w') as f:
             f.write(repo)
+
+    # Make sure custom_repo_file is empty again now that we are switching.
+    if _custom_repo_file and os.path.isfile(_custom_repo_file):
+        with open(_custom_repo_file, 'w') as f:
+            f.write("")
+
     with open(_tag_file, 'w') as f:
             f.write(tag)
 

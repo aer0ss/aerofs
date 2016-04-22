@@ -16,16 +16,16 @@ BOOT_ID=$5
 write_pulling() {
     local PULLED=$1
     local TOTAL=$2
-    echo "{\"status\":\"pulling\", \"pulled\":${PULLED}, \"total\":${TOTAL}, \"bootid\":\"${BOOT_ID}\"}" > ${PULL_JSON}
+    echo "{\"status\":\"pulling\", \"pulled\":${PULLED}, \"total\":${TOTAL}, \"tag\":\"${TAG}\", \"bootid\":\"${BOOT_ID}\"}" > ${PULL_JSON}
 }
 
 write_error() {
     local MESSAGE=$1
-    echo "{\"status\":\"error\", \"bootid\":\"${BOOT_ID}\", \"message\":\"${MESSAGE}\"}" > ${PULL_JSON}
+    echo "{\"status\":\"error\", \"tag\":\"${TAG}\", \"bootid\":\"${BOOT_ID}\", \"message\":\"${MESSAGE}\"}" > ${PULL_JSON}
 }
 
 write_done() {
-    echo "{\"status\":\"done\"}" > ${PULL_JSON}
+    echo "{\"tag\":\"${TAG}\", \"status\":\"done\"}" > ${PULL_JSON}
 }
 
 # Pull Loader
@@ -37,7 +37,8 @@ docker pull ${LOADER_FULL_NAME}
     write_error "Could't pull ${LOADER_FULL_NAME}"
     exit 11
 }
-docker tag -f ${LOADER_FULL_NAME} ${REPO}/${LOADER}:latest
+
+set -e;docker tag -f ${LOADER_FULL_NAME} ${REPO}/${LOADER}:latest;set +e
 
 IMAGES="$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_FULL_NAME} images)"
 [[ -n "${IMAGES}" ]] || {
