@@ -117,3 +117,10 @@ Apr 25, 2015
 
 Aug 20, 2015
 [Wayne Creech, Verizon](https://aerofs.zendesk.com/agent/tickets/17171)
+
+> Suthan is the quintessential TS agent. Cordial, clear, knowledgable,
+> genuinely interested in the outcome. It doesn't get better. (And, bonus: he
+> knew exactly how to address my problem :~)
+
+Apr 25, 2016
+[Mike Goldberg, Self Propelled Scientific, LLC.](https://aerofs.zendesk.com/agent/tickets/19152)
