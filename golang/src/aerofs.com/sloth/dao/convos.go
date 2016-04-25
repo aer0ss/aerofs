@@ -52,7 +52,13 @@ func GetAllConvos(tx *sql.Tx, caller string) map[string]*Convo {
 		var cid string
 		err := rows.Scan(&cid)
 		errors.PanicAndRollbackOnErr(err, tx)
-		convos[cid].IsPinned = true
+		// Interim Fix : A user may have a conversation they have pinned that is
+		// not public and they are no longer a member of because of a Sparta syncing issue.
+		// This conversation is not in the list of their joined convos, so do not set the pinned
+		// flag
+		if convo, ok := convos[cid]; ok {
+			convo.IsPinned = true
+		}
 	}
 	rows.Close()
 
@@ -122,7 +128,7 @@ func GetMinimumConvo(tx *sql.Tx, cid string) *Convo {
 }
 
 func GetConvo(tx *sql.Tx, cid, caller string) *Convo {
-	c := GetMinimumConvo(tx, cid);
+	c := GetMinimumConvo(tx, cid)
 	if c == nil {
 		return nil
 	}
