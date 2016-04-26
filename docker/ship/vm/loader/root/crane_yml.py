@@ -3,8 +3,9 @@ import yaml
 import jinja2
 import requests
 import os.path
-from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix \
+from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix, \
     get_port_number_from_port_allocator
+
 
 CRANE_JINJA_PATH = '/crane.yml.jinja'
 CRANE_YML_PATH = '/crane.yml'
