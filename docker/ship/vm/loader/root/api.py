@@ -4,8 +4,7 @@ import requests
 import subprocess
 import yaml
 from common import call_crane, my_container_id, my_container_name, my_full_image_name, my_image_name, print_args, \
-    MODIFIED_YML_PATH, my_container_prefix, my_subdomain
-from docker import Client
+    MODIFIED_YML_PATH, my_container_prefix, my_subdomain, get_port_number_from_port_allocator
 from flask import Flask, json, jsonify, request, make_response
 from os.path import exists
 from os import devnull
@@ -445,10 +444,7 @@ def get_port(port_name, default_value):
     """
     subdomain = my_subdomain()
     if subdomain:  # HPC
-        client = Client(base_url='unix://var/run/docker.sock', version='auto')
-        port_allocator_IP_address = client.inspect_container('hpc-port-allocator')['NetworkSettings']['IPAddress']
-        r = requests.get('http://{}/ports/{}/{}'.format(port_allocator_IP_address, subdomain, port_name))
-        return make_response((r.text, r.status_code, None))
+        return get_port_number_from_port_allocator(subdomain, port_name)
     else:  # PC
         return str(default_value)
 

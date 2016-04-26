@@ -1,10 +1,10 @@
-from docker import Client
 from re import compile
 import yaml
 import jinja2
 import requests
 import os.path
-from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix
+from common import MODIFIED_YML_PATH, my_image_name, my_container_name, my_subdomain, my_container_prefix \
+    get_port_number_from_port_allocator
 
 CRANE_JINJA_PATH = '/crane.yml.jinja'
 CRANE_YML_PATH = '/crane.yml'
@@ -43,12 +43,7 @@ def get_port_number(subdomain, port_name, default_value):
     On PC (ie: subdomain is None), just return the default value
     """
     if subdomain:
-        # Get the docker client
-        client = Client(base_url='unix://var/run/docker.sock', version='auto')
-        port_allocator_IP_address = client.inspect_container('hpc-port-allocator')['NetworkSettings']['IPAddress']
-        r = requests.get('http://{}/ports/{}/{}'.format(port_allocator_IP_address, subdomain, port_name))
-        r.raise_for_status()
-        return int(r.text)
+        return get_port_number_from_port_allocator(subdomain, port_name)
     else:
         return default_value
 

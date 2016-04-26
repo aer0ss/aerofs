@@ -1,4 +1,5 @@
 import subprocess
+from docker import Client
 from socket import gethostname
 from re import sub, match
 
@@ -85,6 +86,15 @@ def my_subdomain():
 def get_tag():
     with open(TAG_PATH) as f:
         return f.read().strip()
+
+
+def get_port_number_from_port_allocator(subdomain, port_name):
+    # Get the docker client
+    client = Client(base_url='unix://var/run/docker.sock', version='auto')
+    port_allocator_IP_address = client.inspect_container('hpc-port-allocator')['NetworkSettings']['IPAddress']
+    r = requests.get('http://{}/ports/{}/{}'.format(port_allocator_IP_address, subdomain, port_name))
+    r.raise_for_status()
+    return int(r.text)
 
 
 def print_args(args):
