@@ -9,6 +9,9 @@ coreos:
             Environment="DOCKER_OPTS=-H=0.0.0.0:2376 --tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem"
       command: start
 
+  update:
+    reboot-strategy: off
+
 write_files:
   - path: /etc/docker/ca.pem
     permissions: 0644
