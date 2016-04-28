@@ -15,6 +15,7 @@ import com.aerofs.rest.api.SFMember;
 import com.aerofs.rest.api.SFPendingMember;
 import com.aerofs.rest.api.SharedFolder;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.internal.mapper.ObjectMapperType;
@@ -65,9 +66,12 @@ public class TestSharedFolderResource extends AbstractResourceTest
         Long serial = (long)new Random().nextInt(1000);
 
         sqlTrans.begin();
+        DeviceDatabase ddb = inj.getInstance(DeviceDatabase.class);
         CertificateDatabase certdb = inj.getInstance(CertificateDatabase.class);
+        ddb.insertDevice(did, user, "os", "os 2", "dummy");
         certdb.insertCertificate(serial, did, new Date());
         certdb.revokeCertificate(serial);
+        ddb.markUnlinked(did);
         sqlTrans.commit();
 
         givenCert(did, user, serial)
@@ -213,6 +217,7 @@ public class TestSharedFolderResource extends AbstractResourceTest
         Long serial = (long)new Random().nextInt(1000);
 
         sqlTrans.begin();
+        inj.getInstance(DeviceDatabase.class).insertDevice(did, user, "foo", "bar", "baz");
         inj.getInstance(CertificateDatabase.class)
                 .insertCertificate(serial, did, new Date());
         sqlTrans.commit();

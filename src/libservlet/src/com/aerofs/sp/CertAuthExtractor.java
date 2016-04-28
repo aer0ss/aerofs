@@ -35,14 +35,14 @@ import java.util.regex.Pattern;
  *  - Verify
  *  - Serial
  *
- * To actually verify that the certificate is still valid, the provider must also have access to
- * the certificate database.
+ * Instead of checking the serial against the cert db, we check for unlinked devices as this is
+ * the only way for certs to get revoked.
  */
 public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken>
 {
     private final Logger l = Loggers.getLogger(CertAuthExtractor.class);
 
-    private CertificateRevocationChecker _crc;
+    private DeviceUnlinkChecker _crc;
 
     private final static Base64.Decoder base64 = Base64.getDecoder();
 
@@ -56,12 +56,12 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
     private final static Pattern DEVICE_CERT_PATTERN =
             Pattern.compile("Aero-Device-Cert ([0-9a-zA-Z+/]+=*) ([0-9a-f]{32})");
 
-    public interface CertificateRevocationChecker {
-        boolean isRevoked(long serial) throws ExNotFound, SQLException;
+    public interface DeviceUnlinkChecker {
+        boolean isUnlinked(DID did) throws ExNotFound, SQLException;
     }
 
     @Inject
-    public CertAuthExtractor(CertificateRevocationChecker crc)
+    public CertAuthExtractor(DeviceUnlinkChecker crc)
     {
         _crc = crc;
     }
@@ -181,8 +181,8 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
                 throw invalidAuthorizationException("mismatching cname and purported identity");
             }
 
-            // If the cert's serial is missing or invalid, no authentication for you
-            verifyCertNotRevoked(ctx._serial);
+            // If the cert belongs to an unlinked device, no authentication for you
+            verifyDeviceNotUnlinked(ctx.did);
         } catch (InternalFailureException e) {
             l.warn("cert auth failed:", e);
             // Don't leak internal failures
@@ -237,17 +237,17 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
         return cname;
     }
 
-    private void verifyCertNotRevoked(long serial)
+    private void verifyDeviceNotUnlinked(DID did)
             throws InternalFailureException
     {
         try {
-            if (_crc.isRevoked(serial)) {
-                throw invalidAuthorizationException("Certificate " + serial + " is revoked");
+            if (_crc.isUnlinked(did)) {
+                throw invalidAuthorizationException("Device " + did + " has been unlinked");
             }
         } catch (SQLException e) {
-            throw new InternalFailureException("sqlexception: " + e);
-        } catch (ExNotFound exNotFound) {
-            throw new InternalFailureException("No cert known with serial " + serial);
+            throw new InternalFailureException("sql: " + e);
+        } catch (ExNotFound e) {
+            throw new InternalFailureException("no device: " + did);
         }
     }
 

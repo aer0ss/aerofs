@@ -11,7 +11,6 @@ import com.aerofs.ids.ExInvalidID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
-import com.aerofs.sp.CertAuthExtractor.CertificateRevocationChecker;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
@@ -29,7 +28,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_CERT_REVOKE_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_CERT_SERIAL;
 import static com.aerofs.sp.server.lib.SPSchema.T_CERT;
 
-public class CertificateDatabase extends AbstractSQLDatabase implements CertificateRevocationChecker
+public class CertificateDatabase extends AbstractSQLDatabase
 {
     @Inject
     public CertificateDatabase(IDatabaseConnectionProvider<Connection> provider)
@@ -63,11 +62,10 @@ public class CertificateDatabase extends AbstractSQLDatabase implements Certific
             throws SQLException
     {
         try (PreparedStatement ps = prepareStatement("update "
-                + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
-                C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
-                " = 0 and " + C_CERT_SERIAL + " = ?")) {
+                + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp"
+                + " where " + C_CERT_SERIAL + "=?")) {
             ps.setLong(1, serial);
-            ps.execute();
+            ps.executeUpdate();
         }
     }
 

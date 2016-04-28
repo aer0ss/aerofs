@@ -12,6 +12,7 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.ids.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
+import com.aerofs.sp.CertAuthExtractor.DeviceUnlinkChecker;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -34,7 +35,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 /**
  * N.B. only Device.java may refer to this class
  */
-public class DeviceDatabase extends AbstractSQLDatabase
+public class DeviceDatabase extends AbstractSQLDatabase implements DeviceUnlinkChecker
 {
     @Inject
     public DeviceDatabase(IDatabaseConnectionProvider<Connection> provider)
@@ -84,6 +85,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
+    @Override
     public boolean isUnlinked(DID did) throws SQLException, ExNotFound {
         try (PreparedStatement ps = queryDevice(did, C_DEVICE_UNLINKED);
              ResultSet rs = ps.executeQuery()) {

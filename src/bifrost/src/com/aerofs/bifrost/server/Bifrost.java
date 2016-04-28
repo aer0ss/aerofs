@@ -24,6 +24,7 @@ import com.aerofs.bifrost.oaaas.resource.ClientsResource;
 import com.aerofs.bifrost.oaaas.resource.HealthCheckResource;
 import com.aerofs.bifrost.oaaas.resource.TokenResource;
 import com.aerofs.bifrost.oaaas.resource.VerifyResource;
+import com.aerofs.ids.DID;
 import com.aerofs.rest.auth.AuthTokenExtractor;
 import com.aerofs.rest.auth.DelegatedUserExtractor;
 import com.aerofs.rest.auth.SharedSecretExtractor;
@@ -33,9 +34,9 @@ import com.aerofs.restless.Service;
 import com.aerofs.servlets.lib.db.sql.IDataSourceProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.CertAuthExtractor;
-import com.aerofs.sp.CertAuthExtractor.CertificateRevocationChecker;
+import com.aerofs.sp.CertAuthExtractor.DeviceUnlinkChecker;
 import com.aerofs.sp.CertAuthToken;
-import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.*;
 import com.google.inject.internal.Scoping;
@@ -58,17 +59,17 @@ public class Bifrost extends Service
         try {
             // FIXME: burn hibernate in favor of libservlet-style explicit SQL
             // this would allow unified transaction and avoid this weird mixed trans business
-            certExtractor = new CertAuthExtractor(new CertificateRevocationChecker() {
+            certExtractor = new CertAuthExtractor(new DeviceUnlinkChecker() {
                 private final SQLThreadLocalTransaction trans
                         = injector.getInstance(SQLThreadLocalTransaction.class);
-                private final CertificateDatabase certdb
-                        = injector.getInstance(CertificateDatabase.class);
+                private final DeviceDatabase ddb
+                        = injector.getInstance(DeviceDatabase.class);
                 @Override
-                public boolean isRevoked(long serial) throws ExNotFound, SQLException {
-                    l.debug("check revocation {}", serial);
+                public boolean isUnlinked(DID did) throws ExNotFound, SQLException {
+                    l.debug("check unlinked {}", did);
                     trans.begin();
                     try {
-                        return certdb.isRevoked(serial);
+                        return ddb.isUnlinked(did);
                     } finally {
                         trans.rollback();
                     }
