@@ -1,13 +1,11 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.base.Loggers;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UserID;
 import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.ssmp.SSMPConnection;
 import com.aerofs.ssmp.SSMPIdentifier;
 import com.aerofs.ssmp.SSMPRequest;
-import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Collection;

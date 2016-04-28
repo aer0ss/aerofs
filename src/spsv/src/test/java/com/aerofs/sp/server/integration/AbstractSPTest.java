@@ -205,7 +205,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSession(UserID)
     @Spy protected MockSession session;
 
-    @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, ssmp);
+    @Spy protected ACLNotificationPublisher aclNotificationPublisher = new ACLNotificationPublisher(factUser, ssmp, sqlTrans);
     protected SFNotificationPublisher sfNotificationPublisher = mock(SFNotificationPublisher.class);
 
     @Spy protected Authenticator authenticator = spy(new AuthenticatorFactory(aclNotificationPublisher, auditClient, analyticsClient).create());

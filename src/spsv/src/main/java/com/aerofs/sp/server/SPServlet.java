@@ -221,7 +221,7 @@ public class SPServlet extends HttpServlet
         _ssmpConnection = createSSMPConnection(deploymentSecret, URLBasedCertificateProvider.server());
         _auditClient = createAuditClient(deploymentSecret);
         _analyticsClient = new AnalyticsClient(deploymentSecret);
-        _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection);
+        _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection, _sqlTrans);
         _sfNotif = new ThreadLocalSFNotifications();
         _sfPublisher = new SFNotificationPublisher(_ssmpConnection);
         _authenticator = new AuthenticatorFactory(

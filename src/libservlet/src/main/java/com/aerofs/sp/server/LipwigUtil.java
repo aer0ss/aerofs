@@ -22,13 +22,13 @@ public class LipwigUtil {
                 throw new Exception("unexpected response " + r.code);
             }
         } catch (InterruptedException e) {
-            assert false : ("publisher client should never be interrupted");
+            throw new Error("publisher client should never be interrupted");
         } catch (ExecutionException e) {
             Throwable t = e.getCause();
             if (t instanceof Exception) {
                 throw (Exception) e.getCause();
             } else {
-                assert false : ("cannot handle arbitrary throwable");
+                throw new Error("cannot handle arbitrary throwable");
             }
         }
     }

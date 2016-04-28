@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SQLThreadLocalTransaction
     extends AbstractThreadLocalTransaction<SQLException>
@@ -22,6 +24,7 @@ public class SQLThreadLocalTransaction
 
     private IDatabaseConnectionProvider<Connection> _provider;
     private ThreadLocal<Connection> _connection = new ThreadLocal<Connection>();
+    private ThreadLocal<List<Runnable>> _commitHooks = new ThreadLocal<>();
 
     @Override
     public boolean isInTransaction()
@@ -56,6 +59,7 @@ public class SQLThreadLocalTransaction
             _connection.get().close();
             _connection.remove();
         }
+        _commitHooks.remove();
     }
 
     /**
@@ -96,7 +100,12 @@ public class SQLThreadLocalTransaction
         assert isInTransaction();
 
         _connection.get().commit();
-        closeConnection();
+        try {
+            List<Runnable> hooks = _commitHooks.get();
+            if (hooks != null) hooks.forEach(Runnable::run);
+        } finally {
+            closeConnection();
+        }
     }
 
     @Override
@@ -129,5 +138,14 @@ public class SQLThreadLocalTransaction
     {
         // Still in a transaction - did you forget to call commit?
         assert !isInTransaction();
+    }
+
+    public void onCommit(Runnable r) {
+        List<Runnable> hooks = _commitHooks.get();
+        if (hooks == null) {
+            hooks = new ArrayList<>();
+            _commitHooks.set(hooks);
+        }
+        hooks.add(r);
     }
 }
