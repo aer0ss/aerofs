@@ -25,16 +25,16 @@ import static com.aerofs.polaris.Constants.SFNOTIF_CHANGE;
 public class SSMPListener implements EventHandler, Managed {
     private final SFMemberChangeListener listener;
     private final AccessManager access;
+    private final SSMPConnectionWrapper wrapper;
     private final static Logger l = Loggers.getLogger(SSMPListener.class);
 
     // TODO sp and sparta both use the anonymous ssmp id
     private final List<SSMPIdentifier> VALID_SENDERS = Lists.newArrayList(SSMPIdentifier.ANONYMOUS);
 
     @Inject
-    public SSMPListener(ManagedSSMPConnection ssmpConnection, SFMemberChangeListener listener, AccessManager access)
+    public SSMPListener(SSMPConnectionWrapper ssmpConnectionWrapper, SFMemberChangeListener listener, AccessManager access)
     {
-        l.info("starting the ssmp listener");
-        ssmpConnection.conn.addUcastHandler("sf", this);
+        wrapper = ssmpConnectionWrapper;
         this.listener = listener;
         this.access = access;
     }
@@ -78,14 +78,15 @@ public class SSMPListener implements EventHandler, Managed {
         }
     }
 
-    // TODO (RD) need managed so that polaris actually instantiates this class
     @Override
     public void start() throws Exception {
-        // no-op
+        l.info("starting the ssmp listener");
+        wrapper.setup(SSMPIdentifier.fromInternal("polaris"));
+        wrapper.getConn().addUcastHandler("sf", this);
     }
 
     @Override
     public void stop() {
-        // no-op
+        wrapper.teardown();
     }
 }

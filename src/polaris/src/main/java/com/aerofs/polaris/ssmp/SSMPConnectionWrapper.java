@@ -14,17 +14,14 @@ import org.jboss.netty.util.Timer;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Singleton;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
-import com.aerofs.baseline.Managed;
 import org.slf4j.Logger;
 
 import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
-@Singleton
-public class ManagedSSMPConnection implements Managed {
+public class SSMPConnectionWrapper {
     private static final int NUM_BOSS_THREADS = 1;
     private static final int NUM_WORK_THREADS = 8;
     private final static Logger l = Loggers.getLogger(SSMPListener.class);
@@ -33,34 +30,41 @@ public class ManagedSSMPConnection implements Managed {
     private BossPool<NioClientBoss> bossPool = new NioClientBossPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-boss-%d")), NUM_BOSS_THREADS);
     private WorkerPool<NioWorker> workerPool = new NioWorkerPool(Executors.newCachedThreadPool(Threads.newNamedThreadFactory("vk-wrk-%d")), NUM_WORK_THREADS);
     private final ChannelFactory channelFactory = new NioClientSocketChannelFactory(bossPool, workerPool);
-    public final SSMPConnection conn;
+    private final ICertificateProvider cacert;
+    private final String deploymentSecret;
+    private SSMPConnection conn = null;
 
     @Inject
-    public ManagedSSMPConnection(ICertificateProvider cacert,
+    public SSMPConnectionWrapper(ICertificateProvider cacert,
                 @Named(DEPLOYMENT_SECRET_INJECTION_KEY) String deploymentSecret)
     {
-        conn = new SSMPConnection(SSMPIdentifier.fromInternal("polaris"), deploymentSecret,
+        this.cacert = cacert;
+        this.deploymentSecret = deploymentSecret;
+    }
+
+    public void setup(SSMPIdentifier id) throws Exception {
+        if (conn != null) {
+            l.info("ssmp conn already set up");
+            throw new Exception("ssmp conn already set up");
+        }
+        l.info("starting ssmp connection");
+        conn = new SSMPConnection(id, deploymentSecret,
                 InetSocketAddress.createUnresolved("lipwig.service", 8787),
                 timer,
                 channelFactory,
                 new SSLEngineFactory(SSLEngineFactory.Mode.Client, SSLEngineFactory.Platform.Desktop, null, cacert, null)
                         ::newSslHandler);
-    }
 
-    public ManagedSSMPConnection(SSMPConnection conn) {
-        this.conn = conn;
-    }
-
-    @Override
-    public void start() throws Exception {
-        l.info("starting ssmp connection");
         conn.start();
     }
 
-    @Override
-    public void stop() {
+    public void teardown() {
         conn.stop();
         channelFactory.shutdown();
         timer.stop();
+    }
+
+    public SSMPConnection getConn() {
+        return conn;
     }
 }

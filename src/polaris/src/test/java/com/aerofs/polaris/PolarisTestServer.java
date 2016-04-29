@@ -17,7 +17,7 @@ import com.aerofs.polaris.logical.StoreNames;
 import com.aerofs.polaris.notification.ManagedNotifier;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.polaris.notification.UpdatePublisher;
-import com.aerofs.polaris.ssmp.ManagedSSMPConnection;
+import com.aerofs.polaris.ssmp.SSMPConnectionWrapper;
 import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.cache.CacheBuilder;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
@@ -26,8 +26,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.*;
 
 /**
  * JUnit resource that handles the lifecycle of a
@@ -117,7 +116,8 @@ public final class PolarisTestServer extends ExternalResource {
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
         private final FolderSharer folderSharer = Mockito.mock(FolderSharer.class);
         private final StoreNames storeNames = Mockito.mock(StoreNames.class);
-        private final ManagedSSMPConnection ssmpConnection = new ManagedSSMPConnection(mock(SSMPConnection.class));
+        private final SSMPConnection ssmp = Mockito.mock(SSMPConnection.class);
+        private final SSMPConnectionWrapper wrapper = Mockito.mock(SSMPConnectionWrapper.class);
         private Environment env = null;
 
         @Override
@@ -132,7 +132,7 @@ public final class PolarisTestServer extends ExternalResource {
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
                     bind(folderSharer).to(FolderSharer.class).ranked(1);
                     bind(storeNames).to(StoreNames.class).ranked(1);
-                    bind(ssmpConnection).to(ManagedSSMPConnection.class).ranked(1);
+                    bind(wrapper).to(SSMPConnectionWrapper.class).ranked(1);
                 }
             });
 
@@ -152,7 +152,7 @@ public final class PolarisTestServer extends ExternalResource {
 
         protected void resetMocks()
         {
-            reset(publisher, accessManager, notifier, folderSharer, storeNames, ssmpConnection.conn);
+            reset(publisher, accessManager, notifier, folderSharer, storeNames, ssmp, wrapper);
         }
     }
 
@@ -182,9 +182,9 @@ public final class PolarisTestServer extends ExternalResource {
         return server.storeNames;
     }
 
-    public ManagedSSMPConnection getSSMPConn()
+    public SSMPConnectionWrapper getSSMPWrapper()
     {
-        return server.ssmpConnection;
+        return server.wrapper;
     }
 
     public Environment getPolarisEnvironment()
@@ -200,6 +200,7 @@ public final class PolarisTestServer extends ExternalResource {
     @Override
     protected void before() throws Throwable {
         try {
+            when(server.wrapper.getConn()).thenReturn(server.ssmp);
             server.runWithConfiguration(CONFIGURATION);
         } catch (Throwable t) {
             MetricRegistries.unregisterMetrics();

@@ -1,5 +1,6 @@
 package com.aerofs.polaris.ssmp;
 
+import com.aerofs.baseline.Managed;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.notification.BinaryPublisher;
 import com.aerofs.polaris.notification.UpdatePublisher;
@@ -26,14 +27,15 @@ import static com.aerofs.ssmp.SSMPDecoder.MAX_PAYLOAD_LENGTH;
 
 // FIXME (AG): this is a piss-poor updater. I have another approach in mind where you can dump out the actual transforms
 @Singleton
-public final class SSMPPublisher implements UpdatePublisher, BinaryPublisher {
+public final class SSMPPublisher implements UpdatePublisher, BinaryPublisher, Managed {
     private static final Logger LOGGER = LoggerFactory.getLogger(SSMPPublisher.class);
-    private final SSMPConnection ssmp;
+    private final SSMPConnectionWrapper wrapper;
+    private SSMPConnection ssmp;
 
     @Inject
-    public SSMPPublisher(ManagedSSMPConnection managedSSMPConnection) {
+    public SSMPPublisher(SSMPConnectionWrapper ssmpConnectionWrapper) {
         LOGGER.info("setup lipwig update publisher");
-        this.ssmp = managedSSMPConnection.conn;
+        this.wrapper = ssmpConnectionWrapper;
     }
 
     @Override
@@ -103,5 +105,16 @@ public final class SSMPPublisher implements UpdatePublisher, BinaryPublisher {
                 returned.setException(t);
             }
         };
+    }
+
+    @Override
+    public void start() throws Exception {
+        wrapper.setup(SSMPIdentifier.ANONYMOUS);
+        ssmp = wrapper.getConn();
+    }
+
+    @Override
+    public void stop() {
+        wrapper.teardown();
     }
 }
