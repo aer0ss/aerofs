@@ -1175,9 +1175,32 @@ public class TestSharedFolderResource extends AbstractResourceTest
                 .contentType(ContentType.JSON)
                 .body(ImmutableMap.of("public_name", "new name"),
                         ObjectMapperType.GSON)
-                .expect()
+        .expect()
                 .statusCode(403)
-                .when().log().everything()
+        .when().log().everything()
                 .patch("/v1.4/shares/{sid}", share.toStringFormal());
+    }
+
+    @Test
+    public void shouldSetSharedFolderName() throws Exception
+    {
+        SID share = mkShare("Test Folder", user.getString());
+        String newName = "new name";
+        givenReadAccess()
+                .contentType(ContentType.JSON)
+                .body(newName, ObjectMapperType.GSON)
+        .expect()
+                .statusCode(200)
+        .when().log().everything()
+                .put("/v1.4/shares/{sid}/name", share.toStringFormal());
+
+
+        givenReadAccess()
+        .expect()
+                .statusCode(200)
+                .body("id", equalTo(share.toStringFormal()))
+                .body("name", equalTo(newName))
+        .when().log().everything()
+                .get(RESOURCE, share.toStringFormal());
     }
 }

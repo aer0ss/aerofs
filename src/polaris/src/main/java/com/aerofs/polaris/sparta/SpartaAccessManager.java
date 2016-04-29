@@ -275,7 +275,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         put.addHeader(HttpHeaders.AUTHORIZATION, getHeaderValue(serviceName, deploymentSecret,
                 principal.getUser().getString(), principal.getDevice().toStringFormal()));
 
-        put.setEntity(new StringEntity(name));
+        put.setEntity(new StringEntity("\"" + name + "\""));
         try (CloseableHttpResponse response = client.execute(put)) {
             int sc = response.getStatusLine().getStatusCode();
             if (sc != 200) {
