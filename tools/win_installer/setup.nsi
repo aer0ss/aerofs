@@ -214,6 +214,12 @@ Function postInstall_privileged
     ${EndIf}
 
     # Allow the executables to go through the Windows Firewall
+    # NB: it might not be sufficient on the first install because the last two
+    # won't appear until the first run of the updater
+    # TODO: consider detecting whether the current folder exists and if not,
+    # running the updater once to
+    #  1. avoid first firewall warning
+    #  2. provide visual feedback during the first (long) download
     SimpleFC::AddApplication "AeroFS" "$USERS_INSTDIR\${AEROFS_EXECUTABLE}" 0 2 "" 1
     SimpleFC::AddApplication "AeroFS GUI" "$USERS_INSTDIR\current\${AEROFS_EXECUTABLE}" 0 2 "" 1
     SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\current\aerofsd.exe" 0 2 "" 1

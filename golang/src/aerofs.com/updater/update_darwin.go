@@ -64,10 +64,9 @@ func LaunchAero(exec string, _ []string) error {
 	}
 
 	approot := filepath.Join(data, settings.approot)
-	version := LastInstallVersion(approot)
 	// NB: GUI loader is in bundle to avoid running afoul of weird OSX restrictions
 	launcher := filepath.Join(path, settings.launcher)
-	args := []string{launcher, InstallPath(approot, version)}
+	args := []string{launcher, filepath.Join(approot, "current")}
 
 	LaunchIfMatching(approot, launcher, args)
 
@@ -78,7 +77,7 @@ func LaunchAero(exec string, _ []string) error {
 		properties = filepath.Clean(path + "../../Resources/site-config.lproj/locversion.plist")
 	}
 
-	inst, err := Update(properties, settings.manifest, approot, version)
+	inst, err := Update(properties, settings.manifest, approot)
 	if err != nil {
 		log.Printf("Failed to update from site-config:\n\t%s", err.Error())
 		return fmt.Errorf("Failed to update from site-config:\n%s", err.Error())

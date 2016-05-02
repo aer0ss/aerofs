@@ -1,12 +1,9 @@
-# TODO:
 # - doctor version file
 # - doctor manifest to prevent detection of doctored version
 # - restart client
 # - wait (10s) for update to kick in
 # - detect new version file
 # - make sure daemon is ritual-reachable
-#
-# do for all 3 OS and don't forget TS
 
 import os
 import time
@@ -67,13 +64,24 @@ def down_and_up():
     time.sleep(12)
 
     # wait for version file to reflect successful upgrade
+    n = 15
     while True:
-        with open(vf, "r") as f:
-            v = f.readline().strip()
-            #print "v: ", v
-            if v[0] != '0':
-                print "back to ", v
-                break
+        try:
+            with open(vf, "r") as f:
+                v = f.readline().strip()
+                #print "v: ", v
+                if v[0] != '0':
+                    print "back to ", v
+                    break
+                if n == 0:
+                    raise AssertionError
+        except IOError:
+            if n == 0:
+                raise
         time.sleep(1)
+        n -= 1
+
+    # make sure daemon comes back up after upgrade
+    aerofs_proc.wait_for_daemon()
 
 spec = {"default": down_and_up}

@@ -36,7 +36,7 @@ if [ ! -d "$TMPDIR/aerofs" ]; then
   # wait until next update attempt
   rm -f "$UPDATE_FILEPATH"
 else
-  cp -a "$TMPDIR"/aerofs/* "$APP_DIR"
+  cp -af "$TMPDIR"/aerofs/* "$APP_DIR"/../
   if [ $? -ne 0 ]; then
     # Failed to place new root. Maybe the disk was full, or some other
     # catastrophic failure took place. AeroFS will attempt to redownload on the
@@ -54,7 +54,7 @@ if [ $GUI == "1" ]; then
   # the output redirections are needed so that the process won't terminate if
   # the child process (gui) outputs anything to stdout/stderr. We launch from
   # $APP_DIR because the cli and gui may not be on the user's $PATH.
-  "$APP_DIR/[AEROFS_PRODUCT_UNIX]-gui" >/dev/null 2>&1
+  "$APP_DIR/../[AEROFS_PRODUCT_UNIX]-gui" >/dev/null 2>&1
 else
-  nohup "$APP_DIR/[AEROFS_PRODUCT_UNIX]-cli" >/dev/null 2>&1 &
+  nohup "$APP_DIR/../[AEROFS_PRODUCT_UNIX]-cli" >/dev/null 2>&1 &
 fi

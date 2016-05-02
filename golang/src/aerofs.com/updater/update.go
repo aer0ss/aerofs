@@ -32,11 +32,6 @@ type settings struct {
 }
 
 func LaunchIfMatching(approot, launcher string, args []string) {
-	if err := os.MkdirAll(approot, 0755); err != nil {
-		log.Printf("Could not mkdir approot: %s\n", err.Error())
-		return
-	}
-
 	manifest, err := LoadManifest(filepath.Join(approot, MANIFEST))
 	if err != nil {
 		log.Printf("Could not load manifest: %s\n", err.Error())
@@ -89,7 +84,8 @@ func secureTransport(cacert string) (*http.Transport, error) {
 	}, nil
 }
 
-func Update(config, manifestName, approot string, version uint64) (string, error) {
+func Update(config, manifestName, approot string) (string, error) {
+	log.Printf("Loading site config from %s\n", config)
 	siteConfig, err := LoadJavaProperties(config)
 	if err != nil {
 		return "", fmt.Errorf("Could not load site-config:\n%s", err.Error())
@@ -125,46 +121,35 @@ func Update(config, manifestName, approot string, version uint64) (string, error
 	}
 	manifest = manifest["files"].(map[string]interface{})
 
-	current := InstallPath(approot, version)
-	next := InstallPath(approot, version+1)
+	current := filepath.Join(approot, "current")
+	version := LastInstallVersion(approot)
+	prev := InstallPath(approot, version+1)
 
-	if err = os.RemoveAll(next); err != nil && !os.IsNotExist(err) {
-		return "", fmt.Errorf("Could not recursively remove %s:\n%s", next, err.Error())
+	if err = os.Rename(current, prev); err != nil && !os.IsNotExist(err) {
+		return "", fmt.Errorf("Could not rename %s -> %s : %s\n", current, prev, err.Error())
 	}
-	if err = os.MkdirAll(next, 0755); err != nil {
-		return "", fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
+	if err = os.MkdirAll(current, 0755); err != nil {
+		return "", fmt.Errorf("Could not recursively make %s:\n%s", current, err.Error())
 	}
 
-	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
+	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, prev, current)
 
-	if err = Apply(current, next, manifest, fetcher); err != nil {
+	if err = Apply(prev, current, manifest, fetcher); err != nil {
 		return "", fmt.Errorf("Could not apply updates:\n%s", err.Error())
 	}
 
 	log.Println("Copying site-config...")
 
 	// copy site config into new approot
-	if err = LinkOrCopy(filepath.Join(next, "site-config.properties"), config); err != nil {
+	if err = LinkOrCopy(filepath.Join(current, "site-config.properties"), config); err != nil {
 		return "", fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
-	}
-
-	lnk := filepath.Join(approot, "current")
-	if err = os.Remove(lnk); err == nil || os.IsNotExist(err) {
-		log.Println("Symlink...")
-		if err = os.Symlink(next, lnk); err != nil {
-			log.Printf("Failed to symlink: %s\n", err.Error())
-		} else {
-			next = lnk
-		}
-	} else {
-		log.Printf("Failed to remove current symlink: %s\n", err.Error())
 	}
 
 	os.Rename(manifestFile, filepath.Join(approot, MANIFEST))
 
 	log.Println("Launching...")
 
-	return next, nil
+	return current, nil
 }
 
 func InstallPath(approot string, v uint64) string {

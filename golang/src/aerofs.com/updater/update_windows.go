@@ -90,8 +90,7 @@ func LaunchAero(exec string, _ []string) error {
 	}
 
 	approot := filepath.Join(APPDATA, settings.approot)
-	version := LastInstallVersion(approot)
-	launcher := LauncherPath(approot, version, settings.launcher)
+	launcher := filepath.Join(approot, "current", settings.launcher)
 	args := []string{}
 
 	LaunchIfMatching(approot, launcher, args)
@@ -99,7 +98,6 @@ func LaunchAero(exec string, _ []string) error {
 	inst, err := Update(filepath.Join(path, "site-config.properties"),
 		settings.manifest,
 		approot,
-		version,
 	)
 	if err != nil {
 		log.Printf("Failed to update from site-config:\n\t%s", err.Error())
