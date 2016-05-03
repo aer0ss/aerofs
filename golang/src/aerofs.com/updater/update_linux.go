@@ -89,6 +89,9 @@ func LaunchAero(exec string, fwd []string) error {
 	)
 	if err != nil {
 		log.Printf("Failed to update from site-config:\n\t%s", err.Error())
+		if len(inst) > 0 {
+			LaunchIfMatching(approot, launcher, args)
+		}
 		return fmt.Errorf("Failed to update from site-config:\n%s", err.Error())
 	}
 

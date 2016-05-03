@@ -166,8 +166,9 @@ Function install_unprivileged
         FindClose $1
     ${EndUnless}
 
-    # Delete previous manifest to force fresh download
-    Delete "$INSTDIR\manifest.json"
+    # Force updater to fetch new manifest
+    FileOpen $0 "$INSTDIR\forceupdate" w
+    FileClose $0
 
     # Allow overwritting the executables even if they are still in use
     # This should not be the case, but we never know, since they are not in the

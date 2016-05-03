@@ -48,7 +48,7 @@ fi
 
 rm -rf "$TMPDIR"
 
-rm -f "$APP_DIR"/../manifest.json
+touch "$APP_DIR"/../forceupdate
 
 if [ $GUI == "1" ]; then
   # the output redirections are needed so that the process won't terminate if

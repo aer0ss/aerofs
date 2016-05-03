@@ -49,7 +49,7 @@ fi
 
 rm -rf "$TMPDIR"
 
-rm -f "$APP_DIR"/../manifest.json
+touch "$APP_DIR"/../forceupdate
 
 # NB: We cannot restart with nohup, because this will prevent OSX from stopping
 # AeroFS on user logout. This would result in an "AeroFS is still running"

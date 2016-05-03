@@ -32,6 +32,14 @@ type settings struct {
 }
 
 func LaunchIfMatching(approot, launcher string, args []string) {
+	updateFlag := filepath.Join(approot, "forceupdate")
+	if _, err := os.Lstat(updateFlag); err == nil {
+		if err = os.Remove(updateFlag); err != nil {
+			log.Printf("Failed to remove update flag: %s\n", err.Error())
+		}
+		return
+	}
+
 	manifest, err := LoadManifest(filepath.Join(approot, MANIFEST))
 	if err != nil {
 		log.Printf("Could not load manifest: %s\n", err.Error())
@@ -104,13 +112,14 @@ func Update(config, manifestName, approot string) (string, error) {
 	if err := os.MkdirAll(approot, 0755); err != nil {
 		return "", fmt.Errorf("Could not create approot:\n%s", err.Error())
 	}
+	current := filepath.Join(approot, "current")
 
 	log.Println("Downloading manifest...")
 	manifestUrl := url.Scheme + "://" + url.Host + "/static/updates/" + manifestName
 	manifestFile := filepath.Join(approot, MANIFEST+".cand")
 	manifest, err := Download(manifestUrl, manifestFile, transport)
 	if err != nil {
-		return "", fmt.Errorf("Could not download manifests:\n%s", err.Error())
+		return current, fmt.Errorf("Could not download manifests:\n%s", err.Error())
 	}
 
 	fetcher := &HttpFetcher{
@@ -121,36 +130,43 @@ func Update(config, manifestName, approot string) (string, error) {
 
 	format := manifest["format"].(string)
 	if err = fetcher.SetFormat(format); err != nil {
-		return "", fmt.Errorf("Unsupported data format %s", format)
+		return current, fmt.Errorf("Unsupported data format %s", format)
 	}
 	manifest = manifest["files"].(map[string]interface{})
 
-	current := filepath.Join(approot, "current")
 	version := LastInstallVersion(approot)
-	prev := InstallPath(approot, version+1)
+	prev := InstallPath(approot, version+1) // current will be moved there
+	next := InstallPath(approot, version+2) // next will be applied there
 
+	if err = os.MkdirAll(next, 0755); err != nil {
+		return current, fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
+	}
+
+	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
+
+	if err = Apply(current, next, manifest, fetcher); err != nil {
+		return current, fmt.Errorf("Could not apply updates:\n%s", err.Error())
+	}
+
+	log.Println("Copying site-config")
+	if err = LinkOrCopy(filepath.Join(next, "site-config.properties"), config); err != nil {
+		return current, fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
+	}
+
+	// after this point it is no longer possible to fallback to launching the previous version
+
+	log.Println("Switching manifest")
+	os.Remove(filepath.Join(approot, MANIFEST))
+	if err = os.Rename(manifestFile, filepath.Join(approot, MANIFEST)); err != nil {
+		log.Printf("Failed to rename manifest: %s\n", err.Error())
+	}
+
+	log.Println("Switching approot")
 	if err = os.Rename(current, prev); err != nil && !os.IsNotExist(err) {
 		return "", fmt.Errorf("Could not rename %s -> %s : %s\n", current, prev, err.Error())
 	}
-	if err = os.MkdirAll(current, 0755); err != nil {
-		return "", fmt.Errorf("Could not recursively make %s:\n%s", current, err.Error())
-	}
-
-	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, prev, current)
-
-	if err = Apply(prev, current, manifest, fetcher); err != nil {
-		return "", fmt.Errorf("Could not apply updates:\n%s", err.Error())
-	}
-
-	log.Println("Copying site-config...")
-
-	// copy site config into new approot
-	if err = LinkOrCopy(filepath.Join(current, "site-config.properties"), config); err != nil {
-		return "", fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
-	}
-
-	if err = os.Rename(manifestFile, filepath.Join(approot, MANIFEST)); err != nil {
-		log.Printf("Failed to rename manifest: %s\n", err.Error())
+	if err = os.Rename(next, current); err != nil {
+		return "", fmt.Errorf("Could not rename %s -> %s : %s\n", next, current, err.Error())
 	}
 
 	log.Println("Launching...")
@@ -192,6 +208,7 @@ func LastInstallVersion(approot string) uint64 {
 	for _, n := range children {
 		if strings.HasPrefix(n, "m_") {
 			if v, err := strconv.ParseUint(n[2:], 16, 64); err == nil && v < mv {
+				// TODO: custom RemoveAllIgnoreErrors
 				if err = os.RemoveAll(filepath.Join(approot, n)); err != nil {
 					log.Printf("failed to remove %s: %s\n", n, err.Error())
 				} else {
