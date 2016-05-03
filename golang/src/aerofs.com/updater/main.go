@@ -12,6 +12,9 @@ import (
 	"strings"
 )
 
+var buildtime string = "unknown"
+var commithash string = "unknown"
+
 var errInvalidManifest error = fmt.Errorf("invalid manifest")
 
 func Usage() {
@@ -57,6 +60,12 @@ func runAsBinary() {
 
 func main() {
 	argc := len(os.Args)
+
+	if argc == 2 && os.Args[1] == "version" {
+		fmt.Printf("Commit Hash: %s\n", commithash)
+		fmt.Printf("Build Time : %s\n", buildtime)
+		return
+	}
 
 	if argc < 2 || (os.Args[1] != "create" && os.Args[1] != "apply") {
 		runAsBinary()
