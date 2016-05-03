@@ -101,6 +101,10 @@ func Update(config, manifestName, approot string) (string, error) {
 		return "", fmt.Errorf("Could not read secure ca certificate:\n%s", err.Error())
 	}
 
+	if err := os.MkdirAll(approot, 0755); err != nil {
+		return "", fmt.Errorf("Could not create approot:\n%s", err.Error())
+	}
+
 	log.Println("Downloading manifest...")
 	manifestUrl := url.Scheme + "://" + url.Host + "/static/updates/" + manifestName
 	manifestFile := filepath.Join(approot, MANIFEST+".cand")
@@ -145,7 +149,9 @@ func Update(config, manifestName, approot string) (string, error) {
 		return "", fmt.Errorf("Could not link or copy site-config:\n%s", err.Error())
 	}
 
-	os.Rename(manifestFile, filepath.Join(approot, MANIFEST))
+	if err = os.Rename(manifestFile, filepath.Join(approot, MANIFEST)); err != nil {
+		log.Printf("Failed to rename manifest: %s\n", err.Error())
+	}
 
 	log.Println("Launching...")
 
