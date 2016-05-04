@@ -4,7 +4,7 @@ SRC = $(wildcard *.go)
 COMMIT = $(shell git rev-parse HEAD)
 TIMESTAMP = $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 BUILD_FLAGS = -a -installsuffix static
-LDFLAGS = -s -w -X main.buildtime=$(TIMESTAMP) -X main.commithash=$(COMMIT)
+LDFLAGS = -w -X main.buildtime=$(TIMESTAMP) -X main.commithash=$(COMMIT)
 GOPATH = $(abspath ../../../)
 GOBUILD = GOPATH=$(GOPATH) CGOENABLED=0 go build $(BUILD_FLAGS)
 
@@ -15,13 +15,13 @@ all: $(DEST)/linux/updater-i386 \
 	 $(DEST)/win/updater.exe
 
 $(DEST)/linux/updater-amd64: $(SRC)
-	GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags "$(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
 
 $(DEST)/linux/updater-i386: $(SRC)
-	GOOS=linux GOARCH=386 $(GOBUILD) -ldflags "$(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=linux GOARCH=386 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
 
 $(DEST)/osx/updater: $(SRC)
-	GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags "$(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags "-s $(LDFLAGS)" -o "$@" aerofs.com/updater
 
 $(DEST)/win/updater.exe: $(SRC)
 	# NB: do not store icon w/ .syso ext to prevent it from being picked up in *nix build
