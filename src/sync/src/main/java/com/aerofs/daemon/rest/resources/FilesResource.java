@@ -38,7 +38,7 @@ public class FilesResource extends AbstractResource
                             @HeaderParam(Names.IF_RANGE) String ifRange,
                             @HeaderParam(Names.RANGE) String range,
                             @HeaderParam(Names.IF_NONE_MATCH) @DefaultValue("") EntityTagSet ifNoneMatch,
-                            @HeaderParam(Names.USER_AGENT) String userAgent)
+                            @HeaderParam(Names.USER_AGENT) String ua)
     {
         EntityTag etIfRange = parse(ifRange);
         Response response = new EIFileContent(_imce, token, object, etIfRange, range, ifNoneMatch).execute();
@@ -50,7 +50,7 @@ public class FilesResource extends AbstractResource
          * presence of a content-length field in a HEAD request, it is removed for IE.
          */
 
-        if (userAgent.contains("MSIE") || userAgent.contains("Edge") || userAgent.contains("Trident")) {
+        if (ua != null && (ua.contains("MSIE") || ua.contains("Edge") || ua.contains("Trident"))) {
             response.getMetadata().remove(Names.CONTENT_LENGTH);
         }
 
