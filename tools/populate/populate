@@ -38,13 +38,8 @@ function copy_labeling_resources() {
 }
 
 function copy_os_specific_resources() {
-    for resource in $( ls "$CLIENT_RESOURCES_DIR/all/" ) # non-lib directories
-    do
-        if [[ $resource != lib* ]]
-        then
-            cp -R "$CLIENT_RESOURCES_DIR/all/$resource" "$APPROOT"/
-        fi
-    done
+    cp -R "$CLIENT_RESOURCES_DIR/all/icons" "$APPROOT"/
+    cp -R "$CLIENT_RESOURCES_DIR/all/misc"/* "$APPROOT"/
 
     # copy JRE and native libs
     case "$OS" in
