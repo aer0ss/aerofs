@@ -99,7 +99,6 @@ endif
 	$(call success,"package_clients")
 
 package_updates: _clean_updates
-	make -C $(GIT_ROOT)/src/aeroim-client packages
 	$(GIT_ROOT)/tools/build/bootstrap make_updates $(VERSION) --build-all
 	$(call success,"package_updates")
 
