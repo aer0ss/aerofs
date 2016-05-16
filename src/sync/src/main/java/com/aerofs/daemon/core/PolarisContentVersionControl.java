@@ -129,8 +129,10 @@ public class PolarisContentVersionControl implements IContentVersionControl
         Long pv = _cvdb.getVersion_(sidx, oid);
         if (pv == null || pv != v) {
             _cvdb.setVersion_(sidx, oid, v, t);
-            notifyListeners_(sidx, oid, v, t);
         }
+        // NB: notify listener even when the version doesn't change, otherwise
+        // available content may not be advertised after sharing/migration
+        notifyListeners_(sidx, oid, v, t);
     }
 
     @Override

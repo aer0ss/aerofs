@@ -104,7 +104,7 @@ public class SyncStatusVerifier
         try {
             batchUpdateSyncStatus_(0L, 0L, t);
         } catch (SQLException e) {
-            l.warn("error updating sync status after share", e);;
+            l.warn("error updating sync status after share", e);
         }
     }
 

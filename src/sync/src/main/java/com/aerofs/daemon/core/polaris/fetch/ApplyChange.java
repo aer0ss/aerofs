@@ -235,7 +235,7 @@ public class ApplyChange
             if (lv != null && lv == c.newVersion) {
                 _cvc.setContentVersion_(sidx, soid.oid(), c.newVersion, c.logicalTimestamp, t);
             }
-            l.info("ignoring obsolete content change {}:{} {}", soid, version, c.newVersion);
+            l.info("ignoring obsolete content change {}: {} {} {}", soid, lv, version, c.newVersion);
             return;
         }
 

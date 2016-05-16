@@ -16,8 +16,6 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import javax.annotation.Nullable;
-
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -37,7 +35,7 @@ public class OutOfSyncFilesDatabase extends AbstractDatabase
 
     private final PreparedStatementWrapper _pswInsertFile = new PreparedStatementWrapper(
             DBUtil.insertOrReplaceInto(T_OUT_OF_SYNC_FILES, C_OUT_OF_SYNC_FILES_SIDX,
-                    C_OUT_OF_SYNC_FILES_OID, C_OUT_OF_SYNC_FILES_TIMESTAMP).toString());
+                    C_OUT_OF_SYNC_FILES_OID, C_OUT_OF_SYNC_FILES_TIMESTAMP));
     public void insert_(SIndex sidx, OID oid, Trans t) throws SQLException {
         checkState(
                 1 == update(_pswInsertFile, sidx.getInt(), oid.getBytes(), System.currentTimeMillis()));
@@ -60,7 +58,7 @@ public class OutOfSyncFilesDatabase extends AbstractDatabase
                     C_OUT_OF_SYNC_FILES_IDX + ">? order by " + C_OUT_OF_SYNC_FILES_IDX + " limit ?",
                     C_OUT_OF_SYNC_FILES_IDX, C_OUT_OF_SYNC_FILES_SIDX, C_OUT_OF_SYNC_FILES_OID,
                     C_OUT_OF_SYNC_FILES_TIMESTAMP));
-    public @Nullable IDBIterator<OutOfSyncFile> selectPage_(long startingAfter, int limit)
+    public IDBIterator<OutOfSyncFile> selectPage_(long startingAfter, int limit)
             throws SQLException {
         return new AbstractDBIterator<OutOfSyncFile>(query(_pswPageFiles, startingAfter, limit)) {
             @Override
