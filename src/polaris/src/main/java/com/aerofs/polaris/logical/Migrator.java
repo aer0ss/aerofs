@@ -576,7 +576,7 @@ public class Migrator implements Managed {
         }
 
         boolean isSharingJob() {
-            return SID.folderOID2convertedStoreSID(new OID(this.from)).equals(this.to);
+            return Identifiers.isSharedFolder(this.to) && SID.convertedStoreSID2folderOID(new SID(this.to)).equals(this.from);
         }
 
         boolean isRestoreJob() {

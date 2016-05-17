@@ -127,16 +127,22 @@ public class TestMigrator
         // is the equivalent to immigrant_folder in rootstore
         OID migrationDestination = newFolder(rootStore, "migrant_folder", USERID, DEVICE, objects);
         newFile(immigrantFolder, "migrant_file", USERID, DEVICE, objects);
+        SID share3 = SID.generate();
+        insertAnchor(rootStore, share3, "shared_folder_2", USERID, DEVICE, objects);
+        newFile(share3, "migrant_file_2", USERID, DEVICE, objects);
 
         // make the first call do nothing, as if the server had crashed
         doNothing().doCallRealMethod().when(this.migrator).startStoreMigration(eq(SID.folderOID2convertedStoreSID(sharedFolder)), any(UniqueID.class), eq(DEVICE));
         UniqueID job1 = shareFolder(rootStore, sharedFolder, USERID, DEVICE, objects);
-        doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), any(OID.class), any(UniqueID.class), eq(DEVICE));
+        doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(immigrantFolder), eq(migrationDestination), any(UniqueID.class), eq(DEVICE));
         UniqueID job2 = moveObject(share2, migrationDestination, immigrantFolder, "migrant_folder".getBytes(), USERID, DEVICE, objects).jobID;
+        doNothing().doCallRealMethod().when(this.migrator).startFolderMigration(eq(share3), any(OID.class), any(UniqueID.class), eq(DEVICE));
+        UniqueID job3 = moveObject(rootStore, share2, share3, "migrant_folder_2".getBytes(), USERID, DEVICE, objects).jobID;
 
         migrator.start();
         waitForJobCompletion(migrator, job1, 10);
         waitForJobCompletion(migrator, job2, 10);
+        waitForJobCompletion(migrator, job3, 10);
 
         dbi.inTransaction((conn, status) -> {
             DAO dao = new DAO(conn);
@@ -144,6 +150,10 @@ public class TestMigrator
             UniqueID migratedFolder = dao.children.getActiveChildNamed(migrationDestination, "migrant_folder".getBytes());
             assertTrue("failed to migrate folder to new store", migratedFolder != null);
             assertTrue("failed to migrate file to new store", dao.children.getActiveChildNamed(migratedFolder, "migrant_file".getBytes()) != null);
+
+            UniqueID migratedStore = dao.children.getActiveChildNamed(share2, "migrant_folder_2".getBytes());
+            assertTrue("failed to migrate shared folder to new store", migratedStore != null);
+            assertTrue("failed to migrate file under shared folder to new store", dao.children.getActiveChildNamed(migratedStore, "migrant_file_2".getBytes()) != null);
 
             assertThat(dao.objects.get(fileOID).store, equalTo(SID.folderOID2convertedStoreSID(sharedFolder)));
             return null;
