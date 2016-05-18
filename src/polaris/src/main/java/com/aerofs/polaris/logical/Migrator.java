@@ -308,7 +308,13 @@ public class Migrator implements Managed {
     {
         if (Identifiers.isSharedFolder(migrant)) {
             // need the root store to find out the parent of the migrated shared folder
-            UserID owner = deviceResolver.getDeviceOwner(originator);
+            UserID owner;
+            try {
+                owner = deviceResolver.getDeviceOwner(originator);
+            } catch (NotFoundException e) {
+                LOGGER.info("could not find device owner for did {}, skipping removing shared folder", originator);
+                return null;
+            }
             return dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
                 UniqueID parent = dao.mountPoints.getMountPointParent(SID.rootSID(owner), migrant);
