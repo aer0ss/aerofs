@@ -310,16 +310,18 @@ public class Migrator implements Managed {
             return dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
                 UniqueID srcStore = dao.migrations.getSrcStoreForJob(jobID);
-                Preconditions.checkState(srcStore != null, "could not find src store for migrating store %s", migrant.toString());
-                UniqueID parent = dao.mountPoints.getMountPointParent(srcStore, migrant);
-                // daemons can auto-leave shared folders, in which case we don't have to do anything
-                if (parent != null) {
-                    Update update = removeAnchor(dao, originator, parent, migrant, destination);
-                    dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
-                    return update;
+                if (srcStore != null) {
+                    UniqueID parent = dao.mountPoints.getMountPointParent(srcStore, migrant);
+                    // daemons can auto-leave shared folders, in which case we don't have to do anything
+                    if (parent != null) {
+                        Update update = removeAnchor(dao, originator, parent, migrant, destination);
+                        dao.logicalTimestamps.updateLatest(update.store, update.latestLogicalTimestamp);
+                        return update;
+                    }
                 } else {
-                    return null;
+                    LOGGER.warn("could not find srcstore for migrant {}", migrant);
                 }
+                return null;
             });
         } else {
             return dbi.inTransaction((conn, status) -> {
