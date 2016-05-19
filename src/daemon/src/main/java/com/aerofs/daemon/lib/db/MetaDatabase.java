@@ -428,6 +428,11 @@ public class MetaDatabase extends AbstractDatabase
                 if (rs.next()) {
                     OID parent = new OID(rs.getBytes(1));
                     String name = rs.getString(2);
+                    // NB: this is gross but necessary
+                    // a folder name can be temporarily prefixed with '/' during sharing to allow
+                    // the original folder and the anchor to coexist under the same name
+                    // see ApplyChangeImpl#share_ for details
+                    if (name.charAt(0) == '/') name = name.substring(1);
                     Type type = Type.valueOf(rs.getInt(3));
                     int flags = rs.getInt(4);
                     byte[] bs = rs.getBytes(5);

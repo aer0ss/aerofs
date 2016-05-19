@@ -44,6 +44,7 @@ import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.core.store.StoreHierarchy;
 import com.aerofs.daemon.lib.db.ExpulsionDatabase;
+import com.aerofs.daemon.lib.db.MetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.OID;
@@ -108,6 +109,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final ChangeEpochDatabase _cedb;
     private final ContentFetchQueueWrapper _cfqw;
     private final PolarisContentVersionControl _cvc;
+    private final MetaDatabase _mdb;
 
     // FIXME: remove once TS is burned
     private final CfgLocalUser _localUser;
@@ -122,7 +124,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
                            LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
                            PolarisContentVersionControl cvc, ContentFetchQueueWrapper cfqw,
-                           TransManager tm, CfgLocalUser localUser)
+                           MetaDatabase mdb, TransManager tm, CfgLocalUser localUser)
     {
         _tm = tm;
         _ds = ds;
@@ -130,6 +132,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _expulsion = expulsion;
         _a2t = a2t;
         _os = os;
+        _mdb = mdb;
         _cvdb = cvdb;
         _rpdb = rpdb;
         _mbdb = mbdb;
@@ -697,9 +700,10 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (!oa.parent().isTrash()) {
             // move folder out of the way
             // NB: must not put under trash just yet or expulsion status would be wrong
-            // NB: use forbidden character in prefix to avoid conflict
-            _ds.setOAParentAndName_(oa, _ds.getOA_(new SOID(soid.sidx(), oa.parent())),
-                    "/" + soid.oid().toStringFormal(), t);
+            // NB: prefix with forbidden character to ensure no conflict will arise
+            // NB: MetaDatabase will ignore this disambiguation prefix when loading OA
+            // NB: bypass DirectoryService to avoid triggering listeners and invalidating caches
+            _mdb.setOAParentAndName_(soid.sidx(), soid.oid(), oa.parent(), "/" + oa.name(), t);
 
             // create anchor
             _ds.createOA_(ANCHOR, soid.sidx(), anchor, oa.parent(), oa.name(), t);
