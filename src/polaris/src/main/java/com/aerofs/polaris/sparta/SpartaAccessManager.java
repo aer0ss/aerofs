@@ -3,16 +3,13 @@ package com.aerofs.polaris.sparta;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.auth.server.AeroOAuthPrincipal;
 import com.aerofs.auth.server.AeroUserDevicePrincipal;
-import com.aerofs.ids.DID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
 import com.aerofs.polaris.acl.Access;
 import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
-import com.aerofs.polaris.logical.DeviceResolver;
 import com.aerofs.polaris.logical.FolderSharer;
-import com.aerofs.polaris.logical.NotFoundException;
 import com.aerofs.polaris.logical.StoreRenamer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
@@ -20,7 +17,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -57,7 +53,7 @@ import static com.aerofs.polaris.Constants.DEPLOYMENT_SECRET_INJECTION_KEY;
 
 // TODO(AS): This class has more responsibilities than a super hero. Change its name.
 @Singleton
-public final class SpartaAccessManager implements ManagedAccessManager, DeviceResolver, FolderSharer, StoreRenamer {
+public final class SpartaAccessManager implements ManagedAccessManager, FolderSharer, StoreRenamer {
 
     private static final String SPARTA_API_VERSION = "v1.3";
     private static final long CONNECTION_ACQUIRE_TIMEOUT = TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS);
@@ -122,33 +118,6 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
             client.close();
         } catch (IOException e) {
             LOGGER.warn("fail shutdown sparta HTTP client", e);
-        }
-    }
-
-    @Override
-    public UserID getDeviceOwner(DID device) throws NotFoundException
-    {
-        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/devices/%s", SPARTA_API_VERSION, device.toStringFormal()));
-        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
-
-        try (CloseableHttpResponse response = client.execute(get)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (statusCode == HttpStatus.SC_NOT_FOUND) {
-                LOGGER.warn("could not find owner of device ID {}", device);
-                throw new NotFoundException(device);
-            } else if (statusCode != HttpStatus.SC_OK) {
-                LOGGER.warn("fail retrieve owner of device {}, sc:{}", device, statusCode);
-                throw new NotFoundException(device);
-            }
-
-            try (InputStream content = response.getEntity().getContent()) {
-                Device d = mapper.readValue(content, Device.class);
-                return UserID.fromInternal(d.owner);
-            }
-        } catch (IOException e) {
-            LOGGER.warn("IO exception with sparta to find device {} owner", device, e);
-            throw new NotFoundException(device);
         }
     }
 
@@ -267,32 +236,6 @@ public final class SpartaAccessManager implements ManagedAccessManager, DeviceRe
             return false;
         }
     }
-
-    public Collection<DID> getStorageAgentDIDs()
-    {
-        HttpGet get = new HttpGet(spartaUrl + String.format("/%s/users/:2/devices", SPARTA_API_VERSION));
-        get.addHeader(HttpHeaders.AUTHORIZATION, AeroService.getHeaderValue(serviceName, deploymentSecret));
-
-        try (CloseableHttpResponse response = client.execute(get)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-
-            if (statusCode == HttpStatus.SC_OK) {
-                try (InputStream content = response.getEntity().getContent()) {
-                    Device[] devices = mapper.readValue(content, Device[].class);
-                    Set<DID> dids = Sets.newHashSetWithExpectedSize(devices.length);
-                    for (Device device : devices) dids.add(new DID(UniqueID.fromStringFormal(device.id)));
-                    return dids;
-                }
-            } else {
-                LOGGER.warn("fail retrieve TSSA devices, sc:{}", statusCode);
-                return Sets.newHashSetWithExpectedSize(0);
-            }
-        } catch (Exception e) {
-            LOGGER.warn("IO exception with sparta to find tssa devices", e);
-            throw new RuntimeException(e);
-        }
-    }
-
 
     private static class UserStore
     {

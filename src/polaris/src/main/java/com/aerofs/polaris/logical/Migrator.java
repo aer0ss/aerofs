@@ -34,19 +34,17 @@ public class Migrator implements Managed {
     private static final Logger LOGGER = LoggerFactory.getLogger(ObjectStore.class);
     private final DBI dbi;
     private final Notifier notifier;
-    private final DeviceResolver deviceResolver;
     private final ListeningExecutorService executor;
 
     @Inject
-    public Migrator(DBI dbi, Notifier notifier, DeviceResolver deviceResolver)
+    public Migrator(DBI dbi, Notifier notifier)
     {
-        this(dbi, notifier, deviceResolver, MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()));
+        this(dbi, notifier, MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor()));
     }
 
-    public Migrator(DBI dbi, Notifier notifier, DeviceResolver deviceResolver, ListeningExecutorService executor)
+    public Migrator(DBI dbi, Notifier notifier, ListeningExecutorService executor)
     {
         this.dbi = dbi;
-        this.deviceResolver = deviceResolver;
         this.notifier = notifier;
         this.executor = executor;
     }
@@ -86,10 +84,12 @@ public class Migrator implements Managed {
     /*
      * @return the Job ID associated with this migration
      */
-    public UniqueID moveCrossStore(DAO dao, UniqueID child, OID destination, DID originator)
+    public UniqueID moveCrossStore(DAO dao, UniqueID child, UniqueID source, OID destination, DID originator)
     {
         UniqueID jobID = UniqueID.generate();
-        dao.migrations.addMigration(child, destination, jobID, originator, JobStatus.RUNNING);
+        UniqueID srcStore = dao.objects.getStore(source);
+        Preconditions.checkArgument(srcStore != null, "could not find store of source %s", source.toString());
+        dao.migrations.addMigrationWithStore(child, destination, srcStore, jobID, originator, JobStatus.RUNNING);
         dao.migrations.addOidMapping(child, destination, jobID);
         dao.objects.setLocked(destination, LockStatus.LOCKED);
         startFolderMigration(child, destination, jobID, originator);
@@ -164,7 +164,7 @@ public class Migrator implements Managed {
             if (update != null) {
                 notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
             }
-            update = removeMigratedFolder(migratingFolder, destination, originator);
+            update = removeMigratedFolder(migratingFolder, destination, originator, jobID);
             if (update != null) {
                 notifier.notifyStoreUpdated(update.store, update.latestLogicalTimestamp);
             }
@@ -304,20 +304,14 @@ public class Migrator implements Managed {
         return update;
     }
 
-    private @Nullable Update removeMigratedFolder(UniqueID migrant, UniqueID destination, DID originator)
+    private @Nullable Update removeMigratedFolder(UniqueID migrant, UniqueID destination, DID originator, UniqueID jobID)
     {
         if (Identifiers.isSharedFolder(migrant)) {
-            // need the root store to find out the parent of the migrated shared folder
-            UserID owner;
-            try {
-                owner = deviceResolver.getDeviceOwner(originator);
-            } catch (NotFoundException e) {
-                LOGGER.info("could not find device owner for did {}, skipping removing shared folder", originator);
-                return null;
-            }
             return dbi.inTransaction((conn, status) -> {
                 DAO dao = new DAO(conn);
-                UniqueID parent = dao.mountPoints.getMountPointParent(SID.rootSID(owner), migrant);
+                UniqueID srcStore = dao.migrations.getSrcStoreForJob(jobID);
+                Preconditions.checkState(srcStore != null, "could not find src store for migrating store %s", migrant.toString());
+                UniqueID parent = dao.mountPoints.getMountPointParent(srcStore, migrant);
                 // daemons can auto-leave shared folders, in which case we don't have to do anything
                 if (parent != null) {
                     Update update = removeAnchor(dao, originator, parent, migrant, destination);

@@ -12,7 +12,6 @@ import com.aerofs.oauth.TokenVerificationClient;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
-import com.aerofs.polaris.logical.DeviceResolver;
 import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.logical.StoreRenamer;
 import com.aerofs.polaris.notification.ManagedNotifier;
@@ -108,7 +107,6 @@ public final class PolarisTestServer extends ExternalResource {
         private final ManagedUpdatePublisher publisher = Mockito.mock(ManagedUpdatePublisher.class);
         private final ManagedAccessManager accessManager = Mockito.mock(ManagedAccessManager.class);
         private final ManagedNotifier notifier = Mockito.mock(ManagedNotifier.class);
-        private final DeviceResolver deviceResolver = Mockito.mock(DeviceResolver.class);
         private final FolderSharer folderSharer = Mockito.mock(FolderSharer.class);
         private final StoreRenamer storeRenamer = Mockito.mock(StoreRenamer.class);
 
@@ -122,7 +120,6 @@ public final class PolarisTestServer extends ExternalResource {
                     bind(notifier).to(ManagedNotifier.class).to(Notifier.class).ranked(1);
                     bind(publisher).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).ranked(1);
                     bind(accessManager).to(ManagedAccessManager.class).to(AccessManager.class).ranked(1);
-                    bind(deviceResolver).to(DeviceResolver.class).ranked(1);
                     bind(folderSharer).to(FolderSharer.class).ranked(1);
                     bind(storeRenamer).to(StoreRenamer.class).ranked(1);
                 }
@@ -156,11 +153,6 @@ public final class PolarisTestServer extends ExternalResource {
     }
 
     public TokenVerifier getTokenVerifier() { return tokenVerifier;}
-
-    public DeviceResolver getDeviceResolver()
-    {
-        return server.deviceResolver;
-    }
 
     public FolderSharer getFolderSharer()
     {

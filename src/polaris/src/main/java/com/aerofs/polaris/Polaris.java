@@ -120,7 +120,7 @@ public class Polaris extends Service<PolarisConfiguration> {
                 bind(SSMPPublisher.class).to(ManagedUpdatePublisher.class).to(UpdatePublisher.class).
                         to(BinaryPublisher.class).in(Singleton.class);
                 bind(SpartaAccessManager.class).to(SpartaAccessManager.class).to(ManagedAccessManager.class).to(AccessManager.class)
-                        .to(DeviceResolver.class).to(FolderSharer.class).to(StoreRenamer.class).in(Singleton.class);
+                        .to(FolderSharer.class).to(StoreRenamer.class).in(Singleton.class);
                 bind(Migrator.class).to(Migrator.class).in(Singleton.class);
                 bind(ObjectStore.class).to(ObjectStore.class).in(Singleton.class);
                 bind(TreeCommand.class).to(TreeCommand.class);

@@ -54,7 +54,6 @@ public class TestMigrator
     private Migrator migrator;
     private ListeningExecutorService migratorExecutor;
     private ObjectStore objects;
-    private DeviceResolver deviceResolver;
 
     @ClassRule
     public static MySQLDatabase database = new MySQLDatabase("test");
@@ -98,12 +97,10 @@ public class TestMigrator
     {
         // spy on it
         this.dbi = spy(realdbi);
-        this.deviceResolver = mock(DeviceResolver.class);
-        doReturn(USERID).when(this.deviceResolver).getDeviceOwner(eq(DEVICE));
 
         this.notifier = mock(Notifier.class);
         this.migratorExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor());
-        this.migrator = spy(new Migrator(this.dbi, notifier, deviceResolver, migratorExecutor));
+        this.migrator = spy(new Migrator(this.dbi, notifier, migratorExecutor));
         this.objects = new ObjectStore(mock(AccessManager.class), dbi, migrator);
         migrator.start();
     }
@@ -323,7 +320,7 @@ public class TestMigrator
         // this is emulating as if folder was moved to be under share2, and its migrant equivalent were destFolder
         UniqueID job = dbi.inTransaction((conn, handle) -> {
             DAO dao = new DAO(conn);
-            return migrator.moveCrossStore(dao, folder, destFolder, DEVICE);
+            return migrator.moveCrossStore(dao, folder, rootStore, destFolder, DEVICE);
         });
         waitForJobCompletion(migrator, job, 10);
 

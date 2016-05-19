@@ -5,6 +5,7 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.polaris.api.types.JobStatus;
+import com.aerofs.polaris.dao.types.OneColumnUniqueIDMapper;
 import com.aerofs.polaris.logical.Migrator.IDPair;
 import com.aerofs.polaris.logical.Migrator.MigrationJob;
 import org.skife.jdbi.v2.ResultIterator;
@@ -23,12 +24,19 @@ public interface Migrations {
     @SqlUpdate("insert into migration_jobs(migrant, destination, job_id, originator, job_status) values(:src, :dst, :job_id, :originator, :status)")
     int addMigration(@Bind("src") UniqueID src, @Bind("dst") UniqueID dst, @Bind("job_id") UniqueID jobID, @Bind("originator") DID originator, @Bind("status") JobStatus status);
 
+    @SqlUpdate("insert into migration_jobs(migrant, destination, src_store, job_id, originator, job_status) values(:src, :dst, :src_store, :job_id, :originator, :status)")
+    int addMigrationWithStore(@Bind("src") UniqueID src, @Bind("dst") UniqueID dst, @Bind("src_store") UniqueID src_store, @Bind("job_id") UniqueID jobID, @Bind("originator") DID originator, @Bind("status") JobStatus status);
+
     @SqlUpdate("update migration_jobs set job_status = :status where job_id = :job_id")
     int updateStatus(@Bind("job_id") UniqueID job, @Bind("status") JobStatus status);
 
     @RegisterMapper(Migrations.MigrationJobMapper.class)
     @SqlQuery("select migrant, destination, job_id, originator, job_status from migration_jobs where job_id = :job_id")
     @Nullable MigrationJob getJob(@Bind("job_id") UniqueID job);
+
+    @RegisterMapper(OneColumnUniqueIDMapper.class)
+    @SqlQuery("select src_store from migration_jobs where job_id = :job_id")
+    @Nullable UniqueID getSrcStoreForJob(@Bind("job_id") UniqueID job);
 
     @RegisterMapper(Migrations.MigrationJobMapper.class)
     // make sure this matches the value for RUNNING in JobStatus.java

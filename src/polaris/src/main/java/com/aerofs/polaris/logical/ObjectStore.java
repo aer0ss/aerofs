@@ -402,7 +402,7 @@ public final class ObjectStore {
                             updated.add(removeChild(dao, device, oid, mc.child, newOid));
                         } else {
                             updated.add(migrateObject(dao, device, mc.newParent, newOid, mc.child, mc.newChildName));
-                            jobID = migrator.moveCrossStore(dao, mc.child, newOid, device);
+                            jobID = migrator.moveCrossStore(dao, mc.child, oid, newOid, device);
                         }
                         dao.objects.setLocked(mc.child, LockStatus.MIGRATED);
                     }

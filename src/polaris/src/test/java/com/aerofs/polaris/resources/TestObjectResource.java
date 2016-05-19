@@ -68,16 +68,9 @@ public final class TestObjectResource {
     @ClassRule
     public static RuleChain rule = RuleChain.outerRule(database).around(polaris);
 
-    @Before
-    public void beforeTest() throws Exception
-    {
-        doReturn(USERID).when(polaris.getDeviceResolver()).getDeviceOwner(eq(DEVICE));
-        doReturn(USERID2).when(polaris.getDeviceResolver()).getDeviceOwner(eq(DEVICE2));
-    }
-
     @After
     public void afterTest() throws Exception {
-        reset(polaris.getNotifier(), polaris.getTokenVerifier(), polaris.getAccessManager(), polaris.getDeviceResolver());
+        reset(polaris.getNotifier(), polaris.getTokenVerifier(), polaris.getAccessManager());
         database.clear();
     }
 
