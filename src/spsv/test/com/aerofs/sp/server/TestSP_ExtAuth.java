@@ -6,23 +6,21 @@ package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExExternalAuthFailure;
 import com.aerofs.ids.UserID;
-import com.aerofs.proto.Sp.OpenIdSessionAttributes;
-import com.aerofs.proto.Sp.OpenIdSessionNonces;
 import com.aerofs.sp.server.integration.AbstractSPTest;
 import com.aerofs.ssmp.SSMPIdentifiers;
 import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static com.aerofs.proto.Sp.ExtAuthSessionAttributes;
+import static com.aerofs.proto.Sp.ExtAuthSessionNonces;
+import static org.junit.Assert.*;
 
-public class TestSP_OpenID extends AbstractSPTest
+public class TestSP_ExtAuth extends AbstractSPTest
 {
     final int SESSION_NONCE_TIMEOUT_SECS = 5;
 
-    private OpenIdSessionNonces _nonces;
+    private ExtAuthSessionNonces _nonces;
 
     @Before
     public void setUp()
@@ -34,7 +32,7 @@ public class TestSP_OpenID extends AbstractSPTest
     public void shouldThrowIfNoSessionExists() throws Exception
     {
        try {
-           service.openIdGetSessionAttributes("Session that doesn't exist");
+           service.extAuthGetSessionAttributes("Session that doesn't exist");
            fail("Expected exception.");
        } catch (ExExternalAuthFailure e) {
            // pass
@@ -44,10 +42,10 @@ public class TestSP_OpenID extends AbstractSPTest
     @Test
     public void shouldReturnEmptySessionAttributesIfSessionNotYetAuthorized() throws Exception
     {
-        OpenIdSessionAttributes returnedAttributes;
+        ExtAuthSessionAttributes returnedAttributes;
 
-        _nonces = service.openIdBeginTransaction().get();
-        returnedAttributes = service.openIdGetSessionAttributes(_nonces.getSessionNonce()).get();
+        _nonces = service.extAuthBeginTransaction().get();
+        returnedAttributes = service.extAuthGetSessionAttributes(_nonces.getSessionNonce()).get();
 
         assertTrue(returnedAttributes.getUserId().isEmpty());
         assertTrue(returnedAttributes.getFirstName().isEmpty());
@@ -57,16 +55,16 @@ public class TestSP_OpenID extends AbstractSPTest
     @Test
     public void shouldReturnValidSessionAttributesIfSessionAuthorized() throws Exception
     {
-        OpenIdSessionAttributes returnedAttributes;
+        ExtAuthSessionAttributes returnedAttributes;
         IdentitySessionAttributes setAttributes = new IdentitySessionAttributes("a@b.com",
                 "Alfonse", "Benvolio");
 
-        _nonces = service.openIdBeginTransaction().get();
+        _nonces = service.extAuthBeginTransaction().get();
 
         identitySessionManager.authenticateSession(_nonces.getDelegateNonce(),
                 SESSION_NONCE_TIMEOUT_SECS, setAttributes);
 
-        returnedAttributes = service.openIdGetSessionAttributes(_nonces.getSessionNonce()).get();
+        returnedAttributes = service.extAuthGetSessionAttributes(_nonces.getSessionNonce()).get();
 
         assertEquals(setAttributes.getEmail(), returnedAttributes.getUserId());
         assertEquals(setAttributes.getFirstName(), returnedAttributes.getFirstName());
@@ -86,7 +84,7 @@ public class TestSP_OpenID extends AbstractSPTest
         shouldReturnValidSessionAttributesIfSessionAuthorized();
 
         try {
-            service.openIdGetSessionAttributes(_nonces.getSessionNonce());
+            service.extAuthGetSessionAttributes(_nonces.getSessionNonce());
             fail("Expected exception.");
         } catch (ExExternalAuthFailure e) {
             // pass

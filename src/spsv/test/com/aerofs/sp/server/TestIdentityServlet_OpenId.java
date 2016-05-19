@@ -11,11 +11,12 @@ import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
+import com.aerofs.sp.server.openid.DumbAssociation;
+import com.aerofs.sp.server.openid.OpenIdAuthHandler;
 import com.aerofs.testlib.AbstractBaseTest;
-import com.dyuproject.openid.Constants;
+import com.dyuproject.openid.*;
 import com.dyuproject.openid.Constants.Mode;
-import com.dyuproject.openid.OpenIdContext;
-import com.dyuproject.openid.OpenIdUser;
+import com.dyuproject.util.http.SimpleHttpConnector;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.config.RestAssuredConfig;
 import com.jayway.restassured.response.Response;
@@ -44,8 +45,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.*;
 
 /**
  * Some Notes:
@@ -55,7 +55,7 @@ import static org.mockito.Mockito.spy;
  *   currently the only reason IdentityServlet needs SPLifecycleListener is to intialize
  *   configuration.
  */
-public class TestIdentityServlet extends AbstractBaseTest
+public class TestIdentityServlet_OpenId extends AbstractBaseTest
 {
     protected final int NONCE_LIFETIME_SECS = 300;
     protected final String SERVLET_URI = "http://localhost";
@@ -105,14 +105,15 @@ public class TestIdentityServlet extends AbstractBaseTest
                 .param(OpenId.IDP_USER_EMAIL, USER_EMAIL)
                 .param(OpenId.IDP_USER_FIRSTNAME, USER_FIRSTNAME)
                 .param(OpenId.IDP_USER_LASTNAME, USER_LASTNAME)
-                .param(OpenId.OPENID_DELEGATE_NONCE, delegateNonce). // sp.nonce
-        get(OpenId.IDENTITY_RESP_PATH);
+                .param(Identity.DELEGATE_NONCE, delegateNonce). // sp.nonce
+        get(Identity.IDENTITY_RESP_PATH);
     }
 
     @BeforeClass
     public static void setUpOnce()
     {
         Properties properties = new Properties();
+        properties.setProperty("lib.authenticator", "openid");
         properties.setProperty("openid.service.enabled", "true");
         properties.setProperty("openid.service.timeout", "30");
         properties.setProperty("openid.service.session.timeout", "30");
@@ -183,15 +184,15 @@ public class TestIdentityServlet extends AbstractBaseTest
     @Test
     public void shouldRedirectForNormalDelegateNonce() throws Exception
     {
-        given() .param(OpenId.IDENTITY_REQ_PARAM, "209a2a38405f493bb1729aa32d801009").
+        given() .param(Identity.IDENTITY_REQ_PARAM, "209a2a38405f493bb1729aa32d801009").
         expect().statusCode(302).
-        when()  .get(OpenId.IDENTITY_REQ_PATH);
+        when()  .get(Identity.IDENTITY_REQ_PATH);
     }
     @Test
     public void shouldReturnEmptyForNoDelegateNonce() throws Exception
     {
         expect().statusCode(200).
-        when()  .get(OpenId.IDENTITY_REQ_PATH);
+        when()  .get(Identity.IDENTITY_REQ_PATH);
     }
 
     /* Whole Servlet Tests */
@@ -207,8 +208,8 @@ public class TestIdentityServlet extends AbstractBaseTest
         } catch (ExExternalAuthFailure e) { /* pass */ }
 
         // Delegate nonce replay.
-        Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
-                                              .get(OpenId.IDENTITY_REQ_PATH);
+        Response authRequestResponse = given().param(Identity.IDENTITY_REQ_PARAM, _delegate)
+                                              .get(Identity.IDENTITY_REQ_PATH);
         fakeSignInAndSendAuthResponse(authRequestResponse, _delegate, true);
         try {
             _identitySessionManager.getSession(_session);
@@ -224,8 +225,8 @@ public class TestIdentityServlet extends AbstractBaseTest
         // Make sure session nonce exists and isn't authenticated.
         assertNull(_identitySessionManager.getSession(_session));
 
-        Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
-                                              .get(OpenId.IDENTITY_REQ_PATH);
+        Response authRequestResponse = given().param(Identity.IDENTITY_REQ_PARAM, _delegate)
+                                              .get(Identity.IDENTITY_REQ_PATH);
 
         fakeSignInAndSendAuthResponse(authRequestResponse, _delegate, false);
 
@@ -243,8 +244,8 @@ public class TestIdentityServlet extends AbstractBaseTest
             fail("Expected exception");
         } catch (ExExternalAuthFailure e) { /* pass */ }
 
-        Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
-                                              .get(OpenId.IDENTITY_REQ_PATH);
+        Response authRequestResponse = given().param(Identity.IDENTITY_REQ_PARAM, _delegate)
+                                              .get(Identity.IDENTITY_REQ_PATH);
 
         fakeSignInAndSendAuthResponse(authRequestResponse, _delegate, false);
 
@@ -262,8 +263,8 @@ public class TestIdentityServlet extends AbstractBaseTest
         // Make sure session nonce exists and isn't authenticated.
         assertNull(_identitySessionManager.getSession(_session));
 
-        Response authRequestResponse = given().param(OpenId.IDENTITY_REQ_PARAM, _delegate)
-                                              .get(OpenId.IDENTITY_REQ_PATH);
+        Response authRequestResponse = given().param(Identity.IDENTITY_REQ_PARAM, _delegate)
+                                              .get(Identity.IDENTITY_REQ_PATH);
 
         fakeSignInAndSendAuthResponse(authRequestResponse, _delegate, true);
 
@@ -289,8 +290,15 @@ public class TestIdentityServlet extends AbstractBaseTest
 
     protected Server setUpServer() throws Exception
     {
+        RelyingParty relyingParty = new RelyingParty(
+                new OpenIdContext(
+                        new DefaultDiscovery(),
+                        _association,
+                        new SimpleHttpConnector()),
+                new UserManager(), new IdentifierSelectUserCache(), true);
+        OpenIdAuthHandler testHandler = spy(new OpenIdAuthHandler(relyingParty));
         IdentityServlet servlet = spy(new IdentityServlet());
-        doReturn(_association).when(servlet).makeAssociation();
+        servlet.setAuthHandler(testHandler);
 
         Server server = new Server(0);
         Context root = new Context(server, "/", Context.SESSIONS);

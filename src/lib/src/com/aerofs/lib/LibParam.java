@@ -6,11 +6,13 @@ package com.aerofs.lib;
 
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.C;
+import com.aerofs.base.config.ConfigurationProperties;
 
 import java.net.InetSocketAddress;
 import java.net.URL;
 
 import static com.aerofs.base.config.ConfigurationProperties.*;
+import static com.aerofs.lib.LibParam.Identity.*;
 
 /**
  * Note that Main has dependencies on this class before the configuration is initialized. Hence
@@ -28,6 +30,8 @@ public class LibParam extends BaseParam
 
     // Epochs initial values
     public static final int INITIAL_ACL_EPOCH = 0;
+
+    public static final String HOST = ConfigurationProperties.getStringProperty("base.host.unified");
 
     public static class CA
     {
@@ -84,6 +88,13 @@ public class LibParam extends BaseParam
      */
     public static class Identity
     {
+
+        /** The auth request path to append to the identity server URL. */
+        public static final String                      IDENTITY_REQ_PATH = "/oa";
+
+        /** The auth response path to append to the identity server URL. */
+        public static final String                      IDENTITY_RESP_PATH = "/os";
+
         /**
          * The user-authentication type allowed by the server. Default is LOCAL_CREDENTIAL.
          */
@@ -112,7 +123,8 @@ public class LibParam extends BaseParam
              * Client should poll on the session nonce for the out-of-band authentication
              * to complete.
              */
-            OPENID
+            OPENID,
+            SAML
         }
 
         /**
@@ -140,6 +152,8 @@ public class LibParam extends BaseParam
                 return Authenticator.OPENID;
             } else if (value.equals("EXTERNAL_CREDENTIAL")) {
                 return Authenticator.EXTERNAL_CREDENTIAL;
+            } else if (value.equals("SAML")) {
+                return Authenticator.SAML;
             } else {
                 return Authenticator.LOCAL_CREDENTIAL;
             }
@@ -152,7 +166,60 @@ public class LibParam extends BaseParam
         public static final String                      SERVICE_IDENTIFIER =
                 getStringProperty("identity_service_identifier",
                         // The default value
-                        OpenId.enabled() ? "OpenID" : "LDAP");
+                        OpenId.enabled() ? "OpenID" : (SAML.enabled() ? "SAML" : "LDAP"));
+
+        /** The delegate nonce parameter to pass to the auth request URL. */
+        public static final String                      IDENTITY_REQ_PARAM = "token";
+
+        // -- Attributes used only by server code:
+
+        /**
+         * The name of the delegate nonce to pass to the OpenID provider; used to
+         * correlate the auth request and auth response.
+         */
+        public static final String                      DELEGATE_NONCE = "sp.nonce";
+
+        /**
+         * The URL to redirect the completed transaction to. Optional; if not set, we will
+         * try to close the browser (and suggest the user do so).
+         */
+        public static final String                      ONCOMPLETE_URL = "sp.oncomplete";
+
+        /** Timeout for the entire External auth flow, in seconds. */
+        public static final Integer                     DELEGATE_TIMEOUT =
+                getIntegerProperty(                     "openid.service.timeout", 300);
+
+        /**
+         * Timeout for the session nonce, in seconds. This is the timeout
+         * only after the delegate nonce is authorized but before the session nonce
+         * gets used. This only needs to be as long as the retry interval in the session
+         * client, plus the max latency of the session query.
+         */
+        public static final Integer                     SESSION_TIMEOUT =
+                getIntegerProperty("openid.service.session.timeout", 10);
+
+        /**
+         * Polling frequency of the client waiting for External auth authorization to complete, in seconds.
+         * TODO: sub-second resolution?
+         */
+        public static final Integer                     SESSION_INTERVAL =
+                getIntegerProperty("openid.service.session.interval", 1);
+    }
+
+    public static class SAML
+    {
+        public static final String SP_ISSUER = HOST + "_saml";
+        public static final String ASSERTION_CONSUMER_URL = "https://" + HOST + "/identity/os";
+
+        public static boolean enabled() {
+            return AUTHENTICATOR == Authenticator.SAML;
+        }
+
+        public static final String                      ENDPOINT_URL =
+                                                getStringProperty("saml.idp.host");
+
+        public static final String                      SAML_IDP_IDENTIFIER =
+                                                getStringProperty("saml.identity.service.identifier");
     }
 
     /**
@@ -166,28 +233,8 @@ public class LibParam extends BaseParam
     {
         public static boolean enabled()
         {
-            return Identity.AUTHENTICATOR == Identity.Authenticator.OPENID;
+            return AUTHENTICATOR == Authenticator.OPENID;
         }
-
-        /** Timeout for the entire OpenID flow, in seconds. */
-        public static final Integer                     DELEGATE_TIMEOUT =
-                getIntegerProperty(                     "openid.service.timeout", 300);
-
-        /**
-         * Timeout for the session nonce, in seconds. This is the timeout
-         * only after the delegate nonce is authorized but before the session nonce
-         * gets used. This only needs to be as long as the retry interval in the session
-         * client, plus the max latency of the session query.
-         */
-        public static final Integer                     SESSION_TIMEOUT =
-                getIntegerProperty(                     "openid.service.session.timeout", 10);
-
-        /**
-         * Polling frequency of the client waiting for OpenID authorization to complete, in seconds.
-         * TODO: sub-second resolution?
-         */
-        public static final Integer                     SESSION_INTERVAL =
-                getIntegerProperty(                     "openid.service.session.interval", 1);
 
         /** URL of the Identity service */
         public static final String                      IDENTITY_URL =
@@ -196,29 +243,6 @@ public class LibParam extends BaseParam
         /** The security realm for which we are requesting authorization */
         public static final String                      IDENTITY_REALM =
                 getStringProperty(                      "openid.service.realm");
-
-        /** The auth request path to append to the identity server URL. */
-        public static final String                      IDENTITY_REQ_PATH = "/oa";
-
-        /** The auth response path to append to the identity server URL. */
-        public static final String                      IDENTITY_RESP_PATH = "/os";
-
-        /** The delegate nonce parameter to pass to the auth request URL. */
-        public static final String                      IDENTITY_REQ_PARAM = "token";
-
-        // -- Attributes used only by server code:
-
-        /**
-         * The name of the delegate nonce to pass to the OpenID provider; used to
-         * correlate the auth request and auth response.
-         */
-        public static final String                      OPENID_DELEGATE_NONCE = "sp.nonce";
-
-        /**
-         * The URL to redirect the completed transaction to. Optional; if not set, we will
-         * try to close the browser (and suggest the user do so).
-         */
-        public static final String                      OPENID_ONCOMPLETE_URL = "sp.oncomplete";
 
         /** Endpoint URL used if discovery is not enabled for this OpenID Provider */
         public static final String                      ENDPOINT_URL =

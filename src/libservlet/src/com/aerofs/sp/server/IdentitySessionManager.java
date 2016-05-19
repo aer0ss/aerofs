@@ -92,7 +92,7 @@ public class IdentitySessionManager
      * Mark a particular session as authenticated. This can only succeed once for a given delegate
      * @throws ExExternalAuthFailure the delegate nonce is invalid. Give up and don't try again.
      */
-    void authenticateSession(String delegateNonce, int timeoutSecs, IdentitySessionAttributes attrs)
+    public void authenticateSession(String delegateNonce, int timeoutSecs, IdentitySessionAttributes attrs)
             throws ExExternalAuthFailure
     {
         JedisPooledConnection connection = _jedisConProvider.getConnection();

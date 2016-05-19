@@ -14,12 +14,12 @@ from web.views.login.login_view import DEFAULT_DASHBOARD_NEXT
 
 log = logging.getLogger(__name__)
 
-_SESSION_KEY_NEXT = 'openid_login_next'
+_SESSION_KEY_NEXT = 'ext_auth_login_next'
 
-def _sp_openid_get_session_attrs(request, sp_rpc_stub, **kw_args):
+def _sp_ext_auth_get_session_attrs(request, sp_rpc_stub, **kw_args):
     """Inner function for log_in_user; see login_util.py"""
     session_nonce = kw_args['sp_session_nonce']
-    attrs = sp_rpc_stub.open_id_get_session_attributes(session_nonce)
+    attrs = sp_rpc_stub.ext_auth_get_session_attributes(session_nonce)
     if len(attrs.userId) == 0:
         log.error('Session nonce is not logged in: ' + session_nonce)
         settings = request.registry.settings
@@ -48,12 +48,12 @@ def _begin_sp_auth(request):
     con = SyncConnectionService(settings['deployment.sp_server_uri'], settings['sp.version'])
     sp = SPServiceRpcStub(con)
 
-    nonces = sp.open_id_begin_transaction()
+    nonces = sp.ext_auth_begin_transaction()
     request.session['sp_session_nonce'] = nonces.sessionNonce
     request.session[_SESSION_KEY_NEXT] = resolve_next_url(request, DEFAULT_DASHBOARD_NEXT)
-    _next = "https://{}{}".format(settings['base.host.unified'], request.route_path('login_openid_complete'))
+    _next = "https://{}{}".format(settings['base.host.unified'], request.route_path('login_ext_auth_complete'))
 
-    _url = "{0}/oa?{1}".format(settings['openid.service.url'],
+    _url = "{0}/identity/oa?{1}".format(settings['openid.service.url'],
         url.urlencode({
             'token': nonces.delegateNonce,
             'sp.oncomplete': _next}))
@@ -61,10 +61,10 @@ def _begin_sp_auth(request):
 
 
 @view_config(
-    route_name = 'login_openid_begin',
+    route_name = 'login_ext_auth_begin',
     permission=NO_PERMISSION_REQUIRED,
 )
-def login_openid(request):
+def login_ext_auth_begin(request):
     """
     Request nonces from SP. Store the session nonce and build an identity request url.
     Return the identity request url.
@@ -73,18 +73,19 @@ def login_openid(request):
     log.debug("begin openid: redirecting to {}".format(identity_url))
     return HTTPFound(location=identity_url)
 
+
 @view_config(
-    route_name='login_openid_complete',
+    route_name='login_ext_auth_complete',
     permission=NO_PERMISSION_REQUIRED,
 )
-def login_openid_complete(request):
+def login_ext_auth_complete(request):
     """
     Complete the signin procedure with SP.
     """
     session_nonce = request.session['sp_session_nonce']
 
     headers, second_factor_needed, second_factor_setup_needed = log_in_user(request,
-            _sp_openid_get_session_attrs,
+            _sp_ext_auth_get_session_attrs,
             stay_signed_in=True,
             sp_session_nonce=session_nonce)
 

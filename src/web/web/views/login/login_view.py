@@ -34,6 +34,13 @@ def _is_openid_enabled(request):
     return request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'openid'
 
 
+def _is_saml_enabled(request):
+    """
+    True if the local deployment allows OpenID authentication
+    """
+    return request.registry.settings.get('lib.authenticator', 'local_credential').lower() == 'saml'
+
+
 def _do_login(request):
     """
     Log in the user. Return HTTPFound if login is successful; otherwise call
@@ -103,6 +110,7 @@ def login_view(request):
         if ret: return ret
 
     openid_enabled = _is_openid_enabled(request)
+    saml_enabled = _is_saml_enabled(request)
     disable_remember_me = str2bool(settings.get('web.session_daily_expiration', False))
     open_signup = settings.get('signup_restriction', "USER_INVITED") == "UNRESTRICTED"
     external_login_enabled = settings.get('lib.authenticator', 'local_credential').lower() == 'external_credential'
@@ -110,36 +118,46 @@ def login_view(request):
     if not is_configuration_completed():
         return HTTPFound(location=mng_url)
 
-    if not openid_enabled and not _has_users(settings):
+    if not openid_enabled and not saml_enabled and not _has_users(settings):
         log.info('no users yet. ask to create the first user')
         return HTTPFound(location=request.route_path('create_first_user'))
 
+    if not openid_enabled and not saml_enabled:
+        ext_auth_login_url, ext_auth_display_user_pass_login, \
+            ext_auth_login, ext_auth_identifier, external_hint = "","","","",""
 
-    # if openid_enabled is false we don't need to do any of the following. :(
-    next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
-    openid_url = "{0}?{1}".format(request.route_path('login_openid_begin'),
-                                  url.urlencode({URL_PARAM_NEXT: next_url}))
-    identifier = settings.get('identity_service_identifier', 'OpenID')
-    external_hint = 'AeroFS user with no {} account?'.format(identifier)
-    display_user_pass_login = settings.get('lib.display_user_pass_login', True)
-    if display_user_pass_login:
-        display_user_pass_login = str2bool(display_user_pass_login)
     else:
-        # default to True if config returns a empty string.
-        display_user_pass_login = True
-    login = request.params.get(URL_PARAM_EMAIL)
-    if not login: login = ''
+        next_url = get_next_url(request, DEFAULT_DASHBOARD_NEXT)
+        ext_auth_display_user_pass_login = settings.get('lib.display_user_pass_login', True)
+        if ext_auth_display_user_pass_login:
+            ext_auth_display_user_pass_login = str2bool(ext_auth_display_user_pass_login)
+        else:
+            # default to True if config returns a empty string.
+            ext_auth_display_user_pass_login = True
+        ext_auth_login = request.params.get(URL_PARAM_EMAIL)
+        if not ext_auth_login: ext_auth_login = ''
+
+        if openid_enabled:
+            ext_auth_identifier = settings.get('identity_service_identifier', 'OpenID')
+        elif saml_enabled:
+            ext_auth_identifier = settings.get('saml.identity.service.identifier', 'SAML')
+
+        ext_auth_login_begin_url = request.route_path('login_ext_auth_begin')
+        ext_auth_login_url = "{0}?{1}".format(ext_auth_login_begin_url,
+                url.urlencode({URL_PARAM_NEXT: next_url}))
+        external_hint = 'AeroFS user with no {} account?'.format(ext_auth_identifier)
 
     return {
         'url_param_email': URL_PARAM_EMAIL,
         'url_param_password': URL_PARAM_PASSWORD,
         'url_param_remember_me': URL_PARAM_REMEMBER_ME,
         'openid_enabled': openid_enabled,
-        'openid_url': openid_url,
-        'openid_service_identifier': identifier,
-        'openid_service_external_hint': external_hint,
-        'display_user_pass_login': display_user_pass_login,
-        'login': login,
+        'saml_enabled': saml_enabled,
+        'ext_auth_login_url': ext_auth_login_url,
+        'ext_auth_service_identifier': ext_auth_identifier,
+        'ext_auth_service_external_hint': external_hint,
+        'ext_auth_display_user_pass_login': ext_auth_display_user_pass_login,
+        'ext_auth_login': ext_auth_login,
         'disable_remember_me': disable_remember_me,
         'external_login_enabled': external_login_enabled,
         'open_signup': open_signup,

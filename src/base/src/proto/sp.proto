@@ -539,19 +539,19 @@ service SPService {
     //   ExBadCredential if the certificate is not recognized or the DID does not match.
     rpc SignInDevice(SignInDeviceCall) returns (Void);
 
-    // Kick off the OpenId authentication flow by generating session keys for the
+    // Kick off the external(OpenId or SAML) authentication flow by generating session keys for the
     // authenticating session, and returning those to the client.
     //
     // Required Auth Level: none
     //
     // Throws:
-    //   Something Bad if the server does not have openid enabled.
-    rpc OpenIdBeginTransaction(Void) returns (OpenIdSessionNonces);
+    //   Something Bad if the server does not have external auth enabled.
+    rpc ExtAuthBeginTransaction(Void) returns (ExtAuthSessionNonces);
 
     // Complete the authentication flow by returning the session attributes from
     // the authenticated session.
     // This will return null if the session referenced by the
-    // query key is not yet authenticated by an OpenId provider.
+    // query key is not yet authenticated by an ExtAuth provider.
     //
     // An exception indicates non-retryable error (timeout or otherwise).
     //
@@ -560,8 +560,8 @@ service SPService {
     // Required Auth Level: none
     //
     // Throws:
-    //   Something Bad if the server does not have openid enabled.
-    rpc OpenIdGetSessionAttributes(OpenIdSessionQuery) returns (OpenIdSessionAttributes);
+    //   Something Bad if the server does not have external authentication enabled.
+    rpc ExtAuthGetSessionAttributes(ExtAuthSessionQuery) returns (ExtAuthSessionAttributes);
 
 
     // this call was GetMobileAccessCode and is now removed.
@@ -1410,18 +1410,18 @@ message SignInUserReply {
     optional bool need_second_factor_setup = 2;
 }
 
-message OpenIdSessionNonces {
+message ExtAuthSessionNonces {
     // TODO (WW) replace CamelCase with underscore
     required string sessionNonce = 1;
     required string delegateNonce = 2;
 }
 
-message OpenIdSessionQuery {
+message ExtAuthSessionQuery {
     // TODO (WW) replace CamelCase with underscore
     required string sessionNonce = 1;
 }
 
-message OpenIdSessionAttributes {
+message ExtAuthSessionAttributes {
     // TODO (WW) replace CamelCase with underscore
     optional string userId = 1;
     optional string firstName = 2;

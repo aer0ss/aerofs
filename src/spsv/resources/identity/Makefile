@@ -1,3 +1,3 @@
 include ../../../../docker/Makefile.base
 
-IMAGE_NAME = aerofs/openid
+IMAGE_NAME = aerofs/identity

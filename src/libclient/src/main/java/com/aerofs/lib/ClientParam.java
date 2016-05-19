@@ -187,8 +187,18 @@ public class ClientParam
         {
             return getStringProperty("lib.authenticator", "local_credential").equals("OPENID");
         }
+    }
 
+    public static class Identity
+    {
         public static boolean displayUserPassLogin(){return getBooleanProperty("lib.display_user_pass_login", true); }
+    }
+
+    public static class SAML
+    {
+        public static boolean enabled() {
+            return getStringProperty("lib.authenticator", "local_credential").equals("SAML");
+        }
     }
 
     // this class depends on ClientConfigurationLoader

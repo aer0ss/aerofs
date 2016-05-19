@@ -6,9 +6,10 @@ import com.aerofs.base.ex.ExTimeout;
 import com.aerofs.cli.CLI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.OpenId;
-import com.aerofs.proto.Sp.OpenIdSessionAttributes;
-import com.aerofs.proto.Sp.OpenIdSessionNonces;
+import com.aerofs.proto.Sp.ExtAuthSessionAttributes;
+import com.aerofs.proto.Sp.ExtAuthSessionNonces;
 import com.aerofs.proto.Sp.SignInUserReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.IUI.MessageType;
@@ -16,6 +17,7 @@ import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.aerofs.lib.LibParam.Identity.*;
 import static com.aerofs.sp.client.InjectableSPBlockingClientFactory.newOneWayAuthClientFactory;
 
 /**
@@ -68,7 +70,7 @@ public abstract class SignInActor
         @Override
         public void signInUser(SetupModel model) throws Exception
         {
-            OpenIdHelper helper = new OpenIdHelper(model);
+            ExtAuthHelper helper = new ExtAuthHelper(model);
 
             GUIUtil.launch(helper.getDelegateUrl());
 
@@ -83,7 +85,7 @@ public abstract class SignInActor
         @Override
         public void signInUser(SetupModel model) throws Exception
         {
-            OpenIdHelper helper = new OpenIdHelper(model);
+            ExtAuthHelper helper = new ExtAuthHelper(model);
 
             String msg = "To complete " + L.product() + " setup, please sign in with your OpenID " +
                     "Provider by pasting the following URL in a web browser. This URL can be " +
@@ -100,13 +102,13 @@ public abstract class SignInActor
         private final CLI _cli;
     }
 
-    private static class OpenIdHelper
+    private static class ExtAuthHelper
     {
-        OpenIdHelper(SetupModel model) throws Exception
+        ExtAuthHelper(SetupModel model) throws Exception
         {
             _model = model;
             _spclient = newOneWayAuthClientFactory().create();
-            _sessionKeys = _spclient.openIdBeginTransaction();
+            _sessionKeys = _spclient.extAuthBeginTransaction();
             _timer = new ElapsedTimer();
 
             _timer.start();
@@ -114,14 +116,14 @@ public abstract class SignInActor
 
         void getSessionAttributes() throws Exception
         {
-            while (_timer.elapsed() < (OpenId.DELEGATE_TIMEOUT * C.SEC)) {
-                Thread.sleep(OpenId.SESSION_INTERVAL * C.SEC);
+            while (_timer.elapsed() < (DELEGATE_TIMEOUT * C.SEC)) {
+                Thread.sleep(SESSION_INTERVAL * C.SEC);
 
-                OpenIdSessionAttributes session
-                        = _spclient.openIdGetSessionAttributes(_sessionKeys.getSessionNonce());
+                ExtAuthSessionAttributes session
+                        = _spclient.extAuthGetSessionAttributes(_sessionKeys.getSessionNonce());
                 if (session.getUserId().isEmpty()) { continue; }
 
-                l.info("OpenID user {}", session.getUserId());
+                l.info("{} user {}", AUTHENTICATOR, session.getUserId());
 
                 _model.setUserID(session.getUserId());
                 _model.setClient(_spclient);
@@ -138,14 +140,53 @@ public abstract class SignInActor
         // Return a URL of the form  https://transient/openid/oa?token=ab33f
         String getDelegateUrl()
         {
-            return OpenId.IDENTITY_URL + OpenId.IDENTITY_REQ_PATH
-                    + "?" + OpenId.IDENTITY_REQ_PARAM + "=" + _sessionKeys.getDelegateNonce();
+            return (LibParam.SAML.enabled() ? ("https://" + LibParam.HOST + "/identity") : OpenId.IDENTITY_URL)
+                    + IDENTITY_REQ_PATH + "?" + IDENTITY_REQ_PARAM + "="
+                    + _sessionKeys.getDelegateNonce();
         }
 
         private final SPBlockingClient    _spclient;
-        private final OpenIdSessionNonces _sessionKeys;
+        private final ExtAuthSessionNonces _sessionKeys;
         private final SetupModel          _model;
         private final ElapsedTimer        _timer;
-        private static Logger             l = LoggerFactory.getLogger(OpenIdHelper.class);
+        private static Logger             l = LoggerFactory.getLogger(ExtAuthHelper.class);
     }
+
+
+    public static class SAMLGUIActor extends SignInActor
+    {
+        @Override
+        public void signInUser(SetupModel model) throws Exception
+        {
+            ExtAuthHelper helper = new ExtAuthHelper(model);
+            GUIUtil.launch(helper.getDelegateUrl());
+
+            helper.getSessionAttributes();
+        }
+    }
+
+    public static class SAMLCLIActor extends SignInActor
+    {
+        public SAMLCLIActor(CLI cli) { _cli = cli; }
+
+        @Override
+        public void signInUser(SetupModel model) throws Exception
+        {
+            ExtAuthHelper helper = new ExtAuthHelper(model);
+
+            String msg = "To complete " + L.product() + " setup, please sign in with your SAML " +
+                    "Provider by pasting the following URL in a web browser. This URL can be " +
+                    "used only once, and only for this session.\n" +
+                    "Setup will complete automatically once the SAML IDP Provider confirms your " +
+                    "identity.";
+
+            _cli.show(MessageType.INFO, msg);
+            _cli.show(MessageType.INFO, helper.getDelegateUrl());
+
+            helper.getSessionAttributes();
+        }
+
+        private final CLI _cli;
+    }
+
 }

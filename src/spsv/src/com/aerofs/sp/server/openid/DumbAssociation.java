@@ -1,4 +1,4 @@
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.openid;
 
 import com.dyuproject.openid.*;
 import com.dyuproject.util.http.HttpConnector.Response;
@@ -16,7 +16,7 @@ import java.util.Map;
 // On "associate" we simply say "yes" and hack up the user association; without this,
 // the dyu library will fail saying that the user is not associated.
 // On "verify" we create a dumb-mode identification request to the server.
-class DumbAssociation implements Association {
+public class DumbAssociation implements Association {
     private static final Logger l = LoggerFactory.getLogger(DumbAssociation.class);
 
     @Override

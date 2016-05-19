@@ -28,6 +28,10 @@ dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1'
     compile 'commons-codec:commons-codec:1.6'
     compile 'org.mortbay.jetty:jetty-util:6.1.26'
+    compile group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
+    compile 'org.opensaml:xmltooling:1.4.4'
+    compile 'org.opensaml:openws:1.5.4'
+    compile 'org.opensaml:opensaml:2.6.0'
     compile name:'dyuproject-util-1.1'
     compile project(':src/libservlet')
     testCompile 'com.jayway.restassured:rest-assured:2.8.0'

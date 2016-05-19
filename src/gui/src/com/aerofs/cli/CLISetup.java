@@ -4,13 +4,10 @@ import com.aerofs.base.BaseParam.WWW;
 import com.aerofs.base.C;
 import com.aerofs.base.ex.ExRateLimitExceeded;
 import com.aerofs.base.ex.ExSecondFactorRequired;
-import com.aerofs.controller.InstallActor;
-import com.aerofs.controller.Setup;
-import com.aerofs.controller.SetupModel;
+import com.aerofs.controller.*;
 import com.aerofs.controller.SetupModel.BackendConfig;
 import com.aerofs.controller.SignInActor.CredentialActor;
 import com.aerofs.controller.SignInActor.OpenIdCLIActor;
-import com.aerofs.controller.UnattendedSetup;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -19,6 +16,8 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.StorageDataEncryptionPasswordVerifier;
 import com.aerofs.ui.StorageDataEncryptionPasswordVerifier.PasswordVerifierResult;
+
+import static com.aerofs.controller.SignInActor.*;
 
 public class CLISetup
 {
@@ -289,7 +288,7 @@ public class CLISetup
     // ask the user which method they would like to authenticate with.
     private void setupSignInActor(CLI cli) throws Exception
     {
-        if(ClientParam.OpenId.enabled() && ClientParam.OpenId.displayUserPassLogin()) {
+        if(ClientParam.OpenId.enabled() && ClientParam.Identity.displayUserPassLogin()) {
             if(useOpenIdToLogin(cli)) {
                 _model.setSignInActor(new OpenIdCLIActor(cli));
                 _displayUserPassLogin = false;
@@ -299,6 +298,16 @@ public class CLISetup
         } else if(ClientParam.OpenId.enabled()) {
             _model.setSignInActor(new OpenIdCLIActor(cli));
             _displayUserPassLogin = false;
+        } else if (ClientParam.SAML.enabled() && ClientParam.Identity.displayUserPassLogin()) {
+            if(useSAMLToLogin(cli)) {
+                _model.setSignInActor(new SAMLCLIActor(cli));
+                _displayUserPassLogin = false;
+            } else {
+                _model.setSignInActor(new CredentialActor());
+            }
+        } else if (ClientParam.SAML.enabled()) {
+            _model.setSignInActor(new SAMLCLIActor(cli));
+            _displayUserPassLogin = false;
         } else {
             _model.setSignInActor(new CredentialActor());
         }
@@ -306,5 +315,9 @@ public class CLISetup
 
     private boolean useOpenIdToLogin(CLI cli) throws ExNoConsole {
         return cli.ask(MessageType.INFO, "Log in with OpenID?");
+    }
+
+    private boolean useSAMLToLogin(CLI cli) throws ExNoConsole {
+        return cli.ask(MessageType.INFO, "Log in with SAML?");
     }
 }

@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.OpenId;
 import com.dyuproject.openid.OpenIdUser;
 import com.dyuproject.openid.OpenIdUserManager;
@@ -17,11 +18,11 @@ import java.util.concurrent.ConcurrentMap;
  * Note that the User object holds the association data for the OpenID provider, so
  * we do keep the instance around for the auth response flow.
  *
- * NOTE: This code expects the OPENID_DELEGATE_NONCE *attribute* in the HttpServletRequest.
+ * NOTE: This code expects the DELEGATE_NONCE *attribute* in the HttpServletRequest.
  *
  * TODO: OpenIdUser is serializable, so we could actually store the User object in a db...
  */
-class UserManager implements OpenIdUserManager
+public class UserManager implements OpenIdUserManager
 {
     @Override
     public void init(Properties properties) { }
@@ -29,7 +30,7 @@ class UserManager implements OpenIdUserManager
     @Override
     public OpenIdUser getUser(HttpServletRequest request) throws IOException
     {
-        String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
+        String token = (String)request.getAttribute(LibParam.Identity.DELEGATE_NONCE);
         return (token == null) ? null : _users.get(token);
     }
 
@@ -38,7 +39,7 @@ class UserManager implements OpenIdUserManager
     public boolean saveUser(OpenIdUser user,
             HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-        String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
+        String token = (String)request.getAttribute(LibParam.Identity.DELEGATE_NONCE);
         return (token != null) && (_users.putIfAbsent(token, user) == null);
     }
 
@@ -47,7 +48,7 @@ class UserManager implements OpenIdUserManager
     public boolean invalidate(HttpServletRequest request, HttpServletResponse response)
             throws IOException
     {
-        String token = (String)request.getAttribute(OpenId.OPENID_DELEGATE_NONCE);
+        String token = (String)request.getAttribute(LibParam.Identity.DELEGATE_NONCE);
         return (token != null) && (_users.remove(token) != null);
     }
 

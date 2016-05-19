@@ -18,6 +18,7 @@ import com.aerofs.gui.singleuser.SingleUserDlgSecondFactor;
 import com.aerofs.gui.singleuser.SingleuserDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.LibParam;
 import com.aerofs.lib.LibParam.Identity;
 import com.aerofs.lib.LibParam.Identity.Authenticator;
 import com.aerofs.lib.S;
@@ -47,9 +48,8 @@ import java.net.ConnectException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.aerofs.gui.GUIUtil.createLabel;
-import static com.aerofs.gui.GUIUtil.createShellStyle;
-import static com.aerofs.gui.GUIUtil.getNewText;
+import static com.aerofs.controller.SignInActor.SAMLGUIActor;
+import static com.aerofs.gui.GUIUtil.*;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
 
 public class DlgSignIn extends TitleAreaDialog
@@ -65,8 +65,9 @@ public class DlgSignIn extends TitleAreaDialog
         _model._localOptions._rootAnchorPath = Setup.getDefaultAnchorRoot();
         _model.setInstallActor(new InstallActor.SingleUser());
         _model.setDeviceName(Setup.getDefaultDeviceName());
-        _showOpenIdDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID);
-        _displayUserPassLogin = ClientParam.OpenId.displayUserPassLogin();
+        _showExtAuthDialog = (Identity.AUTHENTICATOR == Authenticator.OPENID) ||
+                   (Identity.AUTHENTICATOR == Authenticator.SAML);
+        _displayUserPassLogin = ClientParam.Identity.displayUserPassLogin();
     }
 
     @Override
@@ -102,7 +103,7 @@ public class DlgSignIn extends TitleAreaDialog
 
         setTitle("Setup " + L.product());
 
-        if (_showOpenIdDialog) {
+        if (_showExtAuthDialog) {
             createOpenIdComposite(area)
                     .setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false));
             if (_displayUserPassLogin) {
@@ -136,14 +137,19 @@ public class DlgSignIn extends TitleAreaDialog
         Composite composite = new Composite(parent, SWT.NONE);
 
         Button signInButton = GUIUtil.createButton(composite, SWT.PUSH);
-        signInButton.setText("Sign in with " + Identity.SERVICE_IDENTIFIER);
+        if (LibParam.OpenId.enabled()) {
+            signInButton.setText("Sign in with " + Identity.SERVICE_IDENTIFIER);
+        } else {
+            signInButton.setText("Sign in with " + LibParam.SAML.SAML_IDP_IDENTIFIER);
+        }
+
         // Capture parent
         signInButton.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                _model.setSignInActor(new OpenIdGUIActor());
+                _model.setSignInActor((Identity.AUTHENTICATOR == Authenticator.OPENID) ? new OpenIdGUIActor() : new SAMLGUIActor());
 
                 setInProgressStatus();
 
@@ -186,13 +192,13 @@ public class DlgSignIn extends TitleAreaDialog
     {
         Composite composite = new Composite(parent, SWT.NONE);
 
-        if (_showOpenIdDialog && _displayUserPassLogin) {
+        if (_showExtAuthDialog && _displayUserPassLogin) {
             Label label = createLabel(composite, SWT.NONE);
             label.setText(L.product() + " user without " + Identity.SERVICE_IDENTIFIER + " accounts?");
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 3, 1));
         }
 
-        if (_displayUserPassLogin || !_showOpenIdDialog) {
+        if (_displayUserPassLogin || !_showExtAuthDialog) {
             Label lblEmail = createLabel(composite, SWT.NONE);
             lblEmail.setText(S.SETUP_USER_ID + ": ");
             lblEmail.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
@@ -230,7 +236,7 @@ public class DlgSignIn extends TitleAreaDialog
 
         GridLayout layout = new GridLayout(3, false);
         layout.marginHeight = 0;
-        layout.marginTop = _showOpenIdDialog ? GUIParam.MARGIN : 2 * GUIParam.MARGIN;
+        layout.marginTop = _showExtAuthDialog ? GUIParam.MARGIN : 2 * GUIParam.MARGIN;
         layout.marginWidth = 4 * GUIParam.MARGIN;
         layout.verticalSpacing = GUIParam.VERTICAL_SPACING;
         layout.horizontalSpacing = 0;
@@ -482,7 +488,7 @@ public class DlgSignIn extends TitleAreaDialog
     List<Control>   _controls = new LinkedList<Control>();
     Control         _defaultControl;
 
-    private boolean _showOpenIdDialog;
+    private boolean _showExtAuthDialog;
 
     private boolean _displayUserPassLogin;
 

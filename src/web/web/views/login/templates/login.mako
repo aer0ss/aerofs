@@ -11,32 +11,32 @@
                 </span>
             </h6>
         %endif
-        %if openid_enabled:
-            <div class="openid-login">
-                <div class="col-sm-12">
-                    <a class="btn btn-primary btn-large" href="${openid_url}">Log in with ${openid_service_identifier}</a>
+        %if openid_enabled or saml_enabled:
+            <div class="ext_auth-login">
+                <div class="col-sm-8 col-sm-offset-2">
+                    <a class="btn btn-primary btn-large btn-group-justified" href="${ext_auth_login_url}">Log in with ${ext_auth_service_identifier}</a>
                 </div>
-                %if display_user_pass_login:
-                    <div class="col-sm-12 text-center login-divider">
-                        <span>
+                %if ext_auth_display_user_pass_login:
+                    <div class="col-sm-12 text-center login-divider" style="padding-top: 25px">
+                        <span style="font-weight: bold;">
                             OR
                         </span>
                     </div>
                     <div class="col-sm-12 text-center">
-                        <h3>${openid_service_external_hint}</h3>
+                        <h3>${ext_auth_service_external_hint}</h3>
                     </div>
                 %endif
             </div>
         %endif
-        %if display_user_pass_login or not openid_enabled:
+        %if ext_auth_display_user_pass_login or not (openid_enabled or saml_enabled):
             <form id="login_form" class="form-horizontal" role="form" method="post">
                 ${self.csrf.token_input()}
                 <div class="form-group">
                     <label for="input_email" class="col-sm-4 control-label">Email</label>
                     <div class="col-sm-8">
                         <input class="input-medium form-control" id="input_email" type="email" name="${url_param_email}"
-                            %if login:
-                                value="${login}"
+                            %if ext_auth_login:
+                                value="${ext_auth_login}"
                             %endif
                         >
                     </div>

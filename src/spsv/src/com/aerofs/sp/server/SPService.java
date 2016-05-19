@@ -21,7 +21,6 @@ import com.aerofs.base.id.RestObject;
 import com.aerofs.ids.*;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.LibParam.Identity;
-import com.aerofs.lib.LibParam.OpenId;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExInvalidEmailAddress;
 import com.aerofs.lib.ex.ExNoAdminOrOwner;
@@ -29,10 +28,7 @@ import com.aerofs.lib.ex.ExNotAuthenticated;
 import com.aerofs.lib.ex.sharing_rules.ExSharingRulesWarning;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
-import com.aerofs.proto.Common.PBException;
-import com.aerofs.proto.Common.PBFolderInvitation;
-import com.aerofs.proto.Common.PBPermissions;
-import com.aerofs.proto.Common.PBSubjectPermissions;
+import com.aerofs.proto.Common.*;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.*;
 import com.aerofs.proto.Sp.CheckQuotaCall.PBStoreUsage;
@@ -104,7 +100,6 @@ import com.aerofs.ssmp.SSMPConnection;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-
 import org.apache.commons.lang.StringUtils;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.slf4j.Logger;
@@ -113,7 +108,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.mail.MessagingException;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
@@ -127,13 +121,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.aerofs.base.config.ConfigurationProperties.getBooleanProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
-import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.base.config.ConfigurationProperties.*;
 import static com.aerofs.lib.Util.urlEncode;
 import static com.aerofs.sp.server.CommandUtil.createCommandMessage;
 import static com.google.common.base.Objects.firstNonNull;
-
 import static java.lang.String.format;
 
 public class SPService implements ISPService
@@ -3410,14 +3401,14 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<OpenIdSessionNonces> openIdBeginTransaction()
+    public ListenableFuture<ExtAuthSessionNonces> extAuthBeginTransaction()
     {
-        String session = _identitySessionManager.createSession(OpenId.DELEGATE_TIMEOUT);
-        String delegate = _identitySessionManager.createDelegate(session, OpenId.DELEGATE_TIMEOUT);
+        String session = _identitySessionManager.createSession(Identity.DELEGATE_TIMEOUT);
+        String delegate = _identitySessionManager.createDelegate(session, Identity.DELEGATE_TIMEOUT);
 
         l.info("Created delegate nonce {} for session nonce {}", delegate, session);
 
-        return createReply(OpenIdSessionNonces.newBuilder()
+        return createReply(ExtAuthSessionNonces.newBuilder()
                 .setSessionNonce(session)
                 .setDelegateNonce(delegate)
                 .build());
@@ -3432,7 +3423,7 @@ public class SPService implements ISPService
      *                         the user would exceed the organization's seat limit.
      */
     @Override
-    public ListenableFuture<OpenIdSessionAttributes> openIdGetSessionAttributes(String session)
+    public ListenableFuture<ExtAuthSessionAttributes> extAuthGetSessionAttributes(String session)
             throws Exception
     {
         // 1. getSession() may throw ExBadCredential which means the client should give up
@@ -3441,7 +3432,7 @@ public class SPService implements ISPService
         // 2. if attrs is null, the session nonce is ok but we are still waiting for authentication.
         // return uninitialized SessionAttributes and let the client try again.
         if (attrs == null) {
-            return createReply(OpenIdSessionAttributes.getDefaultInstance());
+            return createReply(ExtAuthSessionAttributes.getDefaultInstance());
         }
 
         User user = _factUser.createFromExternalID(attrs.getEmail());
@@ -3480,7 +3471,7 @@ public class SPService implements ISPService
                 .add("authority", "OpenId")
                 .publish();
 
-        return createReply(OpenIdSessionAttributes.newBuilder()
+        return createReply(ExtAuthSessionAttributes.newBuilder()
                 .setUserId(attrs.getEmail())
                 .setFirstName(attrs.getFirstName())
                 .setLastName(attrs.getLastName())

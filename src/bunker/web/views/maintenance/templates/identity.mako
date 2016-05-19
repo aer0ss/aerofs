@@ -20,6 +20,8 @@
         signup_restriction = conf['signup_restriction']
     # Use the local namespace so the method scripts() can access it
     local.local_auth = authenticator == 'local_credential'
+    local.external_auth = authenticator == 'external_credential'
+    local.saml_auth = authenticator == 'SAML'
     local.ldap_group_sync_schedule_enum = conf['ldap.groupsyncing.schedule_enum']
 %>
 
@@ -29,7 +31,6 @@
 
 <form id="signup-restriction-form" method="POST" onsubmit="submitSignupRestrictionForm(); return false;">
     ${csrf.token_input()}
-
     <div class="row">
         <div class="col-sm-12">
             <div class="radio">
@@ -110,16 +111,30 @@
                 <label>
                     <input type='radio' name='authenticator' value='external_credential'
                            onchange="ldapSelected()"
-                        %if not local.local_auth:
+                        %if local.external_auth:
                            checked
                         %endif
                     >
                     Use ActiveDirectory or LDAP
                 </label>
+            </div>
+
+            <div class="radio">
+
+                <label>
+                    <input type='radio' name='authenticator' value='SAML'
+                           onchange="samlSelected()"
+                        %if local.saml_auth:
+                           checked
+                        %endif
+                    >
+                    Use SAML
+                </label>
+            </div>
 
                 ## The slide down options
                 <div id="ldap-options"
-                    %if local.local_auth:
+                    %if local.local_auth or local.saml_auth:
                         style="display: none;"
                     %endif
                 >
@@ -128,12 +143,59 @@
 
                     ${ldap_options()}
                 </div>
+
+                <div id="saml-options"
+                    %if local.local_auth or local.external_auth:
+                        style="display: none;"
+                    %endif
+                >
+                    ${saml_options()}
+                </div>
             </div>
 
             <button type="submit" id="save-ldap" class="btn btn-primary">Save</button>
         </div>
     </div>
 </form>
+
+
+########
+## N.B. the name of all SAML specific options must start with "saml_".
+## This is required by identity_view.py:_get_saml_specific_options().
+########
+<%def name="saml_options()">
+    <div class="row">
+        <div class="col-sm-6">
+            <label for="identity-service-identifier" class="control-label">SAML IDP Identifier(Optional)</label>
+            <input class="form-control" id="identity-service-identifier"
+                    name="saml_identity_service_identifier" type="text" optional
+                    value="${conf['saml.identity.service.identifier']}">
+            <div class="help-block">e.g. Okta, OneLogin. Users will be asked to sign in via this identifier.</div>
+        </div>
+        <div class="col-sm-6">
+            <label for="saml-idp-host" class="control-label">SAML IDP Single Sign On URL</label>
+            <input class="form-control" id="saml-idp-host"
+                    name="saml_idp_host" type="text" required
+                    value="${conf['saml.idp.host']}">
+            <div class="help-block">e.g. saml.example.com/sso/saml</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <label class="control-label" for="saml-idp-x509_certificate">SAML IDP X509 Certificate</label>
+            <textarea rows="4" class="form-control" id="saml-idp-x509_certificate"
+                    name="saml_idp_x509_certificate"
+                    ## Dont leave spaces around the config value; otherwise they will
+                    ## show up in the box.
+                    ## the .replace() converts the cert from properties format to HTML format.
+                    ## Also see setup_view.py:_format_pem() for the reversed convertion.
+                    >${unformat_pem(conf['saml.idp.x509.certificate'])}</textarea>
+        </div>
+    </div>
+<hr />
+</%def>
+
 
 ########
 ## N.B. the name of all LDAP specific options must start with "ldap_".
@@ -623,8 +685,10 @@
 
             %if local.local_auth:
                 localSelected();
-            %else:
+            %elif local.external_auth:
                 ldapSelected();
+            %elif local.saml_auth:
+                samlSelected();
             %endif
 
             var ldapGroupSyncSchedule = "DAILY";
@@ -676,6 +740,8 @@
             ## attribute.
             $('.form-control[required]').removeAttr('required').addClass('ldap-required');
             $('#ldap-options').hide();
+            $('.form-control[required]').removeAttr('required').addClass('saml-required');
+            $('#saml-options').hide();
         }
 
         function getTimezoneOffset() {
@@ -685,7 +751,14 @@
 
         function ldapSelected() {
             $('.ldap-required').attr('required', 'required');
+            $('#saml-options').hide();
             $('#ldap-options').show();
+        }
+
+        function samlSelected() {
+            $('.saml-required').attr('required', 'required');
+            $('#ldap-options').hide();
+            $('#saml-options').show();
         }
 
         function showAdvancedLDAPOptions() {
@@ -716,9 +789,9 @@
             };
 
             var authenticator = $('input[name="authenticator"]:checked').val();
-            if (authenticator == 'local_credential') {
+            if (authenticator == 'local_credential' || authenticator == 'SAML') {
                 post(always);
-            } else {
+            } else if(authenticator == 'external_credential') {
                 validateAndSubmitLDAPForm(always);
             }
         }
@@ -779,7 +852,9 @@
         function post(always) {
             ## Trim the cert
             var $cert = $('#ldap-server-ca_certificate');
+            var $idp_cert = $('#saml-idp-x509_certificate');
             $cert.val($.trim($cert.val()));
+            $idp_cert.val($.trim($idp_cert.val()));
 
             $.post('${request.route_path('json_set_identity_options')}',
                     $('#identity-form').serialize())

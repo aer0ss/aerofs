@@ -101,7 +101,7 @@ containers:
         - charlie:charlie.service
         - config:config.service
         - havre:havre.service
-        - openid:openid.service
+        - identity:identity.service
         - polaris:polaris.service
         - repackaging:repackaging.service
         - sloth:sloth.service
@@ -389,8 +389,8 @@ containers:
         - config:config.service
         - lipwig:lipwig.service
 
-  openid:
-    image: aerofs/openid
+  identity:
+    image: aerofs/identity
     run:
       detach: true
       # for deployment secret
@@ -415,7 +415,7 @@ containers:
         - config:config.service
         - lipwig:lipwig.service
         - havre:havre.service
-        - openid:openid.service
+        - identity:identity.service
         - mysql:mysql.service
         - polaris:polaris.service
         - postfix:postfix.service

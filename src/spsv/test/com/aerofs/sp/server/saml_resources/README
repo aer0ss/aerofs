@@ -1,0 +1,8 @@
+This directory files that we will need for unit testing SAML assertion handlers.
+
+saml_test_assertion.txt - This file contains an actual assertion sent back by an IDP(Okta) for a
+user called "Saml Unittest". Wit this assertion we do not verify the issuer,
+we only verify the attributes we get back for a user:
+FirstName, LastName and Email
+
+idp_x509_cert -  This is the public X509 cert of Okta to verify assertion signature.

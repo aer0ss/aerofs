@@ -17,6 +17,8 @@ utc_offset = 'utc_offset'
 # Make sure this value is consistent with value in LdapConfiguration.java
 ldap_separator = ' '
 
+saml_idp_x509_cert = 'saml_idp_x509_certificate'
+
 @view_config(
     route_name='identity',
     permission='maintain',
@@ -46,7 +48,7 @@ def json_verify_ldap(request):
               "Please provide one in PEM format.")
 
     payload = {}
-    for key in _get_ldap_specific_options(request.params):
+    for key in _get_identity_specific_options(request.params, "ldap"):
         # N.B. need to convert to ascii. The request params given to us in
         # unicode format.
         payload[key] = request.params[key].encode('ascii', 'ignore')
@@ -64,7 +66,7 @@ def json_verify_ldap(request):
               "settings. The error is:\n" + r.text)
 
     # Server failure. No human readable error message is available.
-    log.warn("received server failure response with status code " + r.status_code + " and contents " + r.text)
+    log.warn("received server failure response with status code {} and contents {}".format(r.status_code, r.text))
     expected_error("Could not communicate with the LDAP server, please check your settings.")
 
 
@@ -79,13 +81,17 @@ def json_set_identity_options(request):
 
     auth = request.params['authenticator']
     ldap = auth == 'external_credential'
+    saml = auth == 'SAML'
 
     # All is well - set the external properties.
     conf = get_conf_client(request)
     conf.set_external_property('authenticator', auth)
     conf.set_external_property('ldap_invitation_required_for_signup', request.params['ldap_invitation_required_for_signup'])
+
     if ldap:
-        _write_ldap_options(conf, request.params)
+        _write_identity_specific_options(conf, request.params, "ldap")
+    elif saml:
+        _write_identity_specific_options(conf, request.params, "saml")
 
     return HTTPOk()
 
@@ -111,9 +117,9 @@ def _is_identity_configurable(conf):
     # FIXME change to license_allow_enterprise_features. ENG-3372.
     return str2bool(conf.get('license_allow_auditing', True))
 
-def _write_ldap_options(conf, request_params):
-    for key in _get_ldap_specific_options(request_params):
-        if key == ldap_server_cert:
+def _write_identity_specific_options(conf, request_params, identity_key):
+    for key in _get_identity_specific_options(request_params, identity_key):
+        if key == ldap_server_cert or key == saml_idp_x509_cert:
             cert = request_params[key]
             if cert:
                 conf.set_external_property(key, format_pem(cert))
@@ -131,14 +137,13 @@ def _write_ldap_options(conf, request_params):
             conf.set_external_property(key, request_params[key])
 
 
-def _get_ldap_specific_options(request_params):
+def _get_identity_specific_options(request_params, identity_key):
     """
-    N.B. This method assumes that an HTTP parameter is LDAP specific iff. it has
-    the "ldap_" prefix.
+    N.B. This method assumes that an HTTP parameter is identity  specific iff. it has
+    the "ldap_" or "saml_" prefix.
     """
-    ldap_params = []
+    identity_params = []
     for key in request_params:
-        if key[:5] == 'ldap_':
-            ldap_params.append(key)
-
-    return ldap_params
+        if key[:5] == '{}_'.format(identity_key):
+            identity_params.append(key)
+    return identity_params
