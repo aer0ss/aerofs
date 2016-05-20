@@ -3788,7 +3788,11 @@ public class SPService implements ISPService
 
         _userTracker.signOutAll(user.id());
 
-        //TODO: We should probably send an audit event too for user deletion
+        _auditClient.event(AuditTopic.USER, "user.org.remove")
+                .add("admin_user", caller.id())
+                .add("target_user", userId)
+                .publish();
+
         _analyticsClient.track(AnalyticsEvent.USER_DELETE);
 
         return createVoidReply();
