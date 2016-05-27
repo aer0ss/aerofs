@@ -41,24 +41,21 @@ public abstract class RestContentHelper
     @Inject private RemoteLinkDatabase _rldb;
     @Inject private TokenManager _tokenManager;
 
-    void waitForFile(SOID soid) throws Exception
-    {
-        Future<RemoteLinkDatabase.RemoteLink> w = _rldb.wait_(soid.sidx(), soid.oid());
-        if (w.isDone()) return;
-
-        _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "upload", () -> {
+    private <T> Future<T> wait_(Future<T> w) throws Exception {
+        if (w.isDone()) return w;
+        return _tokenManager.inPseudoPause_(Cat.API_UPLOAD, "upload", () -> {
             try {
                // Allow 5secs for a polaris notification about the newly created file to show up.
                 w.get(5, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
                 w.cancel(false);
-                throw new ExNotFound("Upload failed. Device doesn't have soid: " + soid);
+                throw new ExNotFound();
             }
-            return null;
+            return w;
         });
     }
 
-    SOID resolveObjectWithPerm(RestObject object, OAuthToken token, Permissions perms)
+    protected SOID resolveObjectWithPerm(RestObject object, OAuthToken token, Permissions perms)
             throws Exception
     {
         SID sid = object.getSID();
@@ -67,9 +64,9 @@ public abstract class RestContentHelper
             sid = SID.rootSID(token.user());
             oid = OID.ROOT;
         }
-        SIndex sidx = _sid2sidx.getNullable_(sid);
-        if (sidx == null) throw new ExNotFound();
+        SIndex sidx = wait_(_sid2sidx.wait_(sid)).get();
         _acl.checkThrows_(token.user(), sidx, perms);
+        wait_(_rldb.wait_(sidx, oid));
         return new SOID(sidx, oid);
     }
 
@@ -113,7 +110,7 @@ public abstract class RestContentHelper
         return false;
     }
 
-    ResolvedPath verifyTokenScopeAccessToFile(OAuthToken token, Scope scope, SIndex sidx,
+    protected ResolvedPath verifyTokenScopeAccessToFile(OAuthToken token, Scope scope, SIndex sidx,
             ResolvedPath path) throws SQLException
     {
         if (hasAccessToFile(token, scope, sidx, path)) return path;

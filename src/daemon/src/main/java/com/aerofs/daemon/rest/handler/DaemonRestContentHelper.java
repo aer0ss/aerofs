@@ -62,7 +62,6 @@ public class DaemonRestContentHelper extends RestContentHelper
             Scope scope, Permissions perms) throws Exception
     {
         SOID soid = resolveObjectWithPerm(object, token, perms);
-        waitForFile(soid);
         OA oa = _ds.getOAThrows_(soid);
         if (!oa.isFile()) throw new ExNotFound("No such file");
         if (oa.isExpelled()) {

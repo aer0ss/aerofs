@@ -28,6 +28,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import com.google.common.util.concurrent.AbstractFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.junit.Assert;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -36,6 +38,10 @@ import javax.annotation.Nullable;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -195,6 +201,9 @@ public class MockDS
         _childStores.put(sidx, Sets.<SIndex>newHashSet());
 
         if (_sid2sidx != null) {
+            SettableFuture<SIndex> f = SettableFuture.create();
+            f.set(sidx);
+            when(_sid2sidx.wait_(sid)).thenReturn(f);
             when(_sid2sidx.getNullable_(sid)).thenReturn(sidx);
             when(_sid2sidx.getThrows_(sid)).thenReturn(sidx);
             when(_sid2sidx.get_(sid)).thenReturn(sidx);

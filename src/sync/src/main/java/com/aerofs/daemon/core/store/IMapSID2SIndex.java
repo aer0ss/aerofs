@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.store;
 
 import java.sql.SQLException;
+import java.util.concurrent.Future;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -16,6 +17,8 @@ import com.aerofs.lib.id.SIndex;
  */
 public interface IMapSID2SIndex
 {
+    Future<SIndex> wait_(SID sid) throws SQLException;
+
     /**
      * @return null if the store doesn't exist locally
      */

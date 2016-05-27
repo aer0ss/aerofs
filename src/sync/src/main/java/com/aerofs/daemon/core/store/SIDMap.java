@@ -6,12 +6,15 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.AbstractFuture;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -24,6 +27,43 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
 
     Map<SID, SIndex> _sid2sidx = Maps.newHashMap();
     Map<SIndex, SID> _sidx2sid = Maps.newHashMap();
+
+
+    private class Waiter extends AbstractFuture<SIndex> {
+        private final SID sid;
+
+        Waiter(SID sid) { this.sid = sid; }
+
+        @Override
+        public boolean set(@Nullable SIndex value) {
+            return super.set(value);
+        }
+
+        @Override
+        public boolean setException(Throwable t) {
+            return super.setException(t);
+        }
+
+        @Override
+        public boolean cancel(boolean maybeInterruptIfRunning) {
+            _waiters.remove(sid, this);
+            return super.cancel(maybeInterruptIfRunning);
+        }
+    }
+
+    private final Map<SID, Waiter> _waiters = new ConcurrentHashMap<>();
+
+    public Future<SIndex> wait_(SID sid) throws SQLException {
+        Waiter f = new Waiter(sid);
+        SIndex sidx = getNullable_(sid);
+        if (sidx != null) {
+            f.set(sidx);
+        } else if (getLocalOrAbsentNullable_(sid) == null) {
+            Waiter prev = _waiters.putIfAbsent(sid, f);
+            if (prev != null) f = prev;
+        }
+        return f;
+    }
 
     @Inject
     public SIDMap(ISIDDatabase db)
@@ -109,6 +149,8 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
         SID sid = _db.getSID_(sidx);
         Util.verify(_sid2sidx.put(sid, sidx) == null);
         Util.verify(_sidx2sid.put(sidx, sid) == null);
+        Waiter w = _waiters.get(sid);
+        if (w != null) w.set(sidx);
     }
 
     public SID delete_(SIndex sidx)
