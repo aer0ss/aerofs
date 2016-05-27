@@ -32,6 +32,7 @@ import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
 import org.opensaml.xml.schema.XSString;
+import org.opensaml.xml.schema.XSAny;
 import org.opensaml.xml.security.x509.BasicX509Credential;
 import org.opensaml.xml.signature.SignatureValidator;
 import org.opensaml.xml.util.Base64;
@@ -160,11 +161,20 @@ public class SAMLAuthHandler implements IExternalAuthHandler {
                 // attribute name while another might return "FirstName" as an attribute name.
                 String attributeLower = attribute.getName().toLowerCase();
                 if (attributeLower.contains("first")) {
-                    firstName = ((XSString) attributeValue).getValue();
+                    if (attributeValue instanceof XSAny)
+                        firstName = ((XSAny) attributeValue).getTextContent();
+                    else
+                        firstName = ((XSString) attributeValue).getValue();
                 } else if (attributeLower.contains("last")) {
-                    lastName = ((XSString) attributeValue).getValue();
+                    if (attributeValue instanceof XSAny)
+                        lastName = ((XSAny) attributeValue).getTextContent();
+                    else
+                        lastName = ((XSString) attributeValue).getValue();
                 } else if (attributeLower.contains("email")) {
-                    email = ((XSString) attributeValue).getValue();
+                    if (attributeValue instanceof XSAny)
+                        email = ((XSAny) attributeValue).getTextContent();
+                    else
+                        email = ((XSString) attributeValue).getValue();
                 }
             }
         }
