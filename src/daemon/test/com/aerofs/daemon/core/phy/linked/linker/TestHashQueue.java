@@ -76,14 +76,20 @@ public class TestHashQueue extends AbstractTest
         when(tm.begin_()).thenAnswer(invocation -> new TestableTrans(tm));
     }
 
-    private InjectableFile mockContent(final byte[] c, long mtime) throws Exception
-    {
+    private InjectableFile mockContent(final byte[] c, long mtime) throws Exception {
+        return mockFutureContent(c, mtime, null);
+    }
+
+    private InjectableFile mockFutureContent(byte[] c, long mtime, Future<Void> w) throws Exception {
         InjectableFile f = mock(InjectableFile.class);
 
         when(f.lastModified()).thenReturn(mtime);
         when(f.length()).thenReturn((long)c.length);
         when(f.lengthOrZeroIfNotFile()).thenReturn((long)c.length);
-        when(f.newInputStream()).thenAnswer(invocation -> new ByteArrayInputStream(c));
+        when(f.newInputStream()).thenAnswer(invocation -> {
+            if (w != null) w.get();
+            return new ByteArrayInputStream(c);
+        });
         return f;
     }
 
@@ -196,11 +202,13 @@ public class TestHashQueue extends AbstractTest
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
-        InjectableFile g = mockContent(EMPTY_CONTENT, 42L);
+        SettableFuture<Void> w = SettableFuture.create();
+        InjectableFile g = mockFutureContent(EMPTY_CONTENT, 42L, w);
         when(g.getAbsolutePath()).thenReturn("bar");
         trans(t -> assertTrue(hq.requestHash_(soid, g, g.length(), g.lastModified(), t)));
 
         evAborted.get().handle_();
+        w.set(null); // for proper abort testing, make sure the second request doesn't complete too fast
 
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
@@ -225,10 +233,12 @@ public class TestHashQueue extends AbstractTest
         evAborted.get();
 
         Future<AbstractEBSelfHandling> ev = whenHashed();
-        InjectableFile g = mockContent(EMPTY_CONTENT, 43L);
+        SettableFuture<Void> w = SettableFuture.create();
+        InjectableFile g = mockFutureContent(EMPTY_CONTENT, 43L, w);
         trans(t -> assertTrue(hq.requestHash_(soid, g, g.length(), g.lastModified(), t)));
 
         evAborted.get().handle_();
+        w.set(null); // for proper abort testing, make sure the second request doesn't complete too fast
 
         verify(ds, never()).setCA_(eq(sokid), anyLong(), anyLong(), any(ContentHash.class), any(Trans.class));
         verifyZeroInteractions(vu);
