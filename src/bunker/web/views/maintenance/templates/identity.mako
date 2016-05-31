@@ -174,8 +174,8 @@
         </div>
         <div class="col-sm-6">
             <label for="saml-idp-host" class="control-label">SAML IDP Single Sign On URL</label>
-            <input class="form-control" id="saml-idp-host"
-                    name="saml_idp_host" type="text" required
+            <input class="form-control saml-required" id="saml-idp-host"
+                    name="saml_idp_host" type="text"
                     value="${conf['saml.idp.host']}">
             <div class="help-block">e.g. saml.example.com/sso/saml</div>
         </div>
@@ -206,15 +206,15 @@
     <div class="row">
         <div class="col-sm-6">
             <label for="ldap-server-host" class="control-label">Server host</label>
-            <input class="form-control" id="ldap-server-host"
-                    name="ldap_server_host" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-host"
+                    name="ldap_server_host" type="text"
                     value="${conf['ldap.server.host']}">
             <div class="help-block">e.g. ldap.example.com</div>
         </div>
         <div class="col-sm-6">
             <label for="ldap-server-port" class="control-label">Server port</label>
-            <input class="form-control" id="ldap-server-port"
-                   name="ldap_server_port" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-port"
+                   name="ldap_server_port" type="text"
                    value="${conf['ldap.server.port']}">
             <div class="help-block">e.g. 389, or 636 for SSL</div>
         </div>
@@ -223,8 +223,8 @@
     <div class="row">
         <div class="col-sm-6">
             <label for="ldap-server-schema-user-base" class="control-label">Base DN</label>
-            <input class="form-control" id="ldap-server-schema-user-base"
-                   name="ldap_server_schema_user_base" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-schema-user-base"
+                   name="ldap_server_schema_user_base" type="text"
                    value="${conf['ldap.server.schema.user.base']}">
             <div class="help-block">e.g. <code>cn=users,dc=example,dc=com</code></div>
         </div>
@@ -232,15 +232,15 @@
     <div class="row">
         <div class="col-sm-6">
             <label for="ldap-server-principal" class="control-label">Bind user name</label>
-            <input class="form-control" id="ldap-server-principal"
-                   name="ldap_server_principal" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-principal"
+                   name="ldap_server_principal" type="text"
                    value="${conf['ldap.server.principal']}">
             <div class="help-block">e.g. <code>cn=admin,ou=users,dc=example,dc=com</code></div>
         </div>
         <div class="col-sm-6">
             <label for="ldap-server-credential" class="control-label">Bind user password</label>
-            <input class="form-control" id="ldap-server-credential"
-                   name="ldap_server_credential" type="password" required
+            <input class="form-control ldap-required" id="ldap-server-credential"
+                   name="ldap_server_credential" type="password"
                    value="${conf['ldap.server.credential']}">
         </div>
     </div>
@@ -359,8 +359,8 @@
                 if not value: value = default
             %>
             <label class="control-label" for="ldap-server-schema-user-class">LDAP object class for user records</label>
-            <input class="form-control" id="ldap-server-schema-user-class"
-                   name="ldap_server_schema_user_class" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-schema-user-class"
+                   name="ldap_server_schema_user_class" type="text"
                    value="${value}">
             <div class="help-block">
                 Default is <code>${default}</code>.</div>
@@ -375,8 +375,8 @@
                 if not value: value = default
             %>
             <label class="control-label" for="ldap-server-schema-user-field-firstname">LDAP first name attribute</label>
-            <input class="form-control" id="ldap-server-schema-user-field-firstname"
-                   name="ldap_server_schema_user_field_firstname" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-schema-user-field-firstname"
+                   name="ldap_server_schema_user_field_firstname" type="text"
                    value="${value}">
             <div class="help-block">Default is <code>${default}</code>.</div>
         </div>
@@ -387,8 +387,8 @@
                 if not value: value = default
             %>
             <label class="control-label" for="ldap-server-schema-user-field-lastname">LDAP last name attribute</label>
-            <input class="form-control" id="ldap-server-schema-user-field-lastname"
-                   name="ldap_server_schema_user_field_lastname" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-schema-user-field-lastname"
+                   name="ldap_server_schema_user_field_lastname" type="text"
                    value="${value}">
             <div class="help-block">Default is <code>${default}</code>.</div>
         </div>
@@ -402,8 +402,8 @@
                 if not value: value = default
             %>
             <label class="control-label" for="ldap-server-schema-user-field-email">LDAP email attribute</label>
-            <input class="form-control" id="ldap-server-schema-user-field-email"
-                   name="ldap_server_schema_user_field_email" type="text" required
+            <input class="form-control ldap-required" id="ldap-server-schema-user-field-email"
+                   name="ldap_server_schema_user_field_email" type="text"
                    value="${value}">
             <div class="help-block">
                 Default is <code>${default}</code></div>
@@ -736,11 +736,10 @@
             ## Remove 'required' attribute otherwise Chrome would complain when
             ## submitting the form since required fields are invisible. See:
             ## http://stackoverflow.com/questions/7168645/invalid-form-control-only-in-google-chrome
-            ## Adding the ldap-required class is for ldapSelected() to restore the
             ## attribute.
-            $('.form-control[required]').removeAttr('required').addClass('ldap-required');
+            $('.form-control.ldap-required').removeAttr('required');
+            $('.form-control.saml-required').removeAttr('required');
             $('#ldap-options').hide();
-            $('.form-control[required]').removeAttr('required').addClass('saml-required');
             $('#saml-options').hide();
         }
 
@@ -750,13 +749,15 @@
         }
 
         function ldapSelected() {
-            $('.ldap-required').attr('required', 'required');
+            $('.form-control.ldap-required').attr('required', 'required');
+            $('.form-control.saml-required').removeAttr('required');
             $('#saml-options').hide();
             $('#ldap-options').show();
         }
 
         function samlSelected() {
-            $('.saml-required').attr('required', 'required');
+            $('.form-control.saml-required').attr('required', 'required');
+            $('.form-control.ldap-required').removeAttr('required');
             $('#ldap-options').hide();
             $('#saml-options').show();
         }
