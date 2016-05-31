@@ -27,6 +27,7 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
@@ -40,14 +41,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.sql.SQLException;
+import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.Queue;
+import java.util.concurrent.*;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -97,7 +95,6 @@ public class HashQueue
 
     private class HashRequest implements Runnable
     {
-
         final SOID soid;
         final long length;
         final long mtime;
@@ -111,6 +108,8 @@ public class HashQueue
         // only ever written from hasher thread
         // NB: might be a core thread NOT holding the core lock
         volatile State state;
+
+        ContentHash newHash;
 
         HashRequest(SOID soid, InjectableFile f, long length, long mtime)
         {
@@ -136,7 +135,7 @@ public class HashQueue
                 return;
             }
 
-            final ContentHash newHash = hash();
+            newHash = hash();
             checkState(state == State.PENDING);
             state = State.HASHED;
             if (newHash == null) {
@@ -145,14 +144,7 @@ public class HashQueue
                 return;
             }
 
-            _sched.schedule(new AbstractEBSelfHandling() {
-                @Override
-                public void handle_()
-                {
-                    commit_(newHash);
-                    removeSelf();
-                }
-            }, 0);
+            schedCommit(this);
         }
 
         private void removeSelf()
@@ -195,8 +187,10 @@ public class HashQueue
             return new ContentHash(md.digest());
         }
 
-        private void commit_(ContentHash newHash)
+        // TODO: batch commit in a single transaction?
+        private void commit_()
         {
+            checkState(state == State.HASHED);
             if (aborted) {
                 l.debug("hash computation aborted {}", soid);
                 return;
@@ -253,7 +247,37 @@ public class HashQueue
         }
     }
 
-    private final ConcurrentMap<SOID, HashRequest> _requests = Maps.newConcurrentMap();
+    private final ConcurrentMap<SOID, HashRequest> _requests = new ConcurrentHashMap<>();
+    private final Queue<HashRequest> _committable = new ArrayDeque<>();
+
+    private final IEvent _commit = new AbstractEBSelfHandling() {
+        @Override
+        public void handle_() {
+            int n = 0;
+            while (true) {
+                HashRequest req;
+                boolean resched;
+                synchronized (_committable) {
+                    req = _committable.poll();
+                    if (req == null) return;
+                    resched = ++n == 100 && _committable.size() > 0;
+                }
+                req.commit_();
+                req.removeSelf();
+                if (resched) {
+                    _sched.schedule_(this);
+                    return;
+                }
+            }
+        }
+    };
+
+    private void schedCommit(HashRequest req) {
+        synchronized (_committable) {
+            _committable.add(req);
+            if (_committable.size() == 1) _sched.schedule(_commit, 0);
+        }
+    }
 
     /**
      * When the bounded hash queue is full the hashing task will be executed in the calling
