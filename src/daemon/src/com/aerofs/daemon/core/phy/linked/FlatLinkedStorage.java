@@ -180,8 +180,12 @@ public class FlatLinkedStorage extends LinkedStorage
             InjectableFile d = _factFile.create(_sharedDir, name);
 
             while (d.exists()) {
-                // dir already exists, only allow if it contains a valid tag file matching the SID
-                if (d.isDirectory() && _sfti.isSharedFolderRoot(sid, d)) return d;
+                // dir already exists, only allow if either:
+                //   - it contains a valid tag file matching the SID
+                //   - it doesn't contain any tag file
+                // relaxing the tag file requirement is useful to prevent unexpected duplication
+                // in some corner cases
+                if (d.isDirectory() && _sfti.isUsableSharedFolderRoot(sid, d)) return d;
                 l.info("conflicting folder");
                 d = _factFile.create(_sharedDir, FileUtil.nextFileName(d.getName()));
             }

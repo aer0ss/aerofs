@@ -112,6 +112,7 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
                 createAnchorIfNeeded_(sidx, sid, info._name, root, t);
                 t.commit_();
             } catch (Exception e) {
+                l.info("failed to create anchor", e);
                 ok = false;
             }
         }
