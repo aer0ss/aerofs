@@ -9,6 +9,7 @@ import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
+
 import org.slf4j.Logger;
 
 import java.sql.Connection;
@@ -141,6 +142,8 @@ public class SQLThreadLocalTransaction
     }
 
     public void onCommit(Runnable r) {
+        assert isInTransaction();
+
         List<Runnable> hooks = _commitHooks.get();
         if (hooks == null) {
             hooks = new ArrayList<>();
