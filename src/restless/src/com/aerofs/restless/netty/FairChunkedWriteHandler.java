@@ -148,7 +148,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
                         do {
                             if (stopped) return;
                             try {
-                                l.debug("wait");
+                                l.trace("wait");
                                 head.wait();
                             } catch (InterruptedException e) {
                                 throw new AssertionError(e);
