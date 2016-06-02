@@ -51,6 +51,8 @@ openid.service.session.timeout={{ openid_service_session_timeout }}
 openid.service.session.interval={{ openid_service_session_interval }}
 openid.service.realm={{ openid_service_realm }}
 
+saml.identity.service.identifier={{ saml_identity_service_identifier }}
+
 base.audit.enabled={{ audit_enabled }}
 base.audit.public.url=https://{{ base_host }}:{{ nginx_mut_auth_port }}/audit/event
 

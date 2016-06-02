@@ -62,7 +62,6 @@ ldap.invitation.required_for_signup={{ ldap_invitation_required_for_signup }}
 
 saml.idp.host={{ saml_idp_host }}
 saml.idp.x509.certificate={{ saml_idp_x509_certificate }}
-saml.identity.service.identifier={{ saml_identity_service_identifier }}
 
 openid.idp.endpoint.url={{ openid_idp_endpoint_url }}
 openid.idp.endpoint.stateful={{ openid_idp_endpoint_stateful }}

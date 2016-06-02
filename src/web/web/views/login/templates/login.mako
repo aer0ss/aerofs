@@ -33,7 +33,7 @@
                 ${self.csrf.token_input()}
                 <div class="form-group">
                     <label for="input_email" class="col-sm-4 control-label">Email</label>
-                    <div class="col-sm-8">
+                    <div class="col-sm-6">
                         <input class="input-medium form-control" id="input_email" type="email" name="${url_param_email}"
                             %if ext_auth_login:
                                 value="${ext_auth_login}"
@@ -43,7 +43,7 @@
                 </div>
                 <div class="form-group">
                     <label for="input_passwd" class="col-sm-4 control-label">Password</label>
-                    <div class="col-sm-8">
+                    <div class="col-sm-6">
                         <input class="input-medium form-control" id="input_passwd" type="password" name="${url_param_password}">
                     </div>
                 </div>
