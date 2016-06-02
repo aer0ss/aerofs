@@ -40,9 +40,13 @@ def archive_container_logs(request):
             with codecs.open(path, encoding="utf-8") as log, codecs.open("formatted", mode='wb', encoding="utf-8") as formatted:
                 print 'Archiving log at {}...'.format(path)
                 container_id = basename(dirname(path))
-                container_name = cli.inspect_container(container_id)['Name'].strip().replace("/", "")
+                try:
+                    container_name = cli.inspect_container(container_id)['Name'].strip().replace("/", "")
+                except Exception as e:
+                    print 'Skipping container {} because of {}'.format(container_id, e)
+                    continue
 
-                for line in log.readlines():
+                for line in log:
                     # some docker log files have null bytes left over
                     logObject = json.loads(line.strip('\0'))
                     formatted.write(u"{}:{}".format(logObject["time"], logObject["log"]))
