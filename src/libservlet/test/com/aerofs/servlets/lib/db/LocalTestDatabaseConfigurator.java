@@ -5,6 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.MigrationInfoService;
 
 import java.sql.*;
@@ -44,14 +45,15 @@ public class LocalTestDatabaseConfigurator
         flyway.setSchemas(params.getMySQLDatabaseName());
 
         MigrationInfoService svc = flyway.info();
-        if (svc.current().getState().isResolved()) {
+        MigrationInfo current = svc.current();
+        if (current == null || current.getState().isResolved()) {
             try {
                 flyway.migrate();
                 return;
             } catch (Throwable e) {
             }
         } else {
-            System.out.println("future migration detected: " + svc.current().getVersion().getVersion());
+            System.out.println("future migration detected: " + current.getVersion().getVersion());
         }
 
         resetDB(params);
