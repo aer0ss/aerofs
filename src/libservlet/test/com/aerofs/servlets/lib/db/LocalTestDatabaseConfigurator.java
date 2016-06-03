@@ -5,6 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfoService;
 
 import java.sql.*;
 
@@ -38,14 +39,20 @@ public class LocalTestDatabaseConfigurator
         flyway.setDataSource("jdbc:mysql://" + params.getMySQLHost() + "/" + params.getMySQLDatabaseName(),
                 params.getMySQLUser(), params.getMySQLPass());
         flyway.setBaselineOnMigrate(true);
-        flyway.setValidateOnMigrate(false);
+        flyway.setValidateOnMigrate(true);
         flyway.setLocations("filesystem:" + params.getMySQLSchemaPath());
         flyway.setSchemas(params.getMySQLDatabaseName());
 
-        try {
-            flyway.migrate();
-            return;
-        } catch (Throwable e) {}
+        MigrationInfoService svc = flyway.info();
+        if (svc.current().getState().isResolved()) {
+            try {
+                flyway.migrate();
+                return;
+            } catch (Throwable e) {
+            }
+        } else {
+            System.out.println("future migration detected: " + svc.current().getVersion().getVersion());
+        }
 
         resetDB(params);
         flyway.migrate();
