@@ -5,6 +5,5 @@
 # Our explicit deps:
 Flask
 CherryPy
-requests
 # Hoisted from aerofs-licensing:
 pygpgme

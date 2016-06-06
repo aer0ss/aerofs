@@ -167,8 +167,13 @@ containers:
       detach: true
       volumes-from:
         - data
-      link:
-        - loader:loader.service
+      {% if hpc %}
+      env:
+        hpc_port_nginx: "{{ get_port('nginx', 4433) }}"
+        hpc_port_nginx_mut_auth: "{{ get_port('nginx_mut_auth', 5222) }}"
+        hpc_port_havre: "{{ get_port('havre', 8084) }}"
+        hpc_port_lipwig: "{{ get_port('lipwig', 29438) }}"
+      {% endif %}
 
   # Use 'ca-server' not 'ca' to avoid conflicts with 'ca*' container ids
   ca-server:

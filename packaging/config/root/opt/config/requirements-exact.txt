@@ -6,8 +6,4 @@ Werkzeug==0.9.6
 itsdangerous==0.24
 pygpgme==0.3
 
-# Make sure the version of requests here is the same as the one from
-# docker/base/python2.7/Dockerfile otherwise CI may break
-requests==2.7.0
-
 wsgiref==0.1.2

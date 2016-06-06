@@ -9,7 +9,6 @@ import os
 import re
 import tempfile
 import datetime
-import requests
 
 # ----------------------------------------------------------------------
 # Statics
@@ -133,9 +132,8 @@ def get_template_kv_pairs():
     return d
 
 def get_port(port_name, default_value):
-    r = requests.get('http://loader.service/v1/port/{}/{}'.format(port_name, default_value))
-    r.raise_for_status()
-    return int(r.text)
+    v = os.environ.get('hpc_port_' + port_name)
+    return default_value if v is None else int(v)
 
 
 # ----------------------------------------------------------------------
