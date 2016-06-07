@@ -927,7 +927,10 @@ public class SharedFolderResource extends AbstractSpartaResource
             throws Exception
     {
         l.trace("enter updateShare: {}", patch);
-        validateAuth(token, Scope.WRITE_ACL, sf);
+        User caller = validateAuth(token, Scope.WRITE_ACL, sf);
+        if (caller != null) {
+            sf.throwIfNoPrivilegeToChangeACL(caller);
+        }
         checkArgument(patch.size() == 1 && patch.containsKey("public_name"));
 
         sf.setPublicName(patch.get("public_name"));

@@ -1,6 +1,7 @@
 package com.aerofs.polaris.external_api.metadata;
 
 import com.aerofs.auth.server.AeroOAuthPrincipal;
+import com.aerofs.auth.server.delegated.AeroDelegatedUserDevicePrincipal;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.RestObject;
@@ -66,16 +67,19 @@ public class MetadataBuilder
     private final Notifier notifier;
     private final DBI dbi;
     private final FolderSharer fs;
+    private final StoreNames sn;
 
     @Inject
     public MetadataBuilder(@Context ObjectStore objectStore, @Context MimeTypeDetector detector,
-            @Context Notifier notifier, @Context DBI dbi, @Context FolderSharer fs)
+            @Context Notifier notifier, @Context DBI dbi, @Context FolderSharer fs,
+            @Context StoreNames sn)
     {
         this.objectStore = objectStore;
         this.detector = detector;
         this.notifier = notifier;
         this.dbi = dbi;
         this.fs = fs;
+        this.sn = sn;
     }
 
     private boolean hasUnrestrictedPermission(Map<Scope, Set<RestObject>> scopes, Scope scope)
@@ -550,6 +554,14 @@ public class MetadataBuilder
             Map<UniqueID, Long> updatedStores = result.updated.stream()
                     .collect(Collectors.toMap(x -> x.object.store, x -> x.transformTimestamp, Math::max));
             updatedStores.forEach(notifier::notifyStoreUpdated);
+            try {
+                if (new OID(oid).isAnchor()) {
+                    sn.setPersonalStoreName(new AeroDelegatedUserDevicePrincipal(
+                            "polaris", principal.getUser(), principal.getDID()), oid, name);
+                }
+            } catch (Exception e) {
+                l.info("failed to update shared folder name", e);
+            }
             return result.response;
         } finally {
             lock.unlock();

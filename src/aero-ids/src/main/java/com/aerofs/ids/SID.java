@@ -93,19 +93,6 @@ public class SID extends UniqueID
     }
 
     /**
-     * DEPRECATED: only used in StoreCreator to ease transition
-     */
-    public static SID folderOID2legacyConvertedStoreSID(OID oid)
-    {
-        checkArgument(!oid.isRoot() && !oid.isTrash() && !oid.isAnchor(), oid);
-        byte[] bs = newMessageDigestMD5().digest(oid.getBytes());
-        setVersionNibble(bs, 0);
-        SID sid = new SID(bs);
-        checkState(!sid.isUserRoot());
-        return sid;
-    }
-
-    /**
      * Translate an arbitrary folder's OID into the SID of the store to which this folder converts.
      */
     public static SID folderOID2convertedStoreSID(OID oid)

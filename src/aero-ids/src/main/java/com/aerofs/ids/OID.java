@@ -9,9 +9,6 @@ import static com.google.common.base.Preconditions.checkArgument;
  */
 public class OID extends UniqueID
 {
-    // dummy value for dummy ctor
-    private static final int NO_ASSERT = 42;
-
     public static final OID ROOT;   // all zeros
     public static final OID TRASH;  // all zeros except one bit
 
@@ -45,11 +42,6 @@ public class OID extends UniqueID
         assertIsValid();
     }
 
-    private OID(byte[] bs, int dummyNoAssert)
-    {
-        super(bs);
-    }
-
     private void assertIsValid()
     {
         int v = getVersionNibble();
@@ -74,15 +66,6 @@ public class OID extends UniqueID
          * trash)
          */
         return !isRoot() && !isTrash() && getVersionNibble() == 0;
-    }
-
-    /**
-     * DO NOT USE outside of one-time-use migration code where bypassing structural constraints
-     * is needed to convert old data to valid new data.
-     */
-    public static OID legacyValue(byte[] bs)
-    {
-        return new OID(bs, NO_ASSERT);
     }
 
     public static OID generate()
