@@ -14,10 +14,7 @@ import com.aerofs.polaris.dao.types.*;
 import com.aerofs.polaris.external_api.etag.EntityTagSet;
 import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
 import com.aerofs.polaris.external_api.rest.util.Version;
-import com.aerofs.polaris.logical.DAO;
-import com.aerofs.polaris.logical.FolderSharer;
-import com.aerofs.polaris.logical.Migrator;
-import com.aerofs.polaris.logical.ObjectStore;
+import com.aerofs.polaris.logical.*;
 import com.aerofs.polaris.notification.Notifier;
 import com.aerofs.rest.api.*;
 import com.aerofs.rest.util.MimeTypeDetector;
@@ -109,7 +106,8 @@ public class TestMetadataBuilder
         when(fs.shareFolder(any(), any(), any())).thenReturn(true);
 
         this.objects = new ObjectStore(mock(AccessManager.class), dbi, mock(Migrator.class));
-        this.metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(), mock(Notifier.class), dbi, fs);
+        this.metadataBuilder = new MetadataBuilder(objects, new MimeTypeDetector(),
+                mock(Notifier.class), dbi, fs, mock(StoreNames.class));
     }
 
     @After
