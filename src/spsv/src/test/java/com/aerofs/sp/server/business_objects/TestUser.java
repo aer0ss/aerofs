@@ -305,6 +305,16 @@ public class TestUser extends AbstractBusinessObjectTest
         Assert.assertArrayEquals(new String[0], user1.getJoinedSharedFolders(10, 0, "zzz").toArray());
     }
 
+    @Test
+    public void shouldSupportUtf8mb4Name() throws Exception
+    {
+        User user = saveUser();
+        FullName expected = new FullName("\uD83D\uDCA9", "\uD83D\uDCA9");
+        user.setName(expected);
+
+        assertEquals(expected, user.getFullName());
+    }
+
     private void createSharedFolders(User user1, User user2)
             throws Exception
     {

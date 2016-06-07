@@ -86,7 +86,7 @@ func Transact(db *sql.DB, txFunc func(*sql.Tx) error) (err error) {
 
 func initMigrationsTable(db *sql.DB) {
 	err := Transact(db, func(tx *sql.Tx) error {
-		_, err := tx.Exec("CREATE TABLE IF NOT EXISTS schema_migrations(name VARCHAR(255), PRIMARY KEY(name))")
+		_, err := tx.Exec("CREATE TABLE IF NOT EXISTS schema_migrations(name VARCHAR(255) CHARACTER SET latin1, PRIMARY KEY(name))")
 		return err
 	})
 	if err != nil {

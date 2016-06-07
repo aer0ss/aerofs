@@ -41,6 +41,19 @@ public class TestSP_SetSharedFolderName extends AbstractSPFolderTest
         assertEquals(originalName, getSharedFolderName(SID_1, USER_2));
     }
 
+    @Test
+    public void shouldSupportUtf8mb4FolderName() throws Exception
+    {
+        // Non-BMP folder name
+        final String NEW_NAME = "\uD83D\uDCA9";
+
+        shareAndJoinFolder(USER_1, SID_1, USER_2, Permissions.allOf(Permission.WRITE));
+        setSession(USER_1);
+        service.setSharedFolderName(BaseUtil.toPB(SID_1), NEW_NAME);
+
+        assertEquals(NEW_NAME, getSharedFolderName(SID_1, USER_1));
+    }
+
     @Test(expected = ExBadArgs.class)
     public void shouldThrowIfEmptyName()
             throws Exception

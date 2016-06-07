@@ -29,4 +29,15 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), name);
         assertEquals(service.getOrgPreferences().get().getOrganizationContactPhone(), phone);
     }
+
+    @Test
+    public void shouldSupportOrgNameUtf8mb4()
+            throws Exception
+    {
+        String name = "\uD83D\uDCA9";
+        String phone = "xixixix";
+
+        service.setOrgPreferences(name, phone);
+        assertEquals(service.getOrgPreferences().get().getOrganizationName(), name);
+    }
 }
