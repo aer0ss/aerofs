@@ -613,7 +613,13 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             public Boolean prefixWalk_(Boolean dummy, OA oa) throws Exception {
                 if (oa.soid().equals(soid)) return true;
                 SOID soid = oa.soid();
-                checkState(rtc.isInSharedTree(soid.oid()));
+                if (!rtc.isInSharedTree(soid.oid())) {
+                    // this case was seen for a linked TS at Finance IT after the Phoenix conversion
+                    // while it is a little concerning it should ultimately be safe as any local
+                    // files will be preserved in sync history and can be restored from there if
+                    // they are not available in the destination folder on some remote peer
+                    l.warn("cleanup {} not present in shared tree");
+                }
                 if (oa.isFile()) {
                     _rcdb.deleteUpToVersion_(soid.sidx(), soid.oid(), Long.MAX_VALUE, t);
                 }
