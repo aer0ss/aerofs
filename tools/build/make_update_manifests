@@ -82,9 +82,9 @@ function make_linux_update() {
         "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${LOCAL_LINUX_PRODUCT_DIR}" \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_LINUX_RESOURCES_DIR}/shared" \
         "${CLIENT_LINUX_RESOURCES_DIR}/${ARCH}" \
-        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_RESOURCES_DIR}/all/misc" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
@@ -109,9 +109,9 @@ function make_osx_update() {
         "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
         "${LOCAL_OSX_PRODUCT_DIR}" \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_OSX_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
-        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_RESOURCES_DIR}/all/misc" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
@@ -133,9 +133,9 @@ function make_windows_update() {
         "${UPDATES_DIR}/${LOWERCASE_PRODUCT}-win.json.base" \
         "${DFMT}:${UPDATES_DIR}/data" \
         "${LOCAL_RELEASE_DIR}/aerofs" \
+        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_WIN_RESOURCES_DIR}" \
         ${SHELLEXT_DIR:-} \
-        "${CLIENT_RESOURCES_DIR}/all/icons:icons" \
         "${CLIENT_RESOURCES_DIR}/all/misc" \
         "${LABELING_RESOURCES_DIR}/${LOWERCASE_PRODUCT}" \
         "${OTHER_RESOURCES_DIR}:lib"
