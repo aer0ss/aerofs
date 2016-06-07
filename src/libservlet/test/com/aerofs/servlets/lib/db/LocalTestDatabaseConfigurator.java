@@ -44,16 +44,16 @@ public class LocalTestDatabaseConfigurator
         flyway.setLocations("filesystem:" + params.getMySQLSchemaPath());
         flyway.setSchemas(params.getMySQLDatabaseName());
 
-        MigrationInfoService svc = flyway.info();
-        MigrationInfo current = svc.current();
-        if (current == null || current.getState().isResolved()) {
-            try {
+        try {
+            MigrationInfoService svc = flyway.info();
+            MigrationInfo current = svc.current();
+            if (current == null || current.getState().isResolved()) {
                 flyway.migrate();
                 return;
-            } catch (Throwable e) {
+            } else {
+                System.out.println("future migration detected: " + current.getVersion().getVersion());
             }
-        } else {
-            System.out.println("future migration detected: " + current.getVersion().getVersion());
+        } catch (Throwable e) {
         }
 
         resetDB(params);
