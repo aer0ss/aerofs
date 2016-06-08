@@ -131,6 +131,9 @@ subprojects {
         for (prop in ['mysqlHost', 'mysqlUser', 'mysqlPass', 'enable_logging']) {
             def k = 'junit.' + prop
             def v = System.getProperty(k)
+            if (v == null) {
+                v = System.getenv('JUNIT_' + prop) 
+            }
             if (v != null) {
                 systemProperty k, v
             }

@@ -38,7 +38,6 @@
         - jq
         - maven
         - msitools  # used to repackage Windows installers to create MSI installers.
-        - homebrew/versions/mysql56 # for unit tests
         - npm       # used to run JavaScript unit tests.
         - pigz      # parallel gzip implementation used to speed up compressing disk images
         - python
@@ -72,7 +71,6 @@
         - pyyaml
         - requests
         - virtualenv
-        - MySQL-python  # to create test user
 
     - name: Install NPM packages
       npm:
@@ -112,24 +110,16 @@
     - name: Install crane
       get_url: url=https://github.com/michaelsauter/crane/releases/download/v1.5.1/crane_darwin_amd64 dest=/usr/local/bin/crane mode=0755
 
-    - name: Mysql and Redis launchctl
+    - name: Redis launchctl
       file: src=/usr/local/Cellar/{{ item }}/homebrew.mxcl.{{ item | dirname }}.plist path=~/Library/LaunchAgents/homebrew.mxcl.{{ item | dirname }}.plist state=link force=yes
       with_items:
-        - mysql56/5.6.27
         - redis/3.0.5
-      notify: Start Mysql and Redis
-
-    - name: Mysql test user
-      mysql_user:
-        name=test
-        password=temp123
-        priv=*.*:ALL
+      notify: Start Redis
 
   handlers:
 
-    - name: Start Mysql and Redis
+    - name: Start Redis
       command: launchctl load ~/Library/LaunchAgents/homebrew.mxcl.{{ item }}.plist
       with_items:
-        - mysql56
         - redis
 

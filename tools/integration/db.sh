@@ -1,18 +1,24 @@
 #!/bin/bash
 
 name=${1:-aerofs_db_test}
-host=${2:-192.168.99.100}
-port=${3:-3306}
+port=${2:-3306}
 
-docker rm -f $name
-docker run -d --name $name -p $port:3306 aerofs/mysql
+THIS_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
 
-while ! echo 'select 1' | mysql -h $host -P $port -u root &>/dev/null ; do
-    echo wait for mysql to come up at $host:$port
+# remove any previous instance
+docker rm -f $name >/dev/null
+
+# start mysql container
+make -C $THIS_DIR/../../docker/mysql > /dev/null
+docker run -d --name $name -p $port:3306 aerofs/mysql >/dev/null
+
+# wait for mysqld to come up
+while ! echo 'select 1' | docker exec -i $name mysql &>/dev/null ; do
     sleep 1
 done
 
-mysql -h $host -P $port -u root <<EOF
+# create test account
+docker exec -i $name mysql <<EOF
 USE mysql;
 GRANT USAGE ON *.* TO 'test'@'%';
 DROP USER 'test'@'%';
@@ -21,4 +27,13 @@ CREATE USER 'test'@'%' IDENTIFIED BY PASSWORD '*7F7520FA4303867EDD3C94D78C89F789
 GRANT ALL PRIVILEGES ON *.* TO 'test'@'%';
 FLUSH PRIVILEGES;
 EOF
+
+VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
+if docker-machine ls "$VM" &>/dev/null ; then
+    host=$(docker-machine ip "$VM")
+else
+    host=$(docker inspect aerofs_db_test | jq -r '.[0].NetworkSettings.IPAddress')
+fi
+
+echo export JUNIT_mysqlHost="$host:$port"
 

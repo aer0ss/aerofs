@@ -8,5 +8,8 @@ if [ -f /usr/libexec/java_home ]; then
     export JAVA_HOME="$(/usr/libexec/java_home -v '1.8*')"
 fi
 
-source $(dirname "${BASH_SOURCE[0]:-$0}")/docker.sh
-source $(dirname "${BASH_SOURCE[0]:-$0}")/invoke.sh
+THIS_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
+source $THIS_DIR/docker.sh
+source $THIS_DIR/invoke.sh
+
+alias integration-env="eval \"\$($THIS_DIR/../integration/db.sh)\""
