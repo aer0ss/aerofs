@@ -114,6 +114,8 @@ void setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
 /**
  * OSX 10.8+ : NSNotificationCenter
  */
+void initNotifications(JNIEnv * j, jstring socket);
+
 void scheduleNotification(JNIEnv * j, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message);
 
 struct TrayPosition {

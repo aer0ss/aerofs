@@ -12,12 +12,24 @@
 #include "Driver.h"
 #include "notif.h"
 
-bool socket_initialized = NO;
-
 @interface NotificationDelegate : NSObject <NSUserNotificationCenterDelegate>
 @end
 
-@implementation NotificationDelegate
+@implementation NotificationDelegate {
+    NSString *socket_path;
+    int socket;
+}
+
+- (id) initWithSocketPath:(NSString *)socketPath
+{
+    self = [super init];
+    if (self) {
+        socket = -1;
+        socket_path = socketPath;
+    }
+    return self;
+}
+
 - (void) userNotificationCenter:(NSUserNotificationCenter *)center didDeliverNotification:(NSUserNotification *)notification
 {}
 
@@ -30,19 +42,28 @@ bool socket_initialized = NO;
 {
     if ([notification.userInfo objectForKey:@"notif"] != nil) {
         NSLog(@"sending notif event");
-
-        if (!socket_initialized) {
-            init_socket([[NSString stringWithFormat:@"%@/%@/%@", NSHomeDirectory(), @"Library/Application Support/AeroFS", @"notif.sock"] UTF8String]);
-            socket_initialized = YES;
+        if (socket == -1) {
+            socket = init_socket([socket_path UTF8String]);
         }
-        send_message([notification.userInfo[@"notif"] UTF8String]);
+        if (socket != -1) {
+            send_message(socket, [notification.userInfo[@"notif"] UTF8String]);
+        }
     }
 }
 @end
 
 namespace Driver {
 
-NotificationDelegate *delegate = [[NotificationDelegate alloc] init];
+NotificationDelegate *delegate = nil;
+
+void initNotifications(JNIEnv* env, jstring socket) {
+    tstring cSocket;
+    if (!AeroFS::jstr2tstr(&cSocket, env, socket)) {
+        NSLog(@"failed to convert socket path");
+        return;
+    }
+    delegate = [[NotificationDelegate alloc] initWithSocketPath: [[NSString alloc] initWithUTF8String:cSocket.c_str()]];
+}
 
 void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {
     tstring cTitle;

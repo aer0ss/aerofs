@@ -228,6 +228,7 @@ int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
     return retval;
 }
 
+void initNotifications(JNIEnv* env, jstring socket) {}
 void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {}
 
 void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)

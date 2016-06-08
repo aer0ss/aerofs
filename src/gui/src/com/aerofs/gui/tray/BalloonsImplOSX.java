@@ -3,6 +3,8 @@ package com.aerofs.gui.tray;
 import com.aerofs.base.Loggers;
 import com.aerofs.gui.notif.NotifMessage;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.Cfg.NativeSocketType;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.ui.IUI.MessageType;
@@ -12,8 +14,9 @@ public class BalloonsImplOSX implements IBalloonsImpl
 {
     private static final Logger l = Loggers.getLogger(BalloonsImplOSX.class);
 
-    BalloonsImplOSX()
-    {}
+    BalloonsImplOSX() {
+        Driver.initNotifications(null, Cfg.nativeSocketFilePath(NativeSocketType.NOTIF));
+    }
 
     @Override
     public void add(MessageType mt, String title, String msg, NotifMessage onClick)
