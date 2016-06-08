@@ -13,8 +13,9 @@ else
     docker rm -f $name >/dev/null
 
     # start mysql container
-    make -C $THIS_DIR/../../docker/mysql > /dev/null
-    docker run -d --name $name -p $port:3306 aerofs/mysql >/dev/null
+    make -C $THIS_DIR/../../docker/base/base 1>&2 || exit 1
+    make -C $THIS_DIR/../../docker/mysql 1>&2 || exit 1
+    docker run -d --name $name -p $port:3306 aerofs/mysql >/dev/null || exit 1
 fi
 
 # wait for mysqld to come up
