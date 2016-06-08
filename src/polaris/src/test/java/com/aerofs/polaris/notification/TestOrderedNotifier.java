@@ -1,15 +1,11 @@
 package com.aerofs.polaris.notification;
 
-import com.aerofs.baseline.config.Configuration;
-import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.baseline.logging.ConsoleLoggingConfiguration;
 import com.aerofs.baseline.logging.FileLoggingConfiguration;
 import com.aerofs.baseline.logging.LoggingConfiguration;
 import com.aerofs.ids.UniqueID;
-import com.aerofs.polaris.Polaris;
-import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.dao.types.*;
 import com.google.common.util.concurrent.Futures;
@@ -29,6 +25,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 
+import static com.aerofs.polaris.PolarisTestServer.CONFIGURATION;
 import static com.aerofs.polaris.notification.NotifierUtilities.getLatestLogicalTimestamp;
 import static com.aerofs.polaris.notification.NotifierUtilities.getLatestNotifiedLogicalTimestamp;
 import static com.aerofs.polaris.notification.NotifierUtilities.setLatestLogicalTimestamp;
@@ -67,9 +64,7 @@ public final class TestOrderedNotifier {
         com.aerofs.baseline.logging.Logging.setupLogging(logging);
 
         // setup database
-        PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
-        DatabaseConfiguration database = configuration.getDatabase();
-        dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(CONFIGURATION.getDatabase());
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

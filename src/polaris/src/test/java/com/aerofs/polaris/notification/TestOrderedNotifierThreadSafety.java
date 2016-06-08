@@ -1,7 +1,5 @@
 package com.aerofs.polaris.notification;
 
-import com.aerofs.baseline.config.Configuration;
-import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.baseline.logging.ConsoleLoggingConfiguration;
@@ -12,8 +10,6 @@ import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
 import com.aerofs.ids.UniqueID;
 import com.aerofs.ids.UserID;
-import com.aerofs.polaris.Polaris;
-import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.api.notification.Update;
 import com.aerofs.polaris.api.types.Timestamps;
 import com.aerofs.polaris.api.types.TransformType;
@@ -46,6 +42,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
+import static com.aerofs.polaris.PolarisTestServer.CONFIGURATION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -87,9 +84,7 @@ public final class TestOrderedNotifierThreadSafety {
         com.aerofs.baseline.logging.Logging.setupLogging(logging);
 
         // setup database
-        PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
-        DatabaseConfiguration database = configuration.getDatabase();
-        dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(CONFIGURATION.getDatabase());
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

@@ -38,7 +38,13 @@ public final class PolarisTestServer extends ExternalResource {
     //
     public static final String DEPLOYMENT_SECRET = "aa23e7fb907fa7f839f6f418820159ab";
 
-    private static final PolarisConfiguration CONFIGURATION = Configuration.loadYAMLConfigurationFromResourcesUncheckedThrow(Polaris.class, "polaris_test_server.yml");
+    public static final PolarisConfiguration CONFIGURATION = Configuration.loadYAMLConfigurationFromResourcesUncheckedThrow(Polaris.class, "polaris_test_server.yml");
+    static {
+        String prop = System.getProperty("junit.mysqlHost");
+        if (prop != null) {
+            CONFIGURATION.getDatabase().setUrl("jdbc:mysql://" + prop + "/test");
+        }
+    }
 
     public static String getAdminURL() {
         HttpConfiguration admin = CONFIGURATION.getAdmin();

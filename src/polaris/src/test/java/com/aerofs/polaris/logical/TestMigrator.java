@@ -1,13 +1,9 @@
 package com.aerofs.polaris.logical;
 
-import com.aerofs.baseline.config.Configuration;
-import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.polaris.Constants;
-import com.aerofs.polaris.Polaris;
-import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.operation.*;
 import com.aerofs.polaris.api.types.DeletableChild;
@@ -33,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 
 import static com.aerofs.polaris.PolarisHelpers.*;
+import static com.aerofs.polaris.PolarisTestServer.CONFIGURATION;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.*;
@@ -61,9 +58,7 @@ public class TestMigrator
     @BeforeClass
     public static void setup() throws Exception {
         // setup database
-        PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
-        DatabaseConfiguration database = configuration.getDatabase();
-        dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(CONFIGURATION.getDatabase());
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

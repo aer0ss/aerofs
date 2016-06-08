@@ -1,7 +1,5 @@
 package com.aerofs.polaris.resources;
 
-import com.aerofs.baseline.config.Configuration;
-import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
@@ -23,6 +21,7 @@ import javax.ws.rs.core.Response;
 
 import java.sql.SQLException;
 
+import static com.aerofs.polaris.PolarisTestServer.CONFIGURATION;
 import static com.jayway.restassured.RestAssured.given;
 import static org.junit.Assert.assertThat;
 
@@ -44,9 +43,7 @@ public class TestJobsResource {
 
     @BeforeClass
     public static void startup() throws Exception {
-        PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
-        DatabaseConfiguration database = configuration.getDatabase();
-        dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(CONFIGURATION.getDatabase());
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);

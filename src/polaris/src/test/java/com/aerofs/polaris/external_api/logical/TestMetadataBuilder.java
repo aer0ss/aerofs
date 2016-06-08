@@ -2,14 +2,10 @@ package com.aerofs.polaris.external_api.logical;
 
 import com.aerofs.auth.server.AeroOAuthPrincipal;
 import com.aerofs.base.id.RestObject;
-import com.aerofs.baseline.config.Configuration;
-import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.db.MySQLDatabase;
 import com.aerofs.ids.*;
 import com.aerofs.oauth.OAuthScopeParsingUtil;
-import com.aerofs.polaris.Polaris;
-import com.aerofs.polaris.PolarisConfiguration;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.api.types.Child;
 import com.aerofs.polaris.api.types.DeletableChild;
@@ -42,6 +38,7 @@ import java.util.stream.Collectors;
 
 import static com.aerofs.polaris.PolarisHelpers.newFile;
 import static com.aerofs.polaris.PolarisHelpers.newFolder;
+import static com.aerofs.polaris.PolarisTestServer.CONFIGURATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
@@ -68,9 +65,7 @@ public class TestMetadataBuilder
     public static void setupDB() throws Exception
     {
         // setup database
-        PolarisConfiguration configuration = Configuration.loadYAMLConfigurationFromResources(Polaris.class, "polaris_test_server.yml");
-        DatabaseConfiguration database = configuration.getDatabase();
-        dataSource = (BasicDataSource) Databases.newDataSource(database);
+        dataSource = (BasicDataSource) Databases.newDataSource(CONFIGURATION.getDatabase());
 
         Flyway flyway = new Flyway();
         flyway.setDataSource(dataSource);
