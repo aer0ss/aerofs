@@ -36,17 +36,16 @@ public class AbstractTestWithDatabase extends AbstractBaseTest
     @Spy protected JedisThreadLocalTransaction jedisTrans =
             new JedisThreadLocalTransaction(jedisProvider);
 
+    // NB: make sure the name is not shadowed in a subclass or the method won't run...
     @BeforeClass
-    public static void commonSetup()
-            throws Exception
+    public static void AbstractTestWithDatabase_commonSetup() throws Exception
     {
         LocalTestDatabaseConfigurator.resetDB(new BifrostDatabaseParams());
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
     }
 
     @Before
-    public void dbSetup()
-            throws Exception
+    public void dbSetup() throws Exception
     {
         sqlTrans.begin();
         try (Statement s = sqlTrans.getConnection().createStatement()) {
