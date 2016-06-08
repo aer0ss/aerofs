@@ -5,12 +5,17 @@ port=${2:-3306}
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
 
-# remove any previous instance
-docker rm -f $name >/dev/null
+if [[ -n "$(docker ps -q -f "name=$name")" ]] && \
+    "$THIS_DIR/../cache/img_fresh.sh" aerofs/mysql "$THIS_DIR/../../docker/mysql"; then
+    echo db container already running 1>&2
+else
+    # remove any previous instance
+    docker rm -f $name >/dev/null
 
-# start mysql container
-make -C $THIS_DIR/../../docker/mysql > /dev/null
-docker run -d --name $name -p $port:3306 aerofs/mysql >/dev/null
+    # start mysql container
+    make -C $THIS_DIR/../../docker/mysql > /dev/null
+    docker run -d --name $name -p $port:3306 aerofs/mysql >/dev/null
+fi
 
 # wait for mysqld to come up
 while ! echo 'select 1' | docker exec -i $name mysql &>/dev/null ; do
