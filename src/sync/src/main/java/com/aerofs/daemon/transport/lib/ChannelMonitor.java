@@ -81,9 +81,13 @@ public class ChannelMonitor implements IMulticastListener, IDevicePresenceListen
 
     protected void scheduleConnect(final int iters, final DID did)
     {
-        connectTimer.newTimeout(timeout ->  connectNewChannel(iters, did),
-                (iters == 0 ? ClientParam.Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : ClientParam.Daemon.CHANNEL_RECONNECT_MAX_DELAY),
-                TimeUnit.MILLISECONDS);
+        try {
+            connectTimer.newTimeout(timeout ->  connectNewChannel(iters, did),
+                    (iters == 0 ? ClientParam.Daemon.CHANNEL_RECONNECT_INITIAL_DELAY : ClientParam.Daemon.CHANNEL_RECONNECT_MAX_DELAY),
+                    TimeUnit.MILLISECONDS);
+        } catch (IllegalStateException e) {
+            l.info("timer stopped");
+        }
     }
 
     private void connectNewChannel(final int iters, final DID did)
