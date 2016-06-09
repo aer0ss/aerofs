@@ -58,8 +58,14 @@ extern bool killProcess(pid_t);
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
 
-int killDaemon()
+int killProcess(JNIEnv *env, jstring name)
 {
+    tstring tName;
+    if (!AeroFS::jstr2tstr(&tName, env, name)) {
+        return DRIVER_FAILURE;
+    }
+    const char *cName = tName.c_str();
+
     // The 3 is for NULL character and path separators
     char pathToCmdline[sizeof(PROC_PATH) + sizeof(CMDLINE_FILE) + NAME_MAX + 3];
 
@@ -112,10 +118,8 @@ int killDaemon()
         // Extract the process name from the cmdline argument path
         char* processName = basename(cmdlineNameBuffer);
 
-        // Check to see if this process is 'aerofsd'
-        if (strcmp(processName, DAEMON_PROC_NAME) == 0) {
-            // This is the aerofs daemon, add it to the vector
-            // of aerofs daemon pids so far encountered
+        // Check to see if this process name matches the request
+        if (strcmp(processName, cName) == 0) {
             daemonProcs.push_back((pid_t)atoi(dirEntity->d_name));
         }
     }

@@ -272,8 +272,14 @@ static int GetBSDProcessList(kinfo_proc **procList, size_t *procCount)
 // Used to kill the daemon process. Defined in driver_nix.cpp
 extern bool killProcess(pid_t);
 
-int killDaemon()
+int killProcess(JNIEnv *env, jstring name)
 {
+    tstring tName;
+    if (!AeroFS::jstr2tstr(&tName, env, name)) {
+        return DRIVER_FAILURE;
+    }
+    const char* cName = tName.c_str();
+
     kinfo_proc* procList = NULL;
     size_t len;
 
@@ -287,7 +293,7 @@ int killDaemon()
     bool error = false;
     for (size_t i = 0; i < len; i++) {
 
-        if (strcmp(procList[i].kp_proc.p_comm, DAEMON_PROC_NAME) != 0) {
+        if (strcmp(procList[i].kp_proc.p_comm, cName) != 0) {
             // This process is not the daemon
             continue;
         }

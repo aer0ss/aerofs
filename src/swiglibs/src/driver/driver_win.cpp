@@ -303,7 +303,7 @@ int waitForNetworkInterfaceChange()
  *         is the daemon process and was killed successfully and 1 if the
  *         process is the daemon process and failed to exit.
  */
-static int killProcessIfDaemon(DWORD pid)
+static int killProcessIfMatching(DWORD pid, const tstring& name)
 {
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ |
             PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
@@ -326,7 +326,7 @@ static int killProcessIfDaemon(DWORD pid)
         return -1;
     }
 
-    if (_tcscmp(processName, _T(DAEMON_PROC_NAME) _T(".exe"))) {
+    if (_tcscmp(processName, name.c_str())) {
         CloseHandle(hProcess);
         return -1;
     }
@@ -348,8 +348,13 @@ static int killProcessIfDaemon(DWORD pid)
     return 0;
 }
 
-int killDaemon()
+int killProcess(JNIEnv *env, jstring name)
 {
+    tstring cName;
+    if (!AeroFS::jstr2tstr(&cName, env, name)) {
+        return DRIVER_FAILURE;
+    }
+
     DWORD *processes;
     DWORD bytesNeeded, numProcesses;
     size_t maxBufferSize = 512;
@@ -382,7 +387,7 @@ int killDaemon()
     bool error = false;
     for (DWORD i = 0; i < numProcesses; i++) {
         if (processes[i] != 0) {
-            int result = killProcessIfDaemon(processes[i]);
+            int result = killProcessIfMatching(processes[i], cName);
             if (result == 1) {
                 error = true;
             } else if (result == 0) {

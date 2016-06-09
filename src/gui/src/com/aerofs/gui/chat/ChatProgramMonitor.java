@@ -10,9 +10,11 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertificateProvider;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.os.IOSUtil;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.oauth.AuthenticatedPrincipal;
+import com.aerofs.swig.driver.DriverConstants;
 import org.jboss.netty.handler.codec.http.HttpHeaders.Names;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -32,6 +34,7 @@ public class ChatProgramMonitor {
     private final static Logger l = Loggers.getLogger(ChatProgramMonitor.class);
 
     private final IOSUtil _os = OSUtil.get();
+    private final InjectableDriver _driver = new InjectableDriver(_os);
 
     private Thread _t;
     private Process _p;
@@ -110,6 +113,9 @@ public class ChatProgramMonitor {
             stop();
         }
 
+        // though shalt not have multiple Amium instances running at the same time
+        kill();
+
         String eyja;
         switch (_os.getOSFamily()) {
         case WINDOWS:
@@ -135,6 +141,25 @@ public class ChatProgramMonitor {
         _t = new Thread(this::outputHandler);
         _t.start();
         return true;
+    }
+
+    private void kill() throws IOException
+    {
+        String eyja;
+        switch (_os.getOSFamily()) {
+        case WINDOWS:
+            eyja = "amium-messaging.exe";
+            break;
+        case OSX:
+            eyja = "Amium";
+            break;
+        default:
+            eyja = "amium-messaging";
+        }
+        // If one of the processes failed to be killed, throw an exception
+        if (_driver.killProcess(eyja) == DriverConstants.DRIVER_FAILURE) {
+            throw new IOException("failed to kill daemon process");
+        }
     }
 
     private static URI uri() {

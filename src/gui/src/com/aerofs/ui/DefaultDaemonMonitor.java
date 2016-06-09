@@ -614,8 +614,14 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
     private void kill() throws IOException
     {
+        String aerofsd;
+        if (OSUtil.isWindows()) {
+            aerofsd = "aerofsd.exe";
+        } else {
+            aerofsd = "aerofsd";
+        }
         // If one of the processes failed to be killed, throw an exception
-        if (_driver.killDaemon() == DriverConstants.DRIVER_FAILURE) {
+        if (_driver.killProcess(aerofsd) == DriverConstants.DRIVER_FAILURE) {
             throw new IOException("failed to kill daemon process");
         }
     }

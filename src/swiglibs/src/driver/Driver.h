@@ -18,8 +18,6 @@ namespace Driver {
 #define FS_LOCAL            1
 #define FS_REMOTE           2
 
-#define DAEMON_PROC_NAME    "aerofsd"
-
 /**
  * Initializes the C++ logger.
  *
@@ -30,14 +28,14 @@ namespace Driver {
 void initLogger_(jstring rtRoot, jstring name, LogLevel loglevel);
 
 /**
- * Kills any daemon processes active on the system. If
+ * Kills any matching processes active on the system. If
  * the kill is successful, this call blocks until the
  * process has completely exitted.
  *
- * @return DRIVER_FAILURE if the call failed to kill a daemon process, otherwise
- *         returns the number of daemon processes killed.
+ * @return DRIVER_FAILURE if the call failed to kill a matching process, otherwise
+ *         returns the number of matching processes killed.
  */
-int killDaemon();
+int killProcess(JNIEnv * j, jstring name);
 
 /**
  * Returns the length of the system file identifier in bytes.

@@ -219,10 +219,11 @@ public class InjectableDriver
         Driver.setFolderIcon(null, folderPath, iconName);
     }
 
-    public int killDaemon()
+    public int killProcess(String name)
     {
-        return Driver.killDaemon();
+        return Driver.killProcess(null, name);
     }
+
     private static int errnoPackedInFid(byte[] bs)
     {
         assert bs.length >= 4;
