@@ -284,6 +284,8 @@ function make_osx_packages() {
         "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app"
     cp -a "${BASE_RESOURCES_DIR}/updater/osx/updater" \
         "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/${AEROFS_PRODUCT_SPACEFREE}Client"
+    cp -a "${BASE_RESOURCES_DIR}/updater/osx/progressmonitor" \
+        "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/${AEROFS_PRODUCT_SPACEFREE}ProgressMonitor"
     cp -a "${BASE_RESOURCES_DIR}/client/osx/aerofs" \
         "${BUILD_DIR}/${LOCAL_APP_DIR}/MacOS/${AEROFS_PRODUCT_UNIX}"
 

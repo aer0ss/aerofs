@@ -26,6 +26,9 @@ var SETTINGS map[Product]settings = map[Product]settings{
 	},
 }
 
+type ProgressProcess struct {
+}
+
 func Launch(launcher string, args []string) error {
 	if err := PreLaunch(launcher, args); err != nil {
 		return err
@@ -98,6 +101,7 @@ func LaunchAero(exec string, _ []string) error {
 	inst, err := Update(filepath.Join(path, "site-config.properties"),
 		settings.manifest,
 		approot,
+		exec,
 	)
 	if err != nil {
 		log.Printf("Failed to update from site-config:\n\t%s", err.Error())
@@ -108,4 +112,20 @@ func LaunchAero(exec string, _ []string) error {
 	}
 
 	return Launch(filepath.Join(inst, settings.launcher), args)
+}
+
+func (prog *ProgressProcess) Kill() {
+	log.Printf("Failed to kill progress monitor: Not implemented")
+}
+
+func (prog *ProgressProcess) Launch() {
+	log.Printf("Failed to launch progress monitor: Not implemented")
+}
+
+func (prog *ProgressProcess) IncrementProgress(progress int) {
+	return
+}
+
+func NewProgressMonitor(total int, exec string) *ProgressProcess {
+	return &ProgressProcess{}
 }

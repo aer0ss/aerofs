@@ -29,6 +29,13 @@ type settings struct {
 	rtroot   string
 	launcher string
 	manifest string
+	monitor  string
+}
+
+type ProgressMonitor interface {
+	Launch()
+	Kill()
+	IncrementProgress(int)
 }
 
 func LaunchIfMatching(approot, launcher string, args []string) {
@@ -92,7 +99,7 @@ func secureTransport(cacert string) (*http.Transport, error) {
 	}, nil
 }
 
-func Update(config, manifestName, approot string) (string, error) {
+func Update(config, manifestName, approot string, exec string) (string, error) {
 	log.Printf("Loading site config from %s\n", config)
 	siteConfig, err := LoadJavaProperties(config)
 	if err != nil {
@@ -142,9 +149,12 @@ func Update(config, manifestName, approot string) (string, error) {
 		return current, fmt.Errorf("Could not recursively make %s:\n%s", next, err.Error())
 	}
 
+	progressMonitor := NewProgressMonitor(manifestSize(manifest), exec)
+	progressMonitor.Launch()
 	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
-
-	if err = Apply(current, next, manifest, fetcher); err != nil {
+	err = Apply(current, next, manifest, fetcher, progressMonitor)
+	progressMonitor.Kill()
+	if err != nil {
 		return current, fmt.Errorf("Could not apply updates:\n%s", err.Error())
 	}
 
@@ -240,4 +250,16 @@ func Download(manifestUrl, dest string, transport *http.Transport) (map[string]i
 	var m map[string]interface{}
 	err = json.NewDecoder(io.TeeReader(resp.Body, f)).Decode(&m)
 	return m, err
+}
+
+func manifestSize(manifest map[string]interface{}) int {
+	size := 0
+	for _, value := range manifest {
+		if child, isDir := value.(map[string]interface{}); isDir {
+			size = size + manifestSize(child)
+		} else {
+			size = size + 1
+		}
+	}
+	return size
 }

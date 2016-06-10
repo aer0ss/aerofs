@@ -70,7 +70,7 @@ func UnmarshalFile(mc interface{}) (string, os.FileMode, error) {
 	return h, os.FileMode(mode), nil
 }
 
-func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetcher) error {
+func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetcher, monitor ProgressMonitor) error {
 	var err error
 	var sp, dp string
 
@@ -85,7 +85,7 @@ func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetc
 			if err = os.Mkdir(dp, 0755); err != nil {
 				return err
 			}
-			err = Apply(sp, dp, cc, fetcher)
+			err = Apply(sp, dp, cc, fetcher, monitor)
 		} else {
 			var mh string
 			var mode os.FileMode
@@ -111,6 +111,9 @@ func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetc
 				}
 			} else {
 				err = errInvalidManifest
+			}
+			if monitor != nil {
+				monitor.IncrementProgress(1)
 			}
 		}
 		if err != nil {

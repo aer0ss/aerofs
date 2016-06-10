@@ -141,7 +141,7 @@ func ApplyManifest(manifestFile, data, src, dst string) {
 		log.Fatalf("fail to create destination: %s\n", err.Error())
 	}
 
-	if err = Apply(src, dst, manifest, fetcher); err != nil {
+	if err = Apply(src, dst, manifest, fetcher, nil); err != nil {
 		log.Fatalf("failed to apply manifest: %s\n", err.Error())
 	}
 }
