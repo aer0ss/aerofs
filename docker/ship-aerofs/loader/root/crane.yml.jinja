@@ -324,9 +324,8 @@ containers:
       volumes-from:
         - data
       link:
-        - mysql:mysql.service
-        - redis:redis.service
         - config:config.service
+        - redis:redis.service
 
   status:
     image: aerofs/status
