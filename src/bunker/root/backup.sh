@@ -19,7 +19,10 @@ else
     cp -a /data/redis/redis.aof aerofs-db-backup/redis.aof
 
     echo ">>> Backing up mysql database..."
-    mysqldump -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
+    # unfortunately mysql really really sucks when it comes to UTF-8 handling
+    # it appears that the only way to avoid silent corruption of non-BMP characters
+    # during backup is to export character data as hex blobs...
+    mysqldump --hex-blob --default-character-set=binary -h mysql.service --events --all-databases > aerofs-db-backup/mysql.dump
 
     # To mark that the polaris db from this appliance is stable enough to not be dropped
     touch aerofs-db-backup/restore-polaris
