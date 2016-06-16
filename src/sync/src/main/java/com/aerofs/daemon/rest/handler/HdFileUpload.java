@@ -41,6 +41,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -263,23 +264,32 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
             t.commit_();
         }
         l.debug("wait sub {}", soid);
-        waitSubmitted_(_ccsub, soid);
-        waitSubmitted_(_casub, soid);
+        waitSubmitted_(soid, _ccsub, _casub);
     }
 
-    private <T> void waitSubmitted_(WaitableSubmitter<T> sub, SOID soid) {
-        try {
-            Future<T> f = sub.waitSubmitted_(soid);
-            _tokenManager.inPseudoPause_(Cat.UNLIMITED, "rest-sub", () -> {
-                try {
-                    return f.get(3, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    f.cancel(false);
-                    throw e;
-                }
-            });
-        } catch (Exception e) {
-            l.info("content sub failed", BaseLogUtil.suppress(e));
+    private void waitSubmitted_(SOID soid, WaitableSubmitter<?> ...subs) {
+        ArrayList<Future<?>> fl = new ArrayList<>(subs.length);
+        // NB: must kick register all waiter *BEFORE* releasing the core lock
+        // otherwise the second operation may complete immediately after the first, before
+        // control is regained and the second waiter can be registered, which would cause
+        // it to wait for the full timeout duration for no good reason.
+        for (WaitableSubmitter<?> sub : subs) {
+            fl.add(sub.waitSubmitted_(soid));
+        }
+        for (Future<?> f : fl) {
+            try {
+                if (f.isDone()) return;
+                _tokenManager.inPseudoPause_(Cat.UNLIMITED, "rest-sub", () -> {
+                    try {
+                        return f.get(3, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        f.cancel(false);
+                        throw e;
+                    }
+                });
+            } catch (Exception e) {
+                l.info("content sub failed", BaseLogUtil.suppress(e));
+            }
         }
     }
 }
