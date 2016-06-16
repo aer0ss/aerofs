@@ -203,7 +203,6 @@ public class SharedFolder
         _f._db.insert(_sid, folderName);
 
         try {
-            // don't send sfNotif for the first member of a shared folder
             return addUserImpl(owner, Permissions.OWNER);
         } catch (ExAlreadyExist e) {
             throw SystemUtil.fatal(e);
@@ -233,13 +232,13 @@ public class SharedFolder
     public ImmutableCollection<UserID> addJoinedUser(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
     {
-        _f._sfNotif.addNotif(user.id(), _sid, JOIN);
         return addUserImpl(user, permissions);
     }
 
     private ImmutableCollection<UserID> addUserImpl(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
     {
+        _f._sfNotif.addNotif(user.id(), _sid, JOIN);
         insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
         setState(user, JOINED);
 
