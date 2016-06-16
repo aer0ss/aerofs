@@ -238,7 +238,7 @@ public class SharedFolder
     private ImmutableCollection<UserID> addUserImpl(User user, Permissions permissions)
             throws ExAlreadyExist, SQLException, ExNotFound, ExNoPerm
     {
-        _f._sfNotif.addNotif(user.id(), _sid, JOIN);
+        if (!_sid.isUserRoot()) _f._sfNotif.addNotif(user.id(), _sid, JOIN);
         insertUser(_sid, user.id(), permissions, JOINED, null, GroupID.NULL_GROUP);
         setState(user, JOINED);
 
