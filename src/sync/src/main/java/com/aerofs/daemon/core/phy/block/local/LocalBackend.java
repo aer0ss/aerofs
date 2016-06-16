@@ -13,10 +13,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
 
 import javax.inject.Inject;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
 
@@ -66,8 +63,9 @@ public class LocalBackend implements IBlockStorageBackend
             if (!block.getParentFile().exists()) block.getParentFile().mkdirs();
             block.createNewFile();
         }
-        try (OutputStream out = block.newOutputStream()) {
+        try (FileOutputStream out = block.newOutputStream()) {
             ByteStreams.copy(input, out);
+            out.getChannel().force(true);
         }
     }
 
