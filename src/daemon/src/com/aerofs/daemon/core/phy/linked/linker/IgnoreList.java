@@ -56,7 +56,8 @@ public class IgnoreList
         // being edited and writes it to disk on pretty much every keystroke which pollutes the DB,
         // creates an inordinate amount of uninteresting activity log entries and significant
         // network overhead so we ignore these files.
-        if (name.charAt(0) == '.' && name.endsWith(".kate-swp")) return true;
+        // vi(m) similarly uses .${filename}.swp
+        if (name.charAt(0) == '.' && (name.endsWith(".kate-swp") || name.endsWith(".swp"))) return true;
 
         // Microsoft office files: ignore them all. Copying what dropbox does as per their support
         // article: https://www.dropbox.com/help/145/en
