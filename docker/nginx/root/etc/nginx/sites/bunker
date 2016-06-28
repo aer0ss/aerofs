@@ -1,6 +1,8 @@
 location /admin/ {
     proxy_pass http://bunker.service:8484;
 
+    proxy_cookie_path / /admin/;
+
     proxy_cache off;
     proxy_buffering off;
     proxy_request_buffering off;
