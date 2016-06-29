@@ -15,11 +15,11 @@ else
     # start mysql container
     make -C $THIS_DIR/../../docker/base/base 1>&2 || exit 1
     make -C $THIS_DIR/../../docker/mysql 1>&2 || exit 1
-    docker run -d --name $name -p $port:3306 --memory=512M  aerofs/mysql >/dev/null || exit 1
+    docker run -d --name $name -p $port:3306 --memory=512M aerofs/mysql >/dev/null || exit 1
 fi
 
 # wait for mysqld to come up
-while ! echo 'select 1' | docker exec -i $name mysql &>/dev/null ; do
+while ! docker exec -i $name mysql -e "select 1" &>/dev/null ; do
     sleep 1
 done
 
@@ -33,6 +33,10 @@ CREATE USER 'test'@'%' IDENTIFIED BY PASSWORD '*7F7520FA4303867EDD3C94D78C89F789
 GRANT ALL PRIVILEGES ON *.* TO 'test'@'%';
 FLUSH PRIVILEGES;
 EOF
+
+if [ $? -ne 0 ] ; then
+    exit 1
+fi
 
 VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 if docker-machine ls "$VM" &>/dev/null ; then
