@@ -139,12 +139,14 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
                             ExUpdateInProgress.class,
                             ExNoResource.class,
                             ExStreamInvalid.class,
+                            ExNoPerm.class,
+                            ExSenderHasNoPerm.class,
                             ExNoComponentWithSpecifiedVersion.class));
             _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
         }
     }
 
-    public void processRequest_(DigestedMessage msg)
+    private void processRequest_(DigestedMessage msg)
             throws Exception {
         l.debug("{} process incoming gcc request over {}", msg.did(), msg.tp());
 
