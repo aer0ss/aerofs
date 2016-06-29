@@ -44,7 +44,7 @@ shelobDirectives.directive('aeroFileUpload', function($rootScope, $routeParams, 
                     //Inspect why - was it because we are in phoenix land
                     // and we haven't got the notification that polaris made the
                     // file If so, keep trying until limit reached
-                    var noSoid = respond.data && response.data.message &&
+                    var noSoid = response.data && response.data.message &&
                       response.data.message.indexOf('Device doesn\'t have soid') > -1;
                     var timeoutNotReached = !phoenixTimeout || now < phoenixTimeout;
 
