@@ -11,6 +11,7 @@ import com.aerofs.polaris.acl.AccessException;
 import com.aerofs.polaris.acl.ManagedAccessManager;
 import com.aerofs.polaris.logical.FolderSharer;
 import com.aerofs.polaris.logical.StoreRenamer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Objects;
 import com.google.common.cache.Cache;
@@ -26,6 +27,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.SocketConfig;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -201,7 +203,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         map.put("name", name);
 
         try {
-            post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(map)));
+            post.setEntity(encodedBody(map));
             try (CloseableHttpResponse response = client.execute(post)) {
                 int sc = response.getStatusLine().getStatusCode();
                 LOGGER.warn("Result of sharing folder from sparta: {}", sc);
@@ -213,6 +215,10 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         }
     }
 
+    private static StringEntity encodedBody(Map<String, String> m) throws JsonProcessingException {
+        return new StringEntity(new ObjectMapper().writeValueAsString(m),
+                ContentType.APPLICATION_JSON);
+    }
 
     @Override
     public boolean renameStore(AeroUserDevicePrincipal principal, UniqueID oid, String name) {
@@ -225,7 +231,7 @@ public final class SpartaAccessManager implements ManagedAccessManager, FolderSh
         map.put("public_name", name);
 
         try {
-            patch.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(map)));
+            patch.setEntity(encodedBody(map));
             try (CloseableHttpResponse response = client.execute(patch)) {
                 int sc = response.getStatusLine().getStatusCode();
                 LOGGER.warn("Result of renaming shared folder from sparta: {}", sc);
