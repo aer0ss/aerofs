@@ -24,8 +24,8 @@ while ! docker exec -i $name mysql -e "select 1" &>/dev/null ; do
 done
 
 # create test account
-docker exec -i $name mysql <<EOF
-USE mysql;
+echo create test account 1>&2
+docker exec -i $name mysql mysql 1>&2 <<EOF
 GRANT USAGE ON *.* TO 'test'@'%';
 DROP USER 'test'@'%';
 FLUSH PRIVILEGES;
@@ -37,6 +37,9 @@ EOF
 if [ $? -ne 0 ] ; then
     exit 1
 fi
+
+echo sanity check 1>&2
+docker exec -i $name mysql -u test --password=temp123 -N -s -e "select 1" >/dev/null || exit 1
 
 VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 if docker-machine ls "$VM" &>/dev/null ; then
