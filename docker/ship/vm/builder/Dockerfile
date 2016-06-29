@@ -17,7 +17,7 @@ RUN apk --update add \
 ADD https://coreos.com/security/image-signing-key/CoreOS_Image_Signing_Key.asc /coreos.asc
 
 # use "current" to track latest stable
-ENV COREOS_VERSION 899.13.0
+ENV COREOS_VERSION 1010.6.0
 
 RUN gpg --import coreos.asc && \
     curl http://stable.release.core-os.net/amd64-usr/$COREOS_VERSION/coreos_production_image.bin.bz2 -o /coreos.bin.bz2 && \
