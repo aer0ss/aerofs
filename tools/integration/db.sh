@@ -10,7 +10,7 @@ if [[ -n "$(docker ps -q -f "name=$name")" ]] && \
     echo db container already running 1>&2
 else
     # remove any previous instance
-    docker rm -f $name >/dev/null
+    docker rm -fv $name >/dev/null
 
     # start mysql container
     make -C $THIS_DIR/../../docker/base/base 1>&2 || exit 1
