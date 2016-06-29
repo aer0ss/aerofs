@@ -11,6 +11,7 @@ if [[ -n "$(docker ps -q -f "name=$name")" ]] && \
 else
     # remove any previous instance
     docker rm -fv $name >/dev/null
+    docker rmi aerofs/mysql >/dev/null
 
     # start mysql container
     make -C $THIS_DIR/../../docker/base/base 1>&2 || exit 1
@@ -18,14 +19,19 @@ else
     docker run -d --name $name -p $port:3306 --memory=512M aerofs/mysql >/dev/null || exit 1
 fi
 
-# wait for mysqld to come up
-while ! docker exec -i $name mysql -e "select 1" &>/dev/null ; do
-    sleep 1
-done
+# on first startup the container may start/stop mysqld a few times
+# as it performs initialization. This makes it possible for races
+# to cause the creation of the test account to fail. To work around
+# this we keep retrying the create step until we can successfully
+# connect with the test account.
+echo sanity check 1>&2
+while ! docker exec -i $name mysql -u test --password=temp123 -N -s -e "select 1" &>/dev/null ; do
+    while ! docker exec -i $name mysql -e "select 1" &>/dev/null ; do
+        sleep 1
+    done
 
-# create test account
-echo create test account 1>&2
-docker exec -i $name mysql mysql 1>&2 <<EOF
+    echo create test account 1>&2
+    docker exec -i $name mysql mysql 1>&2 <<EOF
 GRANT USAGE ON *.* TO 'test'@'%';
 DROP USER 'test'@'%';
 FLUSH PRIVILEGES;
@@ -34,12 +40,7 @@ GRANT ALL PRIVILEGES ON *.* TO 'test'@'%';
 FLUSH PRIVILEGES;
 EOF
 
-if [ $? -ne 0 ] ; then
-    exit 1
-fi
-
-echo sanity check 1>&2
-docker exec -i $name mysql -u test --password=temp123 -N -s -e "select 1" >/dev/null || exit 1
+done
 
 VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 if docker-machine ls "$VM" &>/dev/null ; then
