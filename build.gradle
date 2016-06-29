@@ -116,7 +116,6 @@ subprojects {
     test {
         def libraryPath = clientOSDependentResourcesDirs.join(System.getProperty("path.separator"))
 
-        ignoreFailures = true
         environment sharedLibrarySearchPathVariable, "${libraryPath}"
         systemProperties.put "java.library.path", "${libraryPath}"
         systemProperties.put "junit.mysqlSpSchemaPath", "${rootDir}/src/spdb/src/main/resources/db/migration"
