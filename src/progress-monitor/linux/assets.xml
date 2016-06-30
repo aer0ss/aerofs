@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/aerofs/progress-monitor">
+    <file preprocess="to-pixdata">logo.png</file>
+  </gresource>
+</gresources>

@@ -115,6 +115,7 @@ function make_linux_installer_deb() {
 }
 
 function make_linux_installer_tgz() {
+    local ARCH=""
     local TARGET="${AEROFS_PRODUCT_UNIX}-installer-${RELEASE_VERSION}.tgz"
 
     # Only re-make on updates
@@ -137,6 +138,9 @@ function make_linux_installer_tgz() {
     mkdir -p "${BUILD_DIR}/aerofs"
 
     cp -a "${LINUX_UPDATER_DIR}"/* "${BUILD_DIR}/aerofs/"
+    for ARCH in i386 amd64 ; do
+        mv "${BUILD_DIR}/aerofs/progressmonitor-${ARCH}" "${BUILD_DIR}/aerofs/${AEROFS_PRODUCT_UNIX}progressmonitor-${ARCH}"
+    done
 
     pushd "${BUILD_DIR}/aerofs/" >>/dev/null
     ln -s updater "${AEROFS_PRODUCT_UNIX}"
@@ -179,6 +183,7 @@ function make_linux_update_tgz() {
     mkdir -p "${BUILD_DIR}/aerofs"
 
     cp -a "${LINUX_UPDATER_DIR}/updater-${ARCH}" "${BUILD_DIR}/aerofs/updater"
+    cp -a "${LINUX_UPDATER_DIR}/progressmonitor-${ARCH}" "${BUILD_DIR}/aerofs/${AEROFS_PRODUCT_UNIX}progressmonitor-${ARCH}"
 
     pushd "${BUILD_DIR}/aerofs/" >>/dev/null
     ln -s updater "${AEROFS_PRODUCT_UNIX}"

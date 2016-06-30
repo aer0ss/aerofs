@@ -34,6 +34,7 @@ readonly SECTION='utility'
 readonly PRIORITY='optional'
 
 readonly DEPENDS='procps, coreutils'
+readonly RECOMMENDS='libappindicator1, libgtk-3-0'
 readonly MAINTAINER='AeroFS Team <support@aerofs.com>'
 readonly DESCRIPTION='AeroFS: Private file sync and share.'
 
@@ -84,8 +85,12 @@ mkdir -p $HICOLOR_DIR/32x32/apps
 mkdir -p $HICOLOR_DIR/64x64/apps
 
 # AeroFS code and assets
+local ARCH=""
 mkdir -p debian/usr/share/$AEROFS_PRODUCT_UNIX/
 cp -a $BASE_RESOURCES_DIR/updater/linux/* $LABELING_FILE debian/usr/share/$AEROFS_PRODUCT_UNIX/
+for ARCH in i386 amd64 ; do
+    mv "debian/usr/share/$AEROFS_PRODUCT_UNIX/progressmonitor-${ARCH}" "debian/usr/share/$AEROFS_PRODUCT_UNIX/${AEROFS_PRODUCT_UNIX}progressmonitor-${ARCH}"
+done
 render_template "${CLIENT_LINUX_SHARED_TEMPLATES_DIR}/launcher" debian/usr/share/$AEROFS_PRODUCT_UNIX/launcher
 
 # Freedesktop.org application file
@@ -115,6 +120,7 @@ Section: $SECTION
 Priority: $PRIORITY
 Architecture: all
 Depends: $DEPENDS
+Recommends: $RECOMMENDS
 Maintainer: $MAINTAINER
 Description: $DESCRIPTION
 Installed-Size: $(du -sk | awk '{print $1}')
