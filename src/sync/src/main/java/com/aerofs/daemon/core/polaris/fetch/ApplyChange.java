@@ -124,9 +124,22 @@ public class ApplyChange
         // the value of version indicate that we have applied *ALL* changes up to that point
         // so any incoming changes that predate this value can be safely ignored
         Long version = _cvdb.getVersion_(sidx, parent.oid());
-        if (version != null && version >= c.newVersion) {
-            l.info("ignoring obsolete change {}:{} {}", parent, version, c.newVersion);
-            return;
+        if (version != null) {
+            long diff = c.newVersion - version;
+            if (diff <= 0) {
+                l.info("ignoring obsolete change {}:{} {}", parent, version, c.newVersion);
+                return;
+            } else if (diff > 1) {
+                // a gap in meta version is currently unexpected because polaris doesn't
+                // perform any kind of compaction of the transform log
+                l.warn("unexpected version jump {}:{} {}", parent, version, c.newVersion);
+                // while it theoretically should be fine for the version to jump ahead it
+                // is quite suspicious and given SUPPORT-2231 it seems possible that such
+                // a jump would cause subtle sync issues so for the time being we treat it
+                // as a blocking error to ensure any such issue will be caught as early as
+                // possible
+                throw new ExProtocolError("version jump");
+            }
         }
 
         l.info("apply[{}] {} {} {}: {} {} {}",
