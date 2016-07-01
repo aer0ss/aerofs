@@ -515,7 +515,6 @@ public class MetaChangeSubmitter implements Submitter
             // folder version is updated only when ALL changes up to that version are known
             // otherwise some changes would be incorrectly filtered out in ApplyChange
             if (version + 1 == ack.object.version) {
-                l.debug("{}{} = {}", c.sidx, oid, ack.object.version);
                 _cvdb.setVersion_(c.sidx, oid, ack.object.version, t);
             }
         }

@@ -115,7 +115,7 @@ public class ApplyChange
         }
 
         if (c.transformType == RemoteChange.Type.UPDATE_CONTENT) {
-            l.debug("update content parent: {} remote change: {} {} {} {}", parent, c.newVersion,
+            l.debug("update content {} {} {} {} {}", parent, c.newVersion,
                     c.contentSize, c.contentMtime, c.contentHash);
             applyContentChange_(parent, c ,t);
             return;

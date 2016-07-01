@@ -100,6 +100,7 @@ public class CentralVersionDatabase extends AbstractDatabase implements IStoreDe
             DBUtil.insert(T_VERSION, C_VERSION_SIDX, C_VERSION_OID, C_VERSION_TICK));
     public void setVersion_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
+        l.debug("{}{} = {}", sidx, oid, version);
         int n = update(_pswSetVersion, version, sidx.getInt(), oid.getBytes());
         if (n == 1) return;
         // FIXME: update fails sometimes, WTF?!?!
