@@ -27,7 +27,7 @@ build:
 buildroot:
 
 dist: $(PROTO_SRC)
-	gradle dist
+	$(GIT_ROOT)/gradlew dist
 
 $(DRYAD_SRC):
 	make -C $(GIT_ROOT)/packaging BIN=PRIVATE dryad

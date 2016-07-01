@@ -35,7 +35,7 @@ PUSH_REPO =
 all:
 
 build_client: proto
-	gradle src/desktop:dist
+	$(GIT_ROOT)/gradlew src/desktop:dist
 	$(call success,"build_client")
 
 build_cloud_config:
