@@ -543,6 +543,19 @@ public abstract class Updater
                                             " may shut down to apply an update. A new process will" +
                                             " be started in the background after the update.");
         }
+        // NB: try to shutdown the daemon cleanly
+        // If the daemon is killed halfway through applying changes the database will
+        // most likely be fine however the filesystem could very well be in an unstable
+        // intermediate state that will cause unexpected artifacts when the daemon is
+        // restarted. For instance I once observed the creation of an duplicate folder
+        // because the daemon was killed halfway through joining a shared folder, before
+        // the tag file could be written, which resulted in the created folder later being
+        // treated as a local change, moved out of the way and submitted to polaris.
+        // While this specific case admits a potential solution (creating the folder in the
+        // auxroot and writing the tag file there before moving the folder to the root anchor)
+        // it is impractical to implement and this approach doesn't scale to more complex
+        // operations.
+        UIGlobals.dm().stopIgnoreException();
         update(_installationFilename, newVersion, hasPermissions);
     }
 
