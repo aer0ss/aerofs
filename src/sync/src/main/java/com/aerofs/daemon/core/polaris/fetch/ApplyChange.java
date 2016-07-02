@@ -168,8 +168,9 @@ public class ApplyChange
         // This approach would have the side benefit of providing a centralized persistent audit
         // trail.
         if (lnk != null && lnk.logicalTimestamp >= c.logicalTimestamp) {
-            l.info("ignoring obsolete change {}:{} {}:{} {}",
-                    parent, version, lnk.parent, lnk.logicalTimestamp, c.newVersion);
+            l.info("ignoring obsolete change {}:{} {}:{} {} {}",
+                    parent, version, lnk.parent, lnk.logicalTimestamp, c.logicalTimestamp, c.newVersion);
+            _cvdb.setVersion_(sidx, parent.oid(), c.newVersion, t);
             return;
         }
 
