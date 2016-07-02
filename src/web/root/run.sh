@@ -11,10 +11,10 @@ function authorize() {
     URL='sparta.service:8700'
     AUTH_HEADER="Authorization: Aero-Service-Shared-Secret bootstrap $DEPLOYMENT_SECRET"
 
-    RET=$(curl -S -s -H "$AUTH_HEADER" -o /dev/null -w "%{http_code}" $URL/clients/$ID)
+    RET=$(curl -S -s --max-time 2 -H "$AUTH_HEADER" -o /dev/null -w "%{http_code}" $URL/clients/$ID)
     if [ $RET == 404 ]; then
         # The client hasn't registered. Register now.
-        RET=$(curl -S -s -o /dev/null -w "%{http_code}" $URL/clients \
+        RET=$(curl -S -s --max-time 2 -o /dev/null -w "%{http_code}" $URL/clients \
             -H "$AUTH_HEADER" \
             --data-urlencode "client_id=$ID" \
             --data-urlencode "client_name=$NAME" \
@@ -31,7 +31,7 @@ function authorize() {
     fi
 
     # Retrieve client secret
-    RESP=$(curl -S -s -H "$AUTH_HEADER" $URL/clients/$ID)
+    RESP=$(curl -S -s --max-time 2 -H "$AUTH_HEADER" $URL/clients/$ID)
     if [ x"$RESP" == x ]; then
         echo "GET $URL/clients/$ID returns error"
         exit 77
