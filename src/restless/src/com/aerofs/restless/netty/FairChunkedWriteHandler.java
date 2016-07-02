@@ -7,6 +7,7 @@ import org.jboss.netty.handler.stream.ChunkedInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
 import java.util.Queue;
@@ -49,7 +50,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
             this.q = new ConcurrentLinkedQueue<>();
         }
 
-        public boolean flushOne() {
+        boolean flushOne() {
             MessageEvent me;
             if (current == null) {
                 me = q.poll();
@@ -105,6 +106,8 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
     // access to linked-list and map synchronized on head
     // list of flushable channels
     private final S head = new S();
+    private int newFlushable = 0;
+
     // set of active channels
     private final Map<Channel, S> _m = new ConcurrentHashMap<>();
 
@@ -137,14 +140,14 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
     }
 
     private void run() {
-        S c = head;
-        boolean atLeastOneWritable = false;
+        @Nonnull S c = head;
+        int oldFlushable = 0;
         while (!stopped) {
             // round-robin among flushable channels
             synchronized (head) {
-                if (c == null || c.next == null) {
-                    // wait for flushable channels
-                    if (!atLeastOneWritable || head.next == null) {
+                if (c.next == null) {
+                    if (newFlushable == 0 && oldFlushable == 0) {
+                        // wait for flushable channels
                         do {
                             if (stopped) return;
                             try {
@@ -154,8 +157,11 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
                                 throw new AssertionError(e);
                             }
                         } while (head.next == null);
+                    } else if (head.next == null) {
+                        throw new AssertionError("n:" + newFlushable + " o:" + oldFlushable);
                     }
-                    atLeastOneWritable = false;
+                    oldFlushable = 0;
+                    newFlushable = 0;
                     c = head.next;
                 } else {
                     c = c.next;
@@ -178,7 +184,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
 
             // propagate non-chunked message
             if (c.flushOne()) {
-                atLeastOneWritable = true;
+                ++oldFlushable;
             } else {
                 c = hold(c);
             }
@@ -226,11 +232,8 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
         }
 
         s.q.offer((MessageEvent)e);
-
-        if (!channel.isConnected() || channel.isWritable()) {
-            startIfNeeded();
-            flush(s);
-        }
+        startIfNeeded();
+        flush(s);
     }
 
     private void flush(S s) {
@@ -240,6 +243,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
                 s.next = head.next;
                 if (s.next != null) s.next.prev = s;
                 head.next = s;
+                ++newFlushable;
             }
             // wakeup flush thread
             head.notifyAll();
@@ -247,7 +251,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
     }
 
     // NB: should only be called from flush thread to avoid gaps in iteration
-    private S hold(S s) {
+    private @Nonnull S hold(S s) {
         synchronized (head) {
             S prev = s.prev;
             assert prev != null;
@@ -278,7 +282,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
         }
     }
 
-    static void closeInput(ChunkedInput chunks) {
+    private static void closeInput(ChunkedInput chunks) {
         try {
             chunks.close();
         } catch (Throwable t) {
