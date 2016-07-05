@@ -4,9 +4,12 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -17,16 +20,22 @@ var SETTINGS map[Product]settings = map[Product]settings{
 		rtroot:   "AeroFS",
 		launcher: "aerofs.exe",
 		manifest: "client-win.json",
+		monitor:  "aerofsprogressmonitor.exe",
 	},
 	TeamServer: {
 		approot:  "AeroFSTeamServerExec",
 		rtroot:   "AeroFSTeamServer",
 		launcher: "aerofsts.exe",
 		manifest: "team_server-win.json",
+		monitor:  "aerofstsprogressmonitor.exe",
 	},
 }
 
 type ProgressProcess struct {
+	progress int
+	total    int
+	cmd      *exec.Cmd
+	stdin    io.WriteCloser
 }
 
 func Launch(launcher string, args []string) error {
@@ -73,13 +82,9 @@ func LaunchAero(exec string, _ []string) error {
 		}
 		APPDATA = filepath.Join(PROFILE, "AppData", "Roaming")
 	}
-	base := filepath.Base(exec)
 	path := filepath.Dir(exec)
 
-	var product Product = Client
-	if strings.Contains(base, "ts") {
-		product = TeamServer
-	}
+	product := getProduct(exec)
 
 	settings := SETTINGS[product]
 
@@ -114,18 +119,63 @@ func LaunchAero(exec string, _ []string) error {
 	return Launch(filepath.Join(inst, settings.launcher), args)
 }
 
+func getProduct(exec string) Product {
+	base := filepath.Base(exec)
+	var product Product = Client
+	if strings.Contains(base, "ts") {
+		product = TeamServer
+	}
+	return product
+}
+
 func (prog *ProgressProcess) Kill() {
-	log.Printf("Failed to kill progress monitor: Not implemented")
+	if prog.stdin != nil {
+		prog.stdin.Close()
+		prog.stdin = nil
+	}
+	if prog.cmd != nil && prog.cmd.Process != nil {
+		log.Printf("Killing progress monitor")
+		if err := prog.cmd.Process.Kill(); err != nil {
+			log.Printf("Failed to kill progress monitor")
+		}
+		prog.cmd = nil
+	}
 }
 
 func (prog *ProgressProcess) Launch() {
-	log.Printf("Failed to launch progress monitor: Not implemented")
+	stdin, err := prog.cmd.StdinPipe()
+	if err != nil {
+		log.Printf("Failed to configure pipe to progress monitor:\n\t%s", err.Error())
+		return
+	}
+
+	err = prog.cmd.Start()
+	if err != nil {
+		log.Printf("Failed launch progress monitor:\n\t%s", err.Error())
+		return
+	}
+	prog.stdin = stdin
 }
 
-func (prog *ProgressProcess) IncrementProgress(progress int) {
-	return
+func (prog *ProgressProcess) IncrementProgress(increment int) {
+	prog.progress = prog.progress + increment
+	if prog.stdin != nil && prog.cmd != nil {
+		io.WriteString(prog.stdin, strconv.Itoa(prog.progress)+"\n")
+	}
+	if prog.progress >= prog.total {
+		prog.Kill()
+	}
 }
 
-func NewProgressMonitor(total int, exec string) *ProgressProcess {
-	return &ProgressProcess{}
+func NewProgressMonitor(total int, execString string) *ProgressProcess {
+	path := filepath.Dir(execString)
+	product := getProduct(path)
+	settings := SETTINGS[product]
+	monitor := settings.monitor
+	cmd := exec.Command(filepath.Join(path, monitor), strconv.Itoa(total))
+	return &ProgressProcess{
+		total:    total,
+		progress: 0,
+		cmd:      cmd,
+	}
 }

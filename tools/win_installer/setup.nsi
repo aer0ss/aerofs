@@ -7,6 +7,7 @@
 # AEROFS_APPROOT - The name of the APPROOT folder "AeroFSTeamServerExec"
 # AEROFS_VERSION - The current version in the form <major>.<minor>.<build>
 # AEROFS_EXECUTABLE - The main executable name. e.g. "aerofsts.exe"
+# AEROFS_MONITOR - The name of the updater's progress monitor. e.g. aerofsprogressmonitor.exe
 #
 
 !AddPluginDir "Plugins"
@@ -147,6 +148,7 @@ Function install_unprivileged
     # Kill AeroFS
     !insertmacro KillProcess "${AEROFS_EXECUTABLE}" $USERNAME
     !insertmacro KillProcess "aerofsd.exe" $USERNAME
+    !insertmacro KillProcess "${AEROFS_MONITOR}" $USERNAME
 
     # Unregister the Shell Extension
     !insertmacro unregShellExt
@@ -174,6 +176,7 @@ Function install_unprivileged
     # This should not be the case, but we never know, since they are not in the
     # per-version folder.
     !insertmacro allowOverwritting "$INSTDIR\${AEROFS_EXECUTABLE}"
+    !insertmacro allowOverwritting "$INSTDIR\${AEROFS_MONITOR}"
 
     # Copy files
     DetailPrint "Copying files..."
@@ -294,6 +297,7 @@ Function un.uninstall_unprivileged
     Pop $0
     !insertmacro KillProcess "${AEROFS_EXECUTABLE}" $0
     !insertmacro KillProcess "aerofsd.exe" $0
+    !insertmacro KillProcess "${AEROFS_MONITOR}" $0
 
     Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\Uninstall $(^Name).lnk"
     Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^Name).lnk"

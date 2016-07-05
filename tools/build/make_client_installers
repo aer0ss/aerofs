@@ -197,6 +197,7 @@ function make_linux_update_tgz() {
 
 function make_windows_installers() {
     local EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
+    local MONITOR="${AEROFS_PRODUCT_UNIX}progressmonitor.exe"
     local BUILD_DIR="${PACKAGE_BUILD_DIR}/windows-${PRODUCT}"
 
     # N.B. it would be great to only rebuild this on changes, but out windows
@@ -206,6 +207,7 @@ function make_windows_installers() {
     mkdir -p "${BUILD_DIR}"
 
     cp -a "${BASE_RESOURCES_DIR}/updater/win/updater.exe" "${BUILD_DIR}/${EXECUTABLE}"
+    cp -a "${BASE_RESOURCES_DIR}/updater/win/progressmonitor.exe" "${BUILD_DIR}/${MONITOR}"
     echo -n "${RELEASE_VERSION}" > "${BUILD_DIR}/version"
 
     mkdir "${BUILD_DIR}/icons"
@@ -215,6 +217,7 @@ function make_windows_installers() {
 
     if $SIGNED ; then
         sign_exe "${BUILD_DIR}/${EXECUTABLE}"
+        sign_exe "${BUILD_DIR}/${MONITOR}"
     fi
 
     if [ "${BUILD_WINDOWS_EXE}" == "true" ] ; then
@@ -229,6 +232,7 @@ function make_windows_installers() {
                      -DAEROFS_PRODUCT="${AEROFS_PRODUCT}" \
                      -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
                      -DAEROFS_EXECUTABLE="${EXECUTABLE}" \
+                     -DAEROFS_MONITOR="${MONITOR}" \
                      "${LOCAL_WINDOWS_DIR}/setup.nsi"
 
         if $SIGNED ; then
