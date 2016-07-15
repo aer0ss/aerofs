@@ -636,6 +636,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                 } else {
                     l.info("erase migrated object {}", oa.soid());
                     _os.deleteOA_(oa.soid(), t);
+                    if (oa.isFile()) _ccdb.deleteChange_(oa.soid().sidx(), oa.soid().oid(), t);
                 }
             }
         });

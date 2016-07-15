@@ -8,6 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExNoPerm;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.daemon.core.PolarisContentVersionControl;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -195,16 +196,26 @@ public class ContentChangeSubmitter extends WaitableSubmitter<Long> implements S
             return null;
         }
 
+        SendableContent content;
+        try {
+            content = _provider.content(new SOKID(soid, KIndex.MASTER));
+        } catch (ExNotFound e) {
+            l.warn("no change to submit {}", soid);
+            try (Trans t = _tm.begin_()) {
+                _ccdb.deleteChange_(soid.sidx(), soid.oid(), t);
+                t.commit_();
+            }
+            return null;
+        }
+        if (content.hash == null) {
+            ++cnt.hash_delay;
+            return null;
+        }
+
         // don't submit changes when a conflict exists
         if (_provider.hasConflict(soid)) {
             ++cnt.conflict;
             // TODO(phoenix): remove ccd entry?
-            return null;
-        }
-
-        SendableContent content = _provider.content(new SOKID(soid, KIndex.MASTER));
-        if (content.hash == null) {
-            ++cnt.hash_delay;
             return null;
         }
 

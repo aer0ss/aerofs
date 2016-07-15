@@ -76,7 +76,7 @@ public class DaemonContentProvider implements ContentProvider {
 
     @Override
     public SendableContent content(SOKID k) throws SQLException, ExNotFound {
-        OA oa = _ds.getOA_(k.soid());
+        OA oa = _ds.getOAThrows_(k.soid());
         CA ca = oa.caThrows(k.kidx());
         long mtime = ca.mtime();
         // N.B. this is the length of the complete file contents, regardless of whether we're
