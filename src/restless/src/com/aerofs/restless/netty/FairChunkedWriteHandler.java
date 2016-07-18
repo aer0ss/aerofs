@@ -146,7 +146,7 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
             // round-robin among flushable channels
             synchronized (head) {
                 if (c.next == null) {
-                    if (newFlushable == 0 && oldFlushable == 0) {
+                    if ((newFlushable == 0 && oldFlushable == 0) || head.next == null) {
                         // wait for flushable channels
                         do {
                             if (stopped) return;
@@ -157,8 +157,6 @@ public class FairChunkedWriteHandler implements ChannelUpstreamHandler, ChannelD
                                 throw new AssertionError(e);
                             }
                         } while (head.next == null);
-                    } else if (head.next == null) {
-                        throw new AssertionError("n:" + newFlushable + " o:" + oldFlushable);
                     }
                     oldFlushable = 0;
                     newFlushable = 0;
