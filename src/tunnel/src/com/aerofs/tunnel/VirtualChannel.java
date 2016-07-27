@@ -171,10 +171,10 @@ public class VirtualChannel extends AbstractChannel
     {
         l.debug("disconnecting {}", this);
         _connected.set(false);
+        setClosed();
         Channels.fireChannelDisconnected(this);
         l.debug("closing {}", this);
         Channels.fireChannelClosed(this);
-        setClosed();
     }
 
     /**
