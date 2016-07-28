@@ -12,6 +12,7 @@ import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.oauth.VerifyTokenResponse;
 import org.slf4j.Logger;
 
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class AeroOAuthAuthenticator implements Authenticator
     public AuthenticationResult authenticate(MultivaluedMap<String, String> headers)
             throws AuthenticationException
     {
-        List<String> authHeaders = headers.get(io.netty.handler.codec.http.HttpHeaders.Names.AUTHORIZATION);
+        List<String> authHeaders = headers.get(HttpHeaders.AUTHORIZATION);
 
         // does it even have our auth header?
         if (authHeaders == null || authHeaders.size() == 0) {

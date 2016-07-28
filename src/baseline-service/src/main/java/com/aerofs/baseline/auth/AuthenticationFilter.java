@@ -19,8 +19,7 @@ package com.aerofs.baseline.auth;
 import com.aerofs.baseline.http.ChannelId;
 import com.aerofs.baseline.http.RequestId;
 import com.aerofs.baseline.http.RequestProperties;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpHeaders.Names;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +32,7 @@ import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.IOException;
@@ -85,9 +85,9 @@ public final class AuthenticationFilter implements ContainerRequestFilter {
                             requestContext.setSecurityContext(result.getSecurityContext()); // override default unauthenticated context
                         } else if (result.getStatus() == AuthenticationResult.Status.FAILED) {
                             Response response = Response.status(Response.Status.UNAUTHORIZED)
-                                    .header(Names.CONTENT_LENGTH, 0)
-                                    .header(Names.CACHE_CONTROL, HttpHeaders.Values.NO_CACHE + "," + HttpHeaders.Values.NO_TRANSFORM)
-                                    .header(Names.WWW_AUTHENTICATE, authenticator.getName() + " Bearer realm=\"AeroFS\"").build();
+                                    .header(HttpHeaders.CONTENT_LENGTH, 0)
+                                    .header(HttpHeaders.CACHE_CONTROL, HttpHeaderValues.NO_CACHE + "," + HttpHeaderValues.NO_TRANSFORM)
+                                    .header(HttpHeaders.WWW_AUTHENTICATE, authenticator.getName() + " Bearer realm=\"AeroFS\"").build();
                             requestContext.abortWith(response);
                         }
                         return false;

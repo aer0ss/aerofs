@@ -19,5 +19,5 @@ dependencies {
     compile 'com.google.guava:guava:17.0'
     compile 'junit:junit:4.11'
     compile 'org.apache.httpcomponents:httpasyncclient:4.1-beta1'
-    compile 'org.slf4j:slf4j-api:1.7.10'
+    compile 'org.slf4j:slf4j-api:1.7.25'
 }
