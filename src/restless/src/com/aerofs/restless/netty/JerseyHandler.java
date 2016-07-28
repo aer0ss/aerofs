@@ -9,11 +9,7 @@ import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.WebApplication;
 import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse;
 import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -21,6 +17,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 import org.jboss.netty.handler.codec.http.HttpVersion;
 import org.jboss.netty.handler.execution.ChannelEventRunnable;
+import org.jboss.netty.handler.execution.ChannelUpstreamEventRunnable;
 import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +48,18 @@ public class JerseyHandler extends SimpleChannelUpstreamHandler
         _application = application;
         if (executor != null & !(executor instanceof OrderedMemoryAwareThreadPoolExecutor)) {
             l.warn("unordered thread pool: race between pipelined requests may cause problems");
+        }
+    }
+
+    @Override
+    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception {
+        if (_executor != null && e instanceof ChannelStateEvent) {
+            // pass state events through the executor
+            // this is mostly to ensure that OrderedMemoryAwareThreadPoolExecutor detects closed
+            // channels and cleans up any reference to them to avoid memory leaks
+            _executor.execute(new ChannelUpstreamEventRunnable(ctx, e, _executor));
+        } else {
+            super.handleUpstream(ctx, e);
         }
     }
 
