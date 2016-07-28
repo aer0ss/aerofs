@@ -48,7 +48,7 @@ dependencies {
     compile 'com.lambdaworks:scrypt:1.4.0'
     compile 'javax.mail:mail:1.4.2'
     compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
-    compile 'mysql:mysql-connector-java:5.1.38'
+    compile 'mysql:mysql-connector-java:5.1.39'
     compile 'org.bouncycastle:bcprov-jdk15on:1.52'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.52'
     compile 'org.apache.tomcat:tomcat-jdbc:7.0.61'

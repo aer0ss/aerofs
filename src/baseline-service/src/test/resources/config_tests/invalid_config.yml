@@ -1,0 +1,21 @@
+admin:
+  host: localhost
+  port: 8888
+
+service:
+  host: 0.0.0.0
+  port: 9999
+
+block:
+  host: localhost
+  port: 8888
+
+logging:
+  level: DEBUG
+
+  console:
+    enabled: true
+
+  file:
+    enabled: true
+    logfile: /var/log/baseline/baseline.log
