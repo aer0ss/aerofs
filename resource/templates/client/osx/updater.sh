@@ -4,7 +4,7 @@
 if [ $# -ne 5 ]
 then
   echo "Syntax: $0 [packageDir] [appDir] [updateFilepath] [updateVer] [username]"
-  echo "Ex: $0 /Applications/[AEROFS_PRODUCT_SPACEFREE].app ~/Library/Application Support/AeroFSExec ~/Library/Application Support/AeroFS/update/aerofs-osx-0.4.55.zip 0.4.55 lisa"
+  echo "Ex: $0 /Applications/[AEROFS_PRODUCT_SPACEFREE].app ~/Library/Application Support/AeroFSExec ~/Library/Application Support/AeroFS/update/AeroFSInstall-0.4.55.dmg 0.4.55 lisa"
   echo "NB. packageDir must NOT contain the trailing slash"
   exit 1
 fi
@@ -37,14 +37,15 @@ done
 
 TMPDIR="/tmp/aerofs-$UPDATE_VER-$USERNAME"
 rm -rf "$TMPDIR"
+mkdir -p "$TMPDIR"
 
-unzip -q "$UPDATE_FILEPATH" -d "$TMPDIR"
-if [ ! -d "$TMPDIR" ]; then
+if hdiutil -readonly -nobrowse -mountpoint "$TMPDIR" attach "$UPDATE_FILEPATH" ; then
+  rm -rf "$PACKAGE_DIR/Contents"
+  cp -af "$TMPDIR"/[AEROFS_PRODUCT_SPACEFREE].app/* "$PACKAGE_DIR"
+  hdiutil detach "$TMPDIR"
+else
   # wait until next update attempt
   rm -f "$UPDATE_FILEPATH"
-else
-  rm -rf "$PACKAGE_DIR/Contents"
-  cp -af "$TMPDIR"/Release/[AEROFS_PRODUCT_SPACEFREE].app/* "$PACKAGE_DIR"
 fi
 
 rm -rf "$TMPDIR"

@@ -19,7 +19,7 @@ class OSXUpdater extends Updater
 
     OSXUpdater()
     {
-        super(L.productUnixName() + "-osx-%s.zip");
+        super(L.productSpaceFreeName() + "Install-%s.dmg");
     }
 
     @Override
