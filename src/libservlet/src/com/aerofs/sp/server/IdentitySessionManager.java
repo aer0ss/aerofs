@@ -147,7 +147,7 @@ public class IdentitySessionManager
                 String val = connection.get(key);
 
                 if ((val == null) || val.equals(REDIS_DELETING)) {
-                    l.warn("Invalid nonce {}");
+                    l.warn("Invalid nonce {}", key);
                     throw new ExExternalAuthFailure();
                 }
 
