@@ -75,7 +75,7 @@ public final class TestPipeliningWithHttpRequestHandler {
         }
 
         Future<List<HttpResponse>> future = client.getClient().execute(new HttpHost(ServiceConfiguration.TEST_CONFIGURATION.getService().getHost(), ServiceConfiguration.TEST_CONFIGURATION.getService().getPort()), posts, null);
-        List<HttpResponse> responses = future.get(10, TimeUnit.SECONDS);
+        List<HttpResponse> responses = future.get(20, TimeUnit.SECONDS);
 
         assertThat(responses, hasSize(1000));
 
