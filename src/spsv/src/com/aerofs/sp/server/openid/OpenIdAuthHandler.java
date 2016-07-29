@@ -56,6 +56,7 @@ public class OpenIdAuthHandler implements IExternalAuthHandler {
         try {
             _provider.authResponse(req, resp);
         } catch (Exception e) {
+            l.warn("auth failed", e);
             resp.setContentType("text/html");
             resp.getWriter().println("<html><body>" +
                     "Authentication failed. Please try again later." +
