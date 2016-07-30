@@ -64,7 +64,7 @@ def down_and_up():
     time.sleep(12)
 
     # wait for version file to reflect successful upgrade
-    n = 15
+    n = 25
     while True:
         try:
             with open(vf, "r") as f:
