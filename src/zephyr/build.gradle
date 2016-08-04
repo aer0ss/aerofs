@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-zephyr'
+archivesBaseName = 'aero-zephyr'
 
 sourceSets {
     main {
@@ -29,7 +29,7 @@ dependencies {
 }
 
 task clientJar(type: Jar) {
-    baseName 'aerofs-zephyr-client'
+    baseName 'aero-zephyr-client'
     from sourceSets.client.output
 }
 

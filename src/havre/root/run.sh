@@ -19,4 +19,4 @@ sed -e "s/{{ log_level }}/$LOG_LEVEL/g" \
     havre.properties.tmplt > havre.properties
 
 /container-scripts/restart-on-error java -XX:+HeapDumpOnOutOfMemoryError \
-    -XX:HeapDumpPath=/var/log/havre -Xmx1536m -jar aerofs-havre.jar havre.properties
+    -XX:HeapDumpPath=/var/log/havre -Xmx1536m -jar aero-havre.jar havre.properties

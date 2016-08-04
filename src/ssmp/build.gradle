@@ -3,7 +3,7 @@
 // All right reserved.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-ssmp'
+archivesBaseName = 'aero-ssmp'
 
 dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0'

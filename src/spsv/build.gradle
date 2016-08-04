@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-sp'
+archivesBaseName = 'aero-sp'
 
 test {
     // unit tests fail if we don't fork due to bad isolation

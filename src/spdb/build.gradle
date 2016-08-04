@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-spdb'
+archivesBaseName = 'aero-spdb'
 
 dependencies {
     compile 'org.flywaydb:flyway-core:3.2.1'

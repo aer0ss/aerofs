@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-daemon'
+archivesBaseName = 'aero-daemon'
 
 
 compileJava.options.compilerArgs << '-Xlint:-processing' << '-Xlint:-cast'

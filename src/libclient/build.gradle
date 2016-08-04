@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-libclient'
+archivesBaseName = 'aero-libclient'
 
 sourceSets {
     main {

@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-rest-api'
+archivesBaseName = 'aero-rest-api'
 
 dependencies {
     compile project(':src/aero-api-lib')

@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-restless'
+archivesBaseName = 'aero-restless'
 
 dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0'

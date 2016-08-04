@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-tunnel'
+archivesBaseName = 'aero-tunnel'
 
 dependencies {
     compile project(':src/base')

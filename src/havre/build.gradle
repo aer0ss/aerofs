@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-havre'
+archivesBaseName = 'aero-havre'
 
 dependencies {
     compile 'ch.qos.logback:logback-core:1.1.10'

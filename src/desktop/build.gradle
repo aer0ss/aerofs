@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-desktop'
+archivesBaseName = 'aero-desktop'
 
 dependencies {
     compile project(':src/daemon')

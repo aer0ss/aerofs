@@ -39,7 +39,7 @@ function copy_resources_to_local_release_directories() {
     pushd "${LOCAL_BIN}" >>/dev/null
     JAR_SOURCE_DIR="desktop"
     for jar in "${BUILD_OUTPUT_DIR}/${JAR_SOURCE_DIR}/dist"/*.jar ; do
-        if [[ ${jar##*/} == aerofs-*.jar ]] ; then
+        if [[ ${jar##*/} == aero-*.jar ]] ; then
             jar xf "$jar" com
         else
             cp "$jar" "${TARGET_LIB}"
@@ -53,30 +53,37 @@ function copy_resources_to_local_release_directories() {
     find "${LOCAL_BIN}/" -name .gitignore | xargs rm -f
 
     # remove platform-specific gradle-resolved deps
-    # they will be resolved appropriately for each packkage later on
+    # they will be resolved appropriately for each package later on
     rm -f "${TARGET_LIB}/swt-4.jar"
 }
 
 # Creates the Java manifest file and creates the AeroFS jar
+# Some care is required to produce a deterministic output (free of build timestamps)
 function create_java_jar() {
-    readonly TEMP_MANIFEST="$(mktemp -t manifest_XXXXXX.tmp)"
+    readonly MANIFEST="${LOCAL_RELEASE_DIR}/bin/META-INF/MANIFEST.MF"
+
+    mkdir -p "${LOCAL_RELEASE_DIR}/bin/META-INF"
 
     main_class="Main"
-    echo "Main-Class: com.aerofs.${main_class}" > "${TEMP_MANIFEST}"
-    echo "Class-Path: " >> "${TEMP_MANIFEST}"
-    for i in "${AEROFS_RELEASE_DIR}"/lib/*.jar; do
-        echo " lib/$(basename "$i") " >> "${TEMP_MANIFEST}"
+    echo "Main-Class: com.aerofs.${main_class}" > "${MANIFEST}"
+    echo "Class-Path: " >> "${MANIFEST}"
+    for i in $(ls "${AEROFS_RELEASE_DIR}"/lib/*.jar | sort); do
+        echo " lib/$(basename "$i") " >> "${MANIFEST}"
     done
     # OS-libs must share the same name
     # N.B. we use the Windows dir here because it contains a strict super-set
     # of all OS-native libs.
-    for i in "${CLIENT_WIN_RESOURCES_DIR}"/lib/*; do
-        echo " lib/$(basename "$i") " >> "${TEMP_MANIFEST}"
+    for i in $(ls "${CLIENT_WIN_RESOURCES_DIR}"/lib/* | sort); do
+        echo " lib/$(basename "$i") " >> "${MANIFEST}"
     done
+    # set mtime of all files jar to arbitrary constant for reproducible builds
+    # Use amium release date (2016/08/02 5am PST) in UTC
+    EPOCH=201608021200.00
+    find "${LOCAL_RELEASE_DIR}/bin" -print0 | TZ=utc xargs -0 touch -m -t $EPOCH
 
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.jar" "${TEMP_MANIFEST}" -C "${LOCAL_RELEASE_DIR}/bin" com
-
-    rm -f "${TEMP_MANIFEST}"
+    # MUST use zip instead of jar to avoid non-determinism in manifest
+    rm -rf "${AEROFS_RELEASE_DIR}/aerofs.jar"
+    (cd "${LOCAL_RELEASE_DIR}/bin" && zip -rqX9 "${AEROFS_RELEASE_DIR}/aerofs.jar" .)
 }
 
 # Writes the release version and checksums of the binaries to the version file.

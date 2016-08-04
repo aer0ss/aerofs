@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-oauth-verify'
+archivesBaseName = 'aero-oauth-verify'
 
 dependencies {
     compile project(':src/base')

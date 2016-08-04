@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-sync'
+archivesBaseName = 'aero-sync'
 
 //test {
 //    testLogging {

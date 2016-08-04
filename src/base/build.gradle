@@ -2,8 +2,8 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-// generated jar has the name 'aerofs-base'-<version>.jar
-archivesBaseName = 'aerofs-base'
+// generated jar has the name 'aero-base'-<version>.jar
+archivesBaseName = 'aero-base'
 
 // NOTE:
 //

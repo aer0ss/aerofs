@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-api-lib'
+archivesBaseName = 'aero-api-lib'
 
 dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'

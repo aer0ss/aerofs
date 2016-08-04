@@ -2,7 +2,7 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-polaris'
+archivesBaseName = 'aero-polaris'
 
 dependencies {
     compile 'org.flywaydb:flyway-core:3.0'
