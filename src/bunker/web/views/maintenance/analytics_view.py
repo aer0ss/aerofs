@@ -19,7 +19,7 @@ def analytics(request):
 
     endpoint = conf['analytics.endpoint']
     segment_endpoint = 'https://api.segment.io'
-    enabled = str2bool(conf['analytics.enabled'])
+    enabled = False
 
     return {
         'segment_endpoint': segment_endpoint,
@@ -40,16 +40,5 @@ def json_setup_analytics(request):
     restarted.
     """
 
-    analytics_enabled = str2bool(request.params['analytics-enabled'])
-
-    config = get_conf_client(request)
-    config.set_external_property('analytics_enabled', analytics_enabled)
-
-    if not analytics_enabled:
-        config.set_external_property('analytics_endpoint', '')
-    else:
-        config.set_external_property('analytics_endpoint',
-                                     'https://api.segment.io')
-
-    return {}
+    raise Exception("not supported")
 

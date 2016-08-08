@@ -92,8 +92,6 @@ containers:
         - data
       link:
         - aeroimweb:aeroimweb.service
-        - analytics:analytics.service
-        - analytics-pull:analytics-pull.service
         - auditor:auditor.service
         - blurber:blurber.service
         - bunker:bunker.service
@@ -141,7 +139,6 @@ containers:
 # so that bunker can write to the autocomplete user table
 # remove this when ldap syncing is implemented
         - mysql:mysql.service
-        - analytics:analytics.service
 
   enforcer:
     image: aerofs/enforcer
@@ -199,7 +196,6 @@ containers:
         - havre:havre.service
         - charlie:charlie.service
         - auditor:auditor.service
-        - analytics:analytics.service
 
 {% if not hpc %}
   zephyr:
@@ -262,7 +258,6 @@ containers:
         # For /data/deployment_secret
         - data
       link:
-        - analytics:analytics.service
         - config:config.service
         # for cacert.pem
         - ca-server:ca.service
@@ -272,34 +267,6 @@ containers:
         - auditor:auditor.service
         - lipwig:lipwig.service
         - postfix:postfix.service
-
-  analytics:
-    image: aerofs/analytics
-    run:
-      detach: true
-      volume:
-        - /etc/ssl/certs:/etc/ssl/certs:ro
-        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
-      volumes-from:
-        # For deployment secret
-        - data
-      link:
-        - config:config.service
-        - ca-server:ca.service
-
-  analytics-pull:
-      image: aerofs/analytics-pull
-      run:
-        detach: true
-        volumes-from:
-          # For deployment secret
-          - data
-        link:
-          - polaris:polaris.service
-          - config:config.service
-          - sparta:sparta.service
-          - analytics:analytics.service
-          - probe:probe.service
 
   auditor:
     image: aerofs/auditor
@@ -335,7 +302,6 @@ containers:
         - auditor:auditor.service
         - config:config.service
         - sparta:sparta.service
-        - analytics:analytics.service
 
   trifrost:
     image: aeroim/trifrost

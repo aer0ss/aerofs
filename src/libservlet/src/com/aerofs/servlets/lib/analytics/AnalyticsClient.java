@@ -41,21 +41,8 @@ public class AnalyticsClient implements IAnalyticsClient {
     public AnalyticsClient(String deploymentSecret)
     {
         _deploymentSecret = deploymentSecret;
-        _enabled = getBooleanProperty("analytics.enabled", false);
-
-        if (_enabled) {
-            URL temp;
-            try{
-                temp = new URL("http://analytics.service:9400/events");
-            } catch (MalformedURLException e) {
-                temp = null;
-                l.error("Misconfigured analytics service URL. Analytics is DISABLED.");
-            }
-            _url = temp;
-        } else {
-            _url = null;
-        }
-
+        _enabled = false;
+        _url = null;
     }
 
     public void track(AnalyticsEvent event, UserID user_id) throws IOException {

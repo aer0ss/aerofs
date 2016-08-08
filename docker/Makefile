@@ -3,8 +3,6 @@ include $(GIT_ROOT)/Makefile.common
 
 IMAGES:= \
 	../src/aeroim-client \
-	../golang/src/aerofs.com/analytics \
-	../golang/src/aerofs.com/analytics-pull \
 	../golang/src/aerofs.com/auditor \
 	../src/blurber \
 	../src/bunker \
