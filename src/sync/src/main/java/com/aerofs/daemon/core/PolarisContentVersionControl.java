@@ -27,7 +27,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.Map.Entry;
 
-// TODO: move as much distrib/central switcharoo as possible into this class
 public class PolarisContentVersionControl implements IContentVersionControl
 {
     private final CentralVersionDatabase _cvdb;
@@ -142,5 +141,8 @@ public class PolarisContentVersionControl implements IContentVersionControl
         // Instead we clean it up on re-admission
         _ccdb.deleteChange_(soid.sidx(), soid.oid(), t);
         _cfqdb.remove_(soid.sidx(), soid.oid(), t);
+        for (IContentVersionListener listener : _listeners) {
+            listener.onContentUnavailable_(soid.sidx(), soid.oid(), t);
+        }
     }
 }

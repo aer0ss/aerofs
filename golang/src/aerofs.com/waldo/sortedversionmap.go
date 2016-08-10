@@ -37,6 +37,13 @@ func (m *SortedVersionMap) Load(did UID, version uint64) error {
 	return nil
 }
 
+func (m *SortedVersionMap) PutOrRemove(did UID, version uint64) bool {
+	if version == 0 {
+		return m.Remove(did)
+	}
+	return m.Put(did, version)
+}
+
 func (m *SortedVersionMap) Put(did UID, version uint64) bool {
 	d := m.d
 	i := LowerBound(d, did)
@@ -55,6 +62,18 @@ func (m *SortedVersionMap) Put(did UID, version uint64) bool {
 	d[i+1] = did[1]
 	d[i+2] = version
 	m.d = d
+	return true
+}
+
+func (m *SortedVersionMap) Remove(did UID) bool {
+	d := m.d
+	i := LowerBound(d, did)
+	n := len(d)
+	if !(i+2 < n && did[0] == d[i] && did[1] == d[i+1]) {
+		return false
+	}
+	copy(d[i:n-3], d[i+3:n])
+	m.d = d[:n-3]
 	return true
 }
 

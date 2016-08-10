@@ -81,13 +81,13 @@ func test_shouldSetAvailableBatch_n(t *testing.T, n int) {
 	}
 	b := ctx.db.BeginSetAvailableBatch(d1, 10)
 	for i, oid := range oids {
-		require.Nil(t, b.SetAvailable(oid, uint64(i)))
+		require.Nil(t, b.SetAvailable(oid, uint64(i+1)))
 	}
 	require.Nil(t, b.End())
 
 	for i, oid := range oids {
 		ctx.checkVersions(t, oid,
-			dv(d1, uint64(i)),
+			dv(d1, uint64(i+1)),
 		)
 	}
 
@@ -96,8 +96,76 @@ func test_shouldSetAvailableBatch_n(t *testing.T, n int) {
 
 	for i, oid := range oids {
 		ctx.checkVersions(t, oid,
-			dv(d1, uint64(i)),
+			dv(d1, uint64(i+1)),
 		)
+	}
+}
+
+func TestDB_shouldSetMixedAvailableBatch_1(t *testing.T) {
+	test_shouldSetMixedAvailableBatch_n(t, 1)
+}
+
+func TestDB_shouldSetMixedAvailableBatch_10(t *testing.T) {
+	test_shouldSetMixedAvailableBatch_n(t, 10)
+}
+
+func TestDB_shouldSetMixedAvailableBatch_100(t *testing.T) {
+	test_shouldSetMixedAvailableBatch_n(t, 100)
+}
+
+func TestDB_shouldSetMixedAvailableBatch_1000(t *testing.T) {
+	test_shouldSetMixedAvailableBatch_n(t, 1000)
+}
+
+func TestDB_shouldSetMixedAvailableBatch_10000(t *testing.T) {
+	test_shouldSetMixedAvailableBatch_n(t, 10000)
+}
+
+func test_shouldSetMixedAvailableBatch_n(t *testing.T, n int) {
+	ctx := NewContext()
+	defer ctx.Cleanup()
+
+	o := newUID()
+	d1 := newUID()
+	oids := make([]UID, n)
+	for i := 0; i < len(oids); i++ {
+		oids[i] = o
+		o[1]++
+	}
+
+	for _, oid := range oids {
+		ctx.checkVersions(t, oid)
+	}
+	b := ctx.db.BeginSetAvailableBatch(d1, 10)
+	for i, oid := range oids {
+		require.Nil(t, b.SetAvailable(oid, uint64(i+1)))
+		if (i % 5) == 4 {
+			require.Nil(t, b.SetAvailable(oids[i-4], uint64(0)))
+		}
+	}
+	require.Nil(t, b.End())
+
+	for i, oid := range oids {
+		if (i%5) == 0 && i+4 < n {
+			ctx.checkVersions(t, oid)
+		} else {
+			ctx.checkVersions(t, oid,
+				dv(d1, uint64(i+1)),
+			)
+		}
+	}
+
+	// force checkpoint to clear in-memory cache
+	require.Nil(t, ctx.db.checkpoint())
+
+	for i, oid := range oids {
+		if (i%5) == 0 && i+4 < n {
+			ctx.checkVersions(t, oid)
+		} else {
+			ctx.checkVersions(t, oid,
+				dv(d1, uint64(i+1)),
+			)
+		}
 	}
 }
 
@@ -142,14 +210,14 @@ func test_shouldReloadWAL_n(t *testing.T, n int) {
 	}
 	b := ctx.db.BeginSetAvailableBatch(d1, n)
 	for i, oid := range oids {
-		require.Nil(t, b.SetAvailable(oid, uint64(i)))
+		require.Nil(t, b.SetAvailable(oid, uint64(i+1)))
 	}
 	require.Nil(t, b.End())
 
 	fmt.Println("check 1")
 	for i, oid := range oids {
 		ctx.checkVersions(t, oid,
-			dv(d1, uint64(i)),
+			dv(d1, uint64(i+1)),
 		)
 	}
 
@@ -167,7 +235,7 @@ func test_shouldReloadWAL_n(t *testing.T, n int) {
 	fmt.Println("check 2")
 	for i, oid := range oids {
 		ctx.checkVersions(t, oid,
-			dv(d1, uint64(i)),
+			dv(d1, uint64(i+1)),
 		)
 	}
 }

@@ -159,7 +159,7 @@ func (db *DB) reloadWAL() error {
 				return err
 			}
 			//log.Println("+", oid.String(), did.String(), version)
-			d.Put(did, version)
+			d.PutOrRemove(did, version)
 		}
 		// TODO ?
 		if n%40 > 0 {
@@ -284,7 +284,7 @@ func (b *Batch) SetAvailable(oid UID, version uint64) error {
 
 	// NB: updates to cache MUST be rolled back if flush fails
 	//log.Println("put:", oid.String(), b.did.String(), version)
-	if d.Put(b.did, version) {
+	if d.PutOrRemove(b.did, version) {
 		atomic.AddUint32(&b.db.dirtyCount, 1)
 	}
 	return nil

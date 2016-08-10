@@ -13,8 +13,6 @@ import com.aerofs.daemon.core.polaris.WaldoAsyncClient;
 import com.aerofs.daemon.core.polaris.api.LocationBatch;
 import com.aerofs.daemon.core.polaris.api.LocationBatchOperation;
 import com.aerofs.daemon.core.polaris.api.LocationBatchResult;
-import com.aerofs.daemon.core.polaris.async.AsyncTask;
-import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler;
 import com.aerofs.daemon.core.polaris.async.AsyncWorkGroupScheduler.TaskState;
 import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase;
@@ -81,34 +79,24 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
         _sidx2sid = sidx2sid;
         _tm = tm;
 
-        _submitTask = sched.register_("availability",
-                new AsyncTask() {
-                    @Override
-                    public void run_(AsyncTaskCallback cb) {
-                        l.trace("ENTER: submitAvailableContentToPolarisTask.run");
+        _submitTask = sched.register_("availability", cb -> {
+            LocationBatch batch;
+            try {
+                batch = buildLocationBatch_();
+            } catch (SQLException e) {
+                l.warn("failed building operations map", e);
+                cb.onFailure_(e);
+                return;
+            }
 
-                        LocationBatch batch;
-                        try {
-                            batch = buildLocationBatchOperationsMap_();
-                            l.trace("built batch, size={}", batch != null ? batch.available.size() : 0);
-                        } catch (SQLException e) {
-                            l.warn("failed building operations map", e);
-                            cb.onFailure_(e);
-                            return;
-                        }
+            if (batch == null || batch.available.isEmpty()) {
+                cb.onSuccess_(false);
+                return;
+            }
 
-                        if (batch == null || batch.available == null || batch.available.isEmpty()) {
-                            l.trace("operations map is empty");
-                            cb.onSuccess_(false);
-                            return;
-                        }
-
-                        l.trace("posting to waldo");
-                        _waldoClient.post("/submit", batch, cb,
-                                r -> updateAvailableContentDatabase_(r, batch));
-                        l.trace("EXIT: submitAvailableContentToPolarisTask.run");
-                    }
-                });
+            _waldoClient.post("/submit", batch, cb,
+                    r -> updateAvailableContentDatabase_(r, batch));
+        });
 
         _tlSubmit = new TransLocal<Boolean>() {
             @Override
@@ -140,8 +128,16 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
         checkArgument(_tlSubmit.get(t));
     }
 
-    private LocationBatch buildLocationBatchOperationsMap_() throws SQLException {
-        l.trace("ENTER buildLocationBatchOperationsList");
+    @Override
+    public void onContentUnavailable_(SIndex sidx, OID oid, Trans t) throws SQLException {
+        // NB: version 0 is interpreted as unavailability by waldo
+        // this is arguably not great from a purely semantic perspective
+        // but it has the nice benefit of allowing availability and unavailability info
+        // to be batched together without requiring schema and protocol changes
+        onSetVersion_(sidx, oid, 0, t);
+    }
+
+    private LocationBatch buildLocationBatch_() throws SQLException {
         try (IDBIterator<AvailableContent> contents = _acdb.listContent_()) {
             if (!contents.next_()) return null;
 
