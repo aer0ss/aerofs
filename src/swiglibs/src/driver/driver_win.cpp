@@ -231,14 +231,20 @@ int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
 void initNotifications(JNIEnv* env, jstring socket) {}
 void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {}
 
-void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
+int markHiddenSystemFile(JNIEnv * j, jstring jpath)
 {
-    tstring path;
+    jstr2prefixed(path, jpath)
+    SetFileAttributesW(path.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+    return DRIVER_SUCCESS;
+}
+
+int setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName)
+{
+    jstr2prefixed(path, folderPath)
     tstring icon;
 
-    if (!(AeroFS::jstr2tstr(&path, env, folderPath) &&
-          AeroFS::jstr2tstr(&icon, env, iconName))) {
-        return;
+    if (!AeroFS::jstr2tstr(&icon, j, iconName)) {
+        return DRIVER_FAILURE;
     }
 
     tstring desktopIni = path + TEXT("\\desktop.ini");
@@ -246,7 +252,7 @@ void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
     if (icon.length() > 0) {
         // Set the icon
 
-        PathMakeSystemFolder(path.c_str());
+        SetFileAttributesW(path.c_str(), FILE_ATTRIBUTE_SYSTEM);
 
         // Split the "path\to\icon,index" string into iconPath and iconIndex
         TCHAR* buf = new TCHAR[icon.length() + 1];
@@ -276,12 +282,13 @@ void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
 
     } else {
         // Remove the icon
-        PathUnmakeSystemFolder(path.c_str());
+        SetFileAttributes(path.c_str(), FILE_ATTRIBUTE_NORMAL);
         DeleteFile(desktopIni.c_str());
     }
 
     // Tell the shell to refresh the icon
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, path.c_str(), NULL);
+    return DRIVER_SUCCESS;
 }
 
 int waitForNetworkInterfaceChange()

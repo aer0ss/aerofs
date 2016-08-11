@@ -214,6 +214,11 @@ public class InjectableDriver
         }
     }
 
+    public void markHiddenSystemFile(String path)
+    {
+        Driver.markHiddenSystemFile(null, path);
+    }
+
     public void setFolderIcon(String folderPath, String iconName)
     {
         Driver.setFolderIcon(null, folderPath, iconName);

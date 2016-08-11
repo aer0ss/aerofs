@@ -105,14 +105,14 @@ void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring 
     [notif release];
 }
 
-void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
+int setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
 {
     tstring cPath;
     tstring cIconName;
 
     if (!(AeroFS::jstr2tstr(&cPath, env, folderPath) &&
           AeroFS::jstr2tstr(&cIconName, env, iconName))) {
-        return;
+        return DRIVER_FAILURE;
     }
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -133,6 +133,11 @@ void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
     [nsIconName release];
     [icon release];
     [pool drain];
+    return DRIVER_SUCCESS;
+}
+
+int markHiddenSystemFile(JNIEnv* env, jstring path) {
+    return DRIVER_FAILURE;
 }
 
 /*

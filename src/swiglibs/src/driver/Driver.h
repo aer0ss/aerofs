@@ -107,7 +107,12 @@ int getFileSystemType(JNIEnv * j, jstring path, void * buffer, int bufLen);
  *
  * Set iconName to an empty string to reset the icon to the default system icon.
  */
-void setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
+int setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
+
+/**
+ * Windows: SetFileAttributes
+ */
+int markHiddenSystemFile(JNIEnv * j, jstring path);
 
 /**
  * OSX 10.8+ : NSNotificationCenter

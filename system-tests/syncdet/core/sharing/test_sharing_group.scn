@@ -2,3 +2,4 @@
     core.sharing.should_share_pre_sync
     core.sharing.should_share_post_sync
     core.sharing.should_not_crash_on_concurrent_leave_and_delete
+    core.sharing.should_share_folder_with_trailing_dot

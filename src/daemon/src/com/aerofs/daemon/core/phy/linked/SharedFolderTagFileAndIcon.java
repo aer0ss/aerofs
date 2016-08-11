@@ -1,11 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.sql.SQLException;
 
 import javax.annotation.Nullable;
@@ -119,7 +114,7 @@ public class SharedFolderTagFileAndIcon
 
     public void addTagFileAndIconIn(SID sid, String absPath) throws IOException
     {
-        l.info("add sf tag for {} in {}", sid, absPath);
+        l.info("add sf tag for {} in {}", sid, absPath, new Exception());
 
         if (!OSUtil.isLinux()) {
             _dr.setFolderIcon(absPath, _osutil.getIconPath(Icon.SharedFolder));
@@ -131,13 +126,17 @@ public class SharedFolderTagFileAndIcon
         // which would cause writing the file to fail.
         deleteTagFile(absPathTagFile);
 
-        try (PrintStream ps = new PrintStream(absPathTagFile)) {
-            // this may be called during store creation, when the store might not be fully
-            // initialized locally.
-            ps.print(sid.toStringFormal());
+        try (OutputStream os = _factFile.create(absPathTagFile).newOutputStream()) {
+            try (PrintStream ps = new PrintStream(os)) {
+                // this may be called during store creation, when the store might not be fully
+                // initialized locally.
+                ps.print(sid.toStringFormal());
+            }
         }
 
-        OSUtil.get().markHiddenSystemFile(absPathTagFile);
+        if (OSUtil.isWindows()) {
+            _dr.markHiddenSystemFile(absPathTagFile);
+        }
     }
 
     public void deleteTagFileAndIconIn(String absPath) throws IOException
@@ -160,7 +159,7 @@ public class SharedFolderTagFileAndIcon
         InjectableFile tag = _factFile.create(pc._absPath, ClientParam.SHARED_FOLDER_TAG);
         if (!tag.exists()) return null;
 
-        SID sid = tag.isFile() ? sidFromTagFile(tag.getAbsolutePath()) : null;
+        SID sid = tag.isFile() ? sidFromTagFile(tag) : null;
         if (sid != null && canRestoreAnchor_(sidx, sid)) {
             l.info("first-launch: valid tag found " + sid + " " + pc._path);
             return SID.storeSID2anchorOID(sid);
@@ -181,19 +180,13 @@ public class SharedFolderTagFileAndIcon
     // non-static for mocking...
     public boolean isSharedFolderRoot(SID sid, String absPath)
     {
-        return isStoreRoot(sid, absPath);
+        return isStoreRoot(sid, _factFile.create(absPath));
     }
 
-    public boolean isUsableSharedFolderRoot(SID sid, InjectableFile dir)
+    public static boolean isStoreRoot(SID sid, InjectableFile path)
     {
-        File tag = new File(dir.getAbsolutePath(), ClientParam.SHARED_FOLDER_TAG);
-        return !tag.exists() || (tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath())));
-    }
-
-    public static boolean isStoreRoot(SID sid, String absPath)
-    {
-        File tag = new File(absPath, ClientParam.SHARED_FOLDER_TAG);
-        return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag.getAbsolutePath()));
+        InjectableFile tag = path.newChild(ClientParam.SHARED_FOLDER_TAG);
+        return tag.exists() && tag.isFile() && sid.equals(sidFromTagFile(tag));
     }
 
     private boolean canRestoreAnchor_(SIndex parent, SID sid) throws SQLException
@@ -230,10 +223,9 @@ public class SharedFolderTagFileAndIcon
      * Retrieve SID from tag file at the root of an existing shared folder
      * @return SID if valid tag file found, null otherwise
      */
-    private static @Nullable SID sidFromTagFile(String absPathTagFile)
+    private static @Nullable SID sidFromTagFile(InjectableFile tag)
     {
-        try {
-            FileInputStream in = new FileInputStream(absPathTagFile);
+        try (InputStream in = tag.newInputStream()) {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 String line = reader.readLine();
                 return line != null ? new SID(line, 0, line.length()) : null;

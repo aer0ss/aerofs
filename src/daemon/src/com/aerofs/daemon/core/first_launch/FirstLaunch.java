@@ -27,6 +27,7 @@ import com.aerofs.lib.cfg.*;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.google.common.collect.ImmutableMap;
@@ -67,6 +68,7 @@ public class FirstLaunch
     private final ACLFilter _filter;
     private final IMapSID2SIndex _sid2sidx;
     private final TransManager _tm;
+    private final InjectableFile.Factory _factFile;
 
     /**
      * We have to use an intermediate class to avoid introducing a circular dep:
@@ -93,7 +95,7 @@ public class FirstLaunch
     public FirstLaunch(CfgDatabase cfgDB, ILinker linker, CoreQueue q, AccessibleStores as,
             ScanProgressReporter spr, CfgAbsRoots absRoots, CfgStorageType storageType,
             CfgRootSID rootSID, StoreCreator sc, IMapSID2SIndex sid2sidx, TransManager tm,
-            LocalACL lacl, ACLFilter filter)
+            LocalACL lacl, ACLFilter filter, InjectableFile.Factory factFile)
     {
         _as = as;
         _spr = spr;
@@ -108,6 +110,7 @@ public class FirstLaunch
         _tm = tm;
         _lacl = lacl;
         _filter = filter;
+        _factFile = factFile;
     }
 
     /**
@@ -207,7 +210,7 @@ public class FirstLaunch
     private void restoreRoot_(SID sid, String absPath, Trans t) throws Exception
     {
         PBStoreACL acl = _as._accessibleStores.get(sid);
-        if (!SharedFolderTagFileAndIcon.isStoreRoot(sid, absPath)
+        if (!SharedFolderTagFileAndIcon.isStoreRoot(sid, _factFile.create(absPath))
                 || _cfgAbsRoots.getNullable(sid) != null
                 || acl == null) {
             return;

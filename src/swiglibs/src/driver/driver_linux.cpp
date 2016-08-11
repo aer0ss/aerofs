@@ -16,9 +16,12 @@ namespace Driver {
 void initNotifications(JNIEnv* env, jstring socket) {}
 void scheduleNotification(JNIEnv* env, jstring title, jstring subtitle, jstring message, jdouble delay, jstring notif_message) {}
 
-void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
-{
-    // TODO: implement me
+int setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName) {
+    return DRIVER_FAILURE;
+}
+
+int markHiddenSystemFile(JNIEnv* env, jstring jpath) {
+    return DRIVER_FAILURE;
 }
 
 /*

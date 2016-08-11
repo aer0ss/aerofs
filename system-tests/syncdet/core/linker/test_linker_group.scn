@@ -12,5 +12,6 @@
     core.linker.should_not_create_duplicate_when_moving_over_diff_content
     core.linker.should_not_create_duplicate_when_moving_over_same_content
     core.linker.should_create_duplicate_when_moving_over_expelled_object
-    core.linker.should_sync_folders_with_trailing_spaces
+    core.linker.should_sync_folders_with_trailing_space
+    core.linker.should_sync_folders_with_trailing_dot
     core.linker.should_handle_4_byte_utf8
