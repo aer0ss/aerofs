@@ -114,7 +114,7 @@ public class SharedFolderTagFileAndIcon
 
     public void addTagFileAndIconIn(SID sid, String absPath) throws IOException
     {
-        l.info("add sf tag for {} in {}", sid, absPath, new Exception());
+        l.info("add sf tag for {} in {}", sid, absPath);
 
         if (!OSUtil.isLinux()) {
             _dr.setFolderIcon(absPath, _osutil.getIconPath(Icon.SharedFolder));
