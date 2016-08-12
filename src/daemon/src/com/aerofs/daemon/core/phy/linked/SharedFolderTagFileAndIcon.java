@@ -183,6 +183,11 @@ public class SharedFolderTagFileAndIcon
         return isStoreRoot(sid, _factFile.create(absPath));
     }
 
+    public boolean isUsableSharedFolderRoot(SID sid, InjectableFile d) {
+        InjectableFile tag = d.newChild(ClientParam.SHARED_FOLDER_TAG);
+        return !tag.exists() || (tag.isFile() && sid.equals(sidFromTagFile(tag)));
+    }
+
     public static boolean isStoreRoot(SID sid, InjectableFile path)
     {
         InjectableFile tag = path.newChild(ClientParam.SHARED_FOLDER_TAG);
