@@ -101,23 +101,6 @@ public class SingleuserTrayMenu extends AbstractTrayMenu implements IRitualNotif
         // Open AeroFS folder
         addOpenFolderMenuItem(trayMenuPopulator);
 
-        // TODO: remove check after hard fork
-        if (Cfg.user().isAeroFSUser()) {
-            trayMenuPopulator.addMenuItem("Messaging...",
-                    new AbstractListener() {
-                        @Override
-                        protected void handleEventImpl(Event event)
-                        {
-                            try {
-                                UIGlobals.chat().start();
-                            } catch (Exception e) {
-                                UI.get().notify(MessageType.ERROR,
-                                        "Failed to start chat:\n" + e.getCause());
-                            }
-                        }
-                    });
-        }
-
         trayMenuPopulator.addMenuSeparator();
 
         trayMenuPopulator.addInviteCoworkerMenuItem();
