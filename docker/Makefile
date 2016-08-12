@@ -2,9 +2,7 @@ GIT_ROOT = $(shell git rev-parse --show-toplevel)
 include $(GIT_ROOT)/Makefile.common
 
 IMAGES:= \
-	../src/aeroim-client \
 	../golang/src/aerofs.com/auditor \
-	../src/blurber \
 	../src/bunker \
 	../golang/src/aerofs.com/ca-server \
 	../packaging/config \
@@ -24,11 +22,9 @@ IMAGES:= \
 	redis \
 	../packaging/repackaging \
 	../packaging/sanity \
-	../golang/src/aerofs.com/sloth \
 	../src/sparta \
 	../src/spsv \
 	../src/storage-agent \
-	../golang/src/aerofs.com/trifrost \
 	../golang/src/aerofs.com/ts-probe \
 	../golang/src/aerofs.com/valkyrie \
 	../golang/src/aerofs.com/waldo \

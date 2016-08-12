@@ -56,27 +56,6 @@ containers:
         - config:config.service
         - ca-server:ca.service
 
-  blurber:
-    image: aeroim/blurber
-    run:
-      detach: true
-
-  sloth:
-    image: aeroim/sloth
-    run:
-      detach: true
-      volume:
-        - /etc/ssl/certs:/etc/ssl/certs:ro
-        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
-      volumes-from:
-        - data
-      link:
-        - config:config.service
-        - mysql:mysql.service
-        - sparta:sparta.service
-        - lipwig:lipwig.service
-        - polaris:polaris.service
-
   nginx:
     image: aerofs/nginx
     run:
@@ -91,9 +70,7 @@ containers:
       volumes-from:
         - data
       link:
-        - aeroimweb:aeroimweb.service
         - auditor:auditor.service
-        - blurber:blurber.service
         - bunker:bunker.service
         - ca-server:ca.service
         - charlie:charlie.service
@@ -102,11 +79,9 @@ containers:
         - identity:identity.service
         - polaris:polaris.service
         - repackaging:repackaging.service
-        - sloth:sloth.service
         - sp:sp.service
         - status:status.service
         - sparta:sparta.service
-        - trifrost:trifrost.service
         - waldo:waldo.service
         - web:web.service
 
@@ -302,25 +277,6 @@ containers:
         - auditor:auditor.service
         - config:config.service
         - sparta:sparta.service
-
-  trifrost:
-    image: aeroim/trifrost
-    run:
-      detach: true
-      volume:
-        - /etc/ssl/certs:/etc/ssl/certs:ro
-        - /usr/share/ca-certificates:/usr/share/ca-certificates:ro
-      volumes-from:
-        - data
-      link:
-        - config:config.service
-        - sparta:sparta.service
-        - postfix:postfix.service
-
-  aeroimweb:
-    image: aeroim/nginx
-    run:
-      detach: true
 
   verification:
     image: aerofs/verification
