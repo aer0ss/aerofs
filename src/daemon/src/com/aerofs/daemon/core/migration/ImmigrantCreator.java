@@ -458,6 +458,7 @@ public class ImmigrantCreator
                 _cvdb.setVersion_(sidxTo, oidFrom, v, t);
             }
         }
+        if (type != Type.FILE) return false;
 
         // preserve remote content info when preserving OID
         boolean shouldCollect = v == null;
