@@ -8,6 +8,7 @@ import com.aerofs.base.Loggers;
 import com.aerofs.daemon.event.net.EIDevicePresence;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.event.IEvent;
 import org.slf4j.Logger;
@@ -83,10 +84,10 @@ public class PresenceService implements IUnicastStateListener, IDeviceConnection
     }
 
     @Override
-    public synchronized void onDeviceConnected(DID did)
+    public synchronized void onDeviceConnected(DID did, UserID user)
     {
         if (onlineOnUnicast.add(did)) {
-            notifyDevicePresence(did, true);
+            notifyDevicePresence(did, user, true);
         }
     }
 
@@ -94,16 +95,16 @@ public class PresenceService implements IUnicastStateListener, IDeviceConnection
     public synchronized void onDeviceDisconnected(DID did)
     {
         if (onlineOnUnicast.remove(did)) {
-            notifyDevicePresence(did, false);
+            notifyDevicePresence(did, null, false);
         }
     }
 
-    private void notifyDevicePresence(DID did, boolean isPotentiallyAvailable)
+    private void notifyDevicePresence(DID did, UserID user, boolean isPotentiallyAvailable)
     {
         l.info("{} {}", did, isPotentiallyAvailable ? "potentially available" : "unavailable");
 
         _executor.execute(() -> {
-            sink.enqueueBlocking(new EIDevicePresence(tp, isPotentiallyAvailable, did), LO);
+            sink.enqueueBlocking(new EIDevicePresence(tp, isPotentiallyAvailable, did, user), LO);
             for (IDevicePresenceListener listener : listeners) {
                 listener.onDevicePresenceChanged(did, isPotentiallyAvailable);
             }

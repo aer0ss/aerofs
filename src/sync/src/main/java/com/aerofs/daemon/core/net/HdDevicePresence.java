@@ -15,11 +15,13 @@ public class HdDevicePresence implements IEventHandler<EIDevicePresence>
     private static final Logger l = Loggers.getLogger(HdDevicePresence.class);
 
     private final Devices _devices;
+    private final DeviceToUserMapper _d2u;
     private final CfgLocalDID _cfgLocalDID;
 
     @Inject
-    public HdDevicePresence(Devices devices, CfgLocalDID cfgLocalDID)
+    public HdDevicePresence(Devices devices, DeviceToUserMapper d2u, CfgLocalDID cfgLocalDID)
     {
+        _d2u = d2u;
         _devices = devices;
         _cfgLocalDID = cfgLocalDID;
     }
@@ -32,6 +34,11 @@ public class HdDevicePresence implements IEventHandler<EIDevicePresence>
 
         l.debug("{} {} {}", did, ev._online ? "+" : "-", ev._tp);
 
+        if (ev._user != null) {
+            try {
+                _d2u.onUserIDResolved_(did, ev._user);
+            } catch (Exception e) {}
+        }
         if (ev._online) {
             _devices.online_(did, ev._tp);
         } else {

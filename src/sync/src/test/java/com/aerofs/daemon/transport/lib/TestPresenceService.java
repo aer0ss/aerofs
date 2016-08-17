@@ -5,9 +5,8 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import com.aerofs.testlib.LoggerSetup;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
@@ -71,7 +70,7 @@ public final class TestPresenceService
             assertThat(isOnline, equalTo(true));
         });
 
-        presenceService.onDeviceConnected(DID_0);
+        presenceService.onDeviceConnected(DID_0, UserID.DUMMY);
 
         assertThat(presenceService.isPotentiallyAvailable(DID_0), equalTo(true));
     }
@@ -82,7 +81,7 @@ public final class TestPresenceService
     public void shouldNotifyDeviceOfflineIfDeviceBecomesDisconnectedFromUnicastAndIsNotReachableOnMulticast()
             throws Exception
     {
-        presenceService.onDeviceConnected(DID_0);
+        presenceService.onDeviceConnected(DID_0, UserID.DUMMY);
 
         presenceService.addListener((did, isOnline) -> {
             assertThat(did, equalTo(DID_0));
@@ -107,18 +106,18 @@ public final class TestPresenceService
         });
 
         // NOTE: some of the transport components _may_ report connection twice
-        presenceService.onDeviceConnected(DID_0);
-        presenceService.onDeviceConnected(DID_0);
+        presenceService.onDeviceConnected(DID_0, UserID.DUMMY);
+        presenceService.onDeviceConnected(DID_0, UserID.DUMMY);
 
         assertThat(presenceNotifications.get(), equalTo(1));
     }
 
     @Test
     public void shouldReturnCorrectSetOfOnlineDevices() {
-        presenceService.onDeviceConnected(DID_0);
-        presenceService.onDeviceConnected(DID_1);
-        presenceService.onDeviceConnected(DID_2);
-        presenceService.onDeviceConnected(DID_3);
+        presenceService.onDeviceConnected(DID_0, UserID.DUMMY);
+        presenceService.onDeviceConnected(DID_1, UserID.DUMMY);
+        presenceService.onDeviceConnected(DID_2, UserID.DUMMY);
+        presenceService.onDeviceConnected(DID_3, UserID.DUMMY);
         presenceService.onDeviceDisconnected(DID_1);
 
         assertThat("did0", presenceService.isPotentiallyAvailable(DID_0));

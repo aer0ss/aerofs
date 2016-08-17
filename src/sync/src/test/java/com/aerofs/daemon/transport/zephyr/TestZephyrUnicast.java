@@ -13,6 +13,7 @@ import com.aerofs.ids.DID;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
 import com.aerofs.daemon.transport.lib.IRoundTripTimes;
+import com.aerofs.ids.UserID;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.TransportProtocolUtil;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener;
@@ -43,6 +44,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -212,13 +215,13 @@ public final class TestZephyrUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device (ignore link going down, because we only care that it happened on the local device)
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
     }
 
@@ -251,13 +254,13 @@ public final class TestZephyrUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
     }
 
@@ -284,7 +287,7 @@ public final class TestZephyrUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceConnected(unreachableDevice);
+        localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceConnected(eq(unreachableDevice), any(UserID.class));
     }
 
     @Test
@@ -325,13 +328,13 @@ public final class TestZephyrUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
     }
 

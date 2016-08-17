@@ -5,6 +5,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ public class SemaphoreTriggeringListener implements IUnicastStateListener, IDevi
     }
 
     @Override
-    public void onDeviceConnected(DID did)
+    public void onDeviceConnected(DID did, UserID user)
     {
         deviceConnectedSemaphore.release();
         l.debug("released device connected semaphore");

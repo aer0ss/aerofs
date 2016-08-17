@@ -106,10 +106,10 @@ public final class TestCNameVerifiedHandler
 
         InOrder inOrder = inOrder(channel, deviceConnectionListener, ctx);
         inOrder.verify(channel).setAttachment(channelData);
-        inOrder.verify(deviceConnectionListener).onDeviceConnected(did);
+        inOrder.verify(deviceConnectionListener).onDeviceConnected(did, userID);
         inOrder.verify(ctx).sendUpstream(any(ChannelEvent.class));
 
-        verify(deviceConnectionListener).onDeviceConnected(did);
+        verify(deviceConnectionListener).onDeviceConnected(did, userID);
         verify(channel).setAttachment(channelData);
 
         assertThat(events, hasSize(2));

@@ -87,11 +87,11 @@ public final class CNameVerifiedHandler extends SimpleChannelHandler implements 
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        ChannelData provider = TransportUtil.getChannelData(e.getChannel());
+        ChannelData d = TransportUtil.getChannelData(e.getChannel());
 
         ctx.getPipeline().remove(this);
 
-        deviceConnectionListener.onDeviceConnected(provider.getRemoteDID());
+        deviceConnectionListener.onDeviceConnected(d.getRemoteDID(), d.getRemoteUserID());
 
         ctx.sendUpstream(e);
     }

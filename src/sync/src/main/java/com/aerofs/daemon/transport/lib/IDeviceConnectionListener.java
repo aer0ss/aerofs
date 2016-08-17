@@ -1,6 +1,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.ids.DID;
+import com.aerofs.ids.UserID;
 
 /**
  * Implemented by classes that want to be notified when connection to devices are
@@ -19,7 +20,7 @@ public interface IDeviceConnectionListener
      *
      * @param did device that became potentially available
      */
-    void onDeviceConnected(DID did);
+    void onDeviceConnected(DID did, UserID user);
 
     /**
      * Triggered <strong>once</strong> when

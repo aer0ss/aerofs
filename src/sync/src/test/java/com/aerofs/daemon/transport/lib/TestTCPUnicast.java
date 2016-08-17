@@ -11,6 +11,7 @@ import com.aerofs.daemon.transport.lib.exceptions.ExDeviceUnavailable;
 import com.aerofs.daemon.transport.lib.exceptions.ExTransportUnavailable;
 import com.aerofs.daemon.transport.LoggingRule;
 import com.aerofs.daemon.transport.MockCA;
+import com.aerofs.ids.UserID;
 import com.aerofs.testlib.LoggerSetup;
 import com.aerofs.daemon.transport.lib.UnicastTransportListener.Received;
 import com.aerofs.daemon.transport.tcp.UnicastTCPDevice;
@@ -37,6 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
@@ -278,13 +281,13 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
 
         // we should have signalled somehow that unicast is unavailable
@@ -320,13 +323,13 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener).onDeviceDisconnected(localDevice.did);
     }
 
@@ -354,7 +357,7 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceConnected(unreachableDevice);
+        localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceConnected(eq(unreachableDevice), any(UserID.class));
     }
 
     @Test
@@ -402,13 +405,13 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener, times(2)).onDeviceConnected(otherDevice.did); // once for incoming, once for outgoing
+        localInOrder.verify(localDevice.unicastListener, times(2)).onDeviceConnected(otherDevice.did, otherDevice.userID); // once for incoming, once for outgoing
         localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener, times(2)).onDeviceConnected(localDevice.did); // once for incoming, once for outgoing
+        otherInOrder.verify(otherDevice.unicastListener, times(2)).onDeviceConnected(localDevice.did, localDevice.userID); // once for incoming, once for outgoing
         otherInOrder.verify(otherDevice.unicastListener, times(0)).onDeviceDisconnected(localDevice.did);
     }
 
@@ -457,13 +460,13 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener, times(2)).onDeviceConnected(otherDevice.did); // once for incoming, once for outgoing
+        localInOrder.verify(localDevice.unicastListener, times(2)).onDeviceConnected(otherDevice.did, otherDevice.userID); // once for incoming, once for outgoing
         localInOrder.verify(localDevice.unicastListener, times(0)).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener, times(2)).onDeviceConnected(localDevice.did); // once for incoming, once for outgoing
+        otherInOrder.verify(otherDevice.unicastListener, times(2)).onDeviceConnected(localDevice.did, localDevice.userID); // once for incoming, once for outgoing
         otherInOrder.verify(otherDevice.unicastListener, times(0)).onDeviceDisconnected(localDevice.did);
     }
 
@@ -509,13 +512,13 @@ public final class TestTCPUnicast
         // verify the order of calls for the local device
         InOrder localInOrder = inOrder(localDevice.unicastListener);
         localInOrder.verify(localDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        localInOrder.verify(localDevice.unicastListener, times(1)).onDeviceConnected(otherDevice.did);
+        localInOrder.verify(localDevice.unicastListener, times(1)).onDeviceConnected(otherDevice.did, otherDevice.userID);
         localInOrder.verify(localDevice.unicastListener, times(1)).onDeviceDisconnected(otherDevice.did);
 
         // verify the order of calls for the other device
         InOrder otherInOrder = inOrder(otherDevice.unicastListener);
         otherInOrder.verify(otherDevice.unicastListener, atLeastOnce()).onUnicastReady();
-        otherInOrder.verify(otherDevice.unicastListener, times(1)).onDeviceConnected(localDevice.did);
+        otherInOrder.verify(otherDevice.unicastListener, times(1)).onDeviceConnected(localDevice.did, localDevice.userID);
         otherInOrder.verify(otherDevice.unicastListener, times(1)).onDeviceDisconnected(localDevice.did);
     }
 
