@@ -13,7 +13,6 @@ routes = [
     'json_setup_hpc',
     'json_verify_ldap',
     'json_upload_backup',
-    'json_setup_finalize',
 
     'json-get-boot',
     'json-repackaging',
@@ -31,10 +30,6 @@ routes = [
     'json-archive-container-logs',
     'json-upload-container-logs',
     'json-status',
-
-    # Bootstrap
-    'json_enqueue_bootstrap_task',
-    'json_get_bootstrap_task_status',
 
     # Other maintenance routes
     'login',

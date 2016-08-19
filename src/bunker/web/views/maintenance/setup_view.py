@@ -9,7 +9,6 @@ from pyramid.security import NO_PERMISSION_REQUIRED, remember
 import requests
 from pyramid.view import view_config
 from pyramid.httpexceptions import HTTPOk, HTTPFound
-from aerofs_common.bootstrap import BootstrapClient
 from web.error import expected_error, unexpected_error
 from web.license import set_license_file_and_attach_shasum_to_session, is_license_present_and_valid
 from backup_and_upgrade_view import BACKUP_FILE_PATH, example_backup_download_file_name
@@ -474,20 +473,3 @@ def _get_already_restored_html_message(request):
            ' <a href="{}">click here</a> to finish the setup, or discard this appliance' \
            ' and launch a new one to start over.'.format(
            _get_hostname_page_route_path(request))
-
-
-# ------------------------------------------------------------------------
-# Finalize
-# ------------------------------------------------------------------------
-
-@view_config(
-    route_name='json_setup_finalize',
-    permission='maintain',
-    renderer='json',
-    request_method='POST'
-)
-def json_setup_finalize(request):
-    log.warn("finalizing configuration...")
-    bootstrap_client = BootstrapClient(request.registry.settings["deployment.bootstrap_server_uri"])
-    bootstrap_client.enqueue_task_set("set-configuration-completed")
-    return {}

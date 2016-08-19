@@ -2,7 +2,6 @@
 <%! page_title = "Auditing" %>
 
 <%namespace name="csrf" file="csrf.mako"/>
-<%namespace name="bootstrap" file="bootstrap.mako"/>
 
 <h2>Auditing</h2>
 

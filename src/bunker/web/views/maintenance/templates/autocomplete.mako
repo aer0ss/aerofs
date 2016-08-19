@@ -1,4 +1,3 @@
-<%namespace name="bootstrap" file="bootstrap.mako"/>
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="csrf" file="csrf.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
@@ -41,7 +40,6 @@
     ## spinner support is required by progress_modal
     <%progress_modal:scripts/>
     <%spinner:scripts/>
-    <%bootstrap:scripts/>
 
     <script>
         $(document).ready(function() {

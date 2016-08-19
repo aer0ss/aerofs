@@ -4,7 +4,6 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 
 from web.util import flash_error, flash_success
-from aerofs_common.bootstrap import BootstrapClient
 from web.views.maintenance.maintenance_util import get_conf, get_conf_client, \
         is_ipv4_address, is_hostname_resolvable
 import requests

@@ -4,7 +4,6 @@
 <%! from web.views.maintenance.maintenance_util import unformat_pem %>
 
 <%namespace name="csrf" file="csrf.mako"/>
-<%namespace name="bootstrap" file="bootstrap.mako"/>
 <%namespace name="modal" file="modal.mako"/>
 
 <div class="page-block">

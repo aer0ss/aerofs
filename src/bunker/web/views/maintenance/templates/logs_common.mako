@@ -1,7 +1,6 @@
 
 <%namespace name="spinner" file="spinner.mako"/>
 <%namespace name="progress_modal" file="progress_modal.mako"/>
-<%namespace name="bootstrap" file="bootstrap.mako"/>
 
 <%def name="html()">
     <%progress_modal:progress_modal>
@@ -17,7 +16,6 @@
 </%def>
 
 <%def name="scripts()">
-    <%bootstrap:scripts/>
     <%progress_modal:scripts/>
     ## spinner support is required by progress_modal
     <%spinner:scripts/>
