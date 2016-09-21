@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
+import com.aerofs.daemon.core.polaris.RemoteLinkProxy;
 import com.aerofs.daemon.core.polaris.api.*;
 import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
 import com.aerofs.daemon.core.polaris.api.BatchResult.BatchOpResult;
@@ -139,28 +140,6 @@ public class MetaChangeSubmitter implements Submitter
 
     private final int MAX_BATCH_SIZE = 20;
 
-    private class RemoteLinkProxy
-    {
-        private final SIndex _sidx;
-        private final Map<OID, RemoteLink> _overlay = new HashMap<>();
-
-        RemoteLinkProxy(SIndex sidx)
-        {
-            _sidx = sidx;
-        }
-
-        RemoteLink getParent_(OID oid) throws SQLException
-        {
-            RemoteLink lnk = _overlay.get(oid);
-            return lnk != null ? lnk : _rpdb.getParent_(_sidx, oid);
-        }
-
-        public void setParent(OID oid, OID newParent, String newName)
-        {
-            _overlay.put(oid, new RemoteLink(newParent, newName, -1));
-        }
-    }
-
     /**
      * Asynchronously submit the next queued local metadata change(s) to Polaris.
      */
@@ -190,7 +169,7 @@ public class MetaChangeSubmitter implements Submitter
         }
 
         // get next meta change from queue
-        RemoteLinkProxy proxy = new RemoteLinkProxy(sidx);
+        RemoteLinkProxy proxy = new RemoteLinkProxy(_rpdb, sidx);
         List<MetaChange> changes = Lists.newArrayList();
         List<BatchOp> ops = Lists.newArrayList();
         Set<Long> noops = new HashSet<>();

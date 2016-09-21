@@ -199,6 +199,14 @@ public class MetaChangesDatabase extends AbstractDatabase
         }
     }
 
+    private final ParameterizedStatement<SIndex> _pswGetLastIndex = new ParameterizedStatement<>(
+            sidx -> DBUtil.select(tableName(sidx), "max(" + C_META_CHANGE_IDX + ")"));
+    public Long getLastChangeIndex_(SIndex sidx) throws SQLException {
+        try (ResultSet rs = query(_pswGetLastIndex.get(sidx))) {
+            return rs.next() ? rs.getLong(1) : null;
+        }
+    }
+
     private final ParameterizedStatement<SIndex> _pswDeleteChange = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_IDX + "=?"));
     public boolean deleteChange_(SIndex sidx, long idx, Trans t) throws SQLException
@@ -209,6 +217,6 @@ public class MetaChangesDatabase extends AbstractDatabase
     private final ParameterizedStatement<SIndex> _pswDeleteObjectChanges = new ParameterizedStatement<>(
             sidx -> DBUtil.deleteWhere(tableName(sidx), C_META_CHANGE_OID + "=?"));
     public boolean deleteChanges_(SIndex sidx, OID oid, Trans t) throws SQLException {
-        return 1 == update(_pswDeleteObjectChanges.get(sidx), oid.getBytes());
+        return 1 >= update(_pswDeleteObjectChanges.get(sidx), oid.getBytes());
     }
 }

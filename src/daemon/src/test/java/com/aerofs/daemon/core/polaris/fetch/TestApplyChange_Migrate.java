@@ -3,13 +3,17 @@ package com.aerofs.daemon.core.polaris.fetch;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.mock.logical.LogicalObjectsPrinter;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.PrefixOutputStream;
 import com.aerofs.daemon.core.phy.block.BlockStorage;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
+import com.aerofs.daemon.core.polaris.db.MetaChangesDatabase.MetaChange;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.DID;
@@ -21,10 +25,12 @@ import com.aerofs.lib.cfg.CfgAbsDefaultAuxRoot;
 import com.aerofs.lib.cfg.CfgStoragePolicy;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.UnitTestTempDir;
 import com.google.common.collect.ImmutableSet;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -223,6 +229,101 @@ public class TestApplyChange_Migrate extends AbstractTestApplyChange {
                                         folder("qux", qux)))));
 
         assertHasContentChanges(sidx, baz2);
+    }
+
+    @Test
+    public void shouldReconcileLocalChanges() throws Exception {
+        apply(
+                insert(OID.ROOT, "foo", foo, ObjectType.FOLDER),
+                share(foo)
+        );
+
+        SIndex shared = mds.sm.get_(SID.folderOID2convertedStoreSID(foo));
+
+        OID mvin = OID.generate(), mvout = OID.generate();
+
+        apply(shared,
+                insert(OID.ROOT, "bar", bar, ObjectType.FOLDER),
+                insert(OID.ROOT, "in", mvin, ObjectType.FOLDER),
+                insert(bar, "out", mvout, ObjectType.FOLDER)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        // verify
+        mds.expect(rootSID,
+                folder(ClientParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
+                anchor("foo", foo,
+                        folder(ClientParam.TRASH, OID.TRASH),
+                        folder("in", mvin),
+                        folder("bar", bar,
+                                folder("out", mvout))));
+
+        OID quux = OID.generate();
+
+        try (Trans t = tm.begin_()) {
+            oc.createMetaForLinker_(OA.Type.DIR, baz, new SOID(shared, bar), "baz", t);
+
+            oc.createMetaForLinker_(OA.Type.DIR, qux, new SOID(shared, bar), "qux", t);
+            oc.createMetaForLinker_(OA.Type.FILE, quux, new SOID(shared, qux), "quux", t);
+
+            od.delete_(new SOID(shared, qux), PhysicalOp.MAP, t);
+
+            om.moveInSameStore_(new SOID(shared, mvin), bar, "in2", PhysicalOp.MAP, true, t);
+            om.moveInSameStore_(new SOID(shared, mvout), OID.ROOT, "out2", PhysicalOp.MAP, true, t);
+            t.commit_();
+        }
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        // verify
+        mds.expect(rootSID,
+                folder(ClientParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
+                anchor("foo", foo,
+                        folder(ClientParam.TRASH, OID.TRASH,
+                                folder(qux.toStringFormal(), qux,
+                                        file("quux", quux))),
+                        folder("out2", mvout),
+                        folder("bar", bar,
+                                folder("in2", mvin),
+                                folder("baz", baz))));
+
+        assertHasLocalChanges(shared,
+                new MetaChange(shared, -1, baz, bar, "baz"),
+                new MetaChange(shared, -1, qux, bar, "qux"),
+                new MetaChange(shared, -1, quux, qux, "quux"),
+                new MetaChange(shared, -1, qux, OID.TRASH, qux.toStringFormal()),
+                new MetaChange(shared, -1, mvin, bar, "in2"),
+                new MetaChange(shared, -1, mvout, OID.ROOT, "out2"));
+
+        OID bar2 = OID.generate();
+
+        apply(shared,
+                remove(OID.ROOT, bar, bar2)
+        );
+
+        LogicalObjectsPrinter.printRecursively(rootSID, ds);
+
+        OID alias = a2t.getNullable_(new SOID(shared, mvout));
+        Assert.assertNotNull(alias);
+
+        mds.expect(rootSID,
+                folder(ClientParam.TRASH, OID.TRASH,
+                        folder(foo.toStringFormal(), foo)),
+                anchor("foo", foo,
+                        folder(ClientParam.TRASH, OID.TRASH,
+                                folder(bar.toStringFormal(), bar,
+                                        folder("baz", baz),
+                                        folder("in2", mvin)),
+                                folder(qux.toStringFormal(), qux,
+                                        file("quux", quux))),
+                        folder("out2", alias)));
+
+        assertHasLocalChanges(shared,
+                new MetaChange(shared, -1, mvin, OID.TRASH, mvin.toStringFormal()),
+                new MetaChange(shared, -1, alias, OID.ROOT, "out2"));
     }
 
     // NB: this is not actually exercising migration but it requires a working physical storage...

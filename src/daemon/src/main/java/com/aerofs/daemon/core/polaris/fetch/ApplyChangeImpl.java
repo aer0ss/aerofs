@@ -70,8 +70,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.DigestInputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
@@ -560,47 +559,76 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         }
     }
 
-    void reconcileLocalChangesInMigratedTree_(SIndex sidx, OID oid, Trans t)
+    private void reconcileLocalChangesInMigratedTree_(SIndex sidx, OID oid, Trans t)
             throws SQLException, IOException, ExAlreadyExist {
+        SOID migrated = new SOID(sidx, oid);
+        Set<OID> discarded = new HashSet<>();
         RemoteTreeCache cache = new RemoteTreeCache(sidx, oid, _rpdb);
+        Long last = _mcdb.getLastChangeIndex_(sidx);
+        if (last == null) return;
+
         try (IDBIterator<MetaChange> it = _mcdb.getChangesSince_(sidx, Long.MIN_VALUE)) {
             while (it.next_()) {
                 MetaChange c = it.get_();
-                boolean from = cache.isInSharedTree(c.oid);
-                boolean to = c.newParent != null
-                        && _ds.resolve_(_a2t.dereferenceAliasedOID_(new SOID(sidx, c.newParent)))
-                                .soids.contains(new SOID(sidx, oid));
-                if (from) {
-                    l.info("discard change in migrated subtree {}{}", sidx, c.oid);
+
+                if (c.idx > last) break;
+
+                // must deref alias to properly handle changes to objects moved out of migrated
+                // subtree by an earlier change
+                SOID soid = _a2t.dereferenceAliasedOID_(new SOID(sidx, c.oid));
+
+                // object is under migrated subtree on polaris
+                boolean from = cache.isInSharedTree(soid.oid());
+
+                // object is under migrated subtree locally
+                boolean to = _ds.resolve_(soid).soids.contains(migrated);
+
+                // any meta change under the migrated subtree will be rejected by polaris since
+                // every folder is now permanently LOCKED
+                // however, if newParent is ultimately moved out of the subtree it will be recreated
+                // under an alias and changes preceding that move should be preserved
+                SOID parent = _a2t.dereferenceAliasedOID_(new SOID(sidx, c.newParent));
+                boolean trans = cache.isInSharedTree(parent.oid())
+                        && _ds.resolve_(parent).soids.contains(migrated);
+
+                l.info("{} {}{}:{} {}:{} {} {} {}", c.idx, sidx, c.oid, soid.oid(),
+                        c.newParent, parent.oid(), from, to, trans);
+
+                if (from || trans || discarded.contains(c.oid) || discarded.contains(parent.oid())) {
+                    l.info("discard change in migrated subtree {} {}{} {} {}",
+                            c.idx, sidx, c.oid, c.newParent, c.newName);
                     // changes would be rejected by polaris as the migrated tree is locked to avoid
-                    // races.
-                    // NB: if we support wholesale "restore" of deleted trees in the future we may
-                    // have to reconcile the divergence at that point
+                    // races so they need to be discarded
+                    // NB: if we support wholesale "restore" of deleted trees in the future we will
+                    // have to reconcile the divergence at that point.
                     _mcdb.deleteChange_(sidx, c.idx, t);
-                    if (to) {
-                        OID cc = OID.generate();
-                        OA oa = _ds.getOA_(new SOID(sidx, c.oid));
-                        alias_(sidx, cc, oa, t);
-                        _vu.update_(new SOCID(sidx, cc, CID.META), t);
-                        if (oa.caMasterNullable() != null) {
-                            _vu.update_(new SOCID(sidx, cc, CID.CONTENT), t);
-                        }
+
+                    if (_rpdb.getParent_(sidx, c.oid) == null) {
+                        discarded.add(c.oid);
                     }
-                } else if (to) {
-                    _mcdb.deleteChange_(sidx, c.idx, t);
-                    if (_rpdb.getParent_(sidx, c.oid) != null) {
-                        l.info("del obj locally moved into migrated tree {}{}", c.sidx, c.oid);
-                        // ideally we'd cause a cross-store move instead but that's hard since at
-                        // this point we have no idea what the parent is going to be in the
-                        // destination store
-                        _mcdb.insertChange_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), t);
-                    }
+                }
+
+                if (from && !to) {
+                    OID cc = OID.generate();
+                    l.info("obj locally moved out of migrated subtree {} {}{} {}", c.idx, c.sidx, c.oid, cc);
+                    // NB: MetaChangeSubmitter will move to front if needed to account for already
+                    // inserted children
+                    _mcdb.insertChange_(sidx, cc, c.newParent, c.newName, t);
+                    OA oa = _ds.getOA_(new SOID(sidx, c.oid));
+                    alias_(sidx, cc, oa, t);
+                } else if (!from && to && _rpdb.getParent_(sidx, c.oid) != null) {
+                    l.info("obj locally moved into migrated subtree {} {}{}", c.idx, c.sidx, c.oid);
+                    // ideally we'd cause a cross-store move instead but that's hard since at
+                    // this point we have no idea what the parent is going to be in the
+                    // destination store
+                    // FIXME: iteration forever?
+                    _mcdb.insertChange_(sidx, c.oid, OID.TRASH, c.oid.toStringFormal(), t);
                 }
             }
         }
     }
 
-    void applyDelete_(OA oaChild, Trans t) throws Exception {
+    private void applyDelete_(OA oaChild, Trans t) throws Exception {
         OA oaTrash = _ds.getOA_(new SOID(oaChild.soid().sidx(), OID.TRASH));
         applyMove_(oaTrash, oaChild, oaChild.soid().oid().toStringFormal(), Long.MAX_VALUE, t);
     }
@@ -889,7 +917,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                     continue;
                 }
 
-                l.debug("preserving move {} {} {} {}",
+                l.info("preserving move {} {} {} {}",
                         sidxTo, mc.oid, mc.newParent, mc.newName);
                 _mcdb.insertChange_(sidxTo, mc.oid, mc.newParent, mc.newName, t);
             }
