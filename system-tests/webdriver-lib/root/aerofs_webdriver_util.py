@@ -29,7 +29,7 @@ def login(driver, wait, selector, host, user, password):
 
 
 def login_as_admin_at_syncfs_dot_com(driver, wait, selector, host):
-    login(driver, wait, selector, host, 'admin@syncfs.com', 'temp123')
+    login(driver, wait, selector, host, 'support@aerofs.com', 'temp123')
 
 
 def get_signup_code(hostname, user_id):

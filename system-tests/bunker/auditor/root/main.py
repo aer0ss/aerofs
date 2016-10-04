@@ -31,7 +31,7 @@ def main():
         exit(11)
     driver, waiter, selector = init()
 
-    userid = argv[4] if len(argv) > 4 else "admin@syncfs.com"
+    userid = argv[4] if len(argv) > 4 else "support@aerofs.com"
     passwd = argv[5] if len(argv) > 5 else "temp123"
 
     url = "https://{}/admin/auditing".format(argv[1])

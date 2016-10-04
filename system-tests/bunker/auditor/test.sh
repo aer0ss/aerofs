@@ -26,7 +26,7 @@ fi
 DOWNSTREAM_PORT=$(docker port ${CONTAINER} | tr ':' ' ' | rev | awk '{print $1}' | rev)
 
 APPLIANCE_IP="$1"
-DEFAULT_USERID="admin@syncfs.com"
+DEFAULT_USERID="support@aerofs.com"
 USERID="${2:-$DEFAULT_USERID}"
 shift
 

@@ -82,7 +82,7 @@ STORAGE_BACKENDS_DETAILS = {
     }
 }
 
-ADMIN_USERID = 'admin@syncfs.com'
+ADMIN_USERID = 'support@aerofs.com'
 ADMIN_PASS = 'temp123'
 
 
