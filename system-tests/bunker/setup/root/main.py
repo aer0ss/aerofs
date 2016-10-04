@@ -47,13 +47,16 @@ def set_browser_cert(e, wait, cert, key):
     _click_next(e)
 
 
-def set_email(e, wait, email_host, email_port, admin_email):
+def set_email(e, wait, email_host, email_port, email_username, email_password, admin_email):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 3 of 5'))
 
     # Set remote mail relay
     e.get('input[value="remote"]').click()
     e.get_and_clear('#email-sender-public-host').send_keys(email_host)
     e.get_and_clear('#email-sender-public-port').send_keys(email_port)
+    e.get_and_clear('#email-sender-public-username').send_keys(email_username)
+    e.get_and_clear('#email-sender-public-password').send_keys(email_password)
+    e.get('#email-sender-public-enable-tls').click()
 
     # Set support email address
     e.get_and_clear('#base-www-support-email-address').send_keys(admin_email)
@@ -136,7 +139,7 @@ def run_all(d, wait, e, hostname, create_first_user):
     select_new_appliance(e, wait)
     set_hostname(e, wait, hostname)
     set_browser_cert(e, wait, y['browser-cert'], y['browser-key'])
-    set_email(e, wait, y['email-host'], y['email-port'], y['admin-email'])
+    set_email(e, wait, y['email-host'], y['email-port'], y['email-username'], y['email-password'], y['admin-email'])
     reboot_system(e, wait)
     repackage_installers(e, wait)
 

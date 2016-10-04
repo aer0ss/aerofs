@@ -1,7 +1,9 @@
-admin-email: admin@syncfs.com
+admin-email: support@aerofs.com
 admin-pass: temp123
-email-host: devmail.aerofs.com
+email-host: email-smtp.us-east-1.amazonaws.com
 email-port: 25
+email-username: AKIAJSM4GBGTBVO5UD5Q
+email-password: AqFZb+rIoAddzEhFTpxqMF11OQ7pcONfxT/lP7GEE/ON
 
 # This is the *.syncfs.com certificate
 # This cert & key have been duplicated in docker/hpc/hpc-reverse-proxy/root/test_certs

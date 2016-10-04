@@ -29,11 +29,12 @@ fi
 
 HOST=${2:-share.syncfs.com}
 
-DEVMAIL=devmail.aerofs.com
-echo "Testing connection to ${DEVMAIL} ..."
-# VPN is required to access devmail during appliance setup
-nc -z ${DEVMAIL} 25 || {
-    error "ERROR: please connect to VPN for ${DEVMAIL} access"
+BUTTON=button.amium.com
+
+echo "Testing VPN connection by connecting to ${BUTTON} ..."
+# VPN connection is required to connect to button.amium.com
+nc -z ${BUTTON} 22 || {
+    error "ERROR: please connect to VPN for ${BUTTON} access"
     exit 22
 }
 
