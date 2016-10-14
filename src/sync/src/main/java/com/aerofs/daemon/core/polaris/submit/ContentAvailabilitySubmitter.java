@@ -44,7 +44,7 @@ import static com.aerofs.daemon.core.polaris.GsonUtil.GSON;
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * Listens for new content versions and notifies Polaris of available content.
+ * Listens for new content versions and notifies Waldo of available content.
  * Should be scheduled after successful content downloads.
  *
  * TODO: handle loss of availability due to expulsion
@@ -63,7 +63,7 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
     private final TransLocal<Boolean> _tlSubmit;
 
 
-    // polaris' resulting SSMP payload size is 24 bytes per location. SSMP
+    // Waldo's resulting SSMP payload size is 24 bytes per location. SSMP
     // specifies 1024 bytes max in a payload, so the batch size of 42 is used to
     // stay under this limit.
     private final int MAX_BATCH_SIZE = 42;
@@ -123,7 +123,7 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
      */
     @Override
     public void onSetVersion_(SIndex sidx, OID oid, long v, Trans t) throws SQLException {
-        l.trace("onSetVersion_");
+        l.debug("{}{} = {}", sidx, oid, v);
         _acdb.setContent_(sidx, oid, v, t);
         checkArgument(_tlSubmit.get(t));
     }
@@ -151,16 +151,15 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
             while (contents.next_() && ops.size() < MAX_BATCH_SIZE) {
                 content = contents.get_();
                 if (!content.sidx.equals(sidx)) break;
+                l.debug("sub {}{} {}", content.sidx, content.oid, content.version);
                 ops.add(new LocationBatchOperation(content.oid.toStringFormal(), content.version));
             }
-            l.debug("buildLocationBatchOperationsList ops.size = {}", ops.size());
             return new LocationBatch(sid.toStringFormal(), ops);
         }
     }
 
     private Boolean updateAvailableContentDatabase_(HttpResponse response, LocationBatch batch)
                     throws Exception {
-        l.trace("ENTER updateAvailableContentDatabase, r.status = {}", response.getStatus());
         if (!response.getStatus().equals(HttpResponseStatus.OK)) {
             if (response.getStatus().getCode() >= 500) {
                 throw new ExRetryLater(response.getStatus().getReasonPhrase());
@@ -171,11 +170,8 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
         String content = response.getContent().toString(BaseUtil.CHARSET_UTF);
         LocationBatchResult batchResult = GSON.fromJson(content, LocationBatchResult.class);
 
-        l.debug("updateAvailableContentDatabase: ops.size = {}, results.size = {}", batch.available.size(),
-                batchResult.results.size());
-
-        SIndex sidx = _sid2sidx.getNullable_(new SID(batch.sid));
-        if (sidx == null) throw new ExNotFound("store expelled: " + batch.sid);
+        SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(new SID(batch.sid));
+        if (sidx == null) throw new ExNotFound("unknown store: " + batch.sid);
 
         if (batchResult.results.size() != batch.available.size()) {
             throw new ExProtocolError("mismatching response size");
@@ -184,22 +180,18 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
         try (Trans t = _tm.begin_()) {
             for (int i = 0; i < batchResult.results.size(); ++i) {
                 LocationBatchOperation op = batch.available.get(i);
+                OID oid = new OID(op.oid);
                 if (batchResult.results.get(i)) {
-                    OID oid = new OID(op.oid);
                     _acdb.deleteContent_(sidx, oid, op.version, t);
                     notifyWaiter_(new SOID(sidx, oid), null);
 
-                    l.debug("updateAvailableContentDatabase delete {}{} {} successful", sidx,
-                            op.oid, op.version);
+                    l.debug("ack {}<{}> {}", sidx, oid, op.version);
                 } else {
-                    l.debug("updateAvailableContentDatabase not deleting {}{} {}", sidx,
-                            op.oid, op.version);
+                    l.info("fail {}<{}> {}", sidx, oid, op.version);
                 }
             }
             t.commit_();
         }
-
-        l.trace("EXIT updateAvailableContentDatabase");
 
         // returns true so that it will be rescheduled to pick up any additional
         // changes

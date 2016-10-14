@@ -78,6 +78,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
         when(sid2sidx.get_(sid)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid)).thenReturn(sidx);
         when(sidx2sid.get_(sidx)).thenReturn(sid);
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
         when(sidx2sid.getLocalOrAbsent_(sidx)).thenReturn(sid);
