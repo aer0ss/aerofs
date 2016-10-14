@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.expel;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.IContentVersionControl;
+import com.aerofs.daemon.core.IContentVersionControl.Granularity;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -150,7 +151,7 @@ public class TestLogicalStagingArea extends AbstractTest
         int n = sm.getNullable_(soid.sidx()) != null ? 1 : 0;
         VerificationMode mode = times(n);
         verify(ds, mode).unsetFID_(soid, t);
-        verify(cvc, mode).fileExpelled_(soid, t);
+        verify(cvc, mode).fileExpelled_(soid, Granularity.File, t);
         verify(ds, mode).deleteCA_(soid, KIndex.MASTER, t);
 
         verify(ps).scrub_(eq(soid), eq(historyPath), anyString(), eq(t));

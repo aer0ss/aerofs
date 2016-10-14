@@ -26,14 +26,16 @@ import static com.aerofs.daemon.core.polaris.db.PolarisSchema.T_AVAILABLE_CONTEN
 
 /**
  * Keep track of content that has been updated with the latest version
+ *
+ * NB: this table is NOT cleaned up upon store deletion because we need to notify waldo that
+ * content is no longer available, otherwise routing will be inaccurate upon re-admission
  */
-public class AvailableContentDatabase extends AbstractDatabase implements IStoreDeletionOperator
+public class AvailableContentDatabase extends AbstractDatabase
 {
     @Inject
-    public AvailableContentDatabase(IDBCW dbcw, StoreDeletionOperators sdo)
+    public AvailableContentDatabase(IDBCW dbcw)
     {
         super(dbcw);
-        sdo.addImmediate_(this);
     }
 
     private final PreparedStatementWrapper _pswListContent = new PreparedStatementWrapper(
@@ -62,14 +64,6 @@ public class AvailableContentDatabase extends AbstractDatabase implements IStore
     public boolean deleteContent_(SIndex sidx, OID oid, long version, Trans t) throws SQLException
     {
         return 1 == update(_pswDeleteContent, sidx.getInt(), oid.getBytes(), version);
-    }
-
-    private final PreparedStatementWrapper _pswDeleteStoreContent = new PreparedStatementWrapper(
-            DBUtil.deleteWhereEquals(T_AVAILABLE_CONTENT, C_AVAILABLE_CONTENT_SIDX));
-    @Override
-    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
-    {
-        update(_pswDeleteStoreContent, sidx.getInt());
     }
 
     public static class AvailableContent

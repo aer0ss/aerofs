@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.polaris.db.AvailableContentDatabase.AvailableConte
 import com.aerofs.daemon.core.polaris.db.PolarisSchema;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.ids.DID;
@@ -53,7 +52,6 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
     ContentAvailabilitySubmitter submitter;
     AvailableContentDatabase acdb;
     TransManager tm;
-    StoreDeletionOperators sdo;
     @Mock WaldoAsyncClient client;
     @Mock CfgLocalDID did;
     @Mock CoreScheduler sched;
@@ -76,13 +74,13 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
         }
 
         tm = new TransManager(new Trans.Factory(dbcw));
-        sdo = new StoreDeletionOperators();
-        acdb = new AvailableContentDatabase(dbcw, sdo);
+        acdb = new AvailableContentDatabase(dbcw);
 
         when(sid2sidx.get_(sid)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid)).thenReturn(sidx);
         when(sidx2sid.get_(sidx)).thenReturn(sid);
         when(sidx2sid.getNullable_(sidx)).thenReturn(sid);
+        when(sidx2sid.getLocalOrAbsent_(sidx)).thenReturn(sid);
 
         doReturn(DID.generate()).when(did).get();
         doReturn(UserID.UNKNOWN_TEAM_SERVER).when(cfgLocalUser).get();

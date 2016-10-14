@@ -8,6 +8,7 @@ import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.IContentVersionControl;
+import com.aerofs.daemon.core.IContentVersionControl.Granularity;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -367,12 +368,13 @@ public class LogicalStagingArea extends AbstractLogicalStagingArea
         _ps.scrub_(soid, historyPath, rev, t);
 
         // if the entire store is staged it's counter-productive to cleanup objects one by one
-        if (!isStoreStaged_(soid.sidx())) {
+        Granularity g = isStoreStaged_(soid.sidx()) ? Granularity.Store : Granularity.File;
+        if (g != Granularity.Store) {
             for (KIndex kidx : oa.casNoExpulsionCheck().keySet()) {
                 _ds.deleteCA_(soid, kidx, t);
             }
-            _cvc.fileExpelled_(soid, t);
         }
+        _cvc.fileExpelled_(soid, g, t);
 
         _pvc.deleteAllPrefixVersions_(soid, t);
     }

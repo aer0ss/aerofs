@@ -6,5 +6,9 @@ import com.aerofs.lib.id.SOID;
 import java.sql.SQLException;
 
 public interface IContentVersionControl {
-    void fileExpelled_(SOID soid, Trans t) throws SQLException;
+    enum Granularity {
+        File,
+        Store
+    }
+    void fileExpelled_(SOID soid, Granularity g, Trans t) throws SQLException;
 }

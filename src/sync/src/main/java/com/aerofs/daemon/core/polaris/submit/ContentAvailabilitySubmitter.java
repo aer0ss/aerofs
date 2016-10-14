@@ -143,7 +143,7 @@ public class ContentAvailabilitySubmitter extends WaitableSubmitter<Void>
 
             AvailableContent content = contents.get_();
             SIndex sidx = content.sidx;
-            SID sid = _sidx2sid.get_(sidx);
+            SID sid = _sidx2sid.getLocalOrAbsent_(sidx);
 
             List<LocationBatchOperation> ops = new ArrayList<>();
             ops.add(new LocationBatchOperation(content.oid.toStringFormal(), content.version));
