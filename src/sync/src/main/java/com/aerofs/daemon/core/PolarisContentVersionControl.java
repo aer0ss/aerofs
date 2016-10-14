@@ -100,7 +100,7 @@ public class PolarisContentVersionControl implements IContentVersionControl
                 @Override
                 public void committed_() {
                     // TODO: better scheduling
-                    _sched.schedule_(new AbstractEBSelfHandling() {
+                    _sched.schedule(new AbstractEBSelfHandling() {
                         @Override
                         public void handle_() {
                             for (Entry<SIndex, Updated> e : m.entrySet()) {

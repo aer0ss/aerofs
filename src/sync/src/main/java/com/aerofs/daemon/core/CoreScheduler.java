@@ -18,7 +18,7 @@ public class CoreScheduler extends Scheduler
         _q = q;
     }
 
-    public void schedule_(IEvent ev)
+    public void schedule(IEvent ev)
     {
         // this can be called from the main thread during the initialization phase
         // which for all intent and purposes is equivalent to a core thread, except

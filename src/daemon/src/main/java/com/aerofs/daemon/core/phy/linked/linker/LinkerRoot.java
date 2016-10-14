@@ -218,6 +218,10 @@ public class LinkerRoot
         }
     }
 
+    public void scheduleScanImmediately(Set<String> batch, boolean recurse) {
+        _ssq.scheduleScanImmediately(batch, recurse);
+    }
+
     public void scanImmediately_(Set<String> batch, boolean recurse)
     {
         _ssq.scanImmediately_(batch, recurse);

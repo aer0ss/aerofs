@@ -151,7 +151,7 @@ public class AbstractSyncStatusTest extends AbstractTest
         doAnswer(invocation -> {
             scheduled.add((AbstractEBSelfHandling) invocation.getArguments()[0]);
             return null;
-        }).when(coreScheduler).schedule_(any(IEvent.class));
+        }).when(coreScheduler).schedule(any(IEvent.class));
 
         doAnswer(invocation -> {
             if ((long) invocation.getArguments()[1] == 0) {

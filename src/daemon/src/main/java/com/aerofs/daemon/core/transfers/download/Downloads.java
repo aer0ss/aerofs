@@ -87,7 +87,7 @@ public class Downloads implements IContentDownloads
 
         // try to immediately enqueue event, schedule if core queue full
         IEvent ev = makeDownloadEvent_(dl);
-        _sched.schedule_(ev);
+        _sched.schedule(ev);
 
         Util.verify(_ongoing.put(soid, dl) == null);
     }

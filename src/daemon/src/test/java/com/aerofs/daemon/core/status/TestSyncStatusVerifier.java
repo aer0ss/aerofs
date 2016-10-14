@@ -159,7 +159,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                 statusQueries.add(oids);
                 l.trace("querying waldo for {} locations", batch.objects.size());
 
-                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                coreScheduler.schedule(new AbstractEBSelfHandling() {
                     @Override
                     public void handle_() {
                         try {
@@ -232,7 +232,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
                 batch.objects.forEach(op -> oids.add(op.oid));
                 statusQueries.add(oids);
 
-                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                coreScheduler.schedule(new AbstractEBSelfHandling() {
                     @Override
                     public void handle_() {
                         try {
@@ -302,7 +302,7 @@ public class TestSyncStatusVerifier extends AbstractSyncStatusTest
             try {
                 Function<HttpResponse, Boolean, Exception> function = (Function<HttpResponse, Boolean, Exception>) arg[2];
 
-                coreScheduler.schedule_(new AbstractEBSelfHandling() {
+                coreScheduler.schedule(new AbstractEBSelfHandling() {
                     @Override
                     public void handle_() {
                         try {

@@ -152,7 +152,7 @@ public class Linker implements ILinker, IListener
     @Override
     public void scan_(final ScanCompletionCallback callback)
     {
-        _sched.schedule_(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_()
             {

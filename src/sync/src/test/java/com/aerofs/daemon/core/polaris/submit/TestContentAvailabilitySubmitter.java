@@ -92,10 +92,10 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
             l.trace("scheduling");
             scheduled.add((AbstractEBSelfHandling) invocation.getArguments()[0]);
             return null;
-        }).when(sched).schedule_(any(IEvent.class));
+        }).when(sched).schedule(any(IEvent.class));
 
         doAnswer(invocation -> {
-            sched.schedule_(new AbstractEBSelfHandling() {
+            sched.schedule(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_() {
                     Object[] arg = invocation.getArguments();
@@ -179,7 +179,7 @@ public class TestContentAvailabilitySubmitter extends AbstractTest
 
     @Test
     public void shouldRescheduleWhenTransactionsCommitWhileRequestInFlight() throws Exception {
-        sched.schedule_(new AbstractEBSelfHandling() {
+        sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
                 for (int i = 0; i < 100; i++) {

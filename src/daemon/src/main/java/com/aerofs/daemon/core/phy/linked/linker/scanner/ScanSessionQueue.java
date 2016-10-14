@@ -14,8 +14,6 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.TimeSource;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -31,8 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import static com.aerofs.defects.Defects.newFrequentDefect;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Manages scan sessions on a per-root basis
@@ -99,14 +99,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         @Override
         public String toString()
         {
-            return FluentIterable.from(ImmutableSet.copyOf(_absPaths))
-                    .transform(path -> {
-                        if (path != null) {
-                            return path;
-                        }
-                        return null;
-                    })
-                    .toString() + ":" + _recursive;
+            return _absPaths.stream().collect(Collectors.joining(",", "[", "]")) + ":" + _recursive;
         }
     }
 
@@ -169,6 +162,15 @@ public class ScanSessionQueue implements IDumpStatMisc
         scanImpl_(new PathKey(absPaths, true), 0, callback);
     }
 
+    public void scheduleScanImmediately(Set<String> absPaths, boolean recursive) {
+        _f._sched.schedule(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_() {
+                scanImmediately_(absPaths, recursive);
+            }
+        });
+    }
+
     public void scanImmediately_(Set<String> absPaths, boolean recursive)
     {
         scanImpl_(new PathKey(absPaths, recursive), 0, () -> {});
@@ -215,10 +217,12 @@ public class ScanSessionQueue implements IDumpStatMisc
         }
 
         if (replace || tkOld == null) {
-            l.warn("enq " + pk + " in " + millisecondDelay + " replace " + replace);
+            l.warn("enq {} in {} replace {}", pk, millisecondDelay, replace);
             TimeKey tk = new TimeKey(time, millisecondDelay);
-            Util.verify(_path2time.put(pk, tk) == null);
-            Util.verify(_time2path.put(tk, pk) == null);
+            TimeKey ptk = _path2time.put(pk, tk);
+            checkState(ptk == null, "" + ptk);
+            PathKey ppk = _time2path.put(tk, pk);
+            checkState(ppk == null, "" + ppk);
         }
 
         return time;
@@ -272,7 +276,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         if (delay > 0) {
             _f._sched.schedule(ev, delay);
         } else {
-            _f._sched.schedule_(ev);
+            _f._sched.schedule(ev);
         }
     }
 
@@ -313,7 +317,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         _callbacks = Lists.newArrayList();
 
         for (final ScanCompletionCallback callback : callbacks) {
-            _f._sched.schedule_(new AbstractEBSelfHandling() {
+            _f._sched.schedule(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {

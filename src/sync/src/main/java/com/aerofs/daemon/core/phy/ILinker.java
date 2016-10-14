@@ -61,7 +61,7 @@ public interface ILinker extends IStartable
         @Override
         public void scan_(final ScanCompletionCallback callback)
         {
-            _sched.schedule_(new AbstractEBSelfHandling() {
+            _sched.schedule(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {

@@ -250,7 +250,7 @@ public final class Pump implements IProgram, IUnicastInputLayer
         protected void resched_() {
             if (scheduled) return;
             scheduled = true;
-            sched.schedule_(this);
+            sched.schedule(this);
         }
 
         public void handlePresence_(DID did, boolean online) {

@@ -146,7 +146,7 @@ abstract class AbstractTransferNotifier implements ITransferStateListener
     }
 
     private void scheduleUpdateDeviceInfo_(DID did) {
-        _sched.schedule_(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
                 try {

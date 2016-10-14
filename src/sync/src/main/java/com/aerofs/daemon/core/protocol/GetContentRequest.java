@@ -141,6 +141,7 @@ public class GetContentRequest implements CoreProtocolReactor.Handler {
                             ExStreamInvalid.class,
                             ExNoPerm.class,
                             ExSenderHasNoPerm.class,
+                            ExFileNotFound.class,
                             ExNoComponentWithSpecifiedVersion.class));
             _trl.sendUnicast_(msg.ep(), CoreProtocolUtil.newErrorResponse(msg.pb(), e));
         }

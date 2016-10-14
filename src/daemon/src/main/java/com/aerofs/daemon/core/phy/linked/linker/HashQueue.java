@@ -265,7 +265,7 @@ public class HashQueue
                 req.commit_();
                 req.removeSelf();
                 if (resched) {
-                    _sched.schedule_(this);
+                    _sched.schedule(this);
                     return;
                 }
             }

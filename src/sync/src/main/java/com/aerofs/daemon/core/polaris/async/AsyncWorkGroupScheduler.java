@@ -146,7 +146,7 @@ public class AsyncWorkGroupScheduler extends AbstractEBSelfHandling
     }
 
     private void reschedNow_() {
-        _sched.schedule_(this);
+        _sched.schedule(this);
     }
 
     private void reschedWithDelay_(long timeout) {

@@ -236,7 +236,7 @@ public class LinkedFile extends AbstractLinkedObject implements IPhysicalFile
                 checkNotNull(_path.virtual);
                 LinkerRoot lr = _s._lrm.get_(_path.virtual.sid());
                 if (lr != null) {
-                    lr.scanImmediately_(ImmutableSet.of(_f.getParent()), false);
+                    lr.scheduleScanImmediately(ImmutableSet.of(_f.getParent()), false);
                 }
             } else {
                 l.warn("missing NRO {} {}", _sokid, _path);

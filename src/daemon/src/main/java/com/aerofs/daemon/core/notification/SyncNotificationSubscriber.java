@@ -100,7 +100,7 @@ public class SyncNotificationSubscriber extends SSMPNotificationSubscriber
 
     private void handleResponse(SSMPIdentifier to, byte[] payload) throws ExInvalidID {
         SID store = new SID(to.toString().substring(5));
-        _sched.schedule_(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
                 SyncedLocationDeserializer iterator = new SyncedLocationDeserializer(payload);

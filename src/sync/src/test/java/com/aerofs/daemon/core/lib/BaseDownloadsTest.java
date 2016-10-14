@@ -60,7 +60,7 @@ public class BaseDownloadsTest extends AbstractTest
         assertTrue(dls.downloadAsync_(soid, ImmutableSet.of(did), trl, dcl));
         verify(tokenManager).acquire_(eq(Cat.CLIENT), anyString());
         Mockito.verifyNoMoreInteractions(tokenManager);
-        verify(sched).schedule_(any(IEvent.class));
+        verify(sched).schedule(any(IEvent.class));
         Mockito.verifyZeroInteractions(sched);
     }
 
