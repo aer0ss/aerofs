@@ -7,12 +7,7 @@ archivesBaseName = 'aerofs-gui'
 sourceSets {
     main {
         java {
-            srcDirs 'src', 'gen'
-        }
-    }
-    test {
-        java {
-            srcDirs 'test'
+            srcDirs 'src/main/java', 'gen'
         }
     }
 }

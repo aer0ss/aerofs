@@ -5,14 +5,9 @@
 archivesBaseName = 'aerofs-lib'
 
 sourceSets {
-    main {
-        java {
-            srcDirs 'src'
-        }
-    }
     testutil {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             include 'com/aerofs/testlib/**'
             compileClasspath += main.output
             runtimeClasspath += main.output
@@ -20,7 +15,7 @@ sourceSets {
     }
     test {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             exclude 'com/aerofs/testlib/**'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output

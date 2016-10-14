@@ -7,12 +7,12 @@ archivesBaseName = 'aerofs-libservlet'
 sourceSets {
     main {
         java {
-            srcDirs 'src', 'gen'
+            srcDirs 'src/main/java', 'gen'
         }
     }
     testutil {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             include 'com/aerofs/testlib/**'
             include 'com/aerofs/audit/client/MockAuditClient.java'
             include 'com/aerofs/servlets/MockSession.java'
@@ -25,7 +25,7 @@ sourceSets {
     }
     test {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             exclude 'com/aerofs/testlib/**'
             compileClasspath += testutil.output
             runtimeClasspath += testutil.output

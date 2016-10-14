@@ -7,7 +7,7 @@ archivesBaseName = 'aerofs-bifrost'
 sourceSets {
     main {
         java {
-            srcDir 'src'
+            srcDir 'src/main/java'
         }
         resources {
             srcDir 'resources'
@@ -16,7 +16,7 @@ sourceSets {
     }
     testutil {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             include 'com/aerofs/bifrost/server/BifrostTest.java'
             include 'com/aerofs/bifrost/server/Mock*'
             compileClasspath += main.output
@@ -25,7 +25,7 @@ sourceSets {
     }
     test {
         java {
-            srcDir 'test'
+            srcDir 'src/test/java'
             exclude 'com/aerofs/bifrost/server/BifrostTest.java'
             exclude 'com/aerofs/bifrost/server/Mock*'
             compileClasspath += testutil.output

@@ -9,19 +9,6 @@ test {
     forkEvery = 1
 }
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-    test {
-        java {
-            srcDir 'test'
-        }
-    }
-}
-
 dependencies {
     compile project(':src/libservlet')
     compile project(':src/oauth-verify')

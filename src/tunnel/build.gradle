@@ -4,19 +4,6 @@
 
 archivesBaseName = 'aerofs-tunnel'
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-    test {
-        java {
-            srcDir 'test'
-        }
-    }
-}
-
 dependencies {
     compile project(':src/base')
     testCompile project(path: ':src/base', configuration: 'testutil')

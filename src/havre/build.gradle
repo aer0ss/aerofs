@@ -4,19 +4,6 @@
 
 archivesBaseName = 'aerofs-havre'
 
-sourceSets {
-    main {
-        java {
-            srcDirs 'src', 'gen'
-        }
-    }
-    test {
-        java {
-            srcDirs 'test'
-        }
-    }
-}
-
 dependencies {
     compile 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
     compile 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'

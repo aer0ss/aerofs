@@ -4,14 +4,6 @@
 
 archivesBaseName = 'aerofs-rest-api'
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-}
-
 dependencies {
     compile project(':src/aero-api-lib')
     compile project(':src/oauth-verify')

@@ -4,19 +4,6 @@
 
 archivesBaseName = 'aerofs-oauth-verify'
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-    }
-    test {
-        java {
-            srcDir 'test'
-        }
-    }
-}
-
 dependencies {
     compile project(':src/base')
     testCompile project(path: ':src/bifrost', configuration: 'testutil')
