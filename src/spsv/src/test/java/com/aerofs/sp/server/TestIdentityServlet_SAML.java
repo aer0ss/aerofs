@@ -73,7 +73,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
         StringBuilder sb = new StringBuilder();
 
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_idp_x509_cert")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_idp_x509_cert")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line + "\n");
@@ -187,7 +187,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
 
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -221,7 +221,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
 
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -245,7 +245,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
     {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -269,7 +269,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
     {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion_no_email.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion_no_email.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -305,7 +305,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
     {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);
@@ -328,7 +328,7 @@ public class TestIdentityServlet_SAML extends AbstractSPTest {
     {
         StringBuilder sb = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new FileReader(Util.join(System.getProperty("user.dir"),
-                "test/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
+                "src/test/java/com/aerofs/sp/server/saml_resources/saml_test_assertion.txt")))) {
             String line;
             while ((line = br.readLine()) != null) {
                 sb.append(line);

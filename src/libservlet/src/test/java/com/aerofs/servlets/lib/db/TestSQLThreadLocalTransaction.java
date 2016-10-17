@@ -19,8 +19,8 @@ import java.sql.SQLException;
 public class TestSQLThreadLocalTransaction extends AbstractBaseTest
 {
     private static final String[] DEFAULT_TX_SCHEMA_PATHS = new String[] {
-            "../src/libservlet/test/resources",
-            "../../src/libservlet/test/resources"
+            "../src/libservlet/src/test/resources",
+            "../../src/libservlet/src/test/resources"
     };
     private class TransactionTestDatabaseParams extends DatabaseParameters
     {
