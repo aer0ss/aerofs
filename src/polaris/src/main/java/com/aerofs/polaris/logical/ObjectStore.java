@@ -299,11 +299,14 @@ public final class ObjectStore {
      */
     public Transforms getTransforms(@Nullable UserID user, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
         AccessToken accessToken = user == null ? new AccessToken(UserID.fromInternal("internal service"), Sets.newHashSet(store), Access.READ) : checkAccess(user, store, Access.READ);
+        // ideally this transaction could run at a lower isolation level than serializable (default)
+        // however doing so at this moment leads to the possibility of omitting transforms that should be returned from
+        // the query, but have not been committed yet. in this case the client never fetches those transforms
         return inTransaction(dao -> {
             long available = dao.transforms.getLatestLogicalTimestamp();
             List<Transform> transforms = getTransforms(dao, accessToken, store, startTimestamp, maxReturnedResultCount);
             return new Transforms(available, transforms);
-        }, TransactionIsolation.READ_COMMITTED);
+        });
     }
 
     private List<Transform> getTransforms(DAO dao, AccessToken accessToken, UniqueID store, long startTimestamp, long maxReturnedResultCount) throws NotFoundException, AccessException {
