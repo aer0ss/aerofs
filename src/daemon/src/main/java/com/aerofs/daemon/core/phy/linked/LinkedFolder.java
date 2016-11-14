@@ -8,7 +8,6 @@ import com.aerofs.base.Loggers;
 import com.aerofs.ids.SID;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.TransUtil;
-import com.aerofs.daemon.core.phy.TransUtil.IPhysicalOperation;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage.MoveToRepresentableException;
 import com.aerofs.daemon.core.phy.linked.RepresentabilityHelper.PathType;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -59,22 +58,15 @@ public class LinkedFolder extends AbstractLinkedObject implements IPhysicalFolde
 
         switch (op) {
         case APPLY:
-            _s._rh.try_(this, t, new IPhysicalOperation() {
-                    @Override
-                    public void run_() throws IOException
-                    {
-                        _f.mkdir();
-                    }
-                });
+            _s._rh.try_(this, t, () ->
+                    // NB: this MUST NOT be simplified into a method reference
+                    // as the _f field may be updated by try_
+                    _f.mkdir());
 
-            TransUtil.onRollback_(_f, t, new IPhysicalOperation() {
-                @Override
-                public void run_() throws IOException
-                {
-                    // delete recursively in case files are created within the
-                    // folder after it's created and before the rollback
-                    _f.deleteOrThrowIfExistRecursively();
-                }
+            TransUtil.onRollback_(_f, t, () -> {
+                // delete recursively in case files are created within the
+                // folder after it's created and before the rollback
+                _f.deleteOrThrowIfExistRecursively();
             });
             // fallthrough
         case MAP:

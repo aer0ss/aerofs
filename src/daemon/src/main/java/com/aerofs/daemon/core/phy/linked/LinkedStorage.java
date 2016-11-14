@@ -404,16 +404,19 @@ public class LinkedStorage implements IPhysicalStorage
         if (df == null) return false;
         Path p = new Path(rootSID_(soid.sidx()), _hdb.getHistoryPath_(df.path))
                 .append(deletedPath.toArray(new String[deletedPath.size()]), 0, deletedPath.size());
-        LinkedRevFile rev = _revProvider.localRevFile(p, f._f.getAbsolutePath(), df.rev);
         l.info("attempting to restore {} {}:{}", soid, df.rev, p);
         // revision file may have been removed by the cleaner (or by the user)
-        if (!rev.exists_()) {
+        if (!_revProvider.localRevFile(p, f._f, df.rev).exists_()) {
             l.info("no such rev: {}", _revProvider.listRevHistory_(p));
             return false;
         }
-        rev.rollback_();
+        _rh.try_(f, t, () ->
+            // NB: must recreate the rev file in case the dest is NRO and thus updated by try_
+            // NB: this means this MUST NOT be simplified into a method reference
+            _revProvider.localRevFile(p, f._f, df.rev).rollback_()
+        );
         f.created_(t);
-        TransUtil.onRollback_(f._f, t, rev::save_);
+        TransUtil.onRollback_(f._f, t, _revProvider.localRevFile(p, f._f, df.rev)::save_);
         return true;
     }
 

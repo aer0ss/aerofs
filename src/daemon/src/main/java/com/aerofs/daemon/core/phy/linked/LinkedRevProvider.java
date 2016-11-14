@@ -179,7 +179,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         private final InjectableFile _fRev, _fOrg;
         private final String _index;
 
-        private LinkedRevFile(Path path, InjectableFile fRev, InjectableFile fOrg, String index)
+        LinkedRevFile(Path path, InjectableFile fRev, InjectableFile fOrg, String index)
         {
             _path = path;
             _fRev = fRev;
@@ -308,15 +308,17 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     LinkedRevFile newLocalRevFile(Path path, String absPath, KIndex kidx) throws IOException {
         InjectableFile f = _factFile.create(absPath);
         RevisionInfo info = new RevisionInfo(kidx.getInt(), _ts.getTime(), f.lastModified());
-        return localRevFile(path, absPath, info.hexEncoded());
+        return localRevFile(path, f, info.hexEncoded());
     }
 
     LinkedRevFile localRevFile(Path path, String absPath, String index) throws IOException
     {
-        return new LinkedRevFile(path,
-                _factFile.create(newRevPath(path, index)),
-                _factFile.create(absPath),
-                index);
+        return localRevFile(path, _factFile.create(absPath), index);
+    }
+
+    LinkedRevFile localRevFile(Path path, InjectableFile f, String index) throws IOException
+    {
+        return new LinkedRevFile(path, _factFile.create(newRevPath(path, index)), f, index);
     }
 
     @Override

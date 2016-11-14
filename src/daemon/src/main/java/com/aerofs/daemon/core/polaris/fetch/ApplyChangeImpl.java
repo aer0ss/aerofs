@@ -377,6 +377,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             p.add(lnk.name);
         }
 
+        // NB: this may modify pf in case of NRO
         if (!_ps.restore_(from.soid(), oid, Lists.reverse(p), pf, t)) {
             l.warn("failed to restore content {}", from.soid());
         } else {
