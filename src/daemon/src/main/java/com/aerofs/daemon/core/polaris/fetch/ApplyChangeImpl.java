@@ -77,6 +77,7 @@ import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
 import static com.aerofs.daemon.core.ds.OA.Type.DIR;
 import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
+import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
 import static com.google.common.base.Preconditions.checkState;
 
 public class ApplyChangeImpl implements ApplyChange.Impl
@@ -730,6 +731,8 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         // expelled destination in every parts of the migration...
         if (sidxTo == null || !oa.isExpelled()) {
             _sc.addParentStoreReference_(sid, soid.sidx(), oa.name(), t);
+        }
+        if (!oa.isExpelled()) {
             _ps.newFolder_(p).updateSOID_(soidAnchor, t);
             IPhysicalFolder pf = _ps.newFolder_(p.substituteLastSOID(soidAnchor));
             pf.create_(MAP, t);
@@ -747,7 +750,11 @@ public class ApplyChangeImpl implements ApplyChange.Impl
             if (oa.isExpelled()) {
                 // HACK: mark root dir as expelled to prevent ImmigrantCreator from trying to update
                 // physical objects
-                _ds.setExpelled_(soidToRoot, true, t);
+                // NB: MUST bypass DirectoryService otherwise listeners may go crazy (e.g. SyncStat)
+                // NB: this does not invalidate OA cache, which is fine because the root object was
+                // just created when the store was and thus isn't in any cache. This is fragile and
+                // could easily break in a refactoring...
+                _mdb.setOAFlags_(soidToRoot, OA.FLAG_EXPELLED_ORG, t);
             }
 
             // meta changes for the original folder should be moved to anchor
@@ -808,7 +815,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         if (!oa.parent().isTrash()) {
             OA trash = _ds.getOA_(new SOID(soid.sidx(), OID.TRASH));
             _ds.setOAParentAndName_(oa, trash, soid.oid().toStringFormal(), t);
-            _expulsion.objectMoved_(p, soid, PhysicalOp.NOP, t);
+            _expulsion.objectMoved_(p, soid, NOP, t);
         }
     }
 
