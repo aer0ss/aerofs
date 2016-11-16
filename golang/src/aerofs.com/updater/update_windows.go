@@ -97,6 +97,9 @@ func LaunchAero(exec string, _ []string) error {
 		return fmt.Errorf("Failed to set logfile:\n%s", err.Error())
 	}
 
+	// NB: run this check after the log file has been located so that logging can occur
+	EnforceSingleInstance()
+
 	approot := filepath.Join(APPDATA, settings.approot)
 	launcher := filepath.Join(approot, "current", settings.launcher)
 	args := []string{}
