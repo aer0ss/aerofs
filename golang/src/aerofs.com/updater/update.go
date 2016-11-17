@@ -129,12 +129,8 @@ func Update(config, manifestName, approot string, exec string) (string, error) {
 		return current, fmt.Errorf("Could not download manifests:\n%s", err.Error())
 	}
 
-	fetcher := &HttpFetcher{
-		BaseURL:   url.Scheme + "://" + url.Host + "/static/updates/data",
-		Transport: transport,
-		TmpDir:    filepath.Join(approot, "dl"),
-	}
-
+	dataUrl := url.Scheme + "://" + url.Host + "/static/updates/data"
+	fetcher := NewHttpFetcher(dataUrl, transport)
 	format := manifest["format"].(string)
 	if err = fetcher.SetFormat(format); err != nil {
 		return current, fmt.Errorf("Unsupported data format %s", format)
@@ -152,10 +148,16 @@ func Update(config, manifestName, approot string, exec string) (string, error) {
 	progressMonitor := NewProgressMonitor(manifestSize(manifest), exec)
 	progressMonitor.Launch()
 	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
-	err = Apply(current, next, manifest, fetcher, progressMonitor)
+	pa := NewPendingApply(progressMonitor)
+	pa.Start()
+	err = Apply(current, next, manifest, fetcher, pa)
+	err2 := pa.Wait()
 	progressMonitor.Kill()
 	if err != nil {
 		return current, fmt.Errorf("Could not apply updates:\n%s", err.Error())
+	}
+	if err2 != nil {
+		return current, fmt.Errorf("Could not apply updates:\n%s", err2.Error())
 	}
 
 	log.Println("Copying site-config")

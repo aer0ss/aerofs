@@ -140,9 +140,16 @@ func ApplyManifest(manifestFile, data, src, dst string) {
 	} else if err = os.MkdirAll(dst, 0755); err != nil && !os.IsExist(err) {
 		log.Fatalf("fail to create destination: %s\n", err.Error())
 	}
-
-	if err = Apply(src, dst, manifest, fetcher, nil); err != nil {
+	pa := NewPendingApply(nil)
+	pa.Start()
+	err = Apply(src, dst, manifest, fetcher, pa)
+	// NB: wait for all goroutines to be done
+	err2 := pa.Wait()
+	if err != nil {
 		log.Fatalf("failed to apply manifest: %s\n", err.Error())
+	}
+	if err2 != nil {
+		log.Fatalf("failed to apply manifest: %s\n", err2.Error())
 	}
 }
 

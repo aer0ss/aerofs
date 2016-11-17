@@ -16,12 +16,16 @@ import (
 	"time"
 )
 
+type FetchedContent struct {
+	Err error
+}
+
 type ContentFetcher interface {
 	SetFormat(format string) error
 
 	// Fetch retrieves the content corresponding to the given SHA256 hash
-	// and returns a path to a local file containing it
-	Fetch(hash string) (string, error)
+	// and write it to the given dst file
+	Fetch(hash, dst string, mode os.FileMode, r chan *FetchedContent)
 }
 
 type ContentStore interface {
@@ -56,48 +60,70 @@ func (s *FormattedStore) SetFormat(format string) error {
 
 type HttpFetcher struct {
 	FormattedStore
-	BaseURL   string
-	Transport *http.Transport
-	TmpDir    string
+	BaseURL string
+
+	c http.Client
 }
 
-func (f *HttpFetcher) Fetch(hash string) (string, error) {
-	c := http.Client{
-		Transport: f.Transport,
+func NewHttpFetcher(baseUrl string, transport *http.Transport) *HttpFetcher {
+	return &HttpFetcher{
+		BaseURL: baseUrl,
+		c: http.Client{
+			Transport: transport,
+			Timeout:   120 * time.Second,
+		},
 	}
-	log.Printf("Fetching %s\n", hash)
-	resp, err := c.Get(f.BaseURL + "/" + hash)
+}
+
+func (f *HttpFetcher) Fetch(hash, dst string, mode os.FileMode, r chan *FetchedContent) {
+	finalizeFetch(f.syncFetch(hash, dst), dst, mode, r)
+}
+
+func finalizeFetch(err error, dst string, mode os.FileMode, r chan *FetchedContent) {
 	if err != nil {
-		return "", fmt.Errorf("Could not get fetch url:\n%s", err.Error())
+		os.Remove(dst)
+	} else {
+		err = os.Chmod(dst, mode)
 	}
-	log.Printf("  length %s\n", resp.Header.Get("Content-Length"))
+	r <- &FetchedContent{
+		Err: err,
+	}
+}
+
+func (f *HttpFetcher) syncFetch(hash, dst string) error {
+	ref := time.Now().UnixNano()
+	resp, err := f.c.Get(f.BaseURL + "/" + hash)
+	if err != nil {
+		return fmt.Errorf("Could not get fetch url: %s", err.Error())
+	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Unexpected %s", resp.Status)
+		return fmt.Errorf("Unexpected %s", resp.Status)
 	}
-	os.MkdirAll(f.TmpDir, 0755)
-	tmp := filepath.Join(f.TmpDir, hash)
-	file, err := os.Create(tmp)
-	if err != nil {
-		return "", fmt.Errorf("Could not create temp file:\n%s", err.Error())
-	}
+
 	var src io.ReadCloser = resp.Body
 	if f.rd != nil {
 		if src, err = f.rd(src); err != nil {
-			return "", err
+			return err
 		}
 	}
-	_, err = io.Copy(file, src)
+	file, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("Could not open for writing: %s", err.Error())
+	}
+	sz, err := io.Copy(file, src)
+	elapsed := (time.Now().UnixNano() - ref) / (1000 * 1000)
+	file.Close()
 	if f.rd != nil {
 		src.Close()
 	}
-	resp.Body.Close()
-	file.Close()
-	if err != nil {
-		os.Remove(tmp)
-		return "", fmt.Errorf("Could not copy update:\n%s", err.Error())
-	}
-	return tmp, nil
+	log.Printf("Fetched %s : %s -> %d in %d ms [%d kb/s]",
+		hash,
+		resp.Header.Get("Content-Length"),
+		sz,
+		sz/elapsed,
+		elapsed)
+	return err
 }
 
 type LocalStore struct {
@@ -121,19 +147,20 @@ func NewLocalStore(data string) (*LocalStore, error) {
 	return s, nil
 }
 
-func (s *LocalStore) Fetch(hash string) (string, error) {
+func (s *LocalStore) Fetch(hash, dst string, mode os.FileMode, r chan *FetchedContent) {
+	finalizeFetch(s.syncFetch(hash, dst), dst, mode, r)
+}
+
+func (s *LocalStore) syncFetch(hash, dst string) error {
 	src := filepath.Join(s.BasePath, hash)
-	tmp := filepath.Join(filepath.Dir(s.BasePath), "tmp-"+hash)
-	h, err := CopyFile(tmp, src, s.rd, nil)
+	h, err := CopyFile(dst, src, s.rd, nil)
 	if err != nil {
-		os.Remove(tmp)
-		return "", fmt.Errorf("Could not copy hash from temp dir:\n%s", err.Error())
+		return fmt.Errorf("Could not copy hash from temp dir:\n%s", err.Error())
 	}
 	if h != hash {
-		os.Remove(tmp)
-		return "", fmt.Errorf("Hash mismatch %s != %s", h, hash)
+		return fmt.Errorf("Hash mismatch %s != %s", h, hash)
 	}
-	return tmp, nil
+	return nil
 }
 
 func (s *LocalStore) Store(src string) (string, error) {

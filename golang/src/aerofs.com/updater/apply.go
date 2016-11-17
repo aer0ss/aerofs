@@ -8,7 +8,64 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 )
+
+type PendingApply struct {
+	monitor ProgressMonitor
+
+	c chan *FetchedContent
+	d sync.WaitGroup
+
+	w sync.WaitGroup
+	e error
+	n int
+}
+
+func NewPendingApply(monitor ProgressMonitor) *PendingApply {
+	return &PendingApply{
+		monitor: monitor,
+		c:       make(chan *FetchedContent, 10),
+	}
+}
+
+func (p *PendingApply) Start() {
+	p.w.Add(1)
+	go func() {
+		for {
+			c := <-p.c
+			if c == nil {
+				break
+			}
+			p.d.Done()
+			if p.monitor != nil {
+				p.monitor.IncrementProgress(1)
+			}
+			if c.Err == nil {
+				continue
+			}
+			if p.e == nil {
+				p.e = c.Err
+			} else {
+				p.n++
+			}
+		}
+		p.w.Done()
+	}()
+}
+
+func (p *PendingApply) Wait() error {
+	// wait for all async dl to complete
+	p.d.Wait()
+	// signal above goroutine to exit
+	close(p.c)
+	// wait for above goroutine above to exit
+	p.w.Wait()
+	if p.n > 0 {
+		return fmt.Errorf("%d errors. first: %s", p.n+1, p.e.Error())
+	}
+	return p.e
+}
 
 func Hash(path string) (string, error) {
 	fi, err := os.Stat(path)
@@ -37,18 +94,6 @@ func LinkOrCopy(dst, src string) (err error) {
 	return err
 }
 
-func UpdateFile(dst, h string, fetcher ContentFetcher) error {
-	tmp, err := fetcher.Fetch(h)
-	if err != nil {
-		return fmt.Errorf("Could not fetch update:\n%s", err.Error())
-	}
-	if err = os.Rename(tmp, dst); err != nil {
-		_, err = CopyFile(dst, tmp, nil, nil)
-		os.Remove(tmp)
-	}
-	return err
-}
-
 func UnmarshalFile(mc interface{}) (string, os.FileMode, error) {
 	meta, ok := mc.([]interface{})
 	if !ok || len(meta) < 2 {
@@ -70,7 +115,7 @@ func UnmarshalFile(mc interface{}) (string, os.FileMode, error) {
 	return h, os.FileMode(mode), nil
 }
 
-func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetcher, monitor ProgressMonitor) error {
+func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetcher, pa *PendingApply) error {
 	var err error
 	var sp, dp string
 
@@ -85,40 +130,49 @@ func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetc
 			if err = os.Mkdir(dp, 0755); err != nil {
 				return err
 			}
-			err = Apply(sp, dp, cc, fetcher, monitor)
+			err = Apply(sp, dp, cc, fetcher, pa)
 		} else {
 			var mh string
 			var mode os.FileMode
 			if mh, mode, err = UnmarshalFile(mc); err != nil {
 				return err
 			}
-			if mode.IsRegular() {
-				var ph string
-				ph, err = Hash(sp)
-				if err != nil || mh != ph {
-					err = UpdateFile(dp, mh, fetcher)
-				} else {
-					err = LinkOrCopy(dp, sp)
-				}
-				if err == nil {
-					err = os.Chmod(dp, mode)
-				}
-			} else if (mode & os.ModeSymlink) != 0 {
-				if !filepath.IsAbs(mh) {
-					err = os.Symlink(mh, dp)
-				} else {
-					err = errInvalidManifest
-				}
-			} else {
-				err = errInvalidManifest
-			}
-			if monitor != nil {
-				monitor.IncrementProgress(1)
-			}
+			err = ApplyFile(sp, dp, mh, mode, fetcher, pa)
 		}
 		if err != nil {
 			return fmt.Errorf("Could not apply update:\n%s", err.Error())
 		}
 	}
 	return nil
+}
+
+func ApplyFile(sp, dp, mh string, mode os.FileMode, fetcher ContentFetcher, pa *PendingApply) error {
+	var err error
+	// keep track of file
+	pa.d.Add(1)
+	if mode.IsRegular() {
+		var ph string
+		ph, err = Hash(sp)
+		if err != nil || mh != ph {
+			// TODO: cap number of concurrent dl?
+			go fetcher.Fetch(mh, dp, mode, pa.c)
+			return nil
+		} else {
+			err = LinkOrCopy(dp, sp)
+		}
+		if err == nil {
+			err = os.Chmod(dp, mode)
+		}
+	} else if (mode & os.ModeSymlink) != 0 {
+		if !filepath.IsAbs(mh) {
+			err = os.Symlink(mh, dp)
+		} else {
+			err = errInvalidManifest
+		}
+	} else {
+		err = errInvalidManifest
+	}
+	// trigger progress monitor
+	pa.c <- &FetchedContent{Err: err}
+	return err
 }
