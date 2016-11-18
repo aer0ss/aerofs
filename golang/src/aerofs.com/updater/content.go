@@ -121,8 +121,8 @@ func (f *HttpFetcher) syncFetch(hash, dst string) error {
 		hash,
 		resp.Header.Get("Content-Length"),
 		sz,
-		sz/elapsed,
-		elapsed)
+		elapsed,
+		sz/elapsed)
 	return err
 }
 

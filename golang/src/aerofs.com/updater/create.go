@@ -12,7 +12,7 @@ import (
 /*
 {
 	"foo" : { ... },
-	"bar": [ "755", "<sha256>" ],
+	"bar": [ "755", "<sha256>", "<size>" ],
 	"baz": [ "1000000000", "./bar" ],
 	...
 }
@@ -49,9 +49,10 @@ func Create(src string, manifest Manifest, store ContentStore) error {
 			if err != nil {
 				return fmt.Errorf("Could not store %s\n%s", p, err.Error())
 			}
-			manifest[n] = []interface{}{
+			manifest[n] = []string{
 				strconv.FormatInt(int64(c.Mode()&os.ModePerm), 8),
 				h,
+				strconv.FormatInt(c.Size(), 16),
 			}
 		} else if (c.Mode() & os.ModeSymlink) != 0 {
 			target, err := os.Readlink(p)
@@ -61,7 +62,7 @@ func Create(src string, manifest Manifest, store ContentStore) error {
 			if filepath.IsAbs(target) {
 				return fmt.Errorf("absolute symlink %s -> %s", p, target)
 			}
-			manifest[n] = []interface{}{
+			manifest[n] = []string{
 				strconv.FormatInt(int64(os.ModeSymlink), 8),
 				target,
 			}

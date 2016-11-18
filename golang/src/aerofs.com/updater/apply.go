@@ -7,64 +7,86 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
-	"sync"
+	"sync/atomic"
 )
 
 type PendingApply struct {
 	monitor ProgressMonitor
 
-	c chan *FetchedContent
-	d sync.WaitGroup
+	pending PendingContentList
 
-	w sync.WaitGroup
-	e error
-	n int
+	i int32
+
+	c chan *FetchedContent
 }
+
+type PendingContent struct {
+	sz   int64
+	h    string
+	dst  string
+	mode os.FileMode
+}
+
+type PendingContentList []*PendingContent
+
+func (l PendingContentList) Len() int           { return len(l) }
+func (l PendingContentList) Less(i, j int) bool { return l[i].sz > l[j].sz }
+func (l PendingContentList) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
+
+const MaxConcurrentFetch = 8
 
 func NewPendingApply(monitor ProgressMonitor) *PendingApply {
 	return &PendingApply{
 		monitor: monitor,
-		c:       make(chan *FetchedContent, 10),
+		pending: make(PendingContentList, 0),
+		c:       make(chan *FetchedContent, MaxConcurrentFetch),
 	}
 }
 
-func (p *PendingApply) Start() {
-	p.w.Add(1)
-	go func() {
-		for {
-			c := <-p.c
-			if c == nil {
-				break
-			}
-			p.d.Done()
-			if p.monitor != nil {
-				p.monitor.IncrementProgress(1)
-			}
-			if c.Err == nil {
-				continue
-			}
-			if p.e == nil {
-				p.e = c.Err
-			} else {
-				p.n++
-			}
+func (p *PendingApply) Enqueue(h string, sz int64, dst string, mode os.FileMode) {
+	p.pending = append(p.pending, &PendingContent{
+		sz:   sz,
+		h:    h,
+		dst:  dst,
+		mode: mode,
+	})
+}
+
+func (p *PendingApply) fetchWorker(fetcher ContentFetcher) {
+	for {
+		i := atomic.AddInt32(&p.i, 1)
+		if int(i) > len(p.pending) {
+			break
 		}
-		p.w.Done()
-	}()
+		c := p.pending[i-1]
+		fetcher.Fetch(c.h, c.dst, c.mode, p.c)
+	}
 }
 
-func (p *PendingApply) Wait() error {
-	// wait for all async dl to complete
-	p.d.Wait()
-	// signal above goroutine to exit
-	close(p.c)
-	// wait for above goroutine above to exit
-	p.w.Wait()
-	if p.n > 0 {
-		return fmt.Errorf("%d errors. first: %s", p.n+1, p.e.Error())
+func (p *PendingApply) FetchMissing(fetcher ContentFetcher) error {
+	// sort dl by descending size
+	sort.Sort(p.pending)
+
+	// start dl workers
+	for i := 0; i < MaxConcurrentFetch; i++ {
+		go p.fetchWorker(fetcher)
 	}
-	return p.e
+
+	// wait for all dl to complete
+	n := len(p.pending)
+	for i := 0; i < n; i++ {
+		c := <-p.c
+		// abort on first error
+		if c.Err != nil {
+			atomic.StoreInt32(&p.i, int32(n))
+			return c.Err
+		}
+		p.monitor.IncrementProgress(1)
+	}
+
+	return nil
 }
 
 func Hash(path string) (string, error) {
@@ -115,7 +137,19 @@ func UnmarshalFile(mc interface{}) (string, os.FileMode, error) {
 	return h, os.FileMode(mode), nil
 }
 
-func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetcher, pa *PendingApply) error {
+// return negative value if size not present or invalid
+func UnmarshalFileSize(mc interface{}) int64 {
+	if meta, ok := mc.([]interface{}); ok && len(meta) >= 3 {
+		if s, ok := meta[2].(string); ok {
+			if sz, err := strconv.ParseInt(s, 16, 64); err == nil {
+				return sz
+			}
+		}
+	}
+	return -1
+}
+
+func Apply(src, dst string, manifest map[string]interface{}, pa *PendingApply) error {
 	var err error
 	var sp, dp string
 
@@ -130,14 +164,9 @@ func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetc
 			if err = os.Mkdir(dp, 0755); err != nil {
 				return err
 			}
-			err = Apply(sp, dp, cc, fetcher, pa)
+			err = Apply(sp, dp, cc, pa)
 		} else {
-			var mh string
-			var mode os.FileMode
-			if mh, mode, err = UnmarshalFile(mc); err != nil {
-				return err
-			}
-			err = ApplyFile(sp, dp, mh, mode, fetcher, pa)
+			err = ApplyFile(sp, dp, mc, pa)
 		}
 		if err != nil {
 			return fmt.Errorf("Could not apply update:\n%s", err.Error())
@@ -146,16 +175,19 @@ func Apply(src, dst string, manifest map[string]interface{}, fetcher ContentFetc
 	return nil
 }
 
-func ApplyFile(sp, dp, mh string, mode os.FileMode, fetcher ContentFetcher, pa *PendingApply) error {
+func ApplyFile(sp, dp string, mc interface{}, pa *PendingApply) error {
 	var err error
-	// keep track of file
-	pa.d.Add(1)
+	var mh string
+	var mode os.FileMode
+	if mh, mode, err = UnmarshalFile(mc); err != nil {
+		return err
+	}
 	if mode.IsRegular() {
 		var ph string
 		ph, err = Hash(sp)
 		if err != nil || mh != ph {
-			// TODO: cap number of concurrent dl?
-			go fetcher.Fetch(mh, dp, mode, pa.c)
+			sz := UnmarshalFileSize(mc)
+			pa.Enqueue(mh, sz, dp, mode)
 			return nil
 		} else {
 			err = LinkOrCopy(dp, sp)
@@ -172,7 +204,6 @@ func ApplyFile(sp, dp, mh string, mode os.FileMode, fetcher ContentFetcher, pa *
 	} else {
 		err = errInvalidManifest
 	}
-	// trigger progress monitor
-	pa.c <- &FetchedContent{Err: err}
+	pa.monitor.IncrementProgress(1)
 	return err
 }

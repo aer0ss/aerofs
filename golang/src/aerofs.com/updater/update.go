@@ -149,15 +149,13 @@ func Update(config, manifestName, approot string, exec string) (string, error) {
 	progressMonitor.Launch()
 	log.Printf("Applying manifest: %s\n\t%s\n\t%s\n", manifestFile, current, next)
 	pa := NewPendingApply(progressMonitor)
-	pa.Start()
-	err = Apply(current, next, manifest, fetcher, pa)
-	err2 := pa.Wait()
+	err = Apply(current, next, manifest, pa)
+	if err == nil {
+		err = pa.FetchMissing(fetcher)
+	}
 	progressMonitor.Kill()
 	if err != nil {
 		return current, fmt.Errorf("Could not apply updates:\n%s", err.Error())
-	}
-	if err2 != nil {
-		return current, fmt.Errorf("Could not apply updates:\n%s", err2.Error())
 	}
 
 	log.Println("Copying site-config")

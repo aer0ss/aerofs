@@ -141,15 +141,12 @@ func ApplyManifest(manifestFile, data, src, dst string) {
 		log.Fatalf("fail to create destination: %s\n", err.Error())
 	}
 	pa := NewPendingApply(nil)
-	pa.Start()
-	err = Apply(src, dst, manifest, fetcher, pa)
-	// NB: wait for all goroutines to be done
-	err2 := pa.Wait()
+	err = Apply(src, dst, manifest, pa)
+	if err == nil {
+		err = pa.FetchMissing(fetcher)
+	}
 	if err != nil {
 		log.Fatalf("failed to apply manifest: %s\n", err.Error())
-	}
-	if err2 != nil {
-		log.Fatalf("failed to apply manifest: %s\n", err2.Error())
 	}
 }
 
