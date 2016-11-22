@@ -16,7 +16,6 @@
 
             # Please make alphabetical by display name.
             links = [
-                ('analytics', _("Analytics")),
                 ('auditing', _("Auditing")),
                 ('backup_and_upgrade', _("Backup and upgrade")),
                 ('collect_logs', _("Collect logs")),
