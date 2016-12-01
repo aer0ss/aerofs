@@ -6,7 +6,7 @@ TIMESTAMP = $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 BUILD_FLAGS = -a -installsuffix static
 LDFLAGS = -w -X main.buildtime=$(TIMESTAMP) -X main.commithash=$(COMMIT)
 GOPATH = $(abspath ../../../)
-GOBUILD = GOPATH=$(GOPATH) CGOENABLED=0 go build $(BUILD_FLAGS)
+GOBUILD = GOPATH=$(GOPATH) go build $(BUILD_FLAGS)
 
 
 all: $(DEST)/linux/updater-i386 \
@@ -14,17 +14,24 @@ all: $(DEST)/linux/updater-i386 \
 	 $(DEST)/osx/updater \
 	 $(DEST)/win/updater.exe
 
+.PHONY: osx win linux
+
+osx: $(DEST)/osx/updater
+win: $(DEST)/win/updater.exe
+linux: $(DEST)/linux/updater-amd64 $(DEST)/linux/updater-i386
+
 $(DEST)/linux/updater-amd64: $(SRC)
-	GOOS=linux GOARCH=amd64 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
 
 $(DEST)/linux/updater-i386: $(SRC)
-	GOOS=linux GOARCH=386 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=linux GOARCH=386 CGO_ENABLED=0 $(GOBUILD) -ldflags "-s -d $(LDFLAGS)" -o "$@" aerofs.com/updater
 
+# NB: use CGO to prevent up to .5s delay on startup for system cert verification
 $(DEST)/osx/updater: $(SRC)
-	GOOS=darwin GOARCH=amd64 $(GOBUILD) -ldflags "-s $(LDFLAGS)" -o "$@" aerofs.com/updater
+	GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 $(GOBUILD) -ldflags "-s $(LDFLAGS)" -o "$@" aerofs.com/updater
 
 $(DEST)/win/updater.exe: $(SRC)
 	# NB: do not store icon w/ .syso ext to prevent it from being picked up in *nix build
 	cp icon icon.syso
-	GOOS=windows GOARCH=386 $(GOBUILD) -ldflags "$(LDFLAGS) -H windowsgui" -o "$@" aerofs.com/updater
+	GOOS=windows GOARCH=386 CGO_ENABLED=0 $(GOBUILD) -ldflags "$(LDFLAGS) -H windowsgui" -o "$@" aerofs.com/updater
 	rm icon.syso
