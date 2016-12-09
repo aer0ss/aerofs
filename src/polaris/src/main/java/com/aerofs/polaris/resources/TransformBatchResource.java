@@ -60,9 +60,9 @@ public final class TransformBatchResource {
                 Throwable cause = Resources.rootCause(e);
                 TransformBatchOperationResult result = new TransformBatchOperationResult(Resources.getBatchErrorFromThrowable(cause));
                 if (cause instanceof PolarisException || cause instanceof IllegalArgumentException) {
-                    LOGGER.info("fail transform batch operation {}", operation, BaseLogUtil.suppress(cause));
+                    LOGGER.info("fail transform batch operation {} from {} {}", operation, principal.getDevice(), principal.getUser(), BaseLogUtil.suppress(cause));
                 } else {
-                    LOGGER.warn("unexpected fail transform batch operation {}", operation, cause);
+                    LOGGER.warn("unexpected fail transform batch operation {} from {} {}", operation, principal.getDevice(), principal.getUser(), cause);
                 }
                 results.add(result);
                 if (operation.operation.type != OperationType.UPDATE_CONTENT) {
