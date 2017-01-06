@@ -1,0 +1,36 @@
+#!/bin/bash
+#
+# This script is to restart a redis when it exits with a non-zero code.
+# We attempt to repair the cache before restarting.
+# We can't use `docker run --restart` as it doesn't preserve container links.
+#
+
+# Generate a backup file name for this run
+BACKUP_FILE_NAME="appendonly.aof.backup-$(date +%s)"
+
+# Keep restarting on error
+while true; do
+    "$@"
+    EXIT=$?
+    [[ $EXIT = 0 ]] && break
+    echo "ERROR: command \"$@\" exited with code $EXIT."
+
+    # Attempt to repair appendonly.aof file if it exists
+    if [ -f "/data/appendonly.aof" ]; then
+        OLD_DIR="$(pwd)"
+        cd /data
+
+        # Make a backup of the original only the first time
+        if [ ! -f $BACKUP_FILE_NAME ]; then
+            echo "Backing up appendonly.aof file to $BACKUP_FILE_NAME."
+            cp appendonly.aof $BACKUP_FILE_NAME
+        fi
+
+        # Attempt repair
+        echo "Attempting to repair cache."
+        echo "y" | redis-check-aof --fix appendonly.aof
+        cd $OLD_DIR
+    fi
+
+    echo "Restarting..."
+done

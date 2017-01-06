@@ -9,4 +9,6 @@ RUN apk --update add \
 VOLUME /data
 WORKDIR /data
 
-CMD ["/container-scripts/restart-on-error", "redis-server", "--appendonly", "yes"]
+COPY fix-cache-and-restart-on-error /
+
+CMD ["/fix-cache-and-restart-on-error", "redis-server", "--appendonly", "yes"]
