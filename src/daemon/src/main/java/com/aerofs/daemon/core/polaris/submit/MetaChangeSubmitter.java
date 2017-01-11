@@ -525,8 +525,13 @@ public class MetaChangeSubmitter implements Submitter
             // IMPORTANT: this relies on the new parent being first in the list of updated objects
             // returned by Polaris
             checkState(acks.size() == 1 || acks.size() == 2);
-            checkState(acks.get(0).object.oid.equals(c.newParent),
-                    "%s != %s", acks.get(0).object.oid, c.newParent);
+            UniqueID o = acks.get(0).object.oid;
+            // Polaris use the SID as the root object of a store
+            // we need to convert that back to OID.ROOT for local processing
+            if (_sidx2sid.get_(c.sidx).equals(o)) {
+                o = OID.ROOT;
+            }
+            checkState(o.equals(c.newParent), "%s != %s", o, c.newParent);
             _rpdb.updateParent_(c.sidx, c.oid, c.newParent, c.newName,
                     acks.get(0).transformTimestamp, t);
             break;
