@@ -9,8 +9,8 @@ function sign_exe() {
     # CERT_FILE="$BUILD_SCRIPT_DIR/signing/cert.spc"
     # KEY_FILE="$BUILD_SCRIPT_DIR/signing/privateKey.pvk"
     # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
-    local CERT_FILE="/Volumes/aerofskeys/windows/cert.spc"
-    local KEY_FILE="/Volumes/aerofskeys/windows/privateKey.pvk"
+    local CERT_FILE="/data/aerofskeys/windows/cert.spc"
+    local KEY_FILE="/data/aerofskeys/windows/privateKey.pvk"
     local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
 
     if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
@@ -32,7 +32,7 @@ function sign_exe() {
 function sign_osx() {
     # Unlock the keychain, to prevent AFK dev from failing a build.  All
     # the secrets are available already anyway.
-    SECURE_VOLUME="/Volumes/aerofskeys"
+    SECURE_VOLUME="/data/aerofskeys"
     OSX_KEYCHAIN_FILE="$SECURE_VOLUME/aerofs.keychain"
     OSX_KEYCHAIN_PASSPHRASE_FILE="$SECURE_VOLUME/keychain_passphrase.txt"
 
