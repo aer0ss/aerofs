@@ -423,7 +423,7 @@ public class MetaChangeSubmitter implements Submitter
      */
     public boolean ackMatchingSubmittedMetaChange_(SIndex sidx, RemoteChange rc, RemoteLink lnk,
             Trans t)
-            throws SQLException, ExFormatError
+            throws SQLException, ExFormatError, ExProtocolError
     {
         if (rc.transformType == Type.SHARE) return false;
 
@@ -478,7 +478,7 @@ public class MetaChangeSubmitter implements Submitter
 
     private void ackSubmission_(MetaChange c, LocalChange.Type transformType,
             List<UpdatedObject> acks, Trans t)
-            throws SQLException
+            throws SQLException, ExProtocolError
     {
         // TODO(phoenix): safety check to ensure ACK is resilient to local changes after submit
         if (!_mcdb.deleteChange_(c.sidx, c.idx, t)) {
@@ -503,7 +503,7 @@ public class MetaChangeSubmitter implements Submitter
 
         switch (transformType) {
         case INSERT_CHILD: {
-            checkState(acks.size() == 1);
+            if (acks.size() != 1) throw new ExProtocolError("invalid INSERT ack");
             // on unlink/reinstall, races between submission, buffered inserts and historical SHARE
             // can lead to cases where the remote link is present when an INSERT is ack'd
             if (_rpdb.getParent_(c.sidx, c.oid) != null) {
@@ -524,19 +524,19 @@ public class MetaChangeSubmitter implements Submitter
         case MOVE_CHILD:
             // IMPORTANT: this relies on the new parent being first in the list of updated objects
             // returned by Polaris
-            checkState(acks.size() == 1 || acks.size() == 2);
+            if (acks.size() != 1 && acks.size() != 2) throw new ExProtocolError("invalid MOVE ack");
             UniqueID o = acks.get(0).object.oid;
             // Polaris use the SID as the root object of a store
             // we need to convert that back to OID.ROOT for local processing
             if (_sidx2sid.get_(c.sidx).equals(o)) {
                 o = OID.ROOT;
             }
-            checkState(o.equals(c.newParent), "%s != %s", o, c.newParent);
+            if (!o.equals(c.newParent)) throw new ExProtocolError(o + " != " + c.newParent);
             _rpdb.updateParent_(c.sidx, c.oid, c.newParent, c.newName,
                     acks.get(0).transformTimestamp, t);
             break;
         case REMOVE_CHILD:
-            checkState(acks.size() == 1);
+            if (acks.size() != 1) throw new ExProtocolError("invalid REMOVE ack");
             _rpdb.removeParent_(c.sidx, c.oid, t);
             break;
         default:
