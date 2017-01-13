@@ -113,6 +113,13 @@ func (f *HttpFetcher) syncFetch(hash, dst string) error {
 	}
 	sz, err := io.Copy(file, src)
 	elapsed := (time.Now().UnixNano() - ref) / (1000 * 1000)
+	var rate int64
+	// avoid div by zero
+	if elapsed > 0 {
+		rate = sz / elapsed
+	} else {
+		rate = sz
+	}
 	file.Close()
 	if f.rd != nil {
 		src.Close()
@@ -122,7 +129,7 @@ func (f *HttpFetcher) syncFetch(hash, dst string) error {
 		resp.Header.Get("Content-Length"),
 		sz,
 		elapsed,
-		sz/elapsed)
+		rate)
 	return err
 }
 
