@@ -154,7 +154,7 @@ find ./debian -type d | xargs chmod 755
 chmod 755 $DEBIAN_CONTROL_DIR/{preinst,postinst,postrm}
 # fakeroot allows regular users to build archives with files that, when
 # extracted, will be owned by root.
-# -Zbzip2 is required to avoid making xz-compressed packages that Ubuntu 10.04
+# -Zgzip is required to avoid making xz-compressed packages that Ubuntu 10.04
 # can't extract (its dpkg is too old).
-fakeroot dpkg-deb -Zbzip2 --build debian
+fakeroot dpkg-deb -Zgzip --build debian
 mv debian.deb $OUTPUT_DEB_NAME
