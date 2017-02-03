@@ -882,7 +882,6 @@ public class TestBlockStorage extends AbstractBlockTest
         TestBlock b = newBlock();
         FileInfo info = new FileInfo(id, -1, b._content.length, 0, b._key);
         bsdb.prePutBlock_(b._key, b._content.length, t);
-        bsdb.postPutBlock_(b._key, t);
         bsdb.updateFileInfo_(info, t);
 
         final List<ITransListener> listeners = Lists.newArrayList();

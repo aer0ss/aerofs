@@ -45,6 +45,10 @@ public class PrefixOutputStream extends DigestOutputStream
         return h;
     }
 
+    public boolean digested() {
+        return h != null;
+    }
+
     @Override
     public void close() throws IOException
     {

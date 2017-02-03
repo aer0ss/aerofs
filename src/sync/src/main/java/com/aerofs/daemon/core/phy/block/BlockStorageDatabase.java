@@ -37,6 +37,7 @@ import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Maintains mapping between logical object (SOKID) and physical objects (64bit index)
@@ -389,10 +390,10 @@ public class BlockStorageDatabase extends AbstractDatabase
 
 
     private PreparedStatementWrapper _pswPrePutBlock = new PreparedStatementWrapper(
-            _dbcw.insertOrIgnore() + " into " + T_BlockCount + " (" +
+            "insert into " + T_BlockCount + " (" +
                     C_BlockCount_Hash + ',' + C_BlockCount_Len + ',' +
                     C_BlockCount_State + ',' + C_BlockCount_Count +
-                    ") VALUES(?,?,?,0)");
+                    ") VALUES(?,?,2,0)");
     public void prePutBlock_(ContentBlockHash chunk, long length, Trans t) throws SQLException
     {
         l.debug("start chunk upload: {}", chunk);
@@ -402,7 +403,6 @@ public class BlockStorageDatabase extends AbstractDatabase
             PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
             ps.setLong(2, length);
-            ps.setInt(3, BlockState.STORING.sqlValue());
             ps.executeUpdate();
         } catch (SQLException e) {
             psw.close();
@@ -410,27 +410,6 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
-    private PreparedStatementWrapper _pswPostPutBlock = new PreparedStatementWrapper(
-            "update " + T_BlockCount +
-                    " set " + C_BlockCount_State + "=?" +
-                    " where " + C_BlockCount_Hash + "=?" +
-                    " and " + C_BlockCount_State + "=?");
-    public void postPutBlock_(ContentBlockHash chunk, Trans t) throws SQLException
-    {
-        l.debug("finish chunk upload: {}", chunk);
-        checkArgument(isOneBlock(chunk));
-        PreparedStatementWrapper psw = _pswPostPutBlock;
-        try {
-            PreparedStatement ps = psw.get(c());
-            ps.setInt(1, BlockState.STORED.sqlValue());
-            ps.setBytes(2, chunk.getBytes());
-            ps.setInt(3, BlockState.STORING.sqlValue());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            psw.close();
-            throw detectCorruption(e);
-        }
-    }
     public void incBlockCount_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         adjustBlockCount_(chunk, 1, t);
@@ -439,23 +418,6 @@ public class BlockStorageDatabase extends AbstractDatabase
     public void decBlockCount_(ContentBlockHash chunk, Trans t) throws SQLException
     {
         adjustBlockCount_(chunk, -1, t);
-    }
-
-    private PreparedStatementWrapper _pswGetChunkState = new PreparedStatementWrapper(
-            DBUtil.selectWhere(T_BlockCount, C_BlockCount_Hash + "=?", C_BlockCount_State));
-    public BlockState getBlockState_(ContentBlockHash chunk) throws SQLException
-    {
-        PreparedStatementWrapper psw = _pswGetChunkState;
-        try {
-            PreparedStatement ps = psw.get(c());
-            ps.setBytes(1, chunk.getBytes());
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? BlockState.fromSql(rs.getInt(1)) : null;
-            }
-        } catch (SQLException e) {
-            psw.close();
-            throw detectCorruption(e);
-        }
     }
 
     private PreparedStatementWrapper _pswGetChunkCount = new PreparedStatementWrapper(
@@ -478,14 +440,14 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     private PreparedStatementWrapper _pswGetChunkLength = new PreparedStatementWrapper(
             DBUtil.selectWhere(T_BlockCount, C_BlockCount_Hash + "=?",  C_BlockCount_Len));
-    public long getBlockLength_(ContentBlockHash chunk) throws SQLException {
+    public Long getBlockLength_(ContentBlockHash chunk) throws SQLException {
         PreparedStatementWrapper psw = _pswGetChunkLength;
         try {
             PreparedStatement ps = psw.get(c());
             ps.setBytes(1, chunk.getBytes());
 
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getLong(1) : 0;
+                return rs.next() ? rs.getLong(1) : null;
             }
         } catch (SQLException e) {
             psw.close();
@@ -790,20 +752,19 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     private PreparedStatementWrapper _pswAdjustBlockCount = new PreparedStatementWrapper(
             "update " + T_BlockCount + " set "
-                    + C_BlockCount_State + "=?, "
                     + C_BlockCount_Count + "=" + C_BlockCount_Count + "+?"
                     + " where " + C_BlockCount_Hash + "=?");
     private void adjustBlockCount_(ContentBlockHash chunk, int delta, Trans t) throws SQLException
     {
-        assert isOneBlock(chunk);
+        checkArgument(delta != 0);
+        checkArgument(isOneBlock(chunk), "%s", chunk);
         PreparedStatementWrapper psw = _pswAdjustBlockCount;
         try {
             PreparedStatement ps = psw.get(c());
-            ps.setInt(1, BlockState.REFERENCED.sqlValue());
-            ps.setInt(2, delta);
-            ps.setBytes(3, chunk.getBytes());
+            ps.setInt(1, delta);
+            ps.setBytes(2, chunk.getBytes());
             int rows = ps.executeUpdate();
-            assert rows == 1;
+            checkState(rows == 1, "%s %s", chunk, rows);
         } catch (SQLException e) {
             psw.close();
             throw detectCorruption(e);

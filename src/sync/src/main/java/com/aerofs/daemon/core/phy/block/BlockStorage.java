@@ -18,7 +18,6 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
-import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.TokenWrapper;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -231,17 +230,15 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
     boolean prePutBlock(ContentBlockHash hash, long length, Trans t)
             throws SQLException
     {
-        BlockState bs = _bsdb.getBlockState_(hash);
-        if (bs == BlockState.STORED || bs == BlockState.REFERENCED) {
-            long storedLen = _bsdb.getBlockLength_(hash);
-            if (storedLen != length) {
-                throw new SQLException("hash collision " + hash.toHex()
-                        + " " + storedLen + " " + length);
-            }
-            return false;
+        Long storedLen = _bsdb.getBlockLength_(hash);
+        if (storedLen == null) {
+            _bsdb.prePutBlock_(hash, length, t);
+            return true;
+        } else if (storedLen != length) {
+            throw new SQLException("hash collision " + hash.toHex()
+                    + " " + storedLen + " " + length);
         }
-        _bsdb.prePutBlock_(hash, length, t);
-        return true;
+        return false;
     }
 
     /**

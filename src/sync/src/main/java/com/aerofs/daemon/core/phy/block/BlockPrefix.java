@@ -113,7 +113,10 @@ class BlockPrefix implements IPhysicalPrefix
             final MessageDigest md = prefixLength > 0
                     ? DigestSerializer.deserialize(_f.newChild(HASH).toByteArray(), prefixLength)
                     : BaseSecUtil.newMessageDigest();
-            return new PrefixOutputStream(new ChunkingOutputStream(md), md);
+            ChunkingOutputStream cos = new ChunkingOutputStream(md);
+            PrefixOutputStream pos = new PrefixOutputStream(cos, md);
+            cos.pos = pos;
+            return pos;
         } catch (IllegalArgumentException|IOException e) {
             BlockStorage.l.warn("failed to reload hash for {}", _f, e);
             _f.deleteIgnoreErrorRecursively();
@@ -165,6 +168,9 @@ class BlockPrefix implements IPhysicalPrefix
         private long tailLength;
         private OutputStream out;
         private MessageDigest bmd;
+
+        // HACK need to detect whether the digest has been generated in close()
+        PrefixOutputStream pos;
 
         public ChunkingOutputStream(MessageDigest md) throws IOException {
             this.md = md;
@@ -256,11 +262,13 @@ class BlockPrefix implements IPhysicalPrefix
 
         @SuppressWarnings("try")
         public void close() throws IOException {
+            // failure in openTail will leave this null
+            if (out == null) return;
             try {
                 flush();
                 out.close();
             } finally {
-                if (getLength_() > 0) {
+                if (!pos.digested() && getLength_() > 0) {
                     persistDigest(md, _f.newChild(HASH));
                 }
             }

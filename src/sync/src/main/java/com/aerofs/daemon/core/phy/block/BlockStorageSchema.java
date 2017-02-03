@@ -54,41 +54,8 @@ public class BlockStorageSchema implements ISchema
             T_BlockCount            = "bsco",
             C_BlockCount_Hash       = "bsco_hash", // content hash *before* backend encoding
             C_BlockCount_Len        = "bsco_len",  // content length *before* backend encoding
-            C_BlockCount_State      = "bsco_state",
+            C_BlockCount_State      = "bsco_state", // deprecated/unused
             C_BlockCount_Count      = "bsco_count";
-
-    public enum BlockState
-    {
-        STORING(0), STORED(1), REFERENCED(2);
-
-        private static final BlockState[] _fromSql;
-        static {
-            BlockState[] values = values();
-            _fromSql = new BlockState[values.length];
-            for (BlockState cs : values) {
-                _fromSql[cs.sqlValue()] = cs;
-            }
-        }
-
-        public static BlockState fromSql(int value)
-        {
-            assert value >= 0;
-            if (value >= _fromSql.length) return null;
-            return _fromSql[value];
-        }
-
-        private final int _sqlValue;
-
-        private BlockState(int sqlValue)
-        {
-            _sqlValue = sqlValue;
-        }
-
-        public int sqlValue()
-        {
-            return _sqlValue;
-        }
-    }
 
     @Override
     public void create_(Statement s, IDBCW dbcw) throws SQLException

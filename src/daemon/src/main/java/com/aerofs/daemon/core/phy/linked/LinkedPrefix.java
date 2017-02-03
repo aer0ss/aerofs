@@ -73,7 +73,7 @@ public class LinkedPrefix extends AbstractLinkedObject implements IPhysicalPrefi
                 try {
                     super.close();
                 } finally {
-                    if (_f.lengthOrZeroIfNotFile() > 0) {
+                    if (!digested() && _f.lengthOrZeroIfNotFile() > 0) {
                         LinkedStorage.l.debug("persist partial hash {}", _f);
                         persistDigest(md, hashFile(_f));
                     }

@@ -197,11 +197,16 @@ public class ContentReceiver
         // state. If the internal state is not saved properly, further attempt to reopen the
         // prefix will fail as it will be considered corrupted.
         // Unfortunately the UI will sometimes stop the daemon, for instance when installing
-        // an update or relocating the root anchor. To avoid losing wasting progress made on
-        // ongoing downloads we use a shutdown hook to maximize the likelihood of the prefix
-        // stream being cleanly closed in such circumstances.
+        // an update or relocating the root anchor. To avoid wasting progress made on ongoing
+        // downloads we use a shutdown hook to maximize the likelihood of the prefix stream
+        // being cleanly closed in such circumstances.
         Thread prefixCloser = new Thread(() -> {
-            try { prefixStream.close(); } catch (IOException e) {}
+            try {
+                prefixStream.close();
+                l.info("closed prefix {}", k);
+            } catch (Exception e) {
+                l.warn("failed to close prefix {}", k, BaseLogUtil.suppress(e));
+            }
         }, "closer");
         try {
             Runtime.getRuntime().addShutdownHook(prefixCloser);
@@ -276,15 +281,16 @@ public class ContentReceiver
                 }
             }
         } finally {
-            prefixStream.close();
             try {
                 Runtime.getRuntime().removeShutdownHook(prefixCloser);
-            } catch (IllegalStateException e) {
+            } catch (Exception e) {
                 // sigh, this is so damn stupid...
                 // removing a hook after shutdown is started throws an exception but of course
                 // there is no way to tell if a shutdown has been initiated...
-                l.info("failed to remove shutdown hook", BaseLogUtil.suppress(e));
+                l.info("failed to remove prefix close hook {}", k, BaseLogUtil.suppress(e));
             }
+            // NB: do that after removing the hook, in case it throws
+            prefixStream.close();
         }
         return prefixStream.digest();
     }
