@@ -1,13 +1,17 @@
 #!/bin/bash
 
-name=${1:-aerofs_db_test}
+name=${1:-external_database_1}
 port=${2:-3306}
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
 
-if [[ -n "$(docker ps -q -f "name=$name")" ]] && \
+running=$(docker ps -q -f "name=$name")
+
+if [[ -n "$running" ]] && \
     "$THIS_DIR/../cache/img_fresh.sh" aerofs/mysql "$THIS_DIR/../../docker/mysql"; then
     echo db container already running 1>&2
+elif [[ -n "$running" ]] ; then
+    echo outdated db running, remove manually to force refresh 1>&2
 else
     # remove any previous instance
     docker rm -fv $name >/dev/null
@@ -42,11 +46,11 @@ EOF
 
 done
 
-VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
+VM=$(docker-machine active 2>/dev/null || echo "docker-dev")
 if docker-machine ls "$VM" &>/dev/null ; then
     host=$(docker-machine ip "$VM")
 else
-    host=$(docker inspect aerofs_db_test | jq -r '.[0].NetworkSettings.IPAddress')
+    host=$(docker inspect $name | jq -r '.[0].NetworkSettings.IPAddress')
 fi
 
 echo export JUNIT_mysqlHost="$host:$port"
