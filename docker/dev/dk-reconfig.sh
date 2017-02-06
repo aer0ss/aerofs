@@ -29,11 +29,11 @@ fi
 
 HOST=${2:-share.syncfs.com}
 
-BUTTON=button.amium.com
+BUTTON=button1.amium.com
 
 echo "Testing VPN connection by connecting to ${BUTTON} ..."
 # VPN connection is required to connect to button.amium.com
-nc -z ${BUTTON} 22 || {
+nc -z -w 5 ${BUTTON} 22 || {
     error "ERROR: please connect to VPN for ${BUTTON} access"
     exit 22
 }
