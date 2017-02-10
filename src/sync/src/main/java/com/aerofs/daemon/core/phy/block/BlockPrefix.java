@@ -6,7 +6,6 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.daemon.core.phy.DigestSerializer;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.PrefixOutputStream;
@@ -25,6 +24,8 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.PrefixOutputStream.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -142,13 +143,28 @@ class BlockPrefix implements IPhysicalPrefix
         InjectableFile blockDir = _f.newChild(BLOCKS);
         String[] complete = blockDir.list();
         if (complete != null) {
+            Set<ContentBlockHash> hh = new HashSet<>();
+            byte[] d = _f.newChild(BLOCK_HASH).toByteArray();
+            if (d != null) {
+                try {
+                    hh.addAll(BlockUtil.splitBlocks(new ContentBlockHash(d)));
+                } catch (Exception e) { throw new IOException("corrupted prefix", e); }
+            }
             for (String c : complete) {
                 ContentBlockHash h;
                 try {
                     h = new ContentBlockHash(BaseUtil.hexDecode(c));
-                } catch (ExFormatError e) { continue; }
-                checkState(BlockUtil.isOneBlock(h));
+                } catch (Exception e) { continue; }
+                if (!BlockUtil.isOneBlock(h)) continue;
+                if (!hh.remove(h)) {
+                    BlockStorage.l.error("{} not in {}", h, hh);
+                    throw new IOException("corrupted prefix");
+                }
                 consumer.consume(h, blockDir.newChild(c));
+            }
+            if (!hh.isEmpty()) {
+                BlockStorage.l.error("missing chunks {}", hh);
+                throw new IOException("corrupted prefix");
             }
         }
 
@@ -298,12 +314,14 @@ class BlockPrefix implements IPhysicalPrefix
         if (d != null && td != null) {
             byte[] c = Arrays.copyOf(d, d.length + td.length);
             System.arraycopy(td, 0, c, d.length, td.length);
-            return new ContentBlockHash(c);
+            d = c;
         } else if (d == null && td == null) {
             return EMPTY_HASH;
         }
 
-        return new ContentBlockHash(d != null ? d : td);
+        try {
+            return new ContentBlockHash(d != null ? d : td);
+        } catch (Exception e) { throw new IOException("corrupted prefix", e); }
     }
 
     @Override

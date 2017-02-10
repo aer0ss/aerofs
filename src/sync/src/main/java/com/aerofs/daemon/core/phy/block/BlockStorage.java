@@ -200,15 +200,24 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
                 return;
             }
             InjectableFile dst = _uploadDir.newChild(key.toHex());
-            if (!dst.exists()) TransUtil.moveWithRollback_(f, dst, t);
+            if (dst.exists()) {
+                l.debug("upload already scheduled {}", key);
+            } else {
+                l.debug("schedule upload {}", key);
+                // TODO: hard-link if possible instead of moving
+                // would avoid the rare but annoying corner case wherein the daemon crashes after
+                // moving some of the chunks, thereby corrupting the prefix and forcing a full
+                // transfer on restart
+                TransUtil.moveWithRollback_(f, dst, t);
+            }
         });
 
         // If transaction succeeds, delete the prefix file
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_() {
-                from.cleanup_();
                 _uploadScheduler.schedule_();
+                from.cleanup_();
             }
         });
     }
@@ -227,7 +236,7 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
         }
     }
 
-    boolean prePutBlock(ContentBlockHash hash, long length, Trans t)
+    private boolean prePutBlock(ContentBlockHash hash, long length, Trans t)
             throws SQLException
     {
         Long storedLen = _bsdb.getBlockLength_(hash);

@@ -26,7 +26,7 @@ public class ContentBlockHash extends LeanByteString
     public ContentBlockHash(byte[] hash)
     {
         super(hash);
-        assert hash.length % UNIT_LENGTH == 0;
+        if (hash.length % UNIT_LENGTH != 0) throw new IllegalArgumentException();
     }
 
     public ContentBlockHash(ByteString pb)
