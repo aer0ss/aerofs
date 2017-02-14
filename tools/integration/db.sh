@@ -1,6 +1,6 @@
 #!/bin/bash
 
-name=${1:-external_database_1}
+name=${1:-external_mysql_1}
 port=${2:-3306}
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
