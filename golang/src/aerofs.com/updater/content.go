@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -98,7 +99,11 @@ func (f *HttpFetcher) syncFetch(hash, dst string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Unexpected %s", resp.Status)
+		var s string
+		if d, err := ioutil.ReadAll(resp.Body); err != nil {
+			s = string(d)
+		}
+		return fmt.Errorf("Unexpected %s for %s/%s\n%s", resp.Status, f.BaseURL, hash, s)
 	}
 
 	var src io.ReadCloser = resp.Body
