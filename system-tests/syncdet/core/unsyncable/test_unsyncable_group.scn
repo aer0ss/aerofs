@@ -20,4 +20,3 @@
     core.unsyncable.should_alias_case_conflict
     core.unsyncable.should_migrate_case_conflict
     core.unsyncable.should_delete_case_conflict
-    core.unsyncable.should_handle_failure_to_move_nro

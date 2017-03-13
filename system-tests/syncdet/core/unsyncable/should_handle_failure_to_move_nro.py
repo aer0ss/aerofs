@@ -5,6 +5,8 @@ from syncdet.case.sync import sync
 from syncdet.case.assertion import assertTrue, assertFalse
 from lib import ritual
 
+# NB: this test has been superseded by core.misc.should_move_read_only_file
+
 
 def nro():
     print 'nro', instance_path("foo")
