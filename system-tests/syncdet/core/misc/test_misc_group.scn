@@ -1,4 +1,5 @@
 :group misc_group
     core.misc.should_transfer_files_with_modification_time_before_epoch
     core.misc.should_sync_long_paths
+    core.misc.should_move_read_only_file
     core.misc.should_echo_shell_arguments

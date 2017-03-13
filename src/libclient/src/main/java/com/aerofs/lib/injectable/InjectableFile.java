@@ -11,11 +11,13 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.nio.file.Files;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -186,10 +188,30 @@ public class InjectableFile implements IReadableFile
     {
         if (_factory._osutil.getOSFamily() != OSFamily.WINDOWS) {
             try {
-                Files.setPosixFilePermissions(winSafe().toPath(),
-                        ImmutableSet.of(PosixFilePermission.OWNER_WRITE,
-                                PosixFilePermission.OWNER_READ,
-                                PosixFilePermission.OWNER_EXECUTE));
+                Path f = _f.toPath();
+                Set<PosixFilePermission> p = Files.getPosixFilePermissions(f, LinkOption.NOFOLLOW_LINKS);
+                p.add(PosixFilePermission.OWNER_READ);
+                p.add(PosixFilePermission.OWNER_WRITE);
+                p.add(PosixFilePermission.OWNER_EXECUTE);
+                Files.setPosixFilePermissions(f, p);
+                return;
+            } catch (UnsupportedOperationException e) {}
+        }
+        File w = winSafe();
+        w.setReadable(true);
+        w.setWritable(true);
+        w.setExecutable(true);
+    }
+
+    public void fixFilePermissions() throws IOException
+    {
+        if (_factory._osutil.getOSFamily() != OSFamily.WINDOWS) {
+            try {
+                Path f = _f.toPath();
+                Set<PosixFilePermission> p = Files.getPosixFilePermissions(f, LinkOption.NOFOLLOW_LINKS);
+                p.add(PosixFilePermission.OWNER_READ);
+                p.add(PosixFilePermission.OWNER_WRITE);
+                Files.setPosixFilePermissions(f, p);
                 return;
             } catch (UnsupportedOperationException e) {}
         }
