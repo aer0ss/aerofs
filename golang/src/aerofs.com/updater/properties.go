@@ -94,6 +94,9 @@ func LoadJavaProperties(file string) (map[string]string, error) {
 		for idx < len(d) && (isSpace(d[idx]) || d[idx] == '\r' || d[idx] == '\n') {
 			idx++
 		}
+		if idx >= len(d) {
+			break
+		}
 		// ignore comment lines
 		if d[idx] == '#' || d[idx] == '!' {
 			idx = bytes.IndexByte(d, '\n')
