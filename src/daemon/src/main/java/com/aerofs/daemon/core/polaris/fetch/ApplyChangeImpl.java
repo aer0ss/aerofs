@@ -53,6 +53,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -110,6 +111,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
     private final ContentFetchQueueWrapper _cfqw;
     private final PolarisContentVersionControl _cvc;
     private final MetaDatabase _mdb;
+    private final CfgLocalDID _localDID;
 
     // FIXME: remove once TS is burned
     private final CfgLocalUser _localUser;
@@ -124,7 +126,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
                            ImmigrantCreator imc, ExpulsionDatabase exdb, StoreDeleter sd,
                            LogicalStagingArea sa, VersionUpdater vu, ChangeEpochDatabase cedb,
                            PolarisContentVersionControl cvc, ContentFetchQueueWrapper cfqw,
-                           MetaDatabase mdb, TransManager tm, CfgLocalUser localUser)
+                           MetaDatabase mdb, TransManager tm, CfgLocalUser localUser, CfgLocalDID localDID)
     {
         _tm = tm;
         _ds = ds;
@@ -152,6 +154,7 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         _cvc = cvc;
         _cfqw = cfqw;
         _localUser =  localUser;
+        _localDID = localDID;
     }
 
     @Override
@@ -182,7 +185,19 @@ public class ApplyChangeImpl implements ApplyChange.Impl
         CA ca = oa.caMasterNullable();
         if (ca == null) return false;
         ContentHash h = _ds.getCAHash_(new SOKID(soid, KIndex.MASTER));
-        if (h == null || !h.equals(c.contentHash) || ca.length() != c.contentSize) return false;
+        if (h == null) return false;
+
+        if (!h.equals(c.contentHash) || ca.length() != c.contentSize) {
+            // NB: Handle case where transform is fetched before HTTP response in content submitter
+            // and local change(s) happened after the submit so the local content doesn't actually
+            // match anymore
+            // Failure to bump the version in that case leads to persistent no-sync for the affected
+            // file as the new version will forever fail to submit because of the version mismatch,
+            // the old content cannot be fetched by any peer nor fetched from any other peer.
+            // To avoid this undesirable behavior we pretend the content matched for ApplyChange
+            // purposes but keep the local change in the submit queue.
+            return _localDID.get().equals(c.originator);
+        }
 
         // local content matches remote change
         // -> discard local change if any
