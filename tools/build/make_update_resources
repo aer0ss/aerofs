@@ -88,28 +88,16 @@ function create_java_jar() {
 }
 
 # Writes the release version and checksums of the binaries to the version file.
-function write_version_and_checksums() {
+function write_version() {
     local VERSION_FILE="${AEROFS_RELEASE_DIR}/version"
 
     # Create a version file in the AeroFS release directory
     echo $RELEASE_VERSION > "${VERSION_FILE}"
-
-    OLDIFS=$IFS
-    IFS=','
-    for i in aerofs.jar,"${AEROFS_RELEASE_DIR}/aerofs.jar" \
-             aerofsd.dll,"${AEROFS_RELEASE_WIN_DIR}/aerofsd.dll" \
-             libaerofsd.dylib,"${AEROFS_RELEASE_OSX_DIR}/libaerofsd.dylib"; do
-        set $i
-        local CHKSUM=$(shasum -a 256 "$2" 2>/dev/null | sed -e 's/ .*//')
-
-        echo "$1=${CHKSUM}" >> "$VERSION_FILE"
-    done
-    IFS=$OLDIFS
 }
 
 compute_product_names
 copy_resources_to_local_release_directories
 create_java_jar
-write_version_and_checksums
+write_version
 
 exit 0
