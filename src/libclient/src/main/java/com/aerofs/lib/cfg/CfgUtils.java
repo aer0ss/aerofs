@@ -26,10 +26,10 @@ public class CfgUtils {
     {
         try {
             try (Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), ClientParam.VERSION)))) {
-                    return s.nextLine();
+                return s.nextLine();
             }
         } catch (FileNotFoundException e) {
-                return Versions.ZERO;
+            return Versions.ZERO;
         }
     }
 

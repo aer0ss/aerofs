@@ -134,10 +134,6 @@ public class Launcher
     public static void launch(final boolean isFirstTime) throws Exception
     {
         try {
-            // verify checksums *before* launching the daemon to avoid reporting daemon launching
-            // failures due to binary issues.
-            if (PostUpdate.updated()) verifyChecksums();
-
             // SanityPoller should be executed before the daemon starts so that the users know
             // that they moved or deleted the root anchor prior to the daemon failing because
             // that folder is missing
@@ -196,39 +192,6 @@ public class Launcher
                 UIGlobals.updater().onStartupFailed();
             }
             throw ex;
-        }
-    }
-
-    /**
-     * Verifies that all checksums match, if we're launching AeroFS after an update
-     * @throws IOException
-     * @throws ExLaunchAborted
-     * @throws ExFormatError
-     */
-    private static void verifyChecksums() throws IOException, ExLaunchAborted, ExFormatError
-    {
-        String downloadUrl = getStringProperty("base.www.download_url");
-
-        // After an update, verify that all checksums match
-        String failedFile = PostUpdate.verifyChecksum();
-        if (failedFile != null) {
-            String msg = L.product() + " couldn't launch because some program files are corrupted." +
-                    " Please " +
-                    (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " +
-                            downloadUrl) +
-                    " to download and install " + L.product() + " again. " +
-                    "All your data will be intact during re-installation.";
-
-            newDefectWithLogs("launcher.launch.verify_checksum")
-                    .setMessage(msg)
-                    .setException(new Exception(failedFile + " chksum failed: "
-                            + new File(failedFile).length()))
-                    .sendAsync();
-            UI.get().show(MessageType.ERROR, msg);
-
-            if (UI.isGUI()) GUIUtil.launch(downloadUrl);
-
-            throw new ExLaunchAborted();
         }
     }
 
