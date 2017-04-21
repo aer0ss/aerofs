@@ -44,7 +44,7 @@ public class SSMPDecoder {
     public static byte[] read(ChannelBuffer b, ByteSet s, int max) throws EOFException {
         int n = 0;
         while (true) {
-            if (n == max) throw new IllegalArgumentException();
+            if (n > max) throw new IllegalArgumentException();
             if (n == b.readableBytes()) throw new EOFException();
             byte c = b.getByte(b.readerIndex() + n);
             if (c == ' ' || c == '\n') {
