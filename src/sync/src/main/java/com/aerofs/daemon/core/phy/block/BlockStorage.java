@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -495,33 +497,40 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
         return "block-upload";
     }
 
+    private final static int MAX_UPLOAD_DIR_CHUNK = 256;
     @Override
     public boolean process_() throws Exception {
         // take snapshot of upload folder w/ core lock held to avoid races
-        String[] blocks = _uploadDir.list();
-
-        if (blocks == null || blocks.length == 0) return false;
+        List<ContentBlockHash> blocks = new ArrayList<>(MAX_UPLOAD_DIR_CHUNK);
+        // NB: do not list the entire dir, it could be YUGE
+        try (DirectoryStream<java.nio.file.Path> s = Files.newDirectoryStream(_uploadDir.getImplementation().toPath())) {
+            Iterator<java.nio.file.Path> it = s.iterator();
+            while (it.hasNext() && blocks.size() < MAX_UPLOAD_DIR_CHUNK) {
+                String c = it.next().toFile().getName();
+                try {
+                    ContentBlockHash k = new ContentBlockHash(BaseUtil.hexDecode(c));
+                    checkState(BlockUtil.isOneBlock(k));
+                    blocks.add(k);
+                } catch (Exception e) {
+                    l.warn("invalid block in upload dir: {}", c);
+                }
+            }
+        }
+        // nothing to upload
+        if (blocks.isEmpty()) return false;
 
         try (Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "block-upload")) {
             TCB tcb = tk.pseudoPause_("block-upload");
             try {
-                for (String c : blocks) {
-                    ContentBlockHash k;
-                    try {
-                        k = new ContentBlockHash(BaseUtil.hexDecode(c));
-                        checkState(BlockUtil.isOneBlock(k));
-                    } catch (Exception e) {
-                        l.warn("invalid block in upload dir: {}", c);
-                        continue;
-                    }
-                    l.info("uploading block {}", c);
-                    InjectableFile f = _uploadDir.newChild(c);
+                for (ContentBlockHash k : blocks) {
+                    l.info("uploading block {}", k);
+                    InjectableFile f = _uploadDir.newChild(k.toHex());
                     try (InputStream in = f.newInputStream()) {
                         _bsb.putBlock(k, in, f.length());
                     }
                     // FIXME: delay removal until last reader is closed
                     if (!f.deleteIgnoreError()) {
-                        l.warn("failed to remove block after upload {}", c);
+                        l.warn("failed to remove block after upload {}", k);
                     }
                     _pi.incrementMonotonicProgress();
                 }
@@ -530,8 +539,7 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
             }
         }
 
-        blocks = _uploadDir.list();
-        return blocks != null && blocks.length > 0;
+        return true;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
