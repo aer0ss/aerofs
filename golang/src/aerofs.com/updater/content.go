@@ -71,7 +71,7 @@ func NewHttpFetcher(baseUrl string, transport *http.Transport) *HttpFetcher {
 		BaseURL: baseUrl,
 		c: http.Client{
 			Transport: transport,
-			Timeout:   120 * time.Second,
+			Timeout:   5 * time.Minute,
 		},
 	}
 }
