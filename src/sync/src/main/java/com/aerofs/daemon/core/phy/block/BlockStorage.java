@@ -503,7 +503,7 @@ public class BlockStorage implements IPhysicalStorage, CleanupScheduler.CleanupH
         // take snapshot of upload folder w/ core lock held to avoid races
         List<ContentBlockHash> blocks = new ArrayList<>(MAX_UPLOAD_DIR_CHUNK);
         // NB: do not list the entire dir, it could be YUGE
-        try (DirectoryStream<java.nio.file.Path> s = Files.newDirectoryStream(_uploadDir.getImplementation().toPath())) {
+        try (DirectoryStream<java.nio.file.Path> s = Files.newDirectoryStream(_uploadDir.toPath())) {
             Iterator<java.nio.file.Path> it = s.iterator();
             while (it.hasNext() && blocks.size() < MAX_UPLOAD_DIR_CHUNK) {
                 String c = it.next().toFile().getName();

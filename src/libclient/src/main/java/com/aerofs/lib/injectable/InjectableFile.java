@@ -301,6 +301,11 @@ public class InjectableFile implements IReadableFile
         return winSafe();
     }
 
+    // NB: we do NOT use winSafe() here because nio.Path doesn't like the magic prefix
+    public Path toPath() {
+        return _f.toPath();
+    }
+
     public void setLastModified(long mtime) throws IOException
     {
         FileUtil.setLastModified(winSafe(), mtime);
