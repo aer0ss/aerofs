@@ -64,9 +64,11 @@ public class TestSP_GroupSharing extends AbstractSPFolderTest
         setSession(owner);
         group = factGroup.save("common name", org.id(), null);
 
+        sfNotifications.begin();
         // Test shared folder.
         sf = factSharedFolder.create(sid);
         sf.save("Shared Folder Name", owner);
+        sfNotifications.clear();
 
         sqlTrans.commit();
     }

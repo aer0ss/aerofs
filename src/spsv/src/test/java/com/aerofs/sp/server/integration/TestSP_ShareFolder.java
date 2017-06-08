@@ -401,7 +401,7 @@ public class TestSP_ShareFolder extends AbstractSPACLTest
         verify(sfNotifications, never()).addNotif(any(), any(), any());
         ArgumentCaptor<Collection<ThreadLocalSFNotifications.SFNotification>> captor = ArgumentCaptor.forClass((Class)Collection.class);
         verify(sfNotificationPublisher).sendNotifications(captor.capture());
-        assertTrue(captor.getValue().isEmpty());
+        assertEquals(1, captor.getValue().size());
     }
 
 
