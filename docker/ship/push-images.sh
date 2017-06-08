@@ -35,8 +35,8 @@ for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER
     echo " Pushing ${i}:${TAG} to ${PUSH_REPO}..."
     echo "============================================================"
     PUSH_IMAGE="${PUSH_IMAGE_PREFIX}${i}:${TAG}"
-    docker tag -f "${i}" "${PUSH_IMAGE}"
-    docker tag -f "${i}" "${PUSH_IMAGE_PREFIX}${i}:latest"
+    docker tag "${i}" "${PUSH_IMAGE}"
+    docker tag "${i}" "${PUSH_IMAGE_PREFIX}${i}:latest"
     ${THIS_DIR}/push-docker-image.sh "${PUSH_IMAGE}"
     docker rmi "${PUSH_IMAGE}"
 done

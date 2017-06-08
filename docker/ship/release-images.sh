@@ -22,7 +22,7 @@ echo "============================================================"
 echo " Pushing ${LOADER_IMAGE}:latest to ${PUSH_REPO}..."
 echo "============================================================"
 LOADER_PUSH_IMAGE=$PUSH_IMAGE_PREFIX${LOADER_IMAGE}
-docker tag -f ${LOADER_IMAGE} ${LOADER_PUSH_IMAGE}
+docker tag ${LOADER_IMAGE} ${LOADER_PUSH_IMAGE}
 ${THIS_DIR}/push-docker-image.sh ${LOADER_PUSH_IMAGE}
 docker rmi ${LOADER_PUSH_IMAGE}
 

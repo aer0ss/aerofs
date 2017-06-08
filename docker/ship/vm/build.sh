@@ -117,7 +117,7 @@ setup_preload_registry() {
         # Push images to the preload registry
         for i in $(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${LOADER_IMAGE} images); do
             PRELOAD="127.0.0.1:${REPO_PORT}/${i}"
-            docker tag -f "${i}" "$PRELOAD"
+            docker tag "${i}" "$PRELOAD"
             docker push "${PRELOAD}"
             docker rmi "${PRELOAD}"
 
