@@ -44,7 +44,8 @@ public class MetaChangesDatabase extends AbstractDatabase
         sdo.addImmediate_(this);
     }
 
-    private static String tableName(SIndex sidx)
+    // sigh, public for DPUT
+    public static String tableName(SIndex sidx)
     {
         return T_META_CHANGE + "_" + sidx.getInt();
     }

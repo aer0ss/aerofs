@@ -12,8 +12,11 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.polaris.GsonUtil;
 import com.aerofs.daemon.core.polaris.PolarisAsyncClient;
 import com.aerofs.daemon.core.polaris.api.Batch;
+import com.aerofs.daemon.core.polaris.api.Batch.BatchOp;
 import com.aerofs.daemon.core.polaris.api.BatchResult;
+import com.aerofs.daemon.core.polaris.api.BatchResult.PolarisError;
 import com.aerofs.daemon.core.polaris.api.LocalChange;
+import com.aerofs.daemon.core.polaris.api.LocalChange.Type;
 import com.aerofs.daemon.core.polaris.api.ObjectType;
 import com.aerofs.daemon.core.polaris.async.AsyncTaskCallback;
 import com.aerofs.daemon.core.polaris.db.*;
@@ -40,6 +43,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -111,28 +115,47 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
     @Override
     public void runPhoenix() throws Exception {
         DPUTSyncStatusTableAlterations.addSyncStatusColumnsToOA(_dbcw);
+        int failed = 0;
         for (SIndex s : _sdb.getAll_()) {
             // if the change epoch already exists, then this store has already been traversed and we don't have to do it again
             if (_cedb.getChangeEpoch_(s) != null) continue;
             highestTimestamps.put(s, _cedb.getHighestChangeEpoch_(s));
 
+            // create these tables before conversion as they may be filled in case of name conflict
+            if (!_dbcw.tableExists(MetaChangesDatabase.tableName(s))) {
+                try (Trans t = _tm.begin_()) {
+                    _mcdb.createStore_(s, t);
+                    _ccdb.createStore_(s, t);
+                    t.commit_();
+                }
+            }
+
             // skip submitting transforms to stores which we can't edit
             // can't use _acl.check here because it relies on IMapSindex2SID which will not be init'ed yet
             if (allowedToPostOperationsToStore(s)) {
-                convertStoreCatchNoPerm(s);
+                try {
+                    convertStoreCatchNoPerm(s);
+                } catch (IOException e) {
+                    throw e;
+                } catch (Exception e) {
+                    ++failed;
+                    l.warn("incomplete conversion {}", s, e);
+                    // attempt to make progress on other stores
+                    continue;
+                }
             }
 
             // create necessary polaris tables for the store
-            // N.B. this is done after all the operations are submitted because the existence of these tables is used to short-circuit traversing the store's objects
+            // N.B. this is done after all the operations are submitted because the existence of
+            // these tables is used to short-circuit traversing the store's objects
             try (Trans t = _tm.begin_()) {
-                _mcdb.createStore_(s, t);
                 _rcdb.createStore_(s, t);
                 _cfdb.createStore_(s, t);
-                _ccdb.createStore_(s, t);
                 _cedb.setChangeEpoch_(s, -1L, t);
                 t.commit_();
             }
         }
+        if (failed != 0) throw new Exception("" + failed + " shared folders could not be converted");
     }
 
     private boolean allowedToPostOperationsToStore(SIndex s) throws Exception
@@ -173,27 +196,49 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                     return null;
                 }
 
+                // if parent is in meta change table
+                // this means parent (or one of its ancestors) ran into a name conflict
+                // therefore any attempt to submit this object will fail
+                // simply add the object to the meta (and content) change table(s)
+                // regular fetch/submit machinery will take care of conflict resolution later
+                boolean defer = _mcdb.getFirstChange_(sidx, oa.parent()) != null;
+
                 Version v = _nvdb.getVersion_(sidx, oid, CID.META, KIndex.MASTER);
                 // sometimes version did is zero for anchors
                 if (!v.isZero_() || oa.type() == OA.Type.ANCHOR) {
-                    ConversionChange insert = new ConversionChange();
-                    insert.type = LocalChange.Type.INSERT_CHILD;
-                    insert.child = toPolarisID(oa.soid()).toStringFormal();
-                    insert.childName = oa.name();
-                    insert.childObjectType = fromType(oa.type());
-                    insert.addVersion(v);
-                    try (IDBIterator<OID> aliases = _adb.getAliases_(oa.soid())) {
-                        insert.addAliases(aliases);
+                    if (defer) {
+                        try (Trans t = _tm.begin_()) {
+                            _nvdb.deleteVersion_(sidx, oid, CID.META, KIndex.MASTER, v, t);
+                            _mcdb.insertChange_(sidx, oid, oa.parent(), oa.name(), t);
+                            t.commit_();
+                        }
+                    } else {
+                        ConversionChange insert = new ConversionChange();
+                        insert.type = LocalChange.Type.INSERT_CHILD;
+                        insert.child = toPolarisID(oa.soid()).toStringFormal();
+                        insert.childName = oa.name();
+                        insert.childObjectType = fromType(oa.type());
+                        insert.addVersion(v);
+                        try (IDBIterator<OID> aliases = _adb.getAliases_(oa.soid())) {
+                            insert.addAliases(aliases);
+                        }
+                        changes.add(new Batch.BatchOp(toPolarisID(new SOID(s, oa.parent())).toStringFormal(), insert));
                     }
-                    changes.add(new Batch.BatchOp(toPolarisID(new SOID(s, oa.parent())).toStringFormal(), insert));
                 }
 
                 if (oa.isFile()) {
                     v = _nvdb.getVersion_(sidx, oid, CID.CONTENT, KIndex.MASTER);
                     CA ca = oa.caMasterNullable();
-                    if (!v.isZero_() && ca != null) {
-                        ContentHash hash = _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
-                        if (hash != null) {
+                    ContentHash hash = v.isZero_() || ca == null ? null
+                            : _ds.getCAHash_(new SOKID(oa.soid(), KIndex.MASTER));
+                    if (hash != null) {
+                        if (defer) {
+                            try (Trans t = _tm.begin_()) {
+                                _nvdb.deleteVersion_(sidx, oid, CID.CONTENT, KIndex.MASTER, v, t);
+                                _ccdb.insertChange_(sidx, oid, t);
+                                t.commit_();
+                            }
+                        } else {
                             ConversionChange update = new ConversionChange();
                             update.type = LocalChange.Type.UPDATE_CONTENT;
                             // local version is ignored on polaris
@@ -364,7 +409,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                                         break;
                                     }
                                     case INSERT_CHILD: {
-                                        _nvdb.deleteVersion_(_sidx, new OID(change.child) , CID.META, KIndex.MASTER, change.getVersion(), t);
+                                        _nvdb.deleteVersion_(_sidx, new OID(change.child), CID.META, KIndex.MASTER, change.getVersion(), t);
                                         break;
                                     }
                                     default: {
@@ -373,11 +418,48 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                                     }
                                 }
                                 t.commit_();
-                                ops.remove(0);
-                                // reset the failure counter
-                                failures = 0;
-                                delay = LibParam.EXP_RETRY_MIN_DEFAULT;
                             }
+                            ops.remove(0);
+                            // reset the failure counter
+                            failures = 0;
+                            delay = LibParam.EXP_RETRY_MIN_DEFAULT;
+                        } else if (or.errorCode == PolarisError.NAME_CONFLICT
+                                || or.errorCode == PolarisError.NO_SUCH_OBJECT) {
+                            l.warn("{} {}", or.errorCode, GsonUtil.GSON.toJson(ops.get(i)));
+                            Batch.BatchOp op = ops.get(0);
+                            ConversionChange change = (ConversionChange) (op.operation);
+                            if (change.type != Type.INSERT_CHILD) throw new ExProtocolError();
+                            int n = 1;
+                            try (Trans t = _tm.begin_()) {
+                                OID oid = new OID(change.child);
+                                _nvdb.deleteVersion_(_sidx, oid, CID.META, KIndex.MASTER, change.getVersion(), t);
+                                // NB: ensure later conflict resolution
+                                _mcdb.insertChange_(_sidx, oid, new OID(op.oid), change.childName, t);
+                                // NB: if the object is a folder we need to omit all children as well
+                                // instead of going through the list of ops and removing those that
+                                // match, simply handle NO_SUCH_OBJECT like NAME_CONFLICT
+                                // This results in redundant (and easily avoidable) requests but it
+                                // keeps the code simple and honestly at this point optimizing the
+                                // conversion process is not a requirement
+                                if (change.childObjectType == ObjectType.FILE && ops.size() > 1) {
+                                    BatchOp next = ops.get(1);
+                                    // NB: walk that generates conversion ops ensures UPDATE_CONTENT
+                                    // must immediately follow matching INSERT_CHILD
+                                    if (next.operation.type == Type.UPDATE_CONTENT
+                                            && oid.equals(new OID(next.oid))) {
+                                        n = 2;
+                                        _nvdb.deleteVersion_(_sidx, oid, CID.CONTENT, KIndex.MASTER,
+                                                ((ConversionChange) next.operation).getVersion(), t);
+                                        // NB: ensure later conflict resolution
+                                        _ccdb.insertChange_(_sidx, oid, t);
+                                    }
+                                }
+                                t.commit_();
+                            }
+                            // remove conflicting op(s)
+                            for (int k = 0; k < n; ++k) ops.remove(0);
+                            // retry without conflicting ops
+                            return !ops.isEmpty();
                         } else {
                             l.warn("conversion op failed {} {} {}", or.errorCode, or.errorMessage, GsonUtil.GSON.toJson(ops.get(i)));
                             if (or.errorCode == BatchResult.PolarisError.INSUFFICIENT_PERMISSIONS) {
