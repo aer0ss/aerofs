@@ -425,7 +425,7 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                             delay = LibParam.EXP_RETRY_MIN_DEFAULT;
                         } else if (or.errorCode == PolarisError.NAME_CONFLICT
                                 || or.errorCode == PolarisError.NO_SUCH_OBJECT) {
-                            l.warn("{} {}", or.errorCode, GsonUtil.GSON.toJson(ops.get(i)));
+                            l.warn("{} {}", or.errorCode, GsonUtil.GSON.toJson(ops.get(0)));
                             Batch.BatchOp op = ops.get(0);
                             ConversionChange change = (ConversionChange) (op.operation);
                             if (change.type != Type.INSERT_CHILD) throw new ExProtocolError();
@@ -433,8 +433,11 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                             try (Trans t = _tm.begin_()) {
                                 OID oid = new OID(change.child);
                                 _nvdb.deleteVersion_(_sidx, oid, CID.META, KIndex.MASTER, change.getVersion(), t);
+                                // polaris uses SID instead of OID.ROOT, need to convert back
+                                UniqueID parent = new UniqueID(op.oid);
+                                if (parent.equals(_sid)) parent = OID.ROOT;
                                 // NB: ensure later conflict resolution
-                                _mcdb.insertChange_(_sidx, oid, new OID(op.oid), change.childName, t);
+                                _mcdb.insertChange_(_sidx, oid, new OID(parent), change.childName, t);
                                 // NB: if the object is a folder we need to omit all children as well
                                 // instead of going through the list of ops and removing those that
                                 // match, simply handle NO_SUCH_OBJECT like NAME_CONFLICT
@@ -500,7 +503,8 @@ public class DPUTSubmitLocalTreeToPolaris extends PhoenixDPUT {
                 return;
             }
             failures++;
-            if (failures > MAX_FAILURES) {
+            // no retry for serious/non-transient errors
+            if (failures > MAX_FAILURES || t instanceof Error || t instanceof RuntimeException || t instanceof ExProtocolError) {
                 lastError = t;
                 completionSignaler.release();
             } else {
