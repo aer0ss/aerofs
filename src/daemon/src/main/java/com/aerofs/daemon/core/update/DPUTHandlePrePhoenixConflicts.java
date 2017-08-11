@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.ResolvedPath;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -115,9 +116,12 @@ public class DPUTHandlePrePhoenixConflicts extends PhoenixDPUT {
 
         try (Trans t = _tm.begin_()) {
             for (SOKID k : del) {
+                // skip objects in staging area
+                ResolvedPath p = _ds.resolveNullable_(k.soid());
+                if (p == null) continue;
                 l.info("drop {}", k);
                 _ds.deleteCA_(k.soid(), k.kidx(), t);
-                _ps.newFile_(_ds.resolve_(k.soid()), k.kidx()).delete_(PhysicalOp.APPLY, t);
+                _ps.newFile_(p, k.kidx()).delete_(PhysicalOp.APPLY, t);
             }
             t.commit_();
         }
