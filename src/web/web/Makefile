@@ -61,6 +61,7 @@ watch:
 $(DEST)/css/compiled/%.css: $(SRC)/less/%.less
 	@mkdir -p $(@D)
 	node_modules/.bin/lessc $< > $@
+
 $(DEST)/css/compiled/%.min.css: $(DEST)/css/compiled/%.css
 	node_modules/.bin/minify $<
 

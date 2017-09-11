@@ -61,7 +61,8 @@ class NewAccountCreationForm(Form):
     country = StringField("Country", validators=[InputRequired()], default="United States")
 
 class CompleteSignupForm(Form):
-    password = PasswordField('Password', validators=[InputRequired(), Length(min=6)])
+    password = PasswordField(label='Create Your Password', validators=[InputRequired(), Length(min=6)])
+    stripe_token = StringField(validators=[InputRequired()])
 
 class AcceptInviteForm(Form):
     first_name = StringField('First Name', validators=[InputRequired()])
@@ -121,6 +122,9 @@ class InternalLicenseStateForm(Form):
 
 class PasswordResetForm(Form):
     email = StringField('Email', validators = [Email()])
+
+class PasswordEntryForm(Form):
+    password = PasswordField(label='Password', validators=[InputRequired(), Length(min=6)])
 
 class ReleaseForm(Form):
     release_version = StringField('Version', validators = [InputRequired()])

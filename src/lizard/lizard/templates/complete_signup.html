@@ -1,27 +1,31 @@
 {% extends "public.html" %}
 {% from "_formhelpers.html" import render_field, submit_button, render_pw_strength_script %}
+{% from "_cchelpers.html" import render_card_name, render_card_number, render_card_expiry, render_card_cvc %}
 {% from "steps.html" import render_steps %}
 
-{% block title %}Complete Signup | AeroFS Private Cloud{% endblock %}
-
-{% block head %}
-    <link href="{{ url_for('static', filename='css/password.css') }}" rel="stylesheet" />
-{% endblock %}
-
+{% block title %}Begin Trial | AeroFS Private Cloud{% endblock %}
 
 {% block content %}
     <div id="complete-signup-container" class="col-sm-6 col-sm-offset-3 full-width-form">
-        <h1>Complete Your Account Setup</h1>
-        <p>
-            Choose an account password to grant you access to your Dashboard
-            where you can manage your account. Later, you will add users and invite
-            them to collaborate.
-        </p>
-        <form class="form-horizontal with-password" action="" method="post" name="login">
-            {{ form.hidden_tag() }}
-            {{ render_field(form.password, with_label=false, autofocus=true, type="password", class_="") }}
-            {{ submit_button("Submit", horizontal=False) }}
-        </form>
+      <h1>Begin Your Free Trial</h1>
+      <p>
+          To begin your <strong>7-day free trial</strong>, enter your credit card information and
+          a password for your account below. Your trial will expire after 7 days.
+          If you’d like to upgrade, simple visit your admin dashboard.
+      </p>
+      <br/>
+      <form id="ccInfo" class="full-width-form with-password" autocomplete="on" action="" method="post">
+          {{ form.hidden_tag() }}
+          {{ render_card_name() }}
+          {{ render_card_number() }}
+          {{ render_card_expiry() }}
+          {{ render_card_cvc() }}
+          {{ render_field(form.password, type="password", class_="custom") }}
+          {{ submit_button("Begin Your Free Trial", horizontal=False) }}
+      </form>
+      <form id='form' method="POST" role="form">
+          {{ form.hidden_tag() }}
+      </form>
     </div>
 {% endblock %}
 
@@ -31,4 +35,124 @@
 
 {% block scripts %}
     {{ render_pw_strength_script() }}
+    <script src="{{ url_for('static', filename='js/jquery.payment.js') }}" ></script>
+    <script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+    <script>
+      Stripe.setPublishableKey('{{ config.STRIPE_PUBLISHABLE_KEY }}');
+
+      jQuery(function($) {
+        var $number = $('.cc-number');
+        var $exp = $('.cc-exp');
+        var $cvc = $('.cc-cvc');
+        var $password = $('#password');
+
+        $number.payment('formatCardNumber');
+        $exp.payment('formatCardExpiry');
+        $cvc.payment('formatCardCVC');
+
+        //Clear all errors on change
+        $number.on('click', clearError.bind($number));
+        $exp.on('click', clearError.bind($exp));
+        $cvc.on('click', clearError.bind($cvc));
+        $password.on('click', clearError.bind($password));
+
+        $.fn.toggleInputError = function(erred) {
+          this.parent('.form-group').toggleClass('has-error', erred);
+          return this;
+        };
+
+        function clearError() {
+          this.toggleInputError(false);
+          this.parent('.form-group').find('span.help-block').remove();
+        }
+
+        function stripeResponseHandler(status, response) {
+          var $mainForm = $('#ccInfo');
+          var $submitForm = $('#form');
+          if (response.error) {
+            // Flash an error message banner
+            showErrorMessageUnsafe(response.error.message);
+            $mainForm.find('button').prop('disabled', false);
+          } else {
+            var $tokenInput = $('<input type=hidden name="stripe_token" />').val(response.id);
+            var $pwInput = $('<input type=hidden name="password" />').val($password.val());
+            $submitForm.append($tokenInput).append($pwInput);
+            $submitForm.submit();
+          }
+        }
+
+        $number.keypress(function(e) {
+          var cardType = $.payment.cardType($number.val());
+          if (cardType == "visa") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/visa.png') }} )" );
+          } else if (cardType == "amex") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/amex.png') }} )" );
+          } else if (cardType == "mastercard") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/mastercard.png') }} )" );
+          } else if(cardType == "discover") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/discover.png') }} )" );
+          } else if (cardType == "maestro") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/maestro.png') }} )" );
+          } else if (cardType == "dinersclub") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/diners.png') }} )" );
+          } else if (cardType == "jcb") {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/jcb.png') }} )" );
+          } else {
+            $('.card').css("background-image", "url( {{ url_for('static', filename='img/card.svg') }} )" );
+          }
+        });
+
+        $('#ccInfo').submit(function(e) {
+          e.preventDefault();
+          var $form = $(this);
+          $form.find('button').prop('disabled', true);
+
+          var name = $(".cc-name").val();
+          var number = $number.val();
+          var cvc = $cvc.val();
+
+          var cardType = $.payment.cardType(number);
+          var numberValid = $.payment.validateCardNumber(number);
+          var expValid = $.payment.validateCardExpiry($exp.payment('cardExpiryVal'));
+          var cvcValid = $.payment.validateCardCVC(cvc, cardType);
+
+          // This is kinda gross since this logic also exists in forms.py,
+          // but if we submit to the server before checking for this then it
+          // will clear the already entered credit card data.
+          var pwValid = $password.val().length >= 6;
+
+          if (numberValid && expValid && cvcValid && pwValid) {
+            var exp = $exp.val();
+            var expArr = exp.split( '/' );
+            var expmm = parseInt( expArr[0] );
+            var expyy = parseInt( expArr[1] );
+
+            Stripe.createToken({
+              name: name,
+              number: number,
+              cvc: cvc,
+              exp_month: expmm,
+              exp_year: expyy
+            }, stripeResponseHandler);
+
+          } else {
+            //Show the errors and let them fix it
+            $number.toggleInputError(!numberValid);
+            $exp.toggleInputError(!expValid);
+            $cvc.toggleInputError(!cvcValid);
+            $password.toggleInputError(!pwValid);
+            $form.find('button').prop('disabled', false);
+
+            if (!pwValid) {
+              //Should match the one added by the server
+              $password.parent('.form-group').append(`
+                <span class="error help-block">
+                  Field must be at least 6 characters long.
+                </span>
+              `);
+            }
+          }
+        });
+      });
+    </script>
 {% endblock %}

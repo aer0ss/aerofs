@@ -178,8 +178,8 @@ def signup_request_done():
 @blueprint.route("/signup", methods=["GET", "POST"])
 def signup_completion_page():
     """
-    GET /signup?code=<access_code>
-    POST /signup?code=<access_code> <form data>
+    GET /signup?signup_code=<access_code>
+    POST /signup?signup_code=<access_code> <form data>
     """
     user_signup_code = request.args.get("signup_code", None)
 
@@ -196,18 +196,23 @@ def signup_completion_page():
 
     form = forms.CompleteSignupForm()
     if form.validate_on_submit():
-        # Create a new Customer named `company`
-        cust = models.Customer()
-        cust.name = signup.company_name
-        cust.renewal_seats = 30 # default renewal number
-        db.session.add(cust)
+        # Create a new Customer with company_name
+        customer = models.Customer()
+        customer.name = signup.company_name
+        customer.renewal_seats = 30 # default renewal number
 
-        # Create a new Admin with the right
-        # `first_name`, `last_name`, `customer_id`,
-        # `phone_number`, `job_title`,
-        # `salt`, `pw_hash`
+        # Create a new stripe customer with the stripe token
+        stripe_customer = stripe.Customer.create(
+            email=signup.email,
+            card=form.stripe_token.data
+        )
+
+        customer.stripe_customer_id = stripe_customer.id
+        db.session.add(customer)
+
+        # Create a new Admin with the user info from signup
         admin = models.Admin()
-        admin.customer = cust
+        admin.customer = customer
         admin.email = signup.email
         admin.first_name = signup.first_name
         admin.last_name = signup.last_name
@@ -223,16 +228,18 @@ def signup_completion_page():
         db.session.delete(signup)
 
         # Create a new License request for the customer that just signed up
+        # NOTE: The new 7-day free trial is not a 'trial' in the legacy sense
+        # We are giving the customer 'everything' for 7 days, so is_trial is False.
         l = models.License()
-        l.customer = cust
+        l.customer = customer
         l.state = models.License.LicenseState.PENDING
         l.seats = 30 # Default to 30 seat trial licenses
-        l.set_days_until_expiry(365*10) # default to 10 years for now
-        l.is_trial = True
-        l.allow_audit = False
-        l.allow_identity = False
-        l.allow_mdm = False
-        l.allow_device_restriction = False
+        l.set_days_until_expiry(7) # Default to week long trial
+        l.is_trial = False # Give them the enterprise version
+        l.allow_audit = True
+        l.allow_identity = True
+        l.allow_mdm = True
+        l.allow_device_restriction = True
 
         db.session.add(l)
 
@@ -241,18 +248,19 @@ def signup_completion_page():
 
         # Submit analytics tracking thing.
         analytics_client.identify(admin.customer_id,
-                {
-                    'email': markupsafe.escape(admin.email),
-                    'firstName': markupsafe.escape(admin.first_name),
-                    'lastName': markupsafe.escape(admin.last_name),
-                    'company': markupsafe.escape(admin.customer.name),
-                    'title': markupsafe.escape(admin.job_title),
-                    'phone': markupsafe.escape(admin.phone_number),
-                    'Enterprise': 'true',
-                })
-        analytics_client.track(admin.customer_id, "Signed Up For Private Cloud", {
+        {
+            'email': markupsafe.escape(admin.email),
+            'firstName': markupsafe.escape(admin.first_name),
+            'lastName': markupsafe.escape(admin.last_name),
+            'company': markupsafe.escape(admin.customer.name),
+            'title': markupsafe.escape(admin.job_title),
+            'phone': markupsafe.escape(admin.phone_number),
+            'Enterprise': 'true',
+        })
+        analytics_client.track(admin.customer_id, "Signed Up For Private Cloud",
+        {
             'email': markupsafe.escape(admin.email)
-            })
+        })
 
         # Log user in.
         login_success = login_helper.login_user(admin)
@@ -413,15 +421,13 @@ def pay():
     license_request.allow_mdm = True
     license_request.allow_device_restriction = True
     # charge the customer
-    msg=None
+    msg = None
     try:
         #create/retrieve stripe customer
         if not customer.stripe_customer_id:
             stripe_customer = stripe.Customer.create(
-                    email=user.email,
-                    card=request.form['stripeToken']
-                    )
-
+                email=user.email,
+                card=request.form['stripeToken'])
             customer.stripe_customer_id = stripe_customer.id
             db.session.add(customer)
         # create/update subscription
@@ -436,11 +442,14 @@ def pay():
         else: # Pro-rate.
             license_request.expiry_date = newest_license.expiry_date
             license_request.stripe_subscription_id = newest_license.stripe_subscription_id
-            stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
+            stripe_subscription = stripe_customer.subscriptions.retrieve(
+                newest_license.stripe_subscription_id
+            )
             stripe_subscription.prorate = "true"
             stripe_subscription.quantity = license_request.seats
             stripe_subscription.save()
-            # Immediattely charge the customer (otherwise the customer will get charged at the end of the billing period).
+            # Immediately charge the customer (otherwise the customer will get
+            # charged at the end of the billing period).
             try:
                 stripe.Invoice.create(customer=stripe_customer.id).pay()
             except (stripe.CardError, stripe.StripeError) as e:
@@ -448,22 +457,30 @@ def pay():
                 # (Why stripe throws an error as opposed to a null invoice here is beyond me)
                 if customer.stripe_customer_id and not newest_license.is_trial:
                     stripe_customer = stripe.Customer.retrieve(customer.stripe_customer_id)
-                    stripe_subscription = stripe_customer.subscriptions.retrieve(newest_license.stripe_subscription_id)
+                    stripe_subscription = stripe_customer.subscriptions.retrieve(
+                        newest_license.stripe_subscription_id
+                    )
                     stripe_subscription.prorate = "false"
                     stripe_subscription.quantity = newest_license.seats
                     stripe_subscription.save()
                 raise
-    except stripe.CardError as e:
+    except stripe.CardError as error:
         # Since it's a decline, stripe.error.CardError will be caught.
-        body = e.json_body
-        err  = body['error']
+        body = error.json_body
+        err = body['error']
         msg = err['message']
-    except stripe.StripeError as e:
-        msg = u"An unknown error has occured and your card has not been charged. Please try again later."
-        current_app.logger.warn(e)
-    except Exception as e:
-        msg = u"An internal server error has occured and your card has not been charged. If you continue seeing this error, please contact us at support@aerofs.com."
-        current_app.logger.warn(e)
+    except stripe.StripeError as error:
+        msg = u"""
+            An unknown error has occured and your card has not been charged.
+            Please try again later.
+        """
+        current_app.logger.warn(error)
+    except Exception as error:
+        msg = u"""
+            An internal server error has occured and your card has not been charged.
+            If you continue seeing this error, please contact us at support@aerofs.com.
+        """
+        current_app.logger.warn(error)
     else:
         # Charged succesfully, create license request.
         db.session.add(license_request)
@@ -474,7 +491,8 @@ def pay():
         if newest_license.is_trial:
             flash(u"Successfully bought {} seats.".format(license_request.seats), 'success')
         else:
-            flash(u"Your upgrade from {} seats to {} seats is being processed".format(newest_license.seats,requested_license_count), 'success')
+            flash(u"Your upgrade from {} seats to {} seats is being processed"
+                .format(newest_license.seats, requested_license_count), 'success')
 
         notifications.send_sales_notification(user.email, license_request.seats)
 
@@ -954,7 +972,7 @@ def complete_password_reset():
     token = json.loads(reset_token)
     token_email = token["email"]
 
-    form = forms.CompleteSignupForm()
+    form = forms.PasswordEntryForm()
     if form.validate_on_submit():
         admin = models.Admin.query.filter_by(email=token_email).first_or_404()
         # Mark as used.

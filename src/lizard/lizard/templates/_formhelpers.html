@@ -24,7 +24,7 @@
     {% set class_ = kwargs.pop('class_', 'form-control') %}
 
     {% if with_divs %}
-        <div class="form-group {% if field.errors %}error{% endif %}">
+        <div class="form-group {% if field.errors %}error has-error{% endif %}">
     {% endif %}
         {% if with_label %}
             <label for="{{ field.id }}" class="field-label control-label">
@@ -36,7 +36,7 @@
         {% endif %}
         {% if field.type == 'BooleanField' %}
             <label class="checkbox control-label">
-                {{ field(class_=class_, **kwargs) }}
+                {{ field(class_=class_, required=field.flags.required, **kwargs) }}
                 {{ field.label.text|safe }}
             </label>
         {% else %}
@@ -45,7 +45,7 @@
             {% elif field.type == 'FileField' %}
                 {% set class_ = class_ + ' input-file' %}
             {% endif %}
-            {{ field(class_=class_, placeholder=placeholder, **kwargs) }}
+            {{ field(class_=class_, placeholder=placeholder, required=field.flags.required, **kwargs) }}
         {% endif %}
         {% if field.errors %}
             <span class="error help-block">{{ field.errors|join(' ') }}</span>

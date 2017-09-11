@@ -1,0 +1,44 @@
+{% macro render_card_name() %}
+  <div class="form-group">
+    <label for="cc-name" class="field-label control-label">
+      Name on Card <span class="required-star">*</span>
+    </label>
+    <input id="cc-name" class="form-control cc-name" autocomplete="cc-name"
+      placeholder="Name on Card"
+      required>
+  </div>
+{% endmacro %}
+
+{% macro render_card_number(card) %}
+  <div class="form-group">
+    <label for="cc-number" class="field-label control-label">
+      Credit Card Number <span class="required-star">*</span>
+    </label>
+    <input id="cc-number" type="tel" class="form-control cc-number" autocomplete="cc-number"
+      placeholder="•••• •••• •••• {% if card %}{{ card.last4 }}{% else %}••••{% endif %}"
+      required>
+    <span class="card" aria-hidden="true"></span>
+  </div>
+{% endmacro %}
+
+{% macro render_card_expiry(card) %}
+  <div class="form-group">
+    <label for="cc-exp" class="field-label control-label">
+      Expiration Date <span class="required-star">*</span>
+    </label>
+    <input id="cc-exp" type="tel" class="form-control cc-exp" autocomplete="cc-exp"
+      placeholder="{% if card %}{{card.exp_month }} / {{ card.exp_year }}{% else %} MM / YY{% endif %}"
+      required>
+  </div>
+{% endmacro %}
+
+{% macro render_card_cvc(args) %}
+  <div class="form-group">
+    <label for="cc-cvc" class="field-label control-label">
+      CVC <span class="required-star">*</span>
+    </label>
+    <input id="cc-cvc" type="tel" class="form-control cc-cvc" autocomplete="off"
+      placeholder="•••"
+      required>
+  </div>
+{% endmacro %}

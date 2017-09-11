@@ -109,6 +109,33 @@ select option[disabled] {
   width: 100%;
 }
 
+form .card {
+  position: absolute;
+  display: block;
+  right: 1.5em;
+  top: 3em;
+  margin-top: -10px;
+  width: 28px;
+  height: 19px;
+  background-size: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.full-width-form .form-group {
+  position: relative;
+}
+
+.full-width-form .form-group .card {
+  right: 6px;
+  top: 42px;
+  margin-top: 0px;
+}
+
+.full-width-form:not(.logged-in) .form-group .card {
+  top: 58px;
+}
+
 .full-width-form:not(.logged-in) .btn-default,
 .full-width-form:not(.logged-in) .btn-primary {
   width: 100%;
@@ -121,6 +148,21 @@ select option[disabled] {
 .full-width-form:not(.logged-in) .with-password .progress {
   margin-top: -17px;
   width: 100%;
+}
+
+form.with-password {
+  .progress {
+      width: 174px;
+      margin: 15px auto 5px auto;
+  }
+  span.password-verdict {
+      color: gray;
+      font-size: 12px;
+  }
+}
+
+form .form-group.has-error .custom {
+  border-color: #a94442;
 }
 
 .eula {
@@ -392,7 +434,7 @@ ul.list-unstyled.with-image {
 
 .hpc-btn-large(){
   height: 50px;
-  width: 68%;
+  min-width: 68%;
   font-size: 18px;
   line-height: 35px;
 }

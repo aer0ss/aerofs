@@ -1,8 +1,10 @@
 {% extends "logged_in.html" %}
+{% from "_cchelpers.html" import render_card_name, render_card_number, render_card_expiry, render_card_cvc %}
 
 {% block title %}Billing | AeroFS Private Cloud{% endblock %}
 
 {% block head %}
+<link href="{{ url_for('static', filename='css/extras.css') }}" rel="stylesheet" />
 <style type="text/css" media="screen">
     .has-error input {
       border-width: 2px;
@@ -13,34 +15,6 @@
     .validation.text-success:after {
       content: 'Validation passed';
     }
-
-.card{
-  position:absolute;
-  display:block;
-  right:1.5em;
-  top:3em;
-  margin-top:-10px;
-  width:28px;
-  height:19px;
-  background:url(
-    {% if card.brand == "Visa" %}
-      {{ url_for('static', filename='img/visa.png')}}
-    {% elif card.brand == "American Express" %}
-      {{ url_for('static', filename='img/amex.png')}}
-    {% elif card.brand == "MasterCard "%}
-      {{ url_for('static', filename='img/mastercard.png')}}
-    {% elif card.brand == "Discover" %}
-      {{ url_for('static', filename='img/discover.png')}}
-    {% elif card.brand == "JCB" %}
-      {{ url_for('static', filename='img/jcb.png')}}
-    {% elif card.brand == "Diners Club" %}
-      {{ url_for('static', filename='img/diners.png')}}
-    {% else %}
-      {{ url_for('static', filename='img/card.svg')}}
-    {% endif %}
-    ) no-repeat center center;
-  background-size: 100%;
-}
 </style>
 {% endblock %}
 
@@ -51,21 +25,9 @@
     <form novalidate id="ccInfo" autocomplete="on" method="POST">
       <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
 
-      <div class="form-group">
-        <label for="cc-number" class="field-label control-label">Credit Card Number</label>
-        <input id="cc-number" type="tel" class="form-control cc-number" autocomplete="cc-number" placeholder="•••• •••• •••• {% if card %}{{ card.last4 }}{% else %}••••{% endif %}" required>
-        <span class="card" aria-hidden="true"></span>
-      </div>
-
-      <div class="form-group">
-        <label for="cc-exp" class="field-label control-label">Expiry Date</label>
-        <input id="cc-exp" type="tel" class="form-control cc-exp" autocomplete="cc-exp" placeholder="{% if card %}{{card.exp_month }} / {{ card.exp_year }}{% else %} YY / MM{% endif %}" required>
-      </div>
-
-      <div class="form-group">
-        <label for="cc-cvc" class="field-label control-label">CVC</label>
-        <input id="cc-cvc" type="tel" class="form-control cc-cvc" autocomplete="off" placeholder="•••" required>
-      </div>
+      {{ render_card_number(card) }}
+      {{ render_card_expiry(card) }}
+      {{ render_card_cvc(card) }}
 
       <button id="submit" type="submit" class="btn btn-primary">Update Credit Card</button>
     </form>

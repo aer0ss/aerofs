@@ -45,13 +45,17 @@ Now you should be able to hit the instance on localhost:4444 in your browser.
 
 If you're working on Hosted Private Cloud, you need to run the Celery worker to process the tasks.
 
-1. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG --beat`
+1. Activate Virtualenv: `$ . env/bin/activate`
+2. Run Celery: `$ ./env/bin/celery worker -A "lizard.celery_worker.celery" -l DEBUG --beat`
 
 
 #### Create test user with real license
 
-This will be needed to test the HPC Deployment flow locally. When you run the
-`create_test_user_and_license.py` script, a user is created with a fake license file.
+This will be needed to test the HPC Deployment flow locally.
+Activate the virtualenv with `$ . env/bin/activate` and run ` $ python create_test_user_and_license.py`.
+When you run this script, a user is created with a fake license file. Take a look at
+the script to see the available arguments. It is worth noting that there is an option
+to only sign up the user.
 
 To attach a real license file, open up your local mysql server as root: `mysql -uroot`
 
