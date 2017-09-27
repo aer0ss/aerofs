@@ -221,16 +221,16 @@ public final class CertAuthExtractor implements AuthTokenExtractor<CertAuthToken
         }
     }
 
-    private static String getCN(String dname)
-            throws InternalFailureException
-    {
-        String[] fields = dname.split("/");
-        String cname = null;
-        for (String f : fields) {
-            if (f.startsWith("CN=")) {
-                cname = f.substring(3);
-            }
-        }
+    public static String CNFromDName(String dname) {
+        int idx = dname.indexOf("CN=");
+        if (idx == -1) return null;
+        idx += 3;
+        int end = dname.indexOf(',', idx);
+        return dname.substring(idx, end != -1 ? end : dname.length());
+    }
+
+    private static String getCN(String dname) throws InternalFailureException {
+        String cname = CNFromDName(dname);
         if (cname == null) {
             throw new InternalFailureException("No CN field found in cert DName: " + dname);
         }

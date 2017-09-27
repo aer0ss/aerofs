@@ -593,7 +593,7 @@ public class User
 
         // Can happen if one user is impersonating another user.
         if (!actualCName.equals(expectedCName)) {
-            l.error("{}: wrong cname actual={} epxected={}", toString(), actualCName, expectedCName);
+            l.error("{}: wrong cname actual={} expected={}", toString(), actualCName, expectedCName);
             throw new ExBadCredential();
         }
 

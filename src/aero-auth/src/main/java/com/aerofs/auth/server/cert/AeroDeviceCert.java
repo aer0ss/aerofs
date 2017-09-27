@@ -45,7 +45,7 @@ public abstract class AeroDeviceCert {
     /**
      * Separator between various components of the {@link #AERO_DNAME_HEADER}.
      */
-    public static final String DNAME_SEPARATOR = "/";
+    public static final String DNAME_SEPARATOR = ",";
 
     /**
      * Tag identifying the Common-Name component in the {@link #AERO_DNAME_HEADER}.

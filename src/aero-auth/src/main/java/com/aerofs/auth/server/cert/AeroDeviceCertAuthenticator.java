@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.aerofs.auth.server.cert.AeroDeviceCert.CNAME_TAG;
+import static com.aerofs.auth.server.cert.AeroDeviceCert.DNAME_SEPARATOR;
+
 /**
  * {@code Authenticator} implementation that constructs
  * {@code SecurityContext} instances for requests that use the
@@ -79,15 +82,11 @@ public final class AeroDeviceCertAuthenticator implements Authenticator {
             String reportedCName = null;
 
             // try grab the CName component from the DName header
-            String[] dnameTokens = dnameValue.split(AeroDeviceCert.DNAME_SEPARATOR);
-            for (String dnameToken : dnameTokens) {
-                if (dnameToken.startsWith(AeroDeviceCert.CNAME_TAG)) {
-                    String substring = dnameToken.substring(AeroDeviceCert.CNAME_TAG.length());
-                    if (!substring.isEmpty()) {
-                        reportedCName = substring;
-                        break;
-                    }
-                }
+            int idx = dnameValue.indexOf(CNAME_TAG);
+            if (idx != -1) {
+                idx += CNAME_TAG.length();
+                int end = dnameValue.indexOf(DNAME_SEPARATOR, idx);
+                reportedCName = dnameValue.substring(idx, end != -1 ? end : dnameValue.length());
             }
 
             // if the cname doesn't exist the dname value is broken
