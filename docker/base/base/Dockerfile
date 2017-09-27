@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:3.6
 
 MAINTAINER AeroFS "support@aerofs.com"
 

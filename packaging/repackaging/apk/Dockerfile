@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:3.6
 
 RUN adduser build -D -G abuild &&\
     echo "build ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers &&\

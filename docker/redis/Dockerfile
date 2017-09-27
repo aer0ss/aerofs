@@ -1,8 +1,9 @@
-FROM aerofs/base
+FROM alpine:3.3
 
 EXPOSE 6379
 
 RUN apk --update add \
+        bash \
         redis && \
     rm -rf /var/cache/apk/*
 
