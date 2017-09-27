@@ -1,5 +1,6 @@
 package com.aerofs.polaris;
 
+import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.auth.server.AeroUserDevicePrincipalBinder;
 import com.aerofs.auth.server.SharedSecret;
 import com.aerofs.auth.server.cert.AeroDeviceCertAuthenticator;
@@ -8,20 +9,19 @@ import com.aerofs.auth.server.cert.AeroOAuthAuthenticator;
 import com.aerofs.auth.server.cert.AeroOAuthPrincipalBinder;
 import com.aerofs.auth.server.delegated.AeroDelegatedUserDeviceAuthenticator;
 import com.aerofs.auth.server.delegated.AeroDelegatedUserDevicePrincipalBinder;
-import com.aerofs.auth.server.shared.AeroService;
 import com.aerofs.auth.server.shared.AeroServiceSharedSecretAuthenticator;
 import com.aerofs.auth.server.shared.AeroServiceSharedSecretPrincipalBinder;
+import com.aerofs.base.*;
 import com.aerofs.base.ssl.ICertificateProvider;
-import com.aerofs.base.ssl.URLBasedCertificateProvider;
-import com.aerofs.baseline.ConstraintViolationExceptionMapper;
-import com.aerofs.baseline.DefaultExceptionMapper;
-import com.aerofs.baseline.Environment;
-import com.aerofs.baseline.Service;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
+import com.aerofs.baseline.*;
 import com.aerofs.baseline.auth.AuthenticationExceptionMapper;
+import com.aerofs.baseline.config.Configuration;
 import com.aerofs.baseline.db.DBIExceptionMapper;
 import com.aerofs.baseline.db.DatabaseConfiguration;
 import com.aerofs.baseline.db.Databases;
 import com.aerofs.baseline.json.JsonProcessingExceptionMapper;
+import com.aerofs.baseline.logging.Logging;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.polaris.acl.AccessManager;
 import com.aerofs.polaris.acl.ManagedAccessManager;
@@ -33,6 +33,7 @@ import com.aerofs.polaris.external_api.metadata.MetadataBuilder;
 import com.aerofs.polaris.external_api.version.VersionFilterDynamicFeature;
 import com.aerofs.polaris.external_api.version.VersionProvider;
 import com.aerofs.polaris.logical.*;
+import com.aerofs.polaris.logical.IllegalArgumentExceptionMapper;
 import com.aerofs.polaris.notification.*;
 import com.aerofs.polaris.resources.*;
 import com.aerofs.polaris.resources.external_api.ChildrenResource;
@@ -54,26 +55,92 @@ import org.skife.jdbi.v2.DBI;
 
 import javax.inject.Singleton;
 import javax.sql.DataSource;
+import javax.validation.ConstraintViolationException;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.util.Properties;
 
 import static com.aerofs.base.TimerUtil.getGlobalTimer;
+import static com.google.common.base.Preconditions.checkState;
 
 // explicitly not final so that I can override the injected components in the tests
 public class Polaris extends Service<PolarisConfiguration> {
+    private final Properties _prop;
 
     public static void main(String[] args) throws Exception {
-        Polaris polaris = new Polaris();
-        polaris.run(args);
+        // add the uncaught exception handler
+        Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+
+        // enable all logging to the console
+        Logging.setupErrorConsoleLogging();
+
+        PolarisConfiguration c = Configuration.loadYAMLConfigurationFromFile(Polaris.class, args[0]);
+
+        ContainerUtil.waitPort("config.service", "5434");
+
+        Properties p = getHttpProperties("http://config.service:5434/server", "polaris");
+
+        // override config files with properties from config service
+
+        c.getLogging().setLevel(p.getProperty("base.log.level"));
+
+        String customer = p.getProperty("customer");
+        String dbName = (customer != null && !customer.isEmpty() ? customer + "_": "") + "polaris";
+        DatabaseConfiguration db = c.getDatabase();
+        db.setUrl("jdbc:mysql://" + p.getProperty("mysql.url") + "/" + dbName);
+        db.setUsername(p.getProperty("mysql.user"));
+        db.setPassword(p.getProperty("mysql.password"));
+
+        if (db.getUrl().equals("mysql.service:3306")) {
+            ContainerUtil.waitPort("mysql.service", "3306");
+        }
+
+        ContainerUtil.mkdb(p.getProperty("mysql.url"), dbName, db.getUsername(), db.getPassword());
+
+        Polaris polaris = new Polaris(p);
+        try {
+            polaris.runWithConfiguration(c);
+        } catch (ConstraintViolationException e) {
+            Loggers.getLogger(Polaris.class).error("invalid config {}", e.getMessage(), e);
+            System.exit(1);
+        }
     }
 
-    public Polaris() {
+    private static Properties getHttpProperties(String configURL, String serviceName)
+            throws IOException
+    {
+        Properties httpProperties = new Properties();
+        HttpURLConnection conn = (HttpURLConnection)(new URL(configURL).openConnection());
+        String authHeaderValue = AeroService.getHeaderValue(serviceName, AeroService.loadDeploymentSecret());
+        try {
+            conn.setRequestProperty("Authorization", authHeaderValue);
+            conn.connect();
+            if (!BaseUtil.isHttpSuccess(conn.getResponseCode())) {
+                throw new IOException("Failed to load configuration from the config server: "
+                        + conn.getResponseCode());
+            }
+            try (InputStream is = conn.getInputStream()) {
+                httpProperties.load(is);
+            }
+        } finally {
+            conn.disconnect();
+        }
+        checkState(httpProperties.containsKey("base.host.unified"));
+        return httpProperties;
+    }
+
+    public Polaris(Properties p) {
         super("polaris");
+        _prop = p;
     }
 
     @Override
     public void init(PolarisConfiguration configuration, Environment environment) throws Exception {
+
         // initialize the database connection pool
         DatabaseConfiguration database = configuration.getDatabase();
         DataSource dataSource = Databases.newManagedDataSource(environment, database);
@@ -105,7 +172,8 @@ public class Polaris extends Service<PolarisConfiguration> {
         String deploymentSecret = getDeploymentSecret(configuration);
 
         // fetch cacert
-        ICertificateProvider cacert = URLBasedCertificateProvider.server();
+        ICertificateProvider cacert = new StringBasedCertificateProvider(
+                _prop.getProperty("config.loader.base_ca_certificate"));
 
         // register the command that dumps the object tree
         environment.registerCommand("tree", TreeCommand.class);
@@ -185,6 +253,8 @@ public class Polaris extends Service<PolarisConfiguration> {
         environment.addResource(ChildrenResource.class);
 
         environment.getMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        ContainerUtil.barrier();
     }
 
     protected String getDeploymentSecret(PolarisConfiguration configuration) throws IOException {

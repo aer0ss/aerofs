@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<web-app>
-  <!-- Default page to serve -->
-  <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
-  </welcome-file-list>
-
-  <!-- To enforce serializable sessions. -->
-  <distributable/>
+<web-app metadata-complete="true">
+  <absolute-ordering />
 
   <!-- Initialization listener -->
   <listener>

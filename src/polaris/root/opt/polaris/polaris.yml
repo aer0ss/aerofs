@@ -1,4 +1,5 @@
 admin:
+  enabled: false
   host: 0.0.0.0
   port: 8087
   numNetworkThreads: 2
@@ -12,11 +13,10 @@ service:
   useDefaultExceptionMappers: false
 
 database:
-  username: MYSQL_USER
-# dummy value is in quotes so that if we use no password, represented as the empty string, the yaml will still be parsed properly
-  password: "MYSQL_PASSWORD"
+  username: ""
+  password: ""
   driverClass: com.mysql.jdbc.Driver
-  url: jdbc:mysql://MYSQL_URL/polaris
+  url: jdbc:mysql://dummy
 
 sparta:
   url: http://sparta.service:8085
@@ -25,7 +25,7 @@ sparta:
   maxConnections: 10
 
 logging:
-  level: LOG_LEVEL
+  level: INFO
 
   console:
     enabled: true

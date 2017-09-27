@@ -4,14 +4,8 @@
   ~ Copyright (c) Air Computing Inc., 2014.
   -->
 
-<web-app>
-  <!-- Default page to serve -->
-  <welcome-file-list>
-    <welcome-file>index.html</welcome-file>
-  </welcome-file-list>
-
-    <!-- To enforce serializable sessions. -->
-  <distributable/>
+<web-app metadata-complete="true">
+  <absolute-ordering />
 
   <!-- Initialization listener -->
   <listener>

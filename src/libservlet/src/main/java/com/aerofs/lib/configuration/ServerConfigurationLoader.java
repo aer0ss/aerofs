@@ -28,7 +28,9 @@ public final class ServerConfigurationLoader
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerConfigurationLoader.class);
 
-    private static final String SERVER_CONFIG_URL = ConfigurationUtils.CONFIGURATION_URL + "/server";
+    // The URL that we must GET to obtain configuration properties.
+    protected static final String CONFIGURATION_URL = "http://config.service:5434";
+    private static final String SERVER_CONFIG_URL = CONFIGURATION_URL + "/server";
 
     // used to do sanity check on remote http config
     private static final String PROPERTY_BASE_HOST = "base.host.unified";
@@ -51,16 +53,18 @@ public final class ServerConfigurationLoader
                 .setLevel(Level.toLevel(getStringProperty("base.log.level"), Level.INFO));
 
         // Log that we have loaded config.
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
-            merged.store(stream, "Configuration initialized");
-            LOGGER.debug(stream.toString("UTF-8"));
-        } catch (Exception e) {
-            LOGGER.error("Failed to log server configuration with exception " + e.toString());
+        if (LOGGER.isTraceEnabled()) {
+            try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+                merged.store(stream, "Configuration initialized");
+                LOGGER.debug(stream.toString("UTF-8"));
+            } catch (Exception e) {
+                LOGGER.error("Failed to log server configuration with exception " + e.toString());
+            }
         }
     }
 
     private static Properties effectiveProperties(String serviceName, Properties extra)
-            throws ConfigurationUtils.ExHttpConfig, ExBadArgs
+            throws ExHttpConfig, ExBadArgs
     {
         Properties properties = new Properties();
         properties.putAll(getHttpProperties(serviceName));
@@ -70,10 +74,10 @@ public final class ServerConfigurationLoader
     }
 
     /**
-     * @throws ConfigurationUtils.ExHttpConfig If a URL was provided but the HTTP GET failed.
+     * @throws ExHttpConfig If a URL was provided but the HTTP GET failed.
      */
     private static Properties getHttpProperties(String serviceName)
-            throws ConfigurationUtils.ExHttpConfig
+            throws ExHttpConfig
     {
         Properties httpProperties = new Properties();
 
@@ -99,9 +103,19 @@ public final class ServerConfigurationLoader
                 conn.disconnect();
             }
         } catch (IOException e) {
-            throw new ConfigurationUtils.ExHttpConfig("Couldn't load configuration from config server " + SERVER_CONFIG_URL + ".");
+            throw new ExHttpConfig("Couldn't load configuration from config server " + SERVER_CONFIG_URL + ".");
         }
 
         return httpProperties;
+    }
+
+    public static class ExHttpConfig extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+
+        public ExHttpConfig(String msg)
+        {
+            super(msg);
+        }
     }
 }

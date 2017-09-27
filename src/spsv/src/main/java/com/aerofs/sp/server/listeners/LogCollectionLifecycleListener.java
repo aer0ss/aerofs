@@ -10,7 +10,7 @@ import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.base.ssl.URLBasedCertificateProvider;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.ssmp.SSMPConnection;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 
@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.server.lib.SPParam.SSMP_CLIENT_ATTRIBUTE;
 
 public class LogCollectionLifecycleListener extends ConfigurationLifecycleListener
@@ -36,7 +37,8 @@ public class LogCollectionLifecycleListener extends ConfigurationLifecycleListen
     {
         Executor executor = Executors.newCachedThreadPool();
         String secret = AeroService.loadDeploymentSecret();
-        ICertificateProvider cacert = URLBasedCertificateProvider.server();
+        ICertificateProvider cacert = new StringBasedCertificateProvider(
+                getStringProperty("config.loader.base_ca_certificate"));
         return new SSMPConnection(secret,
                 InetSocketAddress.createUnresolved("lipwig.service", 8787),
                 TimerUtil.getGlobalTimer(),

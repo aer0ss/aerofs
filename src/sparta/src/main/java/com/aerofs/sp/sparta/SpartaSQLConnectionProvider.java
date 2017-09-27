@@ -4,6 +4,8 @@
 
 package com.aerofs.sp.sparta;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+
 import com.aerofs.lib.LibParam;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
@@ -37,7 +39,8 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
     private static DataSource dataSource()
     {
         PoolProperties p = new PoolProperties();
-        p.setUrl("jdbc:mysql://" + LibParam.MYSQL.MYSQL_ADDRESS + "/aerofs_sp");
+        String databaseName = getDatabaseName();
+        p.setUrl("jdbc:mysql://" + LibParam.MYSQL.MYSQL_ADDRESS + "/" + databaseName);
         p.setUsername(LibParam.MYSQL.MYSQL_USER);
         p.setPassword(LibParam.MYSQL.MYSQL_PASS);
 
@@ -67,8 +70,12 @@ public class SpartaSQLConnectionProvider implements IDatabaseConnectionProvider<
         flyway.setDataSource(ds);
         flyway.setValidateOnMigrate(false);
         flyway.setBaselineOnMigrate(true);
-        flyway.setSchemas("aerofs_sp");
+        flyway.setSchemas(getDatabaseName());
         flyway.migrate();
         return ds;
+    }
+
+    public static String getDatabaseName() {
+        return "aerofs_sp";
     }
 }

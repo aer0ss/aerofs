@@ -8,15 +8,18 @@ import com.aerofs.audit.client.AuditClient;
 import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.C;
+import com.aerofs.base.ContainerUtil;
 import com.aerofs.base.DefaultUncaughtExceptionHandler;
 import com.aerofs.base.Loggers;
+import com.aerofs.base.config.ConfigurationProperties;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
+import com.aerofs.lib.LibParam.MYSQL;
 import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
 import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.bifrost.oaaas.auth.NonceChecker;
 import com.aerofs.bifrost.server.Bifrost;
 import com.aerofs.lib.LibParam.REDIS;
@@ -69,6 +72,7 @@ import java.util.concurrent.Executors;
 
 import static com.aerofs.base.config.ConfigurationProperties.getIntegerProperty;
 import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
+import static com.aerofs.sp.sparta.SpartaSQLConnectionProvider.getDatabaseName;
 
 /**
  * Standalone RESTful SP
@@ -124,15 +128,28 @@ public class Sparta extends Service
 
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
-        ServerConfigurationLoader.initialize("sparta", extra);
-
-        ICertificateProvider cacert = URLBasedCertificateProvider.server();
-
         Timer timer = new HashedWheelTimer();
 
         String secret = AeroService.loadDeploymentSecret();
 
+        ContainerUtil.waitPort("config.service", "5434");
+
+        ServerConfigurationLoader.initialize("sparta", extra);
+
+        ICertificateProvider cacert = new StringBasedCertificateProvider(
+                ConfigurationProperties.getStringProperty("config.loader.base_ca_certificate"));
+
+        if (MYSQL.MYSQL_ADDRESS.equals("mysql.service:3306")) {
+            ContainerUtil.waitPort("mysql.service", "3306");
+        }
+
+        ContainerUtil.mkdb(MYSQL.MYSQL_ADDRESS, getDatabaseName(), MYSQL.MYSQL_USER, MYSQL.MYSQL_PASS);
+        // required for migration
+        ContainerUtil.mkdb(MYSQL.MYSQL_ADDRESS, "bifrost", MYSQL.MYSQL_USER, MYSQL.MYSQL_PASS);
+
         SpartaSQLConnectionProvider sqlConnProvider = new SpartaSQLConnectionProvider();
+
+        ContainerUtil.barrier();
 
         Module clients = clientsModule(cacert, secret, timer);
 
@@ -218,16 +235,19 @@ public class Sparta extends Service
     {
         return new AbstractModule() {
             Executor executor = Executors.newCachedThreadPool();
+            NioClientSocketChannelFactory channelFactory = new NioClientSocketChannelFactory(executor, executor, 1, 2);
             SSMPConnection c = new SSMPConnection(secret,
                     InetSocketAddress.createUnresolved("lipwig.service", 8787),
                     timer,
-                    new NioClientSocketChannelFactory(executor, executor, 1, 2),
+                    channelFactory,
                     new SSLEngineFactory(Mode.Client, Platform.Desktop, null, cacert, null)::newSslHandler
             );
 
             @Override
             protected void configure()
             {
+                bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
+
                 PooledJedisConnectionProvider jedisConn = new PooledJedisConnectionProvider();
                 jedisConn.init_(REDIS.AOF_ADDRESS.getHostName(), REDIS.AOF_ADDRESS.getPort(), REDIS.PASSWORD);
 

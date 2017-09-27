@@ -47,7 +47,7 @@ dependencies {
     compile 'org.flywaydb:flyway-core:3.2.1'
     compile 'com.lambdaworks:scrypt:1.4.0'
     compile 'javax.mail:mail:1.4.2'
-    compile 'javax.servlet:servlet-api:2.5'
+    compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
     compile 'mysql:mysql-connector-java:5.1.38'
     compile 'org.bouncycastle:bcprov-jdk15on:1.52'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.52'

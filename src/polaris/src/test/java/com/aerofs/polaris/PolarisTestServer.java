@@ -25,6 +25,7 @@ import org.junit.rules.ExternalResource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.util.Properties;
 
 import static org.mockito.Mockito.*;
 
@@ -119,6 +120,10 @@ public final class PolarisTestServer extends ExternalResource {
         private final SSMPConnection ssmp = Mockito.mock(SSMPConnection.class);
         private final SSMPConnectionWrapper wrapper = Mockito.mock(SSMPConnectionWrapper.class);
         private Environment env = null;
+
+        public TestPolaris() {
+            super(new Properties());
+        }
 
         @Override
         public void init(PolarisConfiguration configuration, Environment environment) throws Exception {

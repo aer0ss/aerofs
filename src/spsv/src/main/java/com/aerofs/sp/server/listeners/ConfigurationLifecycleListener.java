@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.listeners;
 
+import com.aerofs.base.ContainerUtil;
 import com.aerofs.lib.configuration.ServerConfigurationLoader;
 
 import javax.servlet.ServletContextEvent;
@@ -18,10 +19,12 @@ public class ConfigurationLifecycleListener
         //
         // Initialize Configuration Properties.
         try {
+            ContainerUtil.waitPort("config.service", "5434");
             ServerConfigurationLoader.initialize("sp");
         } catch (Exception e) {
             throw new RuntimeException("Configuration server init error", e);
         }
+        ContainerUtil.barrier();
     }
 
     @Override

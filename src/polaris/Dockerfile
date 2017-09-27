@@ -1,7 +1,7 @@
-FROM aerofs/base.jre8-and-mysql-client
+FROM aerofs/base.jre8
 
-EXPOSE 8086 8087
+EXPOSE 8086
 
-CMD [ "/run.sh" ]
+ENTRYPOINT [ "/run.sh" ]
 
 COPY root buildroot /

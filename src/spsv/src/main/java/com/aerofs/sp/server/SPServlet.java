@@ -5,6 +5,7 @@ import com.aerofs.audit.client.AuditorFactory;
 import com.aerofs.auth.client.shared.AeroService;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.TimerUtil;
+import com.aerofs.base.ssl.StringBasedCertificateProvider;
 import com.aerofs.servlets.lib.ThreadLocalSFNotifications;
 import com.aerofs.servlets.lib.analytics.AnalyticsClient;
 import com.aerofs.servlets.lib.analytics.IAnalyticsClient;
@@ -12,7 +13,6 @@ import com.aerofs.base.ssl.ICertificateProvider;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.base.ssl.SSLEngineFactory.Mode;
 import com.aerofs.base.ssl.SSLEngineFactory.Platform;
-import com.aerofs.base.ssl.URLBasedCertificateProvider;
 import com.aerofs.lib.LibParam.REDIS;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.lib.AsyncEmailSender;
@@ -79,6 +79,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.aerofs.base.config.ConfigurationProperties.getStringProperty;
 import static com.aerofs.sp.client.SPProtocol.SP_POST_PARAM_DATA;
 import static com.aerofs.sp.client.SPProtocol.SP_POST_PARAM_PROTOCOL;
 import static com.aerofs.sp.client.SPProtocol.SP_PROTOCOL_VERSION;
@@ -216,7 +217,8 @@ public class SPServlet extends HttpServlet
         _factEmailer = new InvitationEmailer.Factory();
         _asyncEmailSender = AsyncEmailSender.create();
         String deploymentSecret = AeroService.loadDeploymentSecret();
-        _ssmpConnection = createSSMPConnection(deploymentSecret, URLBasedCertificateProvider.server());
+        _ssmpConnection = createSSMPConnection(deploymentSecret,
+                new StringBasedCertificateProvider(getStringProperty("config.loader.base_ca_certificate")));
         _auditClient = createAuditClient(deploymentSecret);
         _analyticsClient = new AnalyticsClient(deploymentSecret);
         _aclNotificationPublisher = new ACLNotificationPublisher(_factUser, _ssmpConnection, _sqlTrans);

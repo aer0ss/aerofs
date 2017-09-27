@@ -1,7 +1,6 @@
 SUBDIRS:=\
 	base \
 	jre8 \
-	jre8-and-mysql-client \
 	python2.7
 
 

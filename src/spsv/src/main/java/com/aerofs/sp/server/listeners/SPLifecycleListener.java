@@ -1,6 +1,8 @@
 package com.aerofs.sp.server.listeners;
 
+import com.aerofs.base.ContainerUtil;
 import com.aerofs.ids.UserID;
+import com.aerofs.lib.LibParam.MYSQL;
 import com.aerofs.sp.server.session.*;
 
 import javax.servlet.ServletContext;
@@ -8,6 +10,8 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
+
+import java.sql.SQLException;
 
 import static com.aerofs.sp.server.lib.SPParam.*;
 
@@ -31,6 +35,16 @@ public class SPLifecycleListener extends ConfigurationLifecycleListener
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent) {
         super.contextInitialized(servletContextEvent);
+
+        try {
+            ContainerUtil.mkdb(MYSQL.MYSQL_ADDRESS, "aerofs_sp",
+                    MYSQL.MYSQL_USER, MYSQL.MYSQL_PASS);
+            // required for migration
+            ContainerUtil.mkdb(MYSQL.MYSQL_ADDRESS, "bifrost",
+                    MYSQL.MYSQL_USER, MYSQL.MYSQL_PASS);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
 
         ServletContext ctx = servletContextEvent.getServletContext();
 
