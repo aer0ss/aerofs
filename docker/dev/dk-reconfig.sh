@@ -29,12 +29,12 @@ fi
 
 HOST=${2:-share.syncfs.com}
 
-BUTTON=button1.amium.com
+DOCS=docs.arrowfs.org
 
-echo "Testing VPN connection by connecting to ${BUTTON} ..."
-# VPN connection is required to connect to button.amium.com
-nc -z -w 5 ${BUTTON} 22 || {
-    error "ERROR: please connect to VPN for ${BUTTON} access"
+echo "Testing VPN connection by connecting to ${DOCS} ..."
+# VPN connection is required to connect to docs server
+nc -z -w 5 ${DOCS} 22 || {
+    error "ERROR: please connect to VPN for ${DOCS} access"
     exit 22
 }
 
