@@ -1,12 +1,10 @@
-FROM alpine:3.3
-
-MAINTAINER AeroFS "support@aerofs.com"
+FROM alpine:3.5
 
 RUN apk --update add \
         python \
         py-pip \
         py-requests && \
-    pip install "devpi-server==2.5.2" && \
+    pip install "devpi-server==4.0.0" && \
     rm -rf /var/cache/apk/*
 
 EXPOSE 80

@@ -3,11 +3,10 @@ set -eu
 
 failure() { echo >&2 -e "\033[31merr: \033[0m- stop rawdns ($1)"; }
 
-docker stop rawdns
-docker rm --force rawdns
+docker rm -f rawdns || true
 
 # detect docker bridge IP
-BRIDGE=$(docker run --rm alpine:3.3 ip route | grep default | cut -d ' ' -f 3)
+BRIDGE=$(docker run --rm alpine:3.5 ip route | grep default | cut -d ' ' -f 3)
 
 VM=${1:-$(docker-machine active 2>/dev/null || echo "docker-dev")}
 
@@ -26,7 +25,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
     # remove dns config inserted by start.sh
     if [[ "$os" == "b2d" ]] ; then
         docker-machine ssh $VM <<EOF
-        grep -v -F 'EXTRA_ARGS="--userland-proxy=false --dns $BRIDGE' $profile | sudo tee ${profile}.old
+        grep -v -F -- '--dns $BRIDGE' $profile | sudo tee ${profile}.old
         sudo mv ${profile}.old ${profile}
         echo "restarting docker daemon"
         sudo /etc/init.d/docker stop

@@ -21,7 +21,7 @@ fi
 
 if [[ -z "$(docker ps -aq -f 'name=cache-pypi')" ]] ; then
     echo "creating pypi cache volume"
-    docker create -v /var/cache/devpi --name cache-pypi alpine:3.3 /bin/true
+    docker create -v /var/cache/devpi --name cache-pypi alpine:3.5 /bin/true
 fi
 
 echo "starting devpi server"

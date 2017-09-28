@@ -1,7 +1,5 @@
 FROM debian:sid
 
-MAINTAINER AeroFS "support@aerofs.com"
-
 RUN apt-get update && \
     apt-get install -y apt-cacher-ng
 

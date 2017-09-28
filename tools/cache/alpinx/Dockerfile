@@ -1,6 +1,4 @@
-FROM alpine:3.3
-
-MAINTAINER AeroFS "support@aerofs.com"
+FROM alpine:3.5
 
 RUN apk --update add \
         nginx && \

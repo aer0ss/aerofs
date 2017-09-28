@@ -12,7 +12,7 @@ failure() { echo >&2 -e "\033[31merr: \033[0m- start rawdns ($1)"; }
 success() { echo >&2 -e "\033[32mok: \033[0m- start rawdns"; }
 
 # detect docker bridge IP
-BRIDGE=$(docker run --rm alpine:3.3 ip route | grep default | cut -d ' ' -f 3)
+BRIDGE=$(docker run --rm alpine:3.5 ip route | grep default | cut -d ' ' -f 3)
 
 # check if rawdns config was modified since the image was created
 config=$PWD/root/rawdns.json
@@ -39,7 +39,7 @@ else
             rawdns
 fi
 
-if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
+if docker run --rm alpine:3.5 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns already configured"
     success
     exit 0
@@ -65,7 +65,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
         # configure docker daemon to use rawdns resolver
         # boot2docker init script doesn't do a proper restart... need to do it oursevles...
         docker-machine ssh $VM <<EOF
-        echo 'EXTRA_ARGS="--userland-proxy=false --dns $BRIDGE \$EXTRA_ARGS"' | sudo tee -a $profile
+        echo 'EXTRA_ARGS="--dns $BRIDGE \$EXTRA_ARGS"' | sudo tee -a $profile
         echo "restarting docker daemon"
         sudo /etc/init.d/docker stop
         while sudo /etc/init.d/docker status | grep -F "is running" &>/dev/null ; do
@@ -80,7 +80,7 @@ if docker-machine ls "$VM" &>/dev/null ; then
 EOF
     elif [[ "$os" == "b2d-ng" ]] ; then
         # update EXTRA_ARGS to use rawdns resolver [idempotent]
-        extra="Environment=\"EXTRA_ARGS=--userland-proxy=false --dns $BRIDGE\""
+        extra="Environment=\"EXTRA_ARGS=--dns $BRIDGE\""
 
         docker-machine ssh $VM "if [ \$(grep -s -F '$extra' ${service}.d/dns.conf | wc -l) -eq 0 ] ; then \
             sudo mkdir -p ${service}.d ; \
@@ -105,7 +105,7 @@ else
 fi
 
 # sanity check
-if docker run --rm alpine:3.3 ping -c 1 rawdns.docker &>/dev/null ; then
+if docker run --rm alpine:3.5 ping -c 1 rawdns.docker &>/dev/null ; then
     echo "dns successfully configured"
     success
 else
