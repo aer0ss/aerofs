@@ -148,7 +148,7 @@ func getCN(dname string) string {
 	if i == -1 {
 		return ""
 	}
-	j := strings.IndexByte(dname[i+3:], '/')
+	j := strings.IndexByte(dname[i+3:], ',')
 	if j != -1 {
 		return dname[i+3 : j]
 	}
