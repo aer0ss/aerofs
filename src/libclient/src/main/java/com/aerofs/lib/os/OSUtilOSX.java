@@ -111,7 +111,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // Disallow all remote filesystems
         if (remote != null && remote) return false;
         // Allow these specific filesystems
-        String[] fss = new String[] { "HFS", "AFPFS", "ZFS", "Z410_STORAGE" };
+        String[] fss = new String[] { "HFS", "APFS", "AFPFS", "ZFS", "Z410_STORAGE" };
         for (String fs : fss) if (type.startsWith(fs)) return true;
         // Disallow all others
         return false;
