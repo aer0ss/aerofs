@@ -148,6 +148,6 @@ do
 done
 
 # generate the jars that dryad depends on.
-gradle -p .. src/$SERVICE:dist
+../gradlew -p .. src/$SERVICE:dist
 # Java-related file copies.
 cp ../out.gradle/$SERVICE/dist/*.jar $OPT/
