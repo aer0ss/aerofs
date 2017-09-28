@@ -90,7 +90,7 @@ public final class AeroDeviceCertAuthenticator implements Authenticator {
             }
 
             // if the cname doesn't exist the dname value is broken
-            if (reportedCName == null) {
+            if (reportedCName == null || reportedCName.isEmpty()) {
                 throw new AuthenticationException(AeroDeviceCert.AERO_DNAME_HEADER + " has invalid format (" + dnameValue + ")");
             }
 
