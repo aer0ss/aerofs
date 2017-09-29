@@ -148,11 +148,12 @@ func getCN(dname string) string {
 	if i == -1 {
 		return ""
 	}
-	j := strings.IndexByte(dname[i+3:], ',')
+	cn := dname[i+3:]
+	j := strings.IndexByte(cn, ',')
 	if j != -1 {
-		return dname[i+3 : j]
+		return cn[:j]
 	}
-	return dname[i+3:]
+	return cn
 }
 
 func MatchingDeviceCN(cn string, userid, did []byte) bool {
