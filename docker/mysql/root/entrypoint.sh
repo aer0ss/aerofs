@@ -9,6 +9,13 @@ if [ "${1:0:1}" = '-' ]; then
 	set -- mysqld_safe "$@"
 fi
 
+fail() {
+	echo >&2 "$1"
+    # reset perms on failure to start to workaround weirdness seen in ENG-8010
+    chown -R mysql: "$DATADIR"
+    exit ${2:-1}
+}
+
 if [ "$1" = 'mysqld_safe' ]; then
 	# Adjust mysql settings on beefy machines.
 	# N.B. This value is the host's max memory. If the container has been run
@@ -47,8 +54,7 @@ if [ "$1" = 'mysqld_safe' ]; then
 			sleep 1
 		done
 		if [ "$i" = 0 ]; then
-			echo >&2 'MySQL init process failed.'
-			exit 1
+			fail 'MySQL init process failed.'
 		fi
 
 		"${mysql[@]}" <<-EOSQL
@@ -60,11 +66,9 @@ if [ "$1" = 'mysqld_safe' ]; then
 
 		mysqladmin -uroot shutdown && \
 			echo 'MySQL init process done.' || \
-			{
-				echo >&2 'MySQL init process failed.';
-				exit 1
-			}
+			fail 'MySQL init process failed.'
 	else
+		chown -R mysql: "$DATADIR"
 		"$@" --skip-networking &
 
 		mysql=( mysql --protocol=socket -uroot )
@@ -77,18 +81,14 @@ if [ "$1" = 'mysqld_safe' ]; then
 			sleep 1
 		done
 		if [ "$i" = 0 ]; then
-			echo >&2 'MySQL start failed.'
-			exit 1
+			fail 'MySQL start failed.'
 		fi
 
 		mysql_upgrade
 
 		mysqladmin -uroot shutdown && \
 			echo 'MySQL upgrade done.' || \
-			{
-				echo >&2 'MySQL upgrade failed.';
-				exit 1
-			}
+			fail 'MySQL upgrade failed.'
 	fi
 
 	chown -R mysql: "$DATADIR"
