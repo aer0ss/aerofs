@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.link;
 
+import com.aerofs.base.ElapsedTimer;
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.ThreadUtil;
@@ -212,11 +213,13 @@ public class LinkStateService
                 // FIXME: this synchronization is kinda gross but necessary to avoid a race between
                 // marking links down from the core and the periodic checks on the lss thread
                 // which can defeat pause sync and break syncdet tests
+                ElapsedTimer t = new ElapsedTimer();
                 synchronized (this) {
                     if (!_markedDown) {
                         checkLinkState();
                     }
                 }
+                long elapsed = t.elapsed();
 
                 // FIXME (AG): this is inefficient, especially on Windows
                 // In JDK 6 I noticed that enumerating the network interfaces can
@@ -228,7 +231,26 @@ public class LinkStateService
                 // considered other alternatives, but the lowest-cost starting option
                 // was to try polling again, and see if the JDK8 implementation
                 // was faster
-                ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
+                //
+                // NB: some windows boxes in the wild have been seen to take upwards of 14s to
+                // list interfaces. With a 10s delay that means we are working on enumerating
+                // interfaces more than 50% of the time, which could easily result in noticeably
+                // high CPU usage if the process of enumerating is not just slow but also CPU
+                // intensive for some weird reason. To protect against this, adjust the polling
+                // interval based on the time it takes for a single poll to complete.
+                //
+                // The target is to spent less than 10% of the time polling:
+                //
+                // elapsed / (elapsed + wait) <= 1/10   <=>  wait >= 9 * elapsed
+                //
+                // The downside of this approach is that we may react slowly to network changes.
+                // This is worse when coming back online than when going offline so we bound the
+                // wait time to 60s when the device is currently offline (interface list empty)
+                // On the problematic windows machine in the wild this leads to polling being
+                // active roughly 14/74 ~ 19% of the time. Not ideal but definitely an improvement.
+                long wait = Math.max(DaemonParam.MIN_LINK_POLLING_INTERVAL, 9 * elapsed);
+                if (_ifaces.isEmpty()) wait = Math.min(wait, DaemonParam.MAX_LINK_POLLING_INTERVAL);
+                ThreadUtil.sleepUninterruptable(wait);
             }
         });
     }
