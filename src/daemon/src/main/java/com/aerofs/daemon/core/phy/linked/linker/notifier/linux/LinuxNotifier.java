@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightCreateNotification.RescanSubtree;
 import com.aerofs.daemon.core.phy.linked.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.phy.linked.linker.notifier.INotifier;
+import com.aerofs.lib.IntMap;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.event.IEvent;
@@ -41,18 +42,18 @@ public class LinuxNotifier implements INotifier, INotifyListener
 {
     private final static Logger l = Loggers.getLogger(LinuxNotifier.class);
 
-    final CoreQueue _cq;
-    final InjectableJNotify _jn;
+    private final CoreQueue _cq;
+    private final InjectableJNotify _jn;
     // The list of possible event types.  We should update on file creation, deletion,
     // modification, rename/move, and metadata change (timestamps, permissions, etc).
-    final static int MASK = IN_CREATE | IN_DELETE | IN_MODIFY |
+    private final static int MASK = IN_CREATE | IN_DELETE | IN_MODIFY |
             IN_MOVED_FROM | IN_MOVED_TO | IN_ATTRIB ;
 
     // All of the remaining instance variables below should be protected by synchronized(this)
     // everywhere they are accessed, since JNotify spawns a thread to watch for inotify events.  A
     // SynchronizedMap is unsatisfactory; it won't actually prevent concurrent access,
     // just throw an exception when it happens.
-    private final Map<Integer, LinuxINotifyWatch> _watches = Maps.newHashMap();
+    private final IntMap<LinuxINotifyWatch> _watches = IntMap.withExpectedSize(1000);
 
     // A set of watches for which we desire to ignore incoming events,
     // but for which the kernel has not yet acknowledged that request.
@@ -180,7 +181,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 // that's still possible in normal operation (see below),
                 // but is unusual enough to merit its own log line.
                 // We make the first case here a logging no-op.
-                if (_watches.containsKey(watch_id)) {
+                if (_watches.get(watch_id) != null) {
                     l.debug("duplicate watch id {} for {} and {}", watch_id,
                             dir.getAbsolutePath(),
                             getWatchPath(watch_id).getAbsolutePath());

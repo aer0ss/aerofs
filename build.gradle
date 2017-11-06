@@ -46,12 +46,24 @@ if (os.contains('windows')) {
     clientOSDependentResourcesDirs = ["${clientResourcesDir}/linux/${arch}", "${clientResourcesDir}/linux/${arch}/lib"]
 }
 
+// propdeps, required for koloboke-compile
+
+buildscript {
+    repositories {
+        maven { url 'https://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+    }
+}
+
 //-----------------------------------------------------------------------------
 // common subproject configuration
 //-----------------------------------------------------------------------------
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'propdeps'
 
     // Default to Java 8 for everything.
     sourceCompatibility = JavaVersion.VERSION_1_8

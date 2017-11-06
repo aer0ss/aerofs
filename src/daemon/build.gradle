@@ -4,6 +4,10 @@
 
 archivesBaseName = 'aerofs-daemon'
 
+
+compileJava.options.compilerArgs << '-Xlint:-processing' << '-Xlint:-cast'
+compileTestJava.options.compilerArgs << '-Xlint:-processing' << '-Xlint:-cast'
+
 dependencies {
     compile name: 'netty-native-socket'
     compile name: 'junixsocket-1.3'
@@ -14,6 +18,10 @@ dependencies {
     compile project(':src/restless')
     compile project(':src/sync')
     compile project(path: ':src/zephyr', configuration: 'client')
+
+    provided 'com.koloboke:koloboke-compile:0.5.1'
+    compile 'com.koloboke:koloboke-impl-common-jdk8:1.0.0'
+
     testCompile 'com.jayway.restassured:rest-assured:2.8.0'
     testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
     testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
