@@ -32,8 +32,7 @@ Vagrant.configure("2") do |config|
   NUMBER_OF_AGENTS.times do |index|
       host = host_base + "#{index}"
       config.vm.define host do |config_a|
-          config_a.vm.box = "precise64-official"
-          config_a.vm.box_url = "http://files.vagrantup.com/precise64.box"
+          config_a.vm.box = "ubuntu/trusty64"
           config_a.vm.network :private_network, ip: "192.168.50.#{index+10}"
           (config_a.vm.network :public_network, :bridge => iface) if BRIDGE_IFACE and index < BRIDGE_COUNT
           config_a.vm.provider "virtualbox" do |vbox|
