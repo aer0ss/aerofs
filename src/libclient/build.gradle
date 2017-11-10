@@ -44,7 +44,7 @@ configurations {
 
 dependencies {
     compile 'commons-lang:commons-lang:2.6'
-    compile 'com.aerofs:sqlite-jdbc:3.12.0'
+    compile 'com.aerofs:sqlite-jdbc:3.21.0'
     compile 'com.aerofs:jnotify:0.96'
     compile 'com.aerofs:aerofsd:0.3.6'
     compile name: 'guice-aerofs'
