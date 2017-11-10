@@ -166,6 +166,7 @@ public class ChangeFetcher
         long lastLogicalTimestamp = Objects.firstNonNull(_cedb.getChangeEpoch_(sidx), 0L);
         for (RemoteChange rc : c.transforms) {
             if (rc.logicalTimestamp <= lastLogicalTimestamp) {
+                l.warn("{} <= {}", rc.logicalTimestamp, lastLogicalTimestamp);
                 throw new ExProtocolError();
             }
             // Polaris use the SID as the root object of a store
