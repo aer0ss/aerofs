@@ -5,8 +5,8 @@
 archivesBaseName = 'aerofs-havre'
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
-    compile 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
+    compile 'ch.qos.logback:logback-core:1.1.10'
+    compile 'ch.qos.logback:logback-classic:1.1.10'
     compile project(':src/tunnel')
     compile project(':src/oauth-verify')
     compile project(path: ':src/aero-auth', configuration: 'client')

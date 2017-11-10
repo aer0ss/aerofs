@@ -11,11 +11,11 @@ dependencies {
     compile 'com.sun.jersey:jersey-core:1.17.1'
     compile 'com.sun.jersey:jersey-server:1.17.1'
     compile ('com.sun.jersey.contribs:jersey-guice:1.17.1') { transitive = false }
-    compile 'io.netty:netty:3.10.6.Final-SNAPSHOT'
+    compile 'io.netty:netty:3.10.6.Final'
     compile 'javax.inject:javax.inject:1'
-    compile 'org.slf4j:slf4j-api:1.7.12'
-    compile 'org.slf4j:jcl-over-slf4j:1.7.12'
-    compile 'org.slf4j:jul-to-slf4j:1.7.12'
+    compile 'org.slf4j:slf4j-api:1.7.25'
+    compile 'org.slf4j:jcl-over-slf4j:1.7.25'
+    compile 'org.slf4j:jul-to-slf4j:1.7.25'
     // Guice injection depends at runtime on javax.inject, but to make for
     // simpler dependency inheritance, just make it a compile-time dep
     compile name: 'guice-aerofs'

@@ -8,7 +8,7 @@ archivesBaseName = 'aerofs-ssmp'
 dependencies {
     compile 'com.google.code.findbugs:jsr305:3.0.0'
     compile 'com.google.guava:guava:17.0'
-    compile 'io.netty:netty:3.10.6.Final-SNAPSHOT'
-    compile 'org.slf4j:slf4j-api:1.7.12'
+    compile 'io.netty:netty:3.10.6.Final'
+    compile 'org.slf4j:slf4j-api:1.7.25'
 }
 

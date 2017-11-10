@@ -6,8 +6,8 @@ archivesBaseName = 'aerofs-dryad-baseline'
 
 dependencies {
     compile 'com.aerofs.baseline:baseline-service:0.6.8'
-    runtime 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
-    runtime 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
+    runtime 'ch.qos.logback:logback-core:1.1.10'
+    runtime 'ch.qos.logback:logback-classic:1.1.10'
 }
 
 jar {

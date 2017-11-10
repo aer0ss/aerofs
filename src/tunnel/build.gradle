@@ -7,6 +7,6 @@ archivesBaseName = 'aerofs-tunnel'
 dependencies {
     compile project(':src/base')
     testCompile project(path: ':src/base', configuration: 'testutil')
-    testRuntime 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
-    testRuntime 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
+    testRuntime 'ch.qos.logback:logback-core:1.1.10'
+    testRuntime 'ch.qos.logback:logback-classic:1.1.10'
 }

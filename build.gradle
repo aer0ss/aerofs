@@ -97,11 +97,11 @@ subprojects {
                 }
 
                 if (details.requested.group == 'org.slf4j') {
-                    details.useVersion '1.7.12'
+                    details.useVersion '1.7.25'
                 }
 
                 if (details.requested.group == 'ch.qos.logback') {
-                    details.useVersion '1.1.4-SNAPSHOT'
+                    details.useVersion '1.1.10'
                 }
             }
         }

@@ -34,8 +34,8 @@ configurations {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.4-SNAPSHOT'
-    compile 'ch.qos.logback:logback-classic:1.1.4-SNAPSHOT'
+    compile 'ch.qos.logback:logback-core:1.1.10'
+    compile 'ch.qos.logback:logback-classic:1.1.10'
     compile 'commons-lang:commons-lang:2.6'
     compile project(':src/base')
     compile project(path:':src/aero-auth', configuration:'client')
