@@ -177,7 +177,7 @@ public class FlatLinkedStorage extends LinkedStorage
         } else {
             // root in $defaultAbsRoot/shared
 
-            InjectableFile d = _factFile.create(_sharedDir, name);
+            InjectableFile d = _factFile.create(_sharedDir, _os.cleanFileName(name));
 
             while (d.exists()) {
                 // dir already exists, only allow if either:
