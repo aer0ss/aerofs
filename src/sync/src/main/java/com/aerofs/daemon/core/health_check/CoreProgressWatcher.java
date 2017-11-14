@@ -53,16 +53,25 @@ public final class CoreProgressWatcher implements HealthCheckService.ScheduledRu
             l.warn("no progress after n:" + _prevNumExecutedEvents + " ev:" + _disp.getCurrentEvents());
 
             if (!_pi.hasInProgressSyscall()) {
-                // dump thread stacks three times so we can see which thread is not making progress.
-                for (int i = 0; i < 3; i++) {
-                    if (i != 0) ThreadUtil.sleepUninterruptable(3 * C.SEC);
-                    Util.logAllThreadStackTraces();
-                }
+                try {
+                    // dump thread stacks three times to see which thread is not making progress
+                    for (int i = 0; i < 3; i++) {
+                        if (i != 0) ThreadUtil.sleepUninterruptable(3 * C.SEC);
+                        Util.logAllThreadStackTraces();
+                    }
 
-                newDefectWithLogs("core.progress")
-                        .setMessage("stuck daemon")
-                        .sendSyncIgnoreErrors();
-                SystemUtil.fatal("stuck daemon");
+                    newDefectWithLogs("core.progress")
+                            .setMessage("stuck daemon")
+                            .sendSyncIgnoreErrors();
+                } finally {
+                    // finally block is important to prevent corner cases where an OOM causes some
+                    // but not all threads to die and somehow turns the process into a zombie
+                    // this was for instance seen at spainwilliams where an OOM would rarely result
+                    // in the Exit being inhibited somehow and the progress checker would repeatedly
+                    // trigger but fail to kill the process as a NoClassDefFound error would happen
+                    // when trying to submit a defect
+                    SystemUtil.fatal("stuck daemon");
+                }
             }
         }
 
