@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.transfers.ITransferStateListener.TransferProgress;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
-import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
@@ -18,7 +17,6 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.IN_SYNC;
 import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.UNKNOWN;
 
 /**
@@ -28,29 +26,18 @@ import static com.aerofs.proto.PathStatus.PBPathStatus.Sync.UNKNOWN;
 public class PathStatus
 {
     private final PathFlagAggregator _tsa;
-    private final ISyncStatusPropagator _syncStatusPropagator;
-    private final SyncStatusOnline _syncStatusOnline;
 
     @Inject
-    public PathStatus(PathFlagAggregator tsa, ISyncStatusPropagator syncStatusPropagator, SyncStatusOnline syncStatusOnline)
+    public PathStatus(PathFlagAggregator tsa)
     {
         _tsa = tsa;
-        _syncStatusPropagator = syncStatusPropagator;
-        _syncStatusOnline = syncStatusOnline;
 
     }
 
     public PBPathStatus getStatus_(Path path) throws SQLException
     {
         return PBPathStatus.newBuilder()
-                .setSync(_syncStatusOnline.get() ? _syncStatusPropagator.getSync_(path) : UNKNOWN)
-                .setFlags(_tsa.state_(path))
-                .build();
-    }
-
-    public PBPathStatus getStatus_(Path path, Sync sync) throws SQLException {
-        return PBPathStatus.newBuilder()
-                .setSync(_syncStatusOnline.get() && sync == IN_SYNC ? IN_SYNC : UNKNOWN)
+                .setSync(UNKNOWN)
                 .setFlags(_tsa.state_(path))
                 .build();
     }
@@ -80,7 +67,7 @@ public class PathStatus
             Path path = e.getKey();
 
             notifications.put(path, PBPathStatus.newBuilder()
-                    .setSync(_syncStatusOnline.get() ? _syncStatusPropagator.getSync_(path) : UNKNOWN)
+                    .setSync(UNKNOWN)
                     .setFlags(e.getValue())
                     .build());
         }

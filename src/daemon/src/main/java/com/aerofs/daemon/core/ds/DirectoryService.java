@@ -9,7 +9,6 @@ import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.Dumpables;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.ex.ExExpelled;
-import com.aerofs.daemon.core.status.ISyncStatusPropagator;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.OID;
@@ -195,8 +194,6 @@ public abstract class DirectoryService implements IDumpStatMisc, IPathResolver, 
 
     /**
      * N.B. should be called by HdCreateObject only.
-     * N.B. the file will be marked as in-sync initially. Make an appropriate call to
-     *  {@link ISyncStatusPropagator} if necessary.
      * @throws ExNotFound if the parent is not found
      */
     public abstract void createOA_(Type type, SIndex sidx, OID oid, OID oidParent, String name,

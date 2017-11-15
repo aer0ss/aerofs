@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.lib.db;
 
-import com.aerofs.daemon.core.status.db.OutOfSyncFilesDatabase;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -81,16 +80,7 @@ public class CoreSchema extends SyncSchema
             // unlinked external folders
             T_UNLINKED_ROOT = "pr",
             C_UNLINKED_ROOT_SID = "pr_s",
-            C_UNLINKED_ROOT_NAME = "pr_n",
-
-            // files marked out of sync.  only files, not directories.
-            T_OUT_OF_SYNC_FILES             = "os",
-            C_OUT_OF_SYNC_FILES_IDX         = "os_i",
-            C_OUT_OF_SYNC_FILES_SIDX        = "os_s",
-            C_OUT_OF_SYNC_FILES_OID         = "os_o",
-            // a long is used to limit space and allow use of System.currentTimeMillis()
-            C_OUT_OF_SYNC_FILES_TIMESTAMP   = "os_t";
-
+            C_UNLINKED_ROOT_NAME = "pr_n";
 
 
     private final InjectableDriver _dr;
@@ -194,29 +184,11 @@ public class CoreSchema extends SyncSchema
                 "primary key (" + C_SC_SIDX + "," + C_SC_DID + ")" +
                 ")" + dbcw.charSet());
 
-        //TODO uncomment when sync status flag is removed
-        //createOutOfSyncFilesTable(s, dbcw);
     }
 
     public static void createPartialCAIndex(Statement s) throws SQLException {
         s.executeUpdate("create index "
                 + T_CA + "0 on " + T_CA + "(" + C_CA_KIDX + ")"
                 +" where " + C_CA_KIDX + ">" + KIndex.MASTER.getInt());
-    }
-
-    /**
-     * Creates a table to be used to store out of sync files.  OID is used as the primary key
-     * instead of (SIndex, OID) so that a separate index isn't required in order to simplify
-     * pagination through the table: see {@link OutOfSyncFilesDatabase#selectPage_(com.aerofs.ids.OID, int)}
-     */
-    public static void createOutOfSyncFilesTable(Statement s, IDBCW dbcw) throws SQLException {
-        //create out of sync files table
-        s.executeUpdate("create table " + T_OUT_OF_SYNC_FILES + "(" +
-                C_OUT_OF_SYNC_FILES_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
-                C_OUT_OF_SYNC_FILES_SIDX + " integer not null," +
-                C_OUT_OF_SYNC_FILES_OID + dbcw.uniqueIdType() + "not null," +
-                C_OUT_OF_SYNC_FILES_TIMESTAMP + dbcw.longType() + "not null)");
-        s.executeUpdate("create unique index " + T_OUT_OF_SYNC_FILES + "0 on " + T_OUT_OF_SYNC_FILES +
-                    "(" + C_OUT_OF_SYNC_FILES_SIDX + "," + C_OUT_OF_SYNC_FILES_OID + ")");
     }
 }

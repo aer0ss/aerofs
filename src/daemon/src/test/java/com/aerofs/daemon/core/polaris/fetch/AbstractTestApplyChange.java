@@ -13,7 +13,6 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStoreHierarchy;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.device.Devices;
-import com.aerofs.daemon.core.notification.ISyncNotificationSubscriber;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -30,7 +29,6 @@ import com.aerofs.daemon.core.polaris.db.RemoteLinkDatabase.RemoteLink;
 import com.aerofs.daemon.core.protocol.*;
 import com.aerofs.daemon.core.quota.IQuotaEnforcement;
 import com.aerofs.daemon.core.quota.NullQuotaEnforcement;
-import com.aerofs.daemon.core.status.ISyncStatusPropagator;
 import com.aerofs.daemon.core.store.*;
 import com.aerofs.daemon.core.transfers.download.Downloads;
 import com.aerofs.daemon.core.transfers.download.IContentDownloads;
@@ -254,10 +252,7 @@ public class AbstractTestApplyChange extends AbstractBaseTest {
 
                 bind(EffectiveUserList.class).toInstance(mock(EffectiveUserList.class));
 
-                bind(ISyncNotificationSubscriber.class).toInstance(new ISyncNotificationSubscriber() {});
-                bind(ISyncStatusPropagator.class).toInstance(new ISyncStatusPropagator() {});
                 newSetBinder(binder(), IContentVersionListener.class);
-                newSetBinder(binder(), IShareListener.class);
             }
 
             @Provides

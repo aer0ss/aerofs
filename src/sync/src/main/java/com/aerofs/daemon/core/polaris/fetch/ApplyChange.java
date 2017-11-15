@@ -19,7 +19,6 @@ import com.aerofs.ids.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -28,8 +27,6 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Set;
 
 
 /**
@@ -86,13 +83,11 @@ public class ApplyChange
     private final IMapSIndex2SID _sidx2sid;
     private final PolarisContentVersionControl _cvc;
     private final ContentFetchQueueWrapper _cfqw;
-    private final Collection<IShareListener> _shareListeners;
 
     @Inject
     public ApplyChange(Impl impl,  CentralVersionDatabase cvdb, RemoteLinkDatabase rpdb,
             RemoteContentDatabase rcdb, IMapSIndex2SID sidx2sid, ChangeEpochDatabase cedb,
-            PolarisContentVersionControl cvc, ContentFetchQueueWrapper cfqw,
-            Set<IShareListener> shareListeners)
+            PolarisContentVersionControl cvc, ContentFetchQueueWrapper cfqw)
     {
         _impl = impl;
         _cvdb = cvdb;
@@ -102,8 +97,6 @@ public class ApplyChange
         _sidx2sid = sidx2sid;
         _cvc = cvc;
         _cfqw = cfqw;
-        _shareListeners = Lists.newArrayListWithCapacity(shareListeners.size());
-        if (shareListeners != null) shareListeners.forEach(_shareListeners::add);
     }
 
     public void apply_(SIndex sidx, RemoteChange c, long mergeBoundary, Trans t) throws Exception
@@ -366,16 +359,9 @@ public class ApplyChange
 
         try {
             _impl.share_(soid, t);
-            notifyShareListeners(t);
         } catch (Exception e) {
             l.warn("share failed", e);
             throw e;
-        }
-    }
-
-    private void notifyShareListeners(Trans t) {
-        for (IShareListener listener : _shareListeners) {
-            listener.onShare_(t);
         }
     }
 }

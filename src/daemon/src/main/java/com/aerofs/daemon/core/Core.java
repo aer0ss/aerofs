@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.first_launch.FirstLaunch;
 import com.aerofs.daemon.core.health_check.HealthCheckService;
 import com.aerofs.daemon.core.launch_tasks.DaemonLaunchTasks;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.notification.ISyncNotificationSubscriber;
 import com.aerofs.daemon.core.notification.NotificationService;
 import com.aerofs.daemon.core.phy.ILinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -24,7 +23,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
-import com.aerofs.daemon.core.update.SyncStatusDatabaseInitialization;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.link.LinkStateService;
 import com.aerofs.lib.SystemUtil;
@@ -59,9 +57,7 @@ public class Core implements IModule
     private final LogicalStagingArea _sa;
     private final ChangeNotificationSubscriber _cnsub;
     private final PauseSync _pauseSync;
-    private final ISyncNotificationSubscriber _snsub;
     private final IContentAvailabilityListener _contentAvailabilityListener;
-    private final SyncStatusDatabaseInitialization _syncStatusDbInit;
 
     @Inject
     public Core(
@@ -90,9 +86,7 @@ public class Core implements IModule
             LogicalStagingArea sa,
             PauseSync pauseSync,
             ChangeNotificationSubscriber cnsub,
-            ISyncNotificationSubscriber snsub,
-            IContentAvailabilityListener contentAvailabilityListener,
-            SyncStatusDatabaseInitialization syncStatusDbInit)
+            IContentAvailabilityListener contentAvailabilityListener)
     {
         _imce2core = imce.imce();
         _fl = fl;
@@ -119,9 +113,7 @@ public class Core implements IModule
         _sa = sa;
         _cnsub = cnsub;
         _pauseSync = pauseSync;
-        _snsub = snsub;
         _contentAvailabilityListener = contentAvailabilityListener;
-        _syncStatusDbInit = syncStatusDbInit;
     }
 
     @Override
@@ -133,7 +125,6 @@ public class Core implements IModule
         // must run dput immediately after database initialization and before other components, as
         // required by IDaemonPostUpdateTask.run()
         _dput.run();
-        _syncStatusDbInit.init_();
         // detect DB tampering before launch tasks as they may interact with the outside world
         // but after DPUTs in case the detection schema changes
         _tamperingDetection.init_();
@@ -152,7 +143,6 @@ public class Core implements IModule
         _ss.init_();
         _aclsub.init_();
         _cnsub.init_();
-        _snsub.init_();
         _ns.init_();
     }
 
