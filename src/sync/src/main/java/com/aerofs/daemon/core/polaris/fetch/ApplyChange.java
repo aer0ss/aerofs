@@ -130,15 +130,22 @@ public class ApplyChange
                 l.info("ignoring obsolete change {}:{} {}", parent, version, c.newVersion);
                 return;
             } else if (diff > 1) {
-                // a gap in meta version is currently unexpected because polaris doesn't
+                // a gap in meta version is currently unexpected because polaris doesn't currently
                 // perform any kind of compaction of the transform log
                 l.warn("unexpected version jump {}:{} {}", parent, version, c.newVersion);
-                // while it theoretically should be fine for the version to jump ahead it
-                // is quite suspicious and given SUPPORT-2231 it seems possible that such
-                // a jump would cause subtle sync issues so for the time being we treat it
-                // as a blocking error to ensure any such issue will be caught as early as
-                // possible
-                throw new ExProtocolError("version jump");
+                // while it theoretically should be fine for the version to jump ahead, it is quite
+                // suspicious and given SUPPORT-2231 it seems possible that such a jump would cause
+                // subtle sync issues so for the time being we treat it as a blocking error to ensure
+                // any such issue will be caught as early as possible
+                // However, we've seen some customers where sharing/migration resulted in some
+                // unexpected version jumps in the migrated transform log. It is not entirely clear
+                // how that happened but the offending timestamps date back to early May 2016, which
+                // predates a bunch of fixes to the polaris migration logic so it is very plausible
+                // that the root cause is now fixed. To allow the affected customers to recover from
+                // this old bad state, we need to relax this invariant
+                if (c.migrantOid == null) {
+                    throw new ExProtocolError("version jump");
+                }
             }
         }
 
