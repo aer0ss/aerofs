@@ -3,8 +3,8 @@ when the golang updater is downloading additional content.
 
 # Generating Binaries
 
-This step must be done separately on each platform (OSX, Linux32, Linux64,
-Windows). OSX and Linux binaries can be built on OSX. Windows support is not yet implemented.
+This step must be done separately on each platform (OSX, Linux32, Linux64, Windows).
+OSX and Linux binaries can be built on OSX. Windows support is not yet implemented.
 
 ## OSX
 

@@ -46,6 +46,9 @@ int main (int argc, char *argv[])
     // Try to prevent the window from showing up in the taskbar
     gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
 
+    // Try to prevent the window from grabbing focus when opening
+    gtk_window_set_accept_focus(GTK_WINDOW(window), FALSE);
+
     // Try to prevent the window from offering a close button
     gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_UTILITY);
     gtk_window_set_deletable(GTK_WINDOW(window), FALSE);

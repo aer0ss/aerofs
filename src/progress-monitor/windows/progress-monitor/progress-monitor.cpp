@@ -1,12 +1,19 @@
 // progress-monitor.cpp
 // compile with: /D_UNICODE /DUNICODE /DWIN32 /D_WINDOWS /c
 
+// Ask the runtime to use visual styles when supported on the platform
+// see https://msdn.microsoft.com/en-us/library/bb773175.aspx
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
 #include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tchar.h>
 #include <CommCtrl.h>
 #include <stdio.h>
+#include <ShObjIdl.h>
 #include "resource.h"
 
 #define BUFSIZE 4096
@@ -40,6 +47,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
     LPSTR lpCmdLine,
     int nCmdShow)
 {
+    // Set the AppUserModelID to match the app's installed shortcut
+    // and the electron app
+    SetCurrentProcessExplicitAppUserModelID(_T("AirComputing.AeroFS"));
+
     // Handle the command line arguments
     int possibleProgress = atoi(lpCmdLine);
     if (possibleProgress < 1)
@@ -116,8 +127,9 @@ int WINAPI WinMain(HINSTANCE hInstance,
         MAKELPARAM(0, possibleProgress));
 
     // Show and paint the main window
+    // SW_SHOWNOACTIVATE to ensure that the window does not steal the user's focus
     ShowWindow(hWnd,
-        nCmdShow);
+        SW_SHOWNOACTIVATE);
     UpdateWindow(hWnd);
 
     // Dispatch a thread for listening on stdin and updating progress

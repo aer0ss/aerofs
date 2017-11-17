@@ -2,7 +2,6 @@
 //  progress-monitor.m
 //
 //  Created by Jeffrey Miller on 6/8/16.
-//  Copyright © 2016 Air Computing. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
@@ -14,7 +13,7 @@
 +(NSImage*)icon;
 @end
 
-// An app delegate that allows closing the window to close the application
+// An app delegate to register for stdin notifications
 @interface ListeningProgressIndicator : NSProgressIndicator <NSApplicationDelegate>
 - (BOOL)applicationDidFinishLaunching:(NSNotification*)aNotification;
 @end
@@ -42,10 +41,10 @@ int main(int argc, const char * argv[]) {
         }
 
         // Set up the window
-        NSInteger const WINDOW_WIDTH  = 300;
-        NSInteger const WINDOW_HEIGHT = 110;
+        NSInteger const WINDOW_WIDTH  = 400;
+        NSInteger const WINDOW_HEIGHT = 130;
         NSInteger const PADDING       = 20;
-        NSInteger const ICON_SIZE     = 70;
+        NSInteger const ICON_SIZE     = WINDOW_HEIGHT - 2 * PADDING;
 
         NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
                                                        styleMask:NSTitledWindowMask
@@ -57,10 +56,11 @@ int main(int argc, const char * argv[]) {
 
         // Add a Text Field for describing what is going on
         NSTextField *description = [[NSTextField alloc] initWithFrame:CGRectMake(2 * PADDING+ICON_SIZE,
-                                                                                 2 * PADDING,
+                                                                                 1.5 * PADDING,
                                                                                  WINDOW_WIDTH - (3 * PADDING + ICON_SIZE),
                                                                                  WINDOW_HEIGHT - 3 * PADDING)];
-        [description setStringValue:@"AeroFS is upgrading to the latest version."];
+        [description setStringValue:@"AeroFS is upgrading to the latest version. "
+                                     "This may take a few minutes."];
         [description setEditable:NO];
         [description setBordered:NO];
         [description setBackgroundColor:[window backgroundColor]];
@@ -74,7 +74,7 @@ int main(int argc, const char * argv[]) {
 
         // Add a progress bar
         ListeningProgressIndicator *progress = [[ListeningProgressIndicator alloc] initWithFrame:CGRectMake(2 * PADDING + ICON_SIZE,
-                                                                                                            PADDING,
+                                                                                                            1.5 * PADDING,
                                                                                                             WINDOW_WIDTH - (3 * PADDING + ICON_SIZE),
                                                                                                             PADDING)];
         NSInteger initialProgress = 0;
@@ -92,12 +92,14 @@ int main(int argc, const char * argv[]) {
         [[window contentView] addSubview:description];
         [[window contentView] addSubview:progress];
         [[window contentView] addSubview:imageView];
+        [window setLevel:NSFloatingWindowLevel];
+        [window setCollectionBehavior:NSWindowCollectionBehaviorManaged];
         [window makeKeyAndOrderFront:nil];
 
         // Now that everything is set up, dispatch a run loop for the application
         // This must be the last thing done on main - all other logic needs to be dispatched out onto
         // other threads if it needs to happen.
-        [thisApp activateIgnoringOtherApps:YES];
+        [thisApp activateIgnoringOtherApps:NO];
         [thisApp run];
     }
     return 0;
