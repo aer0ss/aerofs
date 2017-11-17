@@ -242,6 +242,7 @@ public class AbstractRestTest extends BaseAbstractRestTest
             protected void configure()
             {
                 bind(CfgLocalUser.class).toInstance(localUser);
+                bind(CfgLocalDID.class).toInstance(localDID);
                 bind(CfgCACertificateProvider.class).toInstance(cacert);
                 bind(StoreHierarchy.class).toInstance(ss);
                 bind(DirectoryService.class).toInstance(ds);

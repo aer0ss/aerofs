@@ -173,6 +173,55 @@ public class TestHttpProxyServer extends AbstractBaseTest
                 .get("/");
     }
 
+    @Test
+    public void shouldReturn503WhenUploadTargetNotAvailable() throws Exception
+    {
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
+        DID did = DID.generate();
+
+        when(auth.authenticate(anyString())).thenReturn(user);
+
+        when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(mock(Channel.class));
+        when(connector.connect(eq(user), eq(did), eq(true), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(null);
+
+        given()
+                .header(Names.AUTHORIZATION, "Bearer foo")
+                .header("Upload-ID", did.toStringFormal() + UniqueID.generate().toStringFormal())
+        .expect()
+                .statusCode(503)
+        .when()
+            .put("/");
+    }
+
+    @Test
+    public void shouldReturn503WhenLegacyUploadTargetNotAvailable() throws Exception
+    {
+        AuthenticatedPrincipal user = new AuthenticatedPrincipal("foo@bar.baz");
+        DID did = DID.generate();
+
+        when(auth.authenticate(anyString())).thenReturn(user);
+
+        when(connector.connect(eq(user), any(DID.class), eq(false), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(mock(Channel.class));
+        when(connector.connect(eq(user), eq(did), eq(true), any(Version.class),
+                any(ChannelPipeline.class)))
+                .thenReturn(null);
+
+        given()
+                .header(Names.AUTHORIZATION, "Bearer foo")
+                .header("Cookie", "route=" + did.toStringFormal())
+                .header("Upload-ID", UniqueID.generate().toStringFormal())
+        .expect()
+                .statusCode(503)
+        .when()
+                .put("/");
+    }
+
     public static class TestChannel extends AbstractChannel
     {
         private static class Address extends SocketAddress

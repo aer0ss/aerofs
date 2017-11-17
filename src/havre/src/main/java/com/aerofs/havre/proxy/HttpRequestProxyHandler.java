@@ -10,6 +10,7 @@ import com.aerofs.havre.Authenticator;
 import com.aerofs.havre.Authenticator.UnauthorizedUserException;
 import com.aerofs.havre.EndpointConnector;
 import com.aerofs.havre.Version;
+import com.aerofs.ids.UploadID;
 import com.aerofs.oauth.AuthenticatedPrincipal;
 import com.aerofs.oauth.TokenVerifier;
 import com.aerofs.tunnel.ShutdownEvent;
@@ -155,9 +156,15 @@ public class HttpRequestProxyHandler extends SimpleChannelUpstreamHandler
 
             // The Route header overrides any cookie and enforces strict consistency
             DID did = parseDID(req.headers().get(HEADER_ROUTE));
-            if (did == null && req.getMethod().equals(HttpMethod.PUT) && req.headers().get("Upload-ID") != null) {
-                // only honor cookie-based routing for in-progress uploads
-                did = parseDID(getCookies(req).get(COOKIE_ROUTE));
+            String uploadId = req.headers().get("upload-id");
+            if (req.getMethod().equals(HttpMethod.PUT) && uploadId != null) {
+                UploadID uid = UploadID.fromStringFormalNullable(uploadId);
+                if (uid != null && uid.did() != null) {
+                    did = uid.did();
+                } else {
+                    // only honor cookie-based routing for in-progress uploads with legacy Upload-ID
+                    did = parseDID(getCookies(req).get(COOKIE_ROUTE));
+                }
             }
             boolean strictConsistency = did != null;
 

@@ -4,6 +4,7 @@ import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.acl.Permissions;
 import com.aerofs.base.ex.ExBadArgs;
 import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.ex.ExNotFound;
 import com.aerofs.daemon.core.IVersionUpdater;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.ds.ResolvedPath;
@@ -22,8 +23,9 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.rest.event.EIFileUpload;
 import com.aerofs.daemon.rest.util.ContentEntityTagUtil;
-import com.aerofs.daemon.rest.util.UploadID;
+import com.aerofs.ids.UploadID;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.*;
 import com.aerofs.oauth.Scope;
 import com.aerofs.rest.api.Error;
@@ -63,6 +65,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
     @Inject private ICollectorStateDatabase _csdb;
     @Inject private ContentChangeSubmitter _ccsub;
     @Inject private ContentAvailabilitySubmitter _casub;
+    @Inject private CfgLocalDID _localDid;
 
     @Override
     protected void handleThrows_(EIFileUpload ev) throws Exception
@@ -70,10 +73,13 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
         SOID soid = checkSanity_(ev);
         if (soid == null) return;
 
-        l.info("upload id {} range {}", (ev._ulid != null && ev._ulid.isValid()) ? ev._ulid : null, ev._range);
+        l.info("upload id {} range {}", UploadID.isValid(ev._ulid) ? ev._ulid : null, ev._range);
 
         // to avoid prefix clashes, generate a unique upload ID if none given
-        UploadID uploadId = ev._ulid.isValid() ? ev._ulid : UploadID.generate();
+        UploadID uploadId = UploadID.isValid(ev._ulid) ? ev._ulid : UploadID.generate(_localDid.get());
+        if (uploadId.did() != null && !_localDid.get().equals(uploadId.did())) {
+            throw new ExNotFound();
+        }
         IPhysicalPrefix pf = _ps.newPrefix_(new SOKID(soid, KIndex.MASTER),
                 uploadId.toStringFormal());
 
@@ -110,7 +116,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
         } catch (Exception e) {
             l.warn("upload failed", e);
             // if anything goes wrong, delete the prefix, unless the upload is resumable
-            if (!ev._ulid.isValid()) {
+            if (!UploadID.isValid(ev._ulid)) {
                 try {
                     l.info("delete prefix");
                     pf.delete_();
@@ -151,7 +157,7 @@ public class HdFileUpload extends AbstractHdIMC<EIFileUpload>
         Range<Long> r = range.range();
         Long totalLength = range.totalLength();
 
-        if (!uploadId.isValid()) {
+        if (!UploadID.isValid(uploadId)) {
             if (r != null && r.lowerEndpoint() != 0) {
                 return Response.status(Status.BAD_REQUEST)
                         .entity(new Error(Type.BAD_ARGS, "Missing or invalid Upload-ID"));

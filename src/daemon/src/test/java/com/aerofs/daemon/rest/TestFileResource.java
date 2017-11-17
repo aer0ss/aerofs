@@ -9,9 +9,9 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.protocol.SendableContent;
 import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.rest.util.UploadID;
 import com.aerofs.ids.OID;
 import com.aerofs.ids.SID;
+import com.aerofs.ids.UploadID;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
@@ -1311,7 +1311,7 @@ public class TestFileResource extends AbstractRestTest
                 .header(Names.CONTENT_RANGE, "bytes */*")
         .expect()
                 .statusCode(204)
-                .header("Upload-ID", anyUUID())
+                .header("Upload-ID", anyUploadID())
         .when().log().everything()
                 .put("/v0.10/files/" + id(soid) + "/content");
     }
@@ -1326,7 +1326,7 @@ public class TestFileResource extends AbstractRestTest
                 .content(FILE_CONTENT)
         .expect()
                 .statusCode(204)
-                .header("Upload-ID", anyUUID())
+                .header("Upload-ID", anyUploadID())
                 .header(Names.RANGE, "bytes=0-" + (FILE_CONTENT.length - 1))
         .when()
                 .put("/v0.10/files/" + id(soid) + "/content");

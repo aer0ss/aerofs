@@ -403,8 +403,8 @@ public class BaseAbstractRestTest extends AbstractTest
         };
     }
 
-    protected static Matcher<String> anyUUID()
+    protected static Matcher<String> anyUploadID()
     {
-        return matches("[0-9a-fA-F]{32}");
+        return matches("[0-9a-fA-F]{64}");
     }
 }
