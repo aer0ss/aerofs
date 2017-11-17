@@ -1,6 +1,0 @@
-actors:
-  - os: linux
-    aero_flags: ['polaris']
-    storage_agent: local
-  - os: linux
-    aero_flags: ['polaris']

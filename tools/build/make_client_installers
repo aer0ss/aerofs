@@ -14,7 +14,7 @@ function DieUsage {
     echo >&2 "       [--build-windows-exe] [--build-windows-msi] [--build-osx-packages]"
     echo >&2 "       [--build-all]"
     echo >&2 " "
-    echo >&2 "<build_product>: CLIENT|TEAM_SERVER|STORAGE_AGENT"
+    echo >&2 "<build_product>: CLIENT|TEAM_SERVER"
     echo >&2 "<release_version>: release version (for example: 0.1.0)"
     echo >&2 "<sign_mode>: SIGNED|UNSIGNED"
     echo >&2 "[--build-linux-tgz]: build the Linux installer .tgz"
@@ -34,7 +34,7 @@ function DieUsage {
 # Parse positional args
 ##
 case ${1:-} in
-    CLIENT|TEAM_SERVER|STORAGE_AGENT) BUILD_PRODUCT=$1;;
+    CLIENT|TEAM_SERVER) BUILD_PRODUCT=$1;;
     *) DieUsage;;
 esac
 case ${2:-} in
@@ -140,11 +140,9 @@ function make_linux_installer_tgz() {
 
     pushd "${BUILD_DIR}/aerofs/" >>/dev/null
     ln -s updater "${AEROFS_PRODUCT_UNIX}"
-    if ! is_storage_agent ; then
-        for SUFFIX in cli gui sh ; do
-            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
-        done
-    fi
+    for SUFFIX in cli gui sh ; do
+        ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
+    done
     popd >>/dev/null
 
     tar -C "${BUILD_DIR}" -zcf "${PACKAGE_DIR}/${TARGET}" aerofs
@@ -184,11 +182,9 @@ function make_linux_update_tgz() {
 
     pushd "${BUILD_DIR}/aerofs/" >>/dev/null
     ln -s updater "${AEROFS_PRODUCT_UNIX}"
-    if ! is_storage_agent ; then
-        for SUFFIX in cli gui sh ; do
-            ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
-        done
-    fi
+    for SUFFIX in cli gui sh ; do
+        ln -s "${AEROFS_PRODUCT_UNIX}" "${AEROFS_PRODUCT_UNIX}-${SUFFIX}"
+    done
     popd >>/dev/null
 
     tar -C "${BUILD_DIR}" -zcf "${PACKAGE_DIR}/${TARGET}" aerofs

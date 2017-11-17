@@ -74,7 +74,6 @@ def toggle_maintenance_mode(request):
     return {
         'base_url': conf['base.www.url'],
         'is_maintenance_mode': is_maintenance_mode(request.registry.settings),
-        'onboard_storage_enabled': conf['onboard.storage.enabled'],
     }
 
 

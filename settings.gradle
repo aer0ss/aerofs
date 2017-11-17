@@ -30,6 +30,5 @@ include 'src/aero-api-lib',
         'src/ssmp',
         'src/support',
         'src/sync',
-        'src/storage-agent',
         'src/tunnel',
         'src/zephyr'

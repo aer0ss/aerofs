@@ -37,11 +37,7 @@ function copy_resources_to_local_release_directories() {
 
     # piggy-back on gradle dist output to build aerofs.jar and fetch deps
     pushd "${LOCAL_BIN}" >>/dev/null
-    if is_storage_agent ; then
-        JAR_SOURCE_DIR="storage-agent"
-    else
-        JAR_SOURCE_DIR="desktop"
-    fi
+    JAR_SOURCE_DIR="desktop"
     for jar in "${BUILD_OUTPUT_DIR}/${JAR_SOURCE_DIR}/dist"/*.jar ; do
         if [[ ${jar##*/} == aerofs-*.jar ]] ; then
             jar xf "$jar" com
@@ -65,11 +61,7 @@ function copy_resources_to_local_release_directories() {
 function create_java_jar() {
     readonly TEMP_MANIFEST="$(mktemp -t manifest_XXXXXX.tmp)"
 
-    if is_storage_agent ; then
-        main_class="StorageAgentMain"
-    else
-        main_class="Main"
-    fi
+    main_class="Main"
     echo "Main-Class: com.aerofs.${main_class}" > "${TEMP_MANIFEST}"
     echo "Class-Path: " >> "${TEMP_MANIFEST}"
     for i in "${AEROFS_RELEASE_DIR}"/lib/*.jar; do

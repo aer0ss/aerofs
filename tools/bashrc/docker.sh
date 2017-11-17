@@ -90,7 +90,7 @@ function dk-halt()
 {
     if [[ $# -eq 0 ]]
     then
-        ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance && ${DEV_DIR}/dk-crane.sh kill -dall onboard
+        ${DEV_DIR}/dk-crane.sh kill -dall && ${DEV_DIR}/dk-crane.sh kill -dall maintenance && ${DEV_DIR}/dk-crane.sh kill -dall default
     else
         echo "dk-halt takes no arguments"
         return 1
@@ -181,39 +181,6 @@ function sa-halt()
         sa-crane kill -dall && sa-crane kill -dall maintenance
     else
         echo "sa-halt takes no arguments"
-        return 1
-    fi
-}
-
-function sa-reload()
-{
-    if [[ $# -eq 0 ]]
-    then
-        echo "sa-reload takes at least 1 container name"
-        return 1
-    else
-        sa-crane run --recreate -aall $@
-    fi
-}
-function sa-create()
-{
-    # order is important here, sa-destroy is also used to modify the sa-loader image to have a dev-compatibile crane file
-    # thus, we have to build the sa-loader before we call sa-destroy, lest the modified image be rewritten
-    if [[ $# -eq 0 ]]
-    then
-        dk-start-vm && ${DEV_DIR}/../../invoke --unsigned build_sa_images && sa-destroy && ${DEV_DIR}/emulate-ship.sh aerofs/sa-loader maintenance
-    else
-        echo "sa-create takes no arguments"
-        return 1
-    fi
-}
-function sa-destroy()
-{
-    if [[ $# -eq 0 ]]
-    then
-        ${DEV_DIR}/sa-destroy.sh
-    else
-        echo "sa-destroy takes no arguments"
         return 1
     fi
 }

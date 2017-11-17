@@ -10,7 +10,7 @@ function img_fresh() {
     local major=$(echo $version | cut -d. -f 1)
     local minor=$(echo $version | cut -d. -f 2)
 
-    if (( "$major" >= 1 && "$minor" >= 8 )) ; then
+    if (( 10#"$major" >= 1 && 10#"$minor" >= 8 )) ; then
         local created=$(
             docker inspect --format='{{.Created}}' --type=image "$1" |\
             cut -d. -f1 |\

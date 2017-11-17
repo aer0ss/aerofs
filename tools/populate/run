@@ -58,9 +58,5 @@ VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryE
 
 PRODUCT=$2
 MAIN_CLASS="com.aerofs.Main"
-if [[ "$PRODUCT" == "storage_agent" ]]
-then
-MAIN_CLASS="com.aerofs.StorageAgentMain"
-fi
 # set DEBUG to "gdb --args" to run in debugger
 $EXEC $DEBUG $JAVA $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" $MAIN_CLASS "$@"

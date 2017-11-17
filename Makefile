@@ -46,19 +46,9 @@ build_images:
 	make -C $(GIT_ROOT)/docker images
 	$(call success,"build_images")
 
-build_sa_images:
-	make -C $(GIT_ROOT)/docker sa_images
-	$(call success,"build_sa_images")
-
 build_protoc_plugins: _clean_protobuf
 	make out.shell/protobuf-rpc/gen_rpc_java/protoc-gen-rpc-java
 	$(call success,"build_protoc_plugins")
-
-build_sa_vm:
-	# make sure we don't use a modified dev version of the loader
-	make -C $(GIT_ROOT)/docker/ship-aerofs/sa-loader
-	$(GIT_ROOT)/docker/ship-aerofs/build-vm.sh aerofs/sa-loader
-	$(call success,"build_sa_vm")
 
 build_updater:
 ifeq ($(SIGNED),)
@@ -126,17 +116,6 @@ endif
 	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/loader $(PUSH_REPO)
 	$(call success,"push_images")
 
-push_sa_images:
-ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
-	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
-endif
-	$(GIT_ROOT)/docker/ship-aerofs/push-images.sh aerofs/sa-loader $(PUSH_REPO)
-	$(call success,"push_sa_images")
-
-push_sa_vm:
-	$(GIT_ROOT)/tools/build/bootstrap push_vm aerofs/sa-loader
-	$(call success,"push_sa_vm")
-
 push_vm:
 	$(GIT_ROOT)/tools/build/bootstrap push_vm aerofs/loader
 	$(call success,"push_vm")
@@ -147,13 +126,6 @@ ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
 endif
 	$(GIT_ROOT)/docker/ship-aerofs/release-images.sh aerofs/loader $(PUSH_REPO)
 	$(call success,"release_images")
-
-release_sa_images:
-ifeq (,$(filter registry.aerofs.com private-registry.aerofs.com, $(PUSH_REPO)))
-	$(error "Please use a supported registry. Could not push to $(PUSH_REPO)")
-endif
-	$(GIT_ROOT)/docker/ship-aerofs/release-images.sh aerofs/sa-loader $(PUSH_REPO)
-	$(call success,"release_sa_images")
 
 setupenv:
 ifeq ($(OS),)

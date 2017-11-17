@@ -7,7 +7,6 @@ requires = [
 packages = ["aerofs_common", "aerofs_common._gen",
             "aerofs_ritual", "aerofs_ritual.gen",
             "aerofs_sp",     "aerofs_sp.gen",
-            "aerofs_sa",
             ]
 
 # TODO (GS): Find a better name for this package

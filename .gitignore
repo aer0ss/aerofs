@@ -79,7 +79,7 @@ bin/
 gen/
 out/
 .gradle/
-build/
+build
 local.properties
 proguard/
 *.log

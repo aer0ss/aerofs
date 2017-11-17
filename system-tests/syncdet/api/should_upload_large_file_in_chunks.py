@@ -7,7 +7,6 @@ from aerofs_common import param
 from syncdet.case import local_actor, fail_test_case
 from core.block_storage import common
 from lib import ritual
-from lib.app.cfg import is_teamserver, is_storageagent
 from syncdet.case import instance_unique_string
 
 

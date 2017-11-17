@@ -137,11 +137,6 @@ do
     fi
 done
 
-# Restore onboard storage data if found in the backup file
-if [ -d aerofs-db-backup/aerofs-storage ]; then
-    cp -a aerofs-db-backup/aerofs-storage/. /aerofs-storage
-fi
-
 popd 1>/dev/null 2>/dev/null
 
 echo ">>> AeroFS databases successfully restored."

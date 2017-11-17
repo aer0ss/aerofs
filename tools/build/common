@@ -118,7 +118,7 @@ readonly SLACK_WEBHOOK="https://hooks.slack.com/services/T027U3FMY/B03U7PCBV/OJy
 #
 ###############################################################################
 function is_valid_product() {
-    if [[ "$1" != "CLIENT" && "$1" != "TEAM_SERVER" && "$1" != "STORAGE_AGENT" ]]; then
+    if [[ "$1" != "CLIENT" && "$1" != "TEAM_SERVER" ]]; then
         return $ERRBADPRODUCT
     fi
     return 0
@@ -174,18 +174,6 @@ function is_client() {
 ###############################################################################
 function is_team_server() {
     if [ "$PRODUCT" == "TEAM_SERVER" ]; then
-        return 0
-    fi
-    return 1
-}
-
-###############################################################################
-#
-# Returns 0 if the product is STORAGE_AGENT, 1 otherwise
-#
-###############################################################################
-function is_storage_agent() {
-    if [ "$PRODUCT" == "STORAGE_AGENT" ]; then
         return 0
     fi
     return 1

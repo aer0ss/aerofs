@@ -41,9 +41,6 @@ do
     cp -a /data/$svc aerofs-db-backup/$svc
 done
 
-echo ">>> Backing up onboard storage data..."
-cp -a /aerofs-storage aerofs-db-backup/aerofs-storage
-
 echo ">>> Creating backup file..."
 # FIXME: does this comment still make sense now that we use alpine?
 # gnu tar does not handle reading sparse files efficiently using SEEK_HOLE

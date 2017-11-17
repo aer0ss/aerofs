@@ -355,14 +355,6 @@ containers:
         - waldo:waldo.service
         - web:web.service
 
-  onboard-sa:
-    image: aerofs/storage-agent
-    run:
-      detach: true
-      net: host
-      volumes-from:
-        - data
-
   {% if not hpc %}
   logrotator:
     image: aerofs/logrotator
@@ -432,17 +424,6 @@ groups:
     - nginx
     - enforcer
     - lipwig
-    {% if not hpc %}
-    - logrotator
-    - zephyr
-    {% endif %}
-
-  onboard:
-    - bunker
-    - nginx
-    - enforcer
-    - lipwig
-    - onboard-sa 
     {% if not hpc %}
     - logrotator
     - zephyr

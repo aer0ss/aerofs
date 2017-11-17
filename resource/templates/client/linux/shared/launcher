@@ -3,20 +3,15 @@
 
 PRODUCT="[AEROFS_PRODUCT_UNIX]"
 
-if [[ $PRODUCT == *"storage"* ]]
-then
-    PROG=storage_agent
-else
-    PROG=$1; shift
-    if [ x"$PROG" == x ]; then
-        PROG=gui
-    fi
+PROG=$1; shift
+if [ x"$PROG" == x ]; then
+    PROG=gui
+fi
 
-    if [ $PROG == gui ]; then
-        if [ x"$DISPLAY" == x ]; then
-            echo Please use $PRODUCT-cli when running without a graphical environment.
-            exit 1
-        fi
+if [ $PROG == gui ]; then
+    if [ x"$DISPLAY" == x ]; then
+        echo Please use $PRODUCT-cli when running without a graphical environment.
+        exit 1
     fi
 fi
 check_for_binary()

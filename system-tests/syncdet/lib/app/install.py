@@ -13,7 +13,7 @@ from syncdet import case
 
 import aerofs_proc
 from aerofs_common.param import POLLING_INTERVAL
-from cfg import get_cfg, get_native_homedir, is_teamserver, is_storageagent
+from cfg import get_cfg, get_native_homedir, is_teamserver
 
 
 #####           #####
@@ -244,11 +244,8 @@ class BaseAeroFSInstaller(object):
         if not os.path.exists(self.get_installer_path()):
             self.download_installer()
         self.run_installer()
-        if "storage" in self.get_ui_name():
-            aerofs_proc.wait_for_sa()
-        else:
-            self.wait_for_pb_file()
-            aerofs_proc.wait_for_daemon()
+        self.wait_for_pb_file()
+        aerofs_proc.wait_for_daemon()
         print '{} up and running'.format(get_cfg().did().get_hex())
 
 
@@ -323,12 +320,6 @@ class BaseLinuxInstaller(BaseAeroFSInstaller):
         with tarfile.open(self.get_installer_path()) as tar:
             tar.extractall(path=os.path.dirname(td))
 
-        if "storage" in self.get_ui_name():
-            setup_cmd = ["python {} -f {} -a {} -c {}".format(os.path.join("syncdet", "deploy", "setup_storage_agent.py"),\
-                self.get_setup_file_path(), case.local_actor().aero_host, self.get_rtroot())]
-            print setup_cmd
-            subprocess.check_call(setup_cmd, shell=True)
-            # This is overriding default location of the storage_agent.conf file.
         ensure_site_config_present(td)
 
         print 'launch aerofs...'
@@ -360,21 +351,6 @@ class TeamServerLinuxInstaller(BaseLinuxInstaller):
 
     def get_default_root_anchor(self):
         return os.path.join(os.path.expanduser('~'), 'AeroFS Team Server Storage')
-
-    def get_unattended_setup_dict(self):
-        return get_ts_and_sa_unattended_setup_dict()
-
-
-class StorageAgentLinuxInstaller(BaseLinuxInstaller):
-
-    def get_ui_name(self):
-        return self._cfg.get_ui_name()
-
-    def get_installer_name(self):
-        return 'aerofs-storage-agent-installer.tgz'
-
-    def get_default_root_anchor(self):
-        return os.path.join(os.path.expanduser('~'), 'AeroFS')
 
     def get_unattended_setup_dict(self):
         return get_ts_and_sa_unattended_setup_dict()
@@ -512,8 +488,7 @@ class TeamServerOSXInstaller(BaseOSXInstaller):
 
 def get_installer():
     if 'linux' in sys.platform:
-        installer = StorageAgentLinuxInstaller() if is_storageagent() else \
-                (TeamServerLinuxInstaller() if is_teamserver() else ClientLinuxInstaller())
+        installer = TeamServerLinuxInstaller() if is_teamserver() else ClientLinuxInstaller()
     elif 'win32' in sys.platform:
         installer = TeamServerWinInstaller() if is_teamserver() else ClientWinInstaller()
     elif 'darwin' in sys.platform:

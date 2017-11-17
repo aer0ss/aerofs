@@ -24,35 +24,20 @@ IMAGES:= \
 	../packaging/sanity \
 	../src/sparta \
 	../src/spsv \
-	../src/storage-agent \
 	../golang/src/aerofs.com/ts-probe \
 	../golang/src/aerofs.com/valkyrie \
 	../golang/src/aerofs.com/waldo \
 	../src/web \
 	ship-aerofs/loader
 
-SA_IMAGES:= \
-	../src/storage-agent \
-	../src/storage-agent-setup \
-	ship-aerofs/sa-loader
-
-
 all:
 
 images: $(IMAGES)
 	make -C ship-aerofs/loader verify
 	make clean_docker
-sa_images: $(SA_IMAGES)
-	make -C ship-aerofs/sa-loader verify
-	make clean_docker
-
 
 .PHONY: $(IMAGES)
 $(IMAGES): base
-	make -C $@ image
-
-.PHONY: $(SA_IMAGES)
-$(SA_IMAGES): base
 	make -C $@ image
 
 .PHONY: base
@@ -69,8 +54,5 @@ clean_docker:
 clean:
 	make -C base clean
 	for img in $(IMAGES); do \
-		make -C $$img clean; \
-	done
-	for img in $(SA_IMAGES); do \
 		make -C $$img clean; \
 	done

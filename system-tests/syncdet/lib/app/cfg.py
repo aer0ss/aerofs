@@ -30,11 +30,6 @@ def get_native_homedir():
         raise Exception("Can't get homedir for OS: " + sys.platform)
 
 
-def is_storageagent():
-    actor = case.local_actor()
-    details = getattr(actor, 'details', {})
-    return details.get('storage_agent', False)
-
 def is_teamserver():
     actor = case.local_actor()
     details = getattr(actor, 'details', {})
@@ -43,7 +38,7 @@ def is_teamserver():
 
 def get_cfg():
     if 'linux' in sys.platform:
-        cfg = StorageAgentLinuxCfg() if is_storageagent() else (TeamServerLinuxCfg() if is_teamserver() else ClientLinuxCfg())
+        cfg = TeamServerLinuxCfg() if is_teamserver() else ClientLinuxCfg()
     elif 'darwin' in sys.platform:
         cfg = TeamServerOSXCfg() if is_teamserver() else ClientOSXCfg()
     elif 'win32' in sys.platform:
@@ -137,31 +132,6 @@ class TeamServerLinuxCfg(BaseLinuxCfg):
 
     def get_ui_name(self):
         return 'aerofsts-cli'
-
-class StorageAgentLinuxCfg(BaseLinuxCfg):
-
-    def get_root_anchor(self):
-        return os.path.expanduser(self._conf_db())['root']
-
-    def _conf_db(self):
-        with open(os.path.join(self.get_rtroot(), "storage_agent.conf")) as f:
-            rows = (line.split() for line in f)
-            return { row[0]:row[1] for row in rows }
-
-    def user(self):
-        return self._conf_db()['user_id']
-
-    def did(self):
-        return uuid.UUID(self._conf_db()['device_id'])
-
-    def get_approot(self):
-        return os.path.join(os.path.expanduser('~'), '.aerofs-storage-agent-bin')
-
-    def get_rtroot(self):
-        return os.path.join(os.path.expanduser('~'), '.aerofs-storage-agent')
-
-    def get_ui_name(self):
-        return 'aerofs-storage-agent'
 
 
 #####          #####
