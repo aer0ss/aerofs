@@ -20,6 +20,7 @@ import com.aerofs.oauth.Scope;
 import com.aerofs.rest.util.MimeTypeDetector;
 import com.aerofs.restless.util.HttpStatus;
 import com.aerofs.restless.util.Ranges;
+import com.aerofs.ssmp.ByteSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
@@ -97,17 +98,36 @@ public class HdFileContent extends AbstractHdIMC<EIFileContent>
      *   - Chrome (32) does not consistently pick the filename* value
      *   - wget (1.14) concatenates both values and fails to decode the percent-encoding
      */
+    private static final ByteSet ATTR_CHAR = new ByteSet(
+            ByteSet.Range('a', 'z'),
+            ByteSet.Range('A', 'Z'),
+            ByteSet.Range('0', '9'),
+            ByteSet.All("!#$&+-.^_`|~")
+    );
     private String filename(String s)
     {
-        StringBuilder bd = new StringBuilder("filename=\"");
-        bd.append(s.replaceAll("[^a-zA-Z0-9!#$&+-._`|~^]", "-"));
-        bd.append("\" ; filename*=UTF-8''");
-        // TODO: no need to encode attr-char
-        String encoded = BaseUtil.hexEncode(BaseUtil.string2utf(s));
-        for (int i = 0; i < encoded.length(); i += 2) {
-            bd.append("%").append(encoded.charAt(i)).append(encoded.charAt(i + 1));
+        StringBuilder b0 = new StringBuilder("filename=\"");
+        StringBuilder b1 = new StringBuilder("\" ; filename*=UTF-8''");
+        boolean prevIsHyphen = false;
+        byte[] encoded = BaseUtil.string2utf(s);
+        for (byte c : encoded) {
+            if (ATTR_CHAR.contains(c)) {
+                if (!(prevIsHyphen && c == '-')) b0.appendCodePoint(c);
+                prevIsHyphen = c == '-';
+                b1.appendCodePoint(c);
+            } else {
+                if (!prevIsHyphen) {
+                    b0.append('-');
+                    prevIsHyphen = true;
+                }
+                b1.appendCodePoint('%')
+                        .appendCodePoint(BaseUtil.hexDigits[((c >> 4) & 0x0f)])
+                        .appendCodePoint(BaseUtil.hexDigits[(c & 0x0f)]);
+
+            }
         }
-        return bd.toString();
+        b0.append(b1.toString());
+        return b0.toString();
     }
 
     private ResponseBuilder fullContent(ResponseBuilder bd, String name, IPhysicalFile pf,

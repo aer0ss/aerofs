@@ -8,7 +8,7 @@ package com.aerofs.ssmp;
 public class ByteSet {
     private final long[] d = new long[4];
 
-    interface Initializer {
+    public interface Initializer {
         void init(ByteSet s);
     }
 
@@ -38,10 +38,10 @@ public class ByteSet {
     }
 
     private void set(byte b) {
-        d[b / 64] |= (1L << (b & 63));
+        d[(b >> 6) & 0x03] |= (1L << (b & 63));
     }
 
     public boolean contains(byte b) {
-        return (d[b / 64] & (1L << (b & 63))) != 0;
+        return (d[(b >> 6) & 0x03] & (1L << (b & 63))) != 0;
     }
 }

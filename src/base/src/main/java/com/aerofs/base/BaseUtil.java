@@ -63,7 +63,7 @@ public class BaseUtil
         return new String(hex);
     }
 
-    private static final char[] hexDigits =
+    public static final char[] hexDigits =
             {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
     public static void hexEncode(byte[] bs, int s_offset, int length, char[] hex, int d_offset)
