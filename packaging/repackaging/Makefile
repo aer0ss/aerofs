@@ -15,8 +15,8 @@ build:
 	make -C base image
 
 buildroot:
-ifeq (,$(filter 17 18, $(words $(PACKAGES))))
-	$(error $(words $(PACKAGES)) files were found in $(PACKAGES_SRC). I expect 17 or 18(syncdet only))
+ifeq (,$(filter 15, $(words $(PACKAGES))))
+	$(error $(words $(PACKAGES)) files were found in $(PACKAGES_SRC). I expect 15)
 endif
 	mkdir -p $(PACKAGES_DEST)
 	$(RSYNC) --link-dest=$(PACKAGES_SRC) $(PACKAGES_SRC) $(PACKAGES_DEST)

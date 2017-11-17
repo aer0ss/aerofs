@@ -39,7 +39,7 @@ TMPDIR="/tmp/aerofs-$UPDATE_VER-$USERNAME"
 rm -rf "$TMPDIR"
 mkdir -p "$TMPDIR"
 
-if hdiutil -readonly -nobrowse -mountpoint "$TMPDIR" attach "$UPDATE_FILEPATH" ; then
+if hdiutil attach -readonly -nobrowse -mountpoint "$TMPDIR" "$UPDATE_FILEPATH" ; then
   rm -rf "$PACKAGE_DIR/Contents"
   cp -af "$TMPDIR"/[AEROFS_PRODUCT_SPACEFREE].app/* "$PACKAGE_DIR"
   hdiutil detach "$TMPDIR"

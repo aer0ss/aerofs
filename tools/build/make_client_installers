@@ -275,7 +275,6 @@ function make_osx_packages() {
     local BUILD_DIR="${PACKAGE_BUILD_DIR}/osx-dmg"
     local LOCAL_APP_DIR="Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/"
     local TEMPLATE_FILENAME="${AEROFS_PRODUCT_UNIX}.app.template"
-    local TARGET_ZIP="${AEROFS_PRODUCT_UNIX}-osx-${RELEASE_VERSION}.zip"
 
     rm -rf "${BUILD_DIR}"
     mkdir -p "${BUILD_DIR}/Release"
@@ -300,10 +299,6 @@ function make_osx_packages() {
         # folder.
         # sign_osx "${BUILD_DIR}/Release/${AEROFS_PRODUCT_SPACEFREE}.app/Contents/Resources/Java/AeroFSFinderExtension.osax"
     fi
-
-    pushd "$BUILD_DIR" >>/dev/null
-    zip -9 --symlinks --quiet --recurse-paths "${PACKAGE_DIR}/${TARGET_ZIP}" "Release/"
-    popd >>/dev/null
 
     ln -s /Applications "${BUILD_DIR}/Release/Applications"
     cp -a "${BUILD_SCRIPT_DIR}/osx/dmg_contents/"{.background,.VolumeIcon.icns} "${BUILD_DIR}/Release/"

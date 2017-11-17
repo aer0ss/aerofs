@@ -96,21 +96,6 @@ do
         $SITE_PROP \
         /${program}.app/Contents/Resources/site-config.lproj/locversion.plist &
 
-    # updater zip
-    case $program in
-        AeroFS)           package="aerofs"   ;;
-        AeroFSTeamServer) package="aerofsts" ;;
-        *)
-            echo "I don't have a package name mapping for $program"
-            exit 1
-            ;;
-    esac
-    $TOOLS/osx/add_file_to_zip.sh \
-        $INSTALLERS/original/${package}-osx-${version}.zip \
-        $INSTALLERS/modified/${package}-osx-${version}.zip \
-        $SITE_PROP \
-        Release/${program}.app/Contents/Resources/site-config.lproj \
-        /locversion.plist &
 done
 
 echo "Repackaging Linux installers..."
@@ -169,11 +154,9 @@ ln -s AeroFSInstall-${version}.exe           AeroFSInstall.exe
 ln -s AeroFSTeamServerInstall-${version}.exe AeroFSTeamServerInstall.exe
 ln -s AeroFSInstall-${version}.msi           AeroFSInstall.msi
 ln -s AeroFSTeamServerInstall-${version}.msi AeroFSTeamServerInstall.msi
-# OSX (installers + update packages)
+# OSX
 ln -s AeroFSInstall-${version}.dmg           AeroFSInstall.dmg
 ln -s AeroFSTeamServerInstall-${version}.dmg AeroFSTeamServerInstall.dmg
-ln -s aerofs-osx-${version}.zip              aerofs-osx.zip
-ln -s aerofsts-osx-${version}.zip            aerofsts-osx.zip
 # Linux installers
 ln -s aerofs-installer-${version}.deb        aerofs-installer.deb
 ln -s aerofs-installer-${version}.tgz        aerofs-installer.tgz

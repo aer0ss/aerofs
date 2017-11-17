@@ -213,12 +213,12 @@ _prepare_syncdet:
 
 _prepare_syncdet_client:
 	make _prepare_syncdet PS_PREFIX=AeroFSInstall PS_EXT=exe
-	make _prepare_syncdet PS_PREFIX=aerofs-osx PS_EXT=zip
+	make _prepare_syncdet PS_PREFIX=AeroFSInstall PS_EXT=dmg
 	make _prepare_syncdet PS_PREFIX=aerofs-installer PS_EXT=tgz
 
 _prepare_syncdet_team_server:
 	make _prepare_syncdet PS_PREFIX=AeroFSTeamServerInstall PS_EXT=exe
-	make _prepare_syncdet PS_PREFIX=aerofsts-osx PS_EXT=zip
+	make _prepare_syncdet PS_PREFIX=AeroFSTeamServerInstall PS_EXT=dmg
 	make _prepare_syncdet PS_PREFIX=aerofsts-installer PS_EXT=tgz
 
 _syncdet:

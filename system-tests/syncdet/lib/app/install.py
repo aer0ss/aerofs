@@ -442,8 +442,17 @@ class BaseOSXInstaller(BaseAeroFSInstaller):
 
     def run_installer(self):
         print 'unzipping app...'
-        rm_rf(self.get_app_install_dir())
-        extract(self.get_installer_path(), 'Release', self.get_app_install_dir())
+        install_path = os.path.join(self.get_app_install_dir(), self.get_app_name())
+        rm_rf(install_path)
+
+        td = os.path.join(os.path.expanduser('~'), "." + self.get_app_name()[:-4].lower() + "-install")
+        rm_rf(td)
+        mkdir_p(td)
+        subprocess.check_call(["hdiutil", "attach", "-readonly", "-nobrowse", "-mountpoint", td,
+                               self.get_installer_path()])
+        shutil.copytree(os.path.join(td, self.get_app_name()), install_path)
+        subprocess.check_call(["hdiutil", "detach", td])
+        rm_rf(td)
 
         ensure_site_config_present(os.path.join(self._cfg.app_path(), 'Contents', 'Resources', 'site-config.lproj'),
                                    'locversion.plist')
@@ -455,7 +464,7 @@ class BaseOSXInstaller(BaseAeroFSInstaller):
 class ClientOSXInstaller(BaseOSXInstaller):
 
     def get_installer_name(self):
-        return 'aerofs-osx.zip'
+        return 'AeroFSInstall.dmg'
 
     def get_app_name(self):
         return 'AeroFS.app'
@@ -470,7 +479,7 @@ class ClientOSXInstaller(BaseOSXInstaller):
 class TeamServerOSXInstaller(BaseOSXInstaller):
 
     def get_installer_name(self):
-        return 'aerofsts-osx.zip'
+        return 'AeroFSTeamServerInstall.dmg'
 
     def get_app_name(self):
         return 'AeroFSTeamServer.app'
