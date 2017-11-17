@@ -35,7 +35,7 @@ while ps -e -o pid,user,command | grep "$USERNAME" | grep aerofsd | grep -v grep
   /bin/kill -9 $GET_PID
 done
 
-TMPDIR="/tmp/aerofs-$UPDATE_VER-$USERNAME"
+TMPDIR="/tmp/[AEROFS_PRODUCT_UNIX]-$UPDATE_VER-$USERNAME"
 rm -rf "$TMPDIR"
 mkdir -p "$TMPDIR"
 

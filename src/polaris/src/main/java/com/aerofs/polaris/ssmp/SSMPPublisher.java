@@ -75,8 +75,8 @@ public final class SSMPPublisher implements UpdatePublisher, BinaryPublisher, Ma
                             ssmp.request(SSMPRequest.mcast(SSMPIdentifier.fromInternal(topic),
                                             Arrays.copyOfRange(payload, index, index + chunkSize))),
                             ssmpRequestCallback(topic, returned));
+                    index += chunkSize;
                 }
-                index += chunkSize;
             }
         } catch (Exception e) {
             LOGGER.warn("fail publish notification for {}", topic);
