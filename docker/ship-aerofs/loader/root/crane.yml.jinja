@@ -26,7 +26,6 @@ containers:
     run:
       detach: true
 
-{% if not hpc %}
   ntp:
     image: aerofs/ntp
     run:
@@ -41,7 +40,6 @@ containers:
         - data
       link:
         - config:config.service
-{% endif %}
 
   lipwig:
     image: aerofs/lipwig
@@ -61,10 +59,8 @@ containers:
     run:
       detach: true
       publish:
-      {% if not hpc %}
         - "80:80"
         - "443:443"
-      {% endif %}
         - "{{ get_port('nginx', 4433) }}:4433"
         - "{{ get_port('nginx_mut_auth', 5222) }}:5222"
       volumes-from:
@@ -89,14 +85,10 @@ containers:
     image: aerofs/bunker
     run:
       detach: true
-      {# Make sure Bunker doesn't have access to Docker in HPC, to avoid leaking info from other #}
-      {# customers (from container log collection, for example). #}
-      {% if not hpc %}
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
         - /var/lib/docker/containers:/var/lib/docker/containers
-      {% endif %}
       volumes-from:
         - data
       link:
@@ -108,9 +100,7 @@ containers:
         - repackaging:repackaging.service
         - sparta:sparta.service
         - status:status.service
-      {% if not hpc %}
         - ntp:ntp.service
-      {% endif %}
 # so that bunker can write to the autocomplete user table
 # remove this when ldap syncing is implemented
         - mysql:mysql.service
@@ -139,13 +129,6 @@ containers:
       detach: true
       volumes-from:
         - data
-      {% if hpc %}
-      env:
-        hpc_port_nginx: "{{ get_port('nginx', 4433) }}"
-        hpc_port_nginx_mut_auth: "{{ get_port('nginx_mut_auth', 5222) }}"
-        hpc_port_havre: "{{ get_port('havre', 8084) }}"
-        hpc_port_lipwig: "{{ get_port('lipwig', 29438) }}"
-      {% endif %}
 
   # Use 'ca-server' not 'ca' to avoid conflicts with 'ca*' container ids
   ca-server:
@@ -172,7 +155,6 @@ containers:
         - charlie:charlie.service
         - auditor:auditor.service
 
-{% if not hpc %}
   zephyr:
     image: aerofs/zephyr
     run:
@@ -180,7 +162,6 @@ containers:
       net: host
       publish:
         - "8888:8888"
-{% endif %}
 
   havre:
     image: aerofs/havre
@@ -354,7 +335,6 @@ containers:
         - waldo:waldo.service
         - web:web.service
 
-  {% if not hpc %}
   logrotator:
     image: aerofs/logrotator
     run:
@@ -362,18 +342,15 @@ containers:
       volume:
         # To rotate docker logs
         - /var/lib/docker/containers:/var/lib/docker/containers
-  {% endif %}
 
   maintenance-nginx:
     image: aerofs/maintenance-nginx
     run:
       detach: true
-      {% if not hpc %}
       publish:
         - "80:80"
         - "443:443"
         - "4433:4433"
-      {% endif %}
       link:
         - ca-server:ca.service
         - config:config.service
@@ -386,14 +363,10 @@ containers:
     image: aerofs/bunker
     run:
       detach: true
-      {# Make sure Bunker doesn't have access to Docker in HPC, to avoid leaking info from other #}
-      {# customers (from container log collection, for example). #}
-      {% if not hpc %}
       volume:
         # To collect docker logs
         - /var/run/docker.sock:/var/run/docker.sock
         - /var/lib/docker/containers:/var/lib/docker/containers
-      {% endif %}
       volumes-from:
         - data
       link:
@@ -401,9 +374,7 @@ containers:
         - loader:loader.service
         - verification:verification.service
         - repackaging:repackaging.service
-      {% if not hpc %}
         - ntp:ntp.service
-      {% endif %}
         # For db backup
         - mysql:mysql.service
 
@@ -423,10 +394,8 @@ groups:
     - nginx
     - enforcer
     - lipwig
-    {% if not hpc %}
     - logrotator
     - zephyr
-    {% endif %}
 
   # Bunker relies on this group's name to detect if the system is in maintenance mode.
   maintenance:
