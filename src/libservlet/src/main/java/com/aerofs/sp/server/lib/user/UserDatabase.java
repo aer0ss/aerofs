@@ -180,7 +180,9 @@ public class UserDatabase extends AbstractSQLDatabase
                 "count(*)"))) {
             ps.setString(1, userId.getString());
 
-            return binaryCount(ps.executeQuery());
+            try (ResultSet rs = ps.executeQuery()) {
+                return binaryCount(rs);
+            }
         }
     }
 
