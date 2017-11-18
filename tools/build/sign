@@ -11,7 +11,7 @@ function sign_exe() {
     # CODESIGNING_PASSWORD_FILE="$BUILD_SCRIPT_DIR/signing/passphrase.txt"
     local CERT_FILE="/data/aerofskeys/windows/cert.spc"
     local KEY_FILE="/data/aerofskeys/windows/privateKey.pvk"
-    local CODESIGNING_PASSWORD_FILE="/Volumes/aerofskeys/windows/passphrase.txt"
+    local CODESIGNING_PASSWORD_FILE="/data/aerofskeys/windows/passphrase.txt"
 
     if [ ! -r $CODESIGNING_PASSWORD_FILE ] ; then
         echo >&2 "Cannot signcode: unable to read Windows codesigning password from $CODESIGNING_PASSWORD_FILE"
