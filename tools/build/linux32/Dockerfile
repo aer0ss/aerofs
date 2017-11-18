@@ -1,8 +1,8 @@
-FROM thekevjames/ubuntu32:lucid
+FROM i386/ubuntu:trusty
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN echo 'deb-src http://archive.ubuntu.com/ubuntu lucid main restricted universe' >> /etc/apt/sources.list
+RUN echo 'deb-src http://archive.ubuntu.com/ubuntu trusty main restricted universe' >> /etc/apt/sources.list
 
 RUN apt-get update && \
     apt-get build-dep -y openssl && \
@@ -11,7 +11,11 @@ RUN apt-get update && \
         git-core \
         openjdk-6-jdk \
         qt4-qmake \
-        swig
+        swig \
+        libxml2-utils \
+        libglib2.0-bin \
+        libgtk-3-dev \
+        libgdk-pixbuf2.0-dev
 
 ENV JAVA_HOME /usr/lib/jvm/java-6-openjdk
 
