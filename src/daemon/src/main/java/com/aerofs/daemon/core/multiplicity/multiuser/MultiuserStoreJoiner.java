@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.ids.UserID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -22,12 +21,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.ids.SID;
 import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.id.SIndex;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
-import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class MultiuserStoreJoiner extends AbstractStoreJoiner
 {
@@ -83,40 +78,5 @@ public class MultiuserStoreJoiner extends AbstractStoreJoiner
         if (_sidx2sid.getNullable_(sidx) != null && _stores.isRoot_(sidx)) {
             _sd.deleteRootStore_(sidx, PhysicalOp.APPLY, t);
         }
-    }
-
-    @Override
-    public boolean onMembershipChange_(SIndex sidx, StoreInfo info)
-            throws Exception
-    {
-        Set<UserID> newMembers =  Sets.filter(
-                Sets.difference(info._roles.keySet(), info._externalMembers),
-                user -> !user.isTeamServerID());
-
-        boolean ok = true;
-        SID sid = _sidx2sid.get_(sidx);
-        checkArgument(!sid.isUserRoot());
-        for (UserID user : newMembers) {
-            SID rootSID = SID.rootSID(user);
-            SIndex root = _sid2sidx.getNullable_(rootSID);
-            if (root == null) continue;
-
-            // delay adjustment until completion of first scan of root store to avoid creating an
-            // anchor directly under the root if it is present deeper w/ a tag file
-            if (_linker.isFirstScanInProgress_(rootSID)) {
-                ok = false;
-                continue;
-            }
-
-            try (Trans t = _tm.begin_()) {
-                createAnchorIfNeeded_(sidx, sid, info._name, root, t);
-                t.commit_();
-            } catch (Exception e) {
-                l.info("failed to create anchor", e);
-                ok = false;
-            }
-        }
-
-        return ok;
     }
 }

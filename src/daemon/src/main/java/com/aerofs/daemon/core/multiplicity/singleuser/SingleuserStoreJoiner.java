@@ -213,10 +213,4 @@ public class SingleuserStoreJoiner extends AbstractStoreJoiner
             _sd.deleteRootStore_(sidx, PhysicalOp.APPLY, t);
         }
     }
-
-    @Override
-    public boolean onMembershipChange_(SIndex sidx, StoreInfo info)
-    {
-        return true;
-    }
 }

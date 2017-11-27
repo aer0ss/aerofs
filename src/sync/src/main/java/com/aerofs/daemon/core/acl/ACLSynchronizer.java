@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.acl;
 
-import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.acl.Permissions;
@@ -210,15 +209,6 @@ public class ACLSynchronizer
         }
 
         if (updateEpoch) {
-            for (Entry<SID, IStoreJoiner.StoreInfo> e : serverACLReturn._acl.entrySet()) {
-                SIndex sidx = _sid2sidx.getNullable_(e.getKey());
-                if (sidx != null && !e.getKey().isUserRoot()) {
-                    updateEpoch &= onMembershipChange_(sidx, e.getValue());
-                }
-            }
-        }
-
-        if (updateEpoch) {
             updateEpoch_(serverACLReturn._serverEpoch);
             if (serverACLReturn._serverEpoch < minServerEpoch) {
                 l.info("server epoch lower than notified {} < {}",
@@ -302,18 +292,6 @@ public class ACLSynchronizer
         } catch (Exception e) {
             // ignore errors to allow incremental progress but prevent epoch bump
             l.warn("failed to leave store {}", sidx, e);
-            return false;
-        }
-    }
-
-    private boolean onMembershipChange_(SIndex sidx, IStoreJoiner.StoreInfo info)
-    {
-        try {
-            return _storeJoiner.onMembershipChange_(sidx, info);
-        } catch (Exception e) {
-            // ignore errors to allow incremental progress but prevent epoch bump
-            l.warn("failed to react to membership change {} {}", sidx, info._name,
-                    BaseLogUtil.suppress(e, ExRetryLater.class));
             return false;
         }
     }

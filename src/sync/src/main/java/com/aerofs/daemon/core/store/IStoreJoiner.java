@@ -39,9 +39,4 @@ public interface IStoreJoiner
      */
     void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception;
 
-    /**
-     * React to changes to member list (other than the local user)
-     */
-    boolean onMembershipChange_(SIndex sidx, StoreInfo info) throws Exception;
-
 }
