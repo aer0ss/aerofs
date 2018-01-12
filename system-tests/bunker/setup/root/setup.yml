@@ -1,7 +1,7 @@
 admin-email: support@aerofs.com
 admin-pass: temp123
 email-host: email-smtp.us-east-1.amazonaws.com
-email-port: 25
+email-port: 587
 email-username: AKIAJSM4GBGTBVO5UD5Q
 email-password: AqFZb+rIoAddzEhFTpxqMF11OQ7pcONfxT/lP7GEE/ON
 
