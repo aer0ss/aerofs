@@ -23,8 +23,7 @@ while true; do
     for i in $(docker ps | awk '{print $NF}'); do
         [[ ${CONTAINER} = "${i}" ]] && {
             echo "Container '${CONTAINER}' is already running."
-            echo "PID $$ exits with code 0."
-            exit 0
+            docker kill ${CONTAINER} || true
         }
     done
 
