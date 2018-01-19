@@ -7,3 +7,5 @@ This repository holds the source code for:
   - various bits of ansible-provisioned infra (`src/ansible` on `master`)
 
 
+[CI](docs/engineering/references/ci.md)
+
