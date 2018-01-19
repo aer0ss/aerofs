@@ -24,7 +24,7 @@ needed to save money until a CI run is necessary. However this would require any
 of starting a build to have access to the AWS console, know which box to start, and wait for
 it to come up, which would be brittle and annoying.
 
-The web interface is available at [https://libellule.arrowfs.org](https://libellule.arrowfs.org),
+The web interface is available at [libellule.arrowfs.org](http://libellule.arrowfs.org),
 which is only reachable on the AeroFS VPN.
 
 Each employee has their own login to TeamCity. New logins need to be created manually as needed
