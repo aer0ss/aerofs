@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import javax.inject.Inject;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Executor;
@@ -42,8 +43,7 @@ import static com.google.common.collect.Lists.newLinkedList;
  * This class is intended to be a DaemonLaunchTask except it's not run by DaemonLaunchTasks because
  * we need to delay this task until the linker has finished
  */
-public class DLTSetFolderIcons extends DaemonLaunchTask
-{
+public class DLTSetFolderIcons extends DaemonLaunchTask {
     private final Logger l = Loggers.getLogger(DLTSetFolderIcons.class);
 
     private final InjectableDriver  _driver;
@@ -61,8 +61,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
     DLTSetFolderIcons(CoreScheduler sched, InjectableDriver driver, CfgAbsDefaultRoot cfgAbsRoot,
             CfgAbsRoots cfgAbsRoots, CfgStorageType cfgStorageType, StoreHierarchy ss,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, DirectoryService ds,
-            ILinker linker, Factory factory)
-    {
+            ILinker linker, Factory factory) {
         super(sched);
         _driver         = driver;
         _cfgAbsDefRoot  = cfgAbsRoot;
@@ -77,9 +76,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
     }
 
     @Override
-    protected void run_()
-            throws Exception
-    {
+    protected void run_() throws Exception {
         // don't update icons on Linux
         if (OSUtil.isLinux()) return;
 
@@ -101,8 +98,7 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
         }
     }
 
-    private void setFolderIcon(String absPath, Icon icon)
-    {
+    private void setFolderIcon(String absPath, Icon icon) {
         if (!_factory.create(absPath).isDirectory()) return;
         if (icon == Icon.SharedFolder
                 && !_factory.create(absPath, ClientParam.SHARED_FOLDER_TAG).isFile()) return;
@@ -116,14 +112,13 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
         _driver.setFolderIcon(absPath, OSUtil.get().getIconPath(icon));
     }
 
-    private class DLTSetFolderIconsForRoots extends DaemonLaunchTask
-    {
+    private class DLTSetFolderIconsForRoots extends DaemonLaunchTask {
         private final List<Entry<SID, String>> _roots;
 
         private final Executor _executor;
+        private long _delay = 1 * C.SEC;
 
-        DLTSetFolderIconsForRoots(CoreScheduler sched, List<Entry<SID, String>> roots)
-        {
+        DLTSetFolderIconsForRoots(CoreScheduler sched, List<Entry<SID, String>> roots) {
             super(sched);
 
             _roots = roots;
@@ -132,18 +127,18 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
         }
 
         @Override
-        protected void run_()
-                throws Exception
-        {
+        protected void run_() throws Exception {
             List<String> paths = getAbsPathsForRootsAndAnchors_();
 
             if (!paths.isEmpty()) {
                 // there's work to be done, dispatch work and reschedule when work's done
-                dispatchUpdateTask(paths, () -> _sched.schedule(this, 1 * C.SEC));
+                _delay = C.SEC;
+                dispatchUpdateTask(paths, () -> _sched.schedule(this, _delay));
             } else if (!_roots.isEmpty()) {
                 // there's no work to be done immediately, but we are not done scanning yet
                 // so reschedule.
-                _sched.schedule(this, 1 * C.SEC);
+                _sched.schedule(this, _delay);
+                _delay = Math.min(2*_delay, 10 * C.SEC);
             } else {
                 l.info("Finished setting folder icons.");
             }
@@ -152,26 +147,26 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
         /**
          * @return a list of absolute paths for roots and anchors to update immediately
          */
-        private List<String> getAbsPathsForRootsAndAnchors_()
-        {
+        private List<String> getAbsPathsForRootsAndAnchors_() {
             List<String> absPaths = newArrayList();
 
             // N.B. this loop logic is a little funky because we need to deal with retries
-            while (!_roots.isEmpty()) {
+            Iterator<Entry<SID, String>> it = _roots.iterator();
+            while (it.hasNext()) {
                 if (absPaths.size() >= 200) {
                     // cap our memory usage at 200 paths
                     return absPaths;
                 }
 
-                SID sid = _roots.get(0).getKey();
-
+                Entry<SID, String> r = it.next();
+                SID sid = r.getKey();
                 if (_linker.isFirstScanInProgress_(sid)) {
-                    l.info("Waiting for scan session to finish {}", sid);
-                    return absPaths;
+                    // keep root for later processing and move on to next entry
+                    continue;
                 }
 
                 try {
-                    String absRoot = checkNotNull(_roots.get(0).getValue());
+                    String absRoot = checkNotNull(r.getValue());
                     absPaths.add(absRoot);
                     SIndex sidx = checkNotNull(_sid2sidx.getNullable_(sid));
 
@@ -191,14 +186,13 @@ public class DLTSetFolderIcons extends DaemonLaunchTask
                     // ignore and move on to the next root
                 }
 
-                _roots.remove(0);
+                it.remove();
             }
 
             return absPaths;
         }
 
-        private void dispatchUpdateTask(List<String> absPaths, Runnable continuation)
-        {
+        private void dispatchUpdateTask(List<String> absPaths, Runnable continuation) {
             _executor.execute(() -> {
                 String absDefRoot = _cfgAbsDefRoot.get();
 
