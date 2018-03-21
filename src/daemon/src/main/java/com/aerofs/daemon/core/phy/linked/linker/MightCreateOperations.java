@@ -280,7 +280,18 @@ class MightCreateOperations
         // create the object
         OID oid = dir ? _sfti.getOIDForAnchor_(soidParent.sidx(), pc, t) : null;
         Type type = oid != null ? ANCHOR : (dir ? DIR : FILE);
-        if (oid == null) oid = og.generate_(dir, pc._path);
+        if (oid == null) {
+            oid = og.generate_(dir, pc._path);
+            while (_ds.getOANullable_(new SOID(soidParent.sidx(), oid)) != null) {
+                // It is possible for a seed file to contain outdated information, if for instance
+                // the files on disk where moved after the seed was created but before it could be
+                // leveraged in a scan. There is also room for races with remote changes in such a
+                // situation. In any case, the best course of action is to simply generate a new
+                // random OID and let aliasing be resolved later if necessary
+                l.warn("conflict with existing object {} {}", oid, pc._path);
+                oid = OID.generate();
+            }
+        }
         SOID soid = _oc.createMetaForLinker_(type, oid, soidParent, pc._path.last(), t);
         l.info("created {} {}", soid, pc);
         if (!dir) {
