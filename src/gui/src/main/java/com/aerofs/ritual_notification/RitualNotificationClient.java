@@ -6,6 +6,7 @@ import com.aerofs.base.TimerUtil;
 import com.aerofs.base.ex.ExProtocolError;
 import com.aerofs.base.net.AbstractNettyReconnectingClient;
 import com.aerofs.lib.ClientParam;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.nativesocket.NativeSocketHelper;
 import com.aerofs.lib.nativesocket.RitualNotificationSocketFile;
 import com.aerofs.lib.notifier.Notifier;
@@ -113,6 +114,7 @@ public class RitualNotificationClient extends AbstractNettyReconnectingClient
         {
             l.info("ex:", BaseLogUtil.suppress(e.getCause(), java.net.SocketException.class));
             ctx.getChannel().close();
+            SystemUtil.fatalOnUncheckedException(e.getCause());
         }
 
         @Override

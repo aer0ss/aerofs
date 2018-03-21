@@ -3,19 +3,17 @@ package com.aerofs.gui.notif;
 import com.aerofs.base.BaseLogUtil;
 import com.aerofs.base.C;
 import com.aerofs.base.Loggers;
-import com.aerofs.base.net.NettyUtil;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.nativesocket.AbstractNativeSocketPeerAuthenticator;
 import com.aerofs.lib.nativesocket.NativeSocketHelper;
 import java.io.File;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.buffer.HeapChannelBuffer;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.group.ChannelGroup;
@@ -91,6 +89,7 @@ class NotifServer
             // Close the connection when an exception is raised.
             l.warn("Unexpected exception: ", BaseLogUtil.suppress(e.getCause(), SocketException.class));
             e.getChannel().close();
+            SystemUtil.fatalOnUncheckedException(e.getCause());
         }
 
     }
