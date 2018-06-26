@@ -16,11 +16,11 @@ RUN apk --update add \
 
 # Pin docker to 1.5.0 otherwise some base CoreOS images might not have the docker
 # daemon with an API recent enough to support us.
-RUN curl -L https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/local/bin/docker &&\
+RUN curl --fail -L https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/local/bin/docker &&\
     chmod +x /usr/local/bin/docker
 
 # Install crane
-RUN curl -L https://github.com/aerofs/crane/releases/download/v1.5.1/crane_linux_amd64 -o /usr/local/bin/crane &&\
+RUN curl --fail -L https://github.com/redbooth/crane/releases/download/v1.5.1/crane_linux_amd64 -o /usr/local/bin/crane &&\
     chmod +x /usr/local/bin/crane
 
 EXPOSE 80
