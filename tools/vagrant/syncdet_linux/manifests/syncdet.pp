@@ -22,20 +22,30 @@ class syncdet-packages {
         ensure => installed,
         require => Exec["apt_update"],
     }
+
+    package {"setuptools":
+        ensure => "latest",
+        provider => "pip",
+        before => Package["protobuf"],
+        require => Package["python-pip"]
+    }
     service {"avahi-daemon":
         ensure => running
     }
     package {"PyYAML":
         ensure => installed,
         provider => "pip",
+        require => Package["python-pip"]
     }
     package {"protobuf":
         ensure => "2.6.1",
-        provider => "pip"
+        provider => "pip",
+        require => Package["python-pip"]
     }
     package {"requests":
         ensure => "1.1.0",
-        provider => "pip"
+        provider => "pip",
+        require => Package["python-pip"]
     }
 
     file{"/home/aerofstest":
