@@ -69,7 +69,7 @@ def remove_xml_block(xmlfile, tagstring):
 def change_system_type(filename):
     with open(filename, 'r') as f:
         contents = f.read()
-    new_contents = re.sub('virtualbox-[0-9.]*', 'vmx-7', contents)
+    new_contents = re.sub('virtualbox-[0-9.]*', 'vmx-07', contents)
     with open(filename, 'w') as f:
         f.write(new_contents)
 
