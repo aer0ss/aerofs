@@ -29,10 +29,10 @@ fi
 
 HOST=${2:-share.syncfs.com}
 
-DOCS=docs.arrowfs.org
+DOCS=libellule.arrowfs.org
 
 echo "Testing VPN connection by connecting to ${DOCS} ..."
-# VPN connection is required to connect to docs server
+# VPN connection is required to connect to CI controller
 nc -z -w 5 ${DOCS} 22 || {
     error "ERROR: please connect to VPN for ${DOCS} access"
     exit 22
