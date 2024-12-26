@@ -38,7 +38,7 @@ public class OSXNotifier implements INotifier, FSEventListener
         Batch(LinkerRoot root) { _root = root; }
     }
 
-    private final Map<Integer, Batch> _id2batch = Maps.newConcurrentMap();
+    private Map<Integer, Batch> _id2batch = Maps.newConcurrentMap();
 
     public OSXNotifier(CoreQueue cq, InjectableJNotify jn)
     {
