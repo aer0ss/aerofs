@@ -13,8 +13,6 @@ CMD [ "/container-scripts/restart-on-error", "python", "-u", "/opt/sanity/check.
 
 COPY root/opt/sanity/requirements-exact.txt /
 RUN pip install \
-        --index-url http://devpi.docker/root/pypi/+simple/ \
-        --trusted-host devpi.docker \
         --requirement /requirements-exact.txt && \
     rm /requirements-exact.txt
 

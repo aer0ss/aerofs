@@ -20,7 +20,7 @@ UPDATES_SRC = $(GIT_ROOT)/out.gradle/updates/
 VERSION_SRC = $(GIT_ROOT)/out.gradle/packages/current.ver
 
 image: build buildroot
-	docker build -t $(IMAGE_NAME) $(IMAGE_CTX)
+	docker build --network aero-bridge -t $(IMAGE_NAME) $(IMAGE_CTX)
 	$(call success,"- build $(IMAGE_NAME)")
 
 build:
@@ -29,8 +29,9 @@ buildroot:
 dist: $(PROTO_SRC)
 	$(GIT_ROOT)/gradlew dist
 
+# NB: disabled for now, until we decide what to do about missing apt.aerofs.com
 $(DRYAD_SRC):
-	make -C $(GIT_ROOT)/packaging BIN=PRIVATE dryad
+	echo make -C $(GIT_ROOT)/packaging BIN=PRIVATE dryad
 
 $(LICENSING_SRC):
 	make -C $(LICENSING_SRC)

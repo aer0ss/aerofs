@@ -22,5 +22,5 @@ $(WEB_SRC):
 	make -C ../web/web
 
 image: build buildroot
-	docker build -t $(IMAGE_NAME) $(IMAGE_CTX)
+	docker build --network aero-bridge -t $(IMAGE_NAME) $(IMAGE_CTX)
 	$(call success,"- build $(IMAGE_NAME)")

@@ -25,8 +25,6 @@ RUN apk --update add \
         py-crypto \
         py-pillow && \
     pip install \
-        --index-url http://devpi.docker/root/pypi/+simple/ \
-        --trusted-host devpi.docker \
         --requirement /requirements-exact.txt && \
     rm -rf /var/cache/apk/* && \
     mkdir -p /var/log/web && \

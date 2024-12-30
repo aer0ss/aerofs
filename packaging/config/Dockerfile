@@ -12,8 +12,6 @@ RUN cd /licensing &&\
         build-base \
         python-dev && \
     pip install \
-        --index-url http://devpi.docker/root/pypi/+simple/ \
-        --trusted-host devpi.docker \
         --requirement /opt/config/requirements-exact.txt && \
     python setup.py install && \
     apk del build-deps && \

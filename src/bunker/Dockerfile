@@ -19,10 +19,7 @@ RUN apk --update add \
 COPY root/requirements-exact.txt /
 
 # temporary compiler infra for cryptography and cffi
-RUN apk -U add build-base libffi-dev openssl-dev python-dev &&\
-    pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker \
-        --requirement /requirements-exact.txt &&\
-    apk del build-base libffi-dev openssl-dev python-dev &&\
+RUN pip install --requirement /requirements-exact.txt &&\
     rm -rf /var/cache/apk/*
 
 COPY root buildroot /

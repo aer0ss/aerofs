@@ -16,7 +16,7 @@ buildroot: $(DRYAD_SRC) $(VERSION_SRC) $(WEB_SRC)
 	$(RSYNC) --link-dest=$(WEB_SRC) $(WEB_SRC) $(WEB_DEST)
 
 	mkdir -p $(DRYAD_DEST)
-	$(RSYNC) --link-dest=$(PACKAGING_DEBS_SRC) $(DRYAD_SRC) $(DRYAD_DEST)
+#	$(RSYNC) --link-dest=$(PACKAGING_DEBS_SRC) $(DRYAD_SRC) $(DRYAD_DEST)
 
 .PHONY: $(WEB_SRC)
 

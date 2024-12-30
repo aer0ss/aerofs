@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:3.6
 
 MAINTAINER AeroFS "support@aerofs.com"
 
@@ -14,9 +14,11 @@ RUN apk --update add \
         py-yaml &&\
     rm -rf /var/cache/apk/*
 
-# Pin docker to 1.5.0 otherwise some base CoreOS images might not have the docker
-# daemon with an API recent enough to support us.
-RUN curl --fail -L https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/local/bin/docker &&\
+# Install Docker 17.03. Newer versions may not be supported by all the host environments.
+RUN curl -L --fail https://download.docker.com/linux/static/stable/x86_64/docker-17.03.2-ce.tgz -o docker.tgz &&\
+    tar -xvf docker.tgz docker/docker &&\
+    mv docker/docker /usr/local/bin/docker &&\
+    rm docker.tgz &&\
     chmod +x /usr/local/bin/docker
 
 # Install crane
@@ -30,4 +32,4 @@ ENTRYPOINT [ "python", "-u", "/main.py" ]
 
 COPY root /
 
-RUN pip install -r /requirements.txt
+RUN pip install --index-url http://devpi/root/pypi/+simple/ --trusted-host devpi -r /requirements.txt
