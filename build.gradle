@@ -100,7 +100,7 @@ subprojects {
             dirs "${clientResourcesDir}/all/lib", "${serverResourcesDir}/lib", clientOSDependentResourcesDirs
         }
 
-        maven { url 'http://repos.arrowfs.org/nexus/content/groups/allrepos/' }
+        mavenCentral()
     }
 
     //-------------------------------------------------------------------------
