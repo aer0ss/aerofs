@@ -27,7 +27,24 @@ if [ "$1" = 'mysqld_safe' ]; then
 	# $ docker run --rm alpine:3.3 grep hierarchical_memory_limit /sys/fs/cgroup/memory/memory.stat
 	# hierarchical_memory_limit 9223372036854771712
 	# Yes, that's supposed to be in bytes.
-	CGROUP_MEM=$(grep hierarchical_memory_limit /sys/fs/cgroup/memory/memory.stat | cut -d ' ' -f 2)
+	if [ -f /sys/fs/cgroup/memory/memory.stat ] ; then
+	  # cgroupv1, easy peasy...
+	  CGROUP_MEM=$(grep hierarchical_memory_limit /sys/fs/cgroup/memory/memory.stat | cut -d ' ' -f 2)
+	else
+	  # cgroupv2, need to walk hierarchy and look for a limit, if any
+	  cgroup=$(cat /proc/self/cgroup | cut -d: -f 2)
+
+    lowest_limit=$FREE_MEM
+	  while [[ "$CGROUP" == /* ]] ; do
+	    mem_max=$(cat /sys/fs/cgroup${cgroup}/memory.max)
+	    if [[ "$mem_max" != "max" ]] ; then
+	      lowest_limit=$(( mem_max < lowest_limit ? mem_max : lowest_limit ))
+	    fi
+	    cgroup=$(dirname "$cgroup")
+	  done
+
+	  CGROUP_MEM=$lowest_limit
+	fi
 
 	ACTUAL_MEM_LIMIT=$(( FREE_MEM < CGROUP_MEM ? FREE_MEM : CGROUP_MEM ))
 	[ $ACTUAL_MEM_LIMIT -gt $(( 3 * 1024 * 1024 * 1024 )) ] && sed -i "s/^innodb_buffer_pool_size.*$/innodb_buffer_pool_size = 1024M/g" /etc/mysql/my.cnf
