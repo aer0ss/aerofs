@@ -5,8 +5,8 @@ class ProtobufObjc < Formula
   depends_on 'automake'
   depends_on :libtool
 
-  head 'https://github.com/aerofs/protobuf-objc.git'
-  homepage 'https://github.com/aerofs/protobuf-objc.git'
+  head 'https://github.com/aer0ss/protobuf-objc.git'
+  homepage 'https://github.com/aer0ss/protobuf-objc.git'
 
   def install
     system "./autogen.sh"
