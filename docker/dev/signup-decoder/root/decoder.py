@@ -15,7 +15,7 @@ def mysql_ip():
 
 def connect():
     r = mysql_ip()
-    print "mysql expected at", r
+    print(("mysql expected at", r))
     return MySQLdb.connect(r, db="aerofs_sp")
 
 @app.route("/get_code", methods=["GET"])
@@ -33,12 +33,12 @@ def get():
                 return "no such user: " + user, 404
             return jsonify(signup_code=r[0])
         except MySQLdb.Error as e:
-            print e
+            print(e)
             return e.str(), 400
         finally:
             db.close()
     except Exception as e:
-        print e
+        print(e)
         raise
 
 @app.route("/get_all_codes", methods=["GET"])
@@ -54,12 +54,12 @@ def get_all():
                 entries.append({"user": row[0], "signup_code": row[1]})
             return jsonify(signup_codes=entries)
         except MySQLdb.Error as e:
-            print e
+            print(e)
             return e.str(), 400
         finally:
             db.close()
     except Exception as e:
-        print e
+        print(e)
         raise
 
 app.run('0.0.0.0', 21337)

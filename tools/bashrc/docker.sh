@@ -6,12 +6,11 @@ DEV_DIR="$(dirname "${BASH_SOURCE[0]:-$0}")/../../docker/dev"
 
 VM=docker-dev
 
-alias dk-env='eval "$(docker-machine env ${VM})"'
 function dk-create-vm()
 {
     if [[ $# -eq 0 ]]
     then
-        ${DEV_DIR}/dk-create-vm.sh ${VM} && dk-env
+        ${DEV_DIR}/dk-create-vm.sh ${VM} && dk-host-ip
     else
         echo "dk-create-vm takes no arguments"
         return 1
@@ -34,7 +33,6 @@ function dk-start-vm()
         # Filter out docker-machine env hint, as it's not relevant in this context, since we're
         # doing a dk-env immediately after.
         ${DEV_DIR}/dk-start-vm.sh ${VM} | grep -v "You may need to re-run the \`docker-machine env\` command."
-        dk-env
     else
         echo "dk-start-vm takes no arguments"
         return 1
@@ -68,15 +66,7 @@ function dk-destroy-vm()
 {
     if [[ $# -eq 0 ]]
     then
-        # find name of hostonly adapter used by docker-machine
-        adapter=$(VBoxManage showvminfo --machinereadable docker-dev | grep hostonlyadapter | cut -d '"' -f 2)
-
-        docker-machine rm -f ${VM}
-
-        # cleanup hostonlyif and attached DHCP server to ensure the next dk-create
-        # gets the correct IP (192.168.99.100) instead of a successor
-        VBoxManage dhcpserver remove --ifname $adapter
-        VBoxManage hostonlyif remove $adapter
+        colima delete -f -p ${VM}
     else
         echo "dk-destroy-vm takes no arguments"
         return 1
@@ -100,7 +90,7 @@ function dk-halt-vm()
 {
     if [[ $# -eq 0 ]]
     then
-        docker-machine stop ${VM}
+        colima stop ${VM}
     else
         echo "dk-halt-vm takes no arguments"
         return 1
@@ -114,7 +104,7 @@ function dk-ip()
 {
     if [[ $# -eq 0  ]]
     then
-        docker-machine ip ${VM}
+        colima status docker-dev --json | jq -r .ip_address
     else
         echo "dk-ip takes no arguments"
         return 1
@@ -159,31 +149,6 @@ function dk-restart()
         return 1
     fi
 }
-function sa-crane()
-{
-    ${DEV_DIR}/gen-sa-crane-yml.sh
-    crane $@ -c ${DEV_DIR}/../sa-crane.yml
-}
-function sa-start()
-{
-    if [[ $# -eq 0 ]]
-    then
-        dk-start-vm && ${DEV_DIR}/emulate-ship.sh aerofs/sa-loader default
-    else
-        echo "sa-start takes no arguments"
-        return 1
-    fi
-}
-function sa-halt()
-{
-    if [[ $# -eq 0 ]]
-    then
-        sa-crane kill -dall && sa-crane kill -dall maintenance
-    else
-        echo "sa-halt takes no arguments"
-        return 1
-    fi
-}
 
 # Autocomplete
 command -v autoload &>/dev/null
@@ -204,5 +169,3 @@ if [ $? -eq 0 ] ; then
  bind "set show-all-if-ambiguous on"
 fi
 
-# Now, attempt to set up DOCKER_HOST and friends if docker-dev is running
-[[ -n "$(docker-machine ls | grep ${VM} | grep Running)" ]] && dk-env

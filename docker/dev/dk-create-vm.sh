@@ -8,25 +8,23 @@ then
 fi
 
 VM=$1
+THIS_DIR="$( cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ -z "$(docker-machine ls | grep ${VM})" ]
+if [ -z "$(colima list | grep ${VM})" ]
 then
-    # NB: explicit boot2docker URL is required for now
-    # docker 1.13 removed support for pushing to v1 registries but registry.aerofs.com is still using v1
-    docker-machine create -d virtualbox --virtualbox-disk-size 50000 \
-        --virtualbox-boot2docker-url https://github.com/boot2docker/boot2docker/releases/download/v1.12.5/boot2docker.iso \
-        --virtualbox-memory 3072 --virtualbox-cpu-count 2 ${VM}
+  # https://github.com/abiosoft/colima
+  colima start "${VM}" \
+    --cpu 2 --memory 3 --disk 50 \
+    --network-address
 
-    # XXX
-    # Only on Linux, we need to manually create a home folder mount for the current user.
-    # This is not the case on Mac OS X.
-    # FIXME: this should no longer be necessary with docker-machine 0.4+
-    if [ "$(uname -s)" = "Linux" ]
-    then
-        # The docker machine must be stopped for the shared folder creation op.
-        docker-machine stop ${VM}
-        VBoxManage sharedfolder add "docker-dev" --name $(whoami) --hostpath $HOME --automount
-        docker-machine start ${VM}
-        echo "sudo mkdir $HOME && sudo mount -t vboxsf $(whoami) $HOME" | docker-machine ssh ${VM}
-    fi
+  ip=$(colima status -p "${VM}" --json | jq -r .ip_address)
+
+  # sigh... need to stop/start to make the DNS resolvable to
+  # the auto-assigned IP address
+  # see https://github.com/abiosoft/colima/issues/1232
+  colima stop -p "${VM}"
+  colima start -p "${VM}" --dns-host "share.syncfs.com=$ip"
+
+  echo "starting package cache..."
+  $THIS_DIR/../../tools/cache/start.sh
 fi

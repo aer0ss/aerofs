@@ -1,12 +1,16 @@
-FROM alpine:3.5
+FROM alpine:3.21
 
 RUN apk --update add \
-        python \
-        py-pip \
-        py-requests && \
-    pip install "devpi-server==4.0.0" && \
+        python3 \
+        py3-pip \
+        && \
     rm -rf /var/cache/apk/*
+
+RUN python3 -m venv .venv &&\
+    .venv/bin/pip install "devpi-server<6" ruamel.yaml
+
+ADD server.sh /
 
 EXPOSE 80
 
-CMD ["devpi-server", "--host", "0.0.0.0", "--port", "80", "--serverdir", "/var/cache/devpi"]
+CMD ["/server.sh", "/var/cache/devpi"]

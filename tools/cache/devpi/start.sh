@@ -27,5 +27,6 @@ fi
 echo "starting devpi server"
 docker run -d --restart=always --name devpi \
     --volumes-from cache-pypi \
+    --network aero-bridge \
     devpi
 success

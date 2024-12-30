@@ -7,7 +7,7 @@ RUN apk --update add \
         py-pip \
         py-flask \
         py-mysqldb && \
-    pip install docker-py==1.6.0 && \
+    pip install --index-url http://devpi/root/pypi/+simple/ --trusted-host devpi docker-py==1.6.0 && \
     rm -rf /var/cache/apk/*
 
 CMD [ "python", "-u", "/decoder.py" ]

@@ -29,14 +29,14 @@ fi
 
 HOST=${2:-share.syncfs.com}
 
-DOCS=libellule.arrowfs.org
-
-echo "Testing VPN connection by connecting to ${DOCS} ..."
-# VPN connection is required to connect to CI controller
-nc -z -w 5 ${DOCS} 22 || {
-    error "ERROR: please connect to VPN for ${DOCS} access"
-    exit 22
-}
+#DOCS=libellule.arrowfs.org
+#
+#echo "Testing VPN connection by connecting to ${DOCS} ..."
+## VPN connection is required to connect to CI controller
+#nc -z -w 5 ${DOCS} 22 || {
+#    error "ERROR: please connect to VPN for ${DOCS} access"
+#    exit 22
+#}
 
 THIS_DIR="$(dirname "$0")"
 
@@ -50,15 +50,15 @@ THIS_DIR="$(dirname "$0")"
 
 "${THIS_DIR}"/emulate-ship.sh aerofs/loader maintenance
 
-# Find the appliance's IP
-if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then
-    # Use the docker daemon's IP
-    IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
-else
-    # Assuming the script runs in the CI agent container, and the appliance containers run on the same host.
-    # The appliance IP is then the host's bridge IP.
-    IP=$(ip route show 0.0.0.0/0 | awk '{print $3}')
-fi
+## Find the appliance's IP
+#if [ "$(grep '^tcp://' <<< "${DOCKER_HOST:-}")" ]; then
+#    # Use the docker daemon's IP
+#    IP=$(echo "${DOCKER_HOST}" | sed -e 's`^tcp://``' | sed -e 's`:.*$``')
+#else
+#    # Assuming the script runs in the CI agent container, and the appliance containers run on the same host.
+#    # The appliance IP is then the host's bridge IP.
+#    IP=$(ip route show 0.0.0.0/0 | awk '{print $3}')
+#fi
 
 THIS_DIR="$(dirname "${BASH_SOURCE[0]}")"
 "${THIS_DIR}/../../tools/wait-for-url.sh" ${HOST}
