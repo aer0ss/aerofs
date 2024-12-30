@@ -1,1 +1,7 @@
-../web/.gitignore
+*.pyc
+gen
+*.egg-info
+*.egg
+.idea
+MANIFEST
+node_modules
