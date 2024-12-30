@@ -12,9 +12,9 @@ REQUIREMENTS_TXT="$3"
 # Build sdist package
 pushd "$PACKAGE_DIR"
 rm -rf dist
-PACKAGE_NAME=$(python setup.py --name)
-PACKAGE_VER=$(python setup.py --version)
-python setup.py sdist --formats=gztar
+PACKAGE_NAME=$(python3 setup.py --name)
+PACKAGE_VER=$(python3 setup.py --version)
+python3 setup.py sdist --formats=gztar
 popd
 
 # Place sdist package in specified output folder

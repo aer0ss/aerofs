@@ -111,7 +111,7 @@ def read_dict_from_file(filename):
 
 def write_dict_to_file(d, tmpfilename, dstfilename):
     with open(tmpfilename, 'w') as f:
-        for key in d.keys():
+        for key in list(d.keys()):
             f.write(str(key) + "=" + str(d[key]) + '\n')
     os.rename(tmpfilename, dstfilename)
 
@@ -126,8 +126,8 @@ def get_template_kv_pairs():
     d = read_dict_from_file(PROPERTIES_EXTERNAL)
 
     # Add properties from license file
-    d["license_lines"] = u"\n".join([ u"{}={}".format(k, v) for k, v in current_license_info.iteritems() ])
-    for k, v in current_license_info.iteritems():
+    d["license_lines"] = "\n".join([ "{}={}".format(k, v) for k, v in list(current_license_info.items()) ])
+    for k, v in list(current_license_info.items()):
         d[k] = v
     return d
 
@@ -151,7 +151,7 @@ def write_port_numbers():
              'lipwig': 29438}
 
     results = {'{}_port'.format(name): get_port(name, default_value)
-               for name, default_value in ports.iteritems()}
+               for name, default_value in list(ports.items())}
 
     app.logger.info("Got ports: {}".format(results))
     update_properties_file(results)

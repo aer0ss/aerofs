@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.errorhandler(Exception)
 def all_exception_handler(error):
-   print error
+   print(error)
    return 'Error', 500
 
 @app.route("/", methods=["GET"])
@@ -43,7 +43,7 @@ def post():
 
     config = Configuration('http://config.service:5434', 'repackaging')
     config_service_public_url = config.server_properties()['config.loader.configuration_service_url']
-    print 'Launch repackaging task (config service url:', config_service_public_url, ')'
+    print(('Launch repackaging task (config service url:', config_service_public_url, ')'))
 
     subprocess.Popen([REPACKAGER, config_service_public_url, '/opt/repackaging/cacert.pem'])
 
@@ -83,5 +83,5 @@ API Usage:
 
 
 if __name__ == "__main__":
-    print banner()
+    print((banner()))
     app.run('0.0.0.0', 80)

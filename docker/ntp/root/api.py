@@ -36,7 +36,7 @@ def set_ntp(on):
 def reload_ntp():
     server = Configuration('http://config.service:5434', service_name='ntp').server_properties()['ntp.server']
 
-    print "Setting NTP server to '{}'...".format(server)
+    print(("Setting NTP server to '{}'...".format(server)))
     if server:
         with open(NTP_CONF, 'w') as f:
             f.write('[Time]\nNTP={}'.format(server))
@@ -45,33 +45,33 @@ def reload_ntp():
         if exists(NTP_CONF):
             unlink(NTP_CONF)
 
-    print "Stopping NTP client..."
+    print("Stopping NTP client...")
     set_ntp('false')
 
     if server:
-        print "Skipping clock..."
+        print("Skipping clock...")
         call(['sntpc', '-b', server])
 
-    print "Starting NTP client..."
+    print("Starting NTP client...")
     set_ntp('true')
 
 
 def call(cmd):
     if not listdir('/var/run/dbus'):
-        print "WARN: /var/run/dbus is empty. The host may not be CoreOS. Skip command to help testing: {}".format(cmd)
+        print(("WARN: /var/run/dbus is empty. The host may not be CoreOS. Skip command to help testing: {}".format(cmd)))
     else:
         check_call(cmd)
 
 
 reload_ntp()
 
-print '''
+print('''
 API Usage:
 
     POST /  Configure the host to use the server specified by the config server's ntp.server property. If the property
             is empty, CoreOS's default NTP server pool will be used. The call also performs a possibly large time
             adjustment.
 
-'''
+''')
 
 app.run('0.0.0.0', 80)

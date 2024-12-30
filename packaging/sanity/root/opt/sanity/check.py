@@ -29,7 +29,7 @@ class SanityCheck(object):
         failure_occurred = False
         for script in scripts:
             service = script.split('.')[0]
-            print "Probing", service, "..."
+            print(("Probing", service, "..."))
             status = self.perform_check(script)
             is_healthy = status[0]
             if not is_healthy:

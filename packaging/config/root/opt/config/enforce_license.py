@@ -13,9 +13,9 @@ SERVICES_TO_STOP = ["lipwig", "zephyr"]
 
 def shut_down_services_and_create_flag_file_and_exit():
     for service in SERVICES_TO_STOP:
-        print "stopping", service
+        print(("stopping", service))
         shut_down_service(service)
-    print "all services stopped"
+    print("all services stopped")
     create_license_expired_flag_file()
     sys.exit(0)
 
@@ -34,20 +34,20 @@ def create_license_expired_flag_file():
         open(os.path.join(parent, 'license-expired-flag'), 'w').close()
     except Exception as e:
         # Best effort. move on if error occurs
-        print "ignore error:", e
+        print(("ignore error:", e))
 
 if __name__ == "__main__":
     if not os.path.exists(LICENSE_FILE_PATH):
-        print "No license file available, stopping services"
+        print("No license file available, stopping services")
         shut_down_services_and_create_flag_file_and_exit()
     else:
         try:
             license_handle = open(LICENSE_FILE_PATH)
             license = license_file.verify_and_load(license_handle)
         except:
-            print "License file did not validate, stopping services"
+            print("License file did not validate, stopping services")
             shut_down_services_and_create_flag_file_and_exit()
         if not license.is_currently_valid():
-            print "License file has expired, stopping services"
+            print("License file has expired, stopping services")
             shut_down_services_and_create_flag_file_and_exit()
     # If we get to here, the license is valid.  Do nothing.
