@@ -9,9 +9,11 @@ RUN apt-get update &&\
         mercurial \
         patch
 
-# Install Docker 1.5. Newer versions may not be supported by all the host environments.
-# The code was adapted from https://get.docker.com
-RUN curl -L --fail https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/local/bin/docker &&\
+# Install Docker 17.03. Newer versions may not be supported by all the host environments.
+RUN curl -L --fail https://download.docker.com/linux/static/stable/x86_64/docker-17.03.2-ce.tgz -o docker.tgz &&\
+    tar -xvf docker.tgz docker/docker &&\
+    mv docker/docker /usr/local/bin/docker &&\
+    rm docker.tgz &&\
     chmod +x /usr/local/bin/docker
 
 # Installing from official packages makes it easier to bump Go version when distro lags

@@ -4,28 +4,11 @@
 # $2 source path
 # return true if the image is newer than the newest file in the source tree
 function img_fresh() {
-    # find creation date of container image, if present
-    # NB: remove sub-second precision and make it find-friendly
-    local version=$(docker -v | cut -d' ' -f 3)
-    local major=$(echo $version | cut -d. -f 1)
-    local minor=$(echo $version | cut -d. -f 2)
-
-    if (( 10#"$major" >= 1 && 10#"$minor" >= 8 )) ; then
-        local created=$(
-            docker inspect --format='{{.Created}}' --type=image "$1" |\
-            cut -d. -f1 |\
-            sed 's/T/ /'
-        )
-    else
-        docker build -t test-newer - &>/dev/null <<EOF
-FROM alpine:3.3
-RUN apk -U add curl jq
-EOF
-        local created=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock test-newer sh -c \
-            "curl --fail --unix-socket /var/run/docker.sock http:/images/\$(echo $1 | jq -R -r @uri)/json 2>/dev/null \
-            | jq -r '.Created[0:19]' | sed 's/T/ /'"
-        )
-    fi
+    local created=$(
+        docker inspect --format='{{.Created}}' --type=image "$1" |\
+        cut -d. -f1 |\
+        sed 's/T/ /'
+    )
 
     # find first file in build context newer than image, if any
     # NB: docker gives UTC timestamps, make sure find does not compare it to local time
