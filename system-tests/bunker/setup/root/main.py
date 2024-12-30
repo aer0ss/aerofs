@@ -50,13 +50,14 @@ def set_browser_cert(e, wait, cert, key):
 def set_email(e, wait, email_host, email_port, email_username, email_password, admin_email):
     wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, 'h3'), 'Step 3 of 5'))
 
-    # Set remote mail relay
-    e.get('input[value="remote"]').click()
-    e.get_and_clear('#email-sender-public-host').send_keys(email_host)
-    e.get_and_clear('#email-sender-public-port').send_keys(email_port)
-    e.get_and_clear('#email-sender-public-username').send_keys(email_username)
-    e.get_and_clear('#email-sender-public-password').send_keys(email_password)
-    e.get('#email-sender-public-enable-tls').click()
+    # NB: disabled, we no company no mo, aws ses be gone
+    # # Set remote mail relay
+    # e.get('input[value="remote"]').click()
+    # e.get_and_clear('#email-sender-public-host').send_keys(email_host)
+    # e.get_and_clear('#email-sender-public-port').send_keys(email_port)
+    # e.get_and_clear('#email-sender-public-username').send_keys(email_username)
+    # e.get_and_clear('#email-sender-public-password').send_keys(email_password)
+    # e.get('#email-sender-public-enable-tls').click()
 
     # Set support email address
     e.get_and_clear('#base-www-support-email-address').send_keys(admin_email)
@@ -131,7 +132,7 @@ def run_all(d, wait, e, hostname, create_first_user):
         y = yaml.load(f)
 
     url = "http://" + hostname
-    print "Interacting with {}...".format(url)
+    print("Interacting with {}...".format(url))
     d.get(url)
 
     # Set up appliance
@@ -148,7 +149,7 @@ def run_all(d, wait, e, hostname, create_first_user):
         signup_first_user(e, wait)
         code = get_signup_code(hostname, y['admin-email'])
         url = "https://{}/signup?c={}".format(hostname, code)
-        print "Interacting with {}...".format(url)
+        print("Interacting with {}...".format(url))
         d.get(url)
         create_account(e, wait, y['admin-pass'])
 
@@ -157,10 +158,10 @@ def run_all(d, wait, e, hostname, create_first_user):
 
 def main():
     if len(argv) != 3:
-        print >>stderr, "Usage: {} <hostname> <create-first-user>".format(argv[0])
+        print("Usage: {} <hostname> <create-first-user>".format(argv[0]), file=stderr)
         exit(11)
 
-    driver, waiter, selector = init()
+    driver, waiter, selector, datapath = init()
     run_all(driver, waiter, selector, argv[1], argv[2] == 'true')
 
 

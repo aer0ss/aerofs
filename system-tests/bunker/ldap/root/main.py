@@ -85,7 +85,7 @@ def should_forbid_ldap_user_login(d, w, e, host):
 
 def main():
     if len(argv) != 4:
-        print >>stderr, "Usage: {} <hostname> <ldap-server-address> <ldap-server-cert>".format(argv[0])
+        print("Usage: {} <hostname> <ldap-server-address> <ldap-server-cert>".format(argv[0]), file=stderr)
         exit(11)
     ldap_server_cert_pem = get_ldap_server_cert(argv[3])
     driver, waiter, selector = init()

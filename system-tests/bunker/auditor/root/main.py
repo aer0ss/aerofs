@@ -27,7 +27,7 @@ def save_downstream_settings(w, e):
 
 def main():
     if len(argv) < 4:
-        print >>stderr, "Usage: {} <hostname> <downstream-address> <downstream-port> [<admin-user> [<admin-password>]]".format(argv[0])
+        print("Usage: {} <hostname> <downstream-address> <downstream-port> [<admin-user> [<admin-password>]]".format(argv[0]), file=stderr)
         exit(11)
     driver, waiter, selector = init()
 

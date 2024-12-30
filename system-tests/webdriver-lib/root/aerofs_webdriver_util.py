@@ -2,7 +2,7 @@ import time
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_util import wait_and_get
 import requests
-from urllib import urlencode
+from urllib.parse import urlencode
 
 LICENSE_FILE = '/test.license'
 
@@ -38,7 +38,7 @@ def get_signup_code(hostname, user_id):
     available in the CI environment (see ci-cloud-config.yml)
     """
     url = "http://{}:21337/get_code?{}".format(hostname, urlencode({'userid': user_id}))
-    print "Getting signup code via Signup Decoder at {}...".format(url)
+    print("Getting signup code via Signup Decoder at {}...".format(url))
     n = 15
     while True:
         r = requests.get(url)
