@@ -70,14 +70,16 @@ L = SF
 O = aerofs.com
 CN = $SERVER_NAME
 
-[ v3_req ]" > openssl.cnf
+[ v3_req ]
+subjectAltName = @alt_names
+
+[ alt_names ]" > openssl.cnf
 
 if valid_ip $SERVER_NAME
 then
-    echo "subjectAltName = @alt_names
-
-[ alt_names ]
-IP.1 = $SERVER_NAME" >> openssl.cnf
+    echo "IP.1 = $SERVER_NAME" >> openssl.cnf
+else
+    echo "DNS.1 = $SERVER_NAME" >> openssl.cnf
 fi
 
 openssl req -new -reqexts v3_req \
