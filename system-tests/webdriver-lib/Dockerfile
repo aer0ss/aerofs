@@ -1,3 +1,3 @@
-FROM aerofs/webdriver-python:0.2
+FROM aerofs/webdriver-python
 
 COPY root /

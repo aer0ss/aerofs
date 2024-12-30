@@ -28,6 +28,7 @@ IMAGES:= \
 	../golang/src/aerofs.com/valkyrie \
 	../golang/src/aerofs.com/waldo \
 	../src/web \
+	webdriver-python \
 	ship-aerofs/loader
 
 all:
