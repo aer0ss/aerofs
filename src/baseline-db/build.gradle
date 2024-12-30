@@ -15,9 +15,10 @@
  */
 
 dependencies {
-    compile 'com.codahale.metrics:metrics-jdbi:3.0.2'
-    compile 'org.apache.tomcat:tomcat-dbcp:8.0.20'
-    compile 'org.jdbi:jdbi:2.71'
-    compile project(':src/baseline-service')
-    testCompile project(':src/baseline-testlib')
+    api 'ch.qos.logback:logback-classic:1.1.10'
+    api 'com.codahale.metrics:metrics-jdbi:3.0.2'
+    api 'org.apache.tomcat:tomcat-dbcp:8.0.20'
+    api 'org.jdbi:jdbi:2.71'
+    api project(':src:baseline-service')
+    testImplementation project(':src:baseline-testlib')
 }

@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-libservlet'
+base {
+    archivesName = 'aero-libservlet'
+}
 
 sourceSets {
     main {
@@ -34,36 +36,36 @@ sourceSets {
 }
 
 configurations {
-    testutilCompile.extendsFrom compile
-    testutilRuntime.extendsFrom testutilCompile
+    testutilImplementation.extendsFrom implementation
+    testutilRuntimeOnly.extendsFrom testutilImplementation
 
-    testutil.extendsFrom testutilCompile
+    testutil.extendsFrom testutilImplementation
 
-    testCompile.extendsFrom testutilCompile
-    testRuntime.extendsFrom testCompile, testutilRuntime
+    testImplementation.extendsFrom testutilImplementation
+    testRuntimeOnly.extendsFrom testImplementation, testutilRuntimeOnly
 }
 
 dependencies {
-    compile 'org.flywaydb:flyway-core:3.2.1'
-    compile 'com.lambdaworks:scrypt:1.4.0'
-    compile 'javax.mail:mail:1.4.2'
+    api 'org.flywaydb:flyway-core:3.2.1'
+    api 'com.lambdaworks:scrypt:1.4.0'
+    api 'javax.mail:mail:1.4.2'
     compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
-    compile 'mysql:mysql-connector-java:5.1.39'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.52'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.52'
-    compile 'org.apache.tomcat:tomcat-jdbc:7.0.61'
-    compile name: 'dyuproject-openid-1.1'
-    compile name: 'unboundid-ldapsdk-se'
-    compile name: 'jedis-2.2.5'
-    compile jedisDependencies
-    compile project(':src/lib')
-    compile project(':src/rest-api')
-    testutilCompile 'org.subethamail:subethasmtp:3.1.7'
-    testutilCompile project(path: ':src/lib', configuration: 'testutil')
+    api 'mysql:mysql-connector-java:5.1.39'
+    api 'org.bouncycastle:bcprov-jdk15on:1.52'
+    api 'org.bouncycastle:bcpkix-jdk15on:1.52'
+    api 'org.apache.tomcat:tomcat-jdbc:7.0.61'
+    api name: 'dyuproject-openid-1.1'
+    api name: 'unboundid-ldapsdk-se'
+    api name: 'jedis-2.2.5'
+    implementation jedisDependencies
+    api project(':src:lib')
+    api project(':src:rest-api')
+    testutilImplementation 'org.subethamail:subethasmtp:3.1.7'
+    testutilImplementation project(path: ':src:lib', configuration: 'testutil')
 }
 
 task testutilJar(type: Jar) {
-    baseName 'aerofs-libservlet-testutil'
+    archiveBaseName = 'aerofs-libservlet-testutil'
     from sourceSets.testutil.output
 }
 

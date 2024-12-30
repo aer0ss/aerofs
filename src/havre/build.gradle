@@ -2,23 +2,25 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-havre'
+base {
+    archivesName = 'aero-havre'
+}
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.10'
-    compile 'ch.qos.logback:logback-classic:1.1.10'
-    compile project(':src/tunnel')
-    compile project(':src/oauth-verify')
-    compile project(path: ':src/aero-auth', configuration: 'client')
-    compile project(':src/ssmp')
-    testCompile 'com.jayway.restassured:rest-assured:2.8.0'
-    testCompile project(path: ':src/base', configuration: 'testutil')
+    implementation 'ch.qos.logback:logback-core:1.1.10'
+    implementation 'ch.qos.logback:logback-classic:1.1.10'
+    implementation project(':src:tunnel')
+    implementation project(':src:oauth-verify')
+    implementation project(path: ':src:aero-auth', configuration: 'client')
+    implementation project(':src:ssmp')
+    testImplementation 'com.jayway.restassured:rest-assured:2.8.0'
+    testImplementation project(path: ':src:base', configuration: 'testutil')
 }
 
 jar {
     from('resources') { include('logback.xml') }
     manifest.attributes(
         'Main-Class': 'com.aerofs.havre.Havre',
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }

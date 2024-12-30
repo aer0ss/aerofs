@@ -15,9 +15,9 @@
  */
 
 dependencies {
-    compile 'com.google.code.findbugs:jsr305:3.0.0'
-    compile 'com.google.guava:guava:17.0'
-    compile 'junit:junit:4.11'
-    compile 'org.apache.httpcomponents:httpasyncclient:4.1-beta1'
-    compile 'org.slf4j:slf4j-api:1.7.25'
+    api 'com.google.code.findbugs:jsr305:3.0.0'
+    api 'com.google.guava:guava:17.0'
+    api 'junit:junit:4.11'
+    api 'org.apache.httpcomponents:httpasyncclient:4.1-beta1'
+    api 'org.slf4j:slf4j-api:1.7.25'
 }

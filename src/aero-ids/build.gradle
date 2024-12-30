@@ -2,8 +2,12 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
+base {
+    archivesName = 'aero-ids'
+}
+
 dependencies {
-    compile 'com.google.guava:guava:17.0'
-    compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'com.google.code.findbugs:jsr305:3.0.0'
+    api 'com.google.guava:guava:17.0'
+    api 'org.slf4j:slf4j-api:1.7.25'
+    api 'com.google.code.findbugs:jsr305:3.0.0'
 }

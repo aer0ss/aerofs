@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-zephyr'
+base {
+    archivesName = 'aero-zephyr'
+}
 
 sourceSets {
     main {
@@ -20,16 +22,16 @@ sourceSets {
 }
 
 configurations {
-    client.extendsFrom clientCompile
+    client.extendsFrom clientImplementation
 }
 
 dependencies {
-    compile project(':src/lib')
-    clientCompile project(':src/lib')
+    implementation project(':src:lib')
+    clientImplementation project(':src:lib')
 }
 
 task clientJar(type: Jar) {
-    baseName 'aero-zephyr-client'
+    archiveBaseName = 'aero-zephyr-client'
     from sourceSets.client.output
 }
 
@@ -41,6 +43,6 @@ artifacts {
 jar {
     manifest.attributes(
         'Main-Class': 'com.aerofs.zephyr.server.Zephyr',
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }

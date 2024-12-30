@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-bifrost'
+base {
+    archivesName = 'aero-bifrost'
+}
 
 sourceSets {
     main {
@@ -35,40 +37,41 @@ sourceSets {
 }
 
 configurations {
-    testutilCompile.extendsFrom compile
-    testutilRuntime.extendsFrom testutilCompile
+    testutilImplementation.extendsFrom api
+    testutilImplementation.extendsFrom implementation
+    testutilRuntimeOnly.extendsFrom testutilImplementation
 
-    testutil.extendsFrom testutilCompile
+    testutil.extendsFrom testutilImplementation
 
-    testCompile.extendsFrom testutilCompile
-    testRuntime.extendsFrom(testCompile, testutilRuntime)
+    testImplementation.extendsFrom testutilImplementation
+    testRuntimeOnly.extendsFrom(testImplementation, testutilRuntimeOnly)
 }
 
 dependencies {
-    compile 'com.lambdaworks:scrypt:1.4.0'
-    compile 'commons-codec:commons-codec:1.4'
-    compile 'commons-net:commons-net:3.3'
-    compile 'commons-validator:commons-validator:1.4.1'
-    compile 'org.hibernate:hibernate-core:4.1.9.Final'
-    compile 'org.hibernate:hibernate-validator:4.3.0.Final'
-    compile project(':src/lib')
-    compile project(':src/libservlet')
-    compile project(':src/restless')
-    compile project(':src/rest-api')
-    compile project(path:':src/aero-auth', configuration:'client')
-    runtime 'mysql:mysql-connector-java:5.1.39'
-    testutilCompile 'com.jayway.restassured:rest-assured:2.8.0'
-    testutilCompile project(path: ':src/lib', configuration: 'testutil')
+    api 'com.lambdaworks:scrypt:1.4.0'
+    api 'commons-codec:commons-codec:1.4'
+    api 'commons-net:commons-net:3.3'
+    api 'commons-validator:commons-validator:1.4.1'
+    api 'org.hibernate:hibernate-core:4.1.9.Final'
+    api 'org.hibernate:hibernate-validator:4.3.0.Final'
+    api project(':src:lib')
+    api project(':src:libservlet')
+    api project(':src:restless')
+    api project(':src:rest-api')
+    api project(path: ':src:aero-auth', configuration:'client')
+    runtimeOnly 'mysql:mysql-connector-java:5.1.39'
+    testutilImplementation 'com.jayway.restassured:rest-assured:2.8.0'
+    testutilImplementation project(path: ':src:lib', configuration: 'testutil')
 }
 
 jar {
     manifest.attributes(
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }
 
 task testutilJar(type: Jar) {
-    baseName 'aerofs-bifrost-testutil'
+    archiveBaseName = 'aerofs-bifrost-testutil'
     from sourceSets.testutil.output
 }
 

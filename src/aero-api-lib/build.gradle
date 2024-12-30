@@ -2,10 +2,12 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-api-lib'
+base {
+    archivesName = 'aero-api-lib'
+}
 
 dependencies {
-    compile 'org.slf4j:slf4j-api:1.7.25'
-    compile 'com.google.code.findbugs:jsr305:3.0.0'
-    compile 'org.apache.tika:tika-core:1.4'
+    api 'org.slf4j:slf4j-api:1.7.25'
+    api 'com.google.code.findbugs:jsr305:3.0.0'
+    api 'org.apache.tika:tika-core:1.4'
 }

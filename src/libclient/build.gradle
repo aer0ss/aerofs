@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-libclient'
+base {
+    archivesName = 'aero-libclient'
+}
 
 sourceSets {
     main {
@@ -33,29 +35,30 @@ sourceSets {
 }
 
 configurations {
-    testutilCompile.extendsFrom compile
-    testutilRuntime.extendsFrom testutilCompile
+    testutilImplementation.extendsFrom api
+    testutilImplementation.extendsFrom implementation
+    testutilRuntimeOnly.extendsFrom testutilImplementation
 
-    testutil.extendsFrom testutilCompile
+    testutil.extendsFrom testutilImplementation
 
-    testCompile.extendsFrom testutilCompile
-    testRuntime.extendsFrom(testCompile, testutilRuntime)
+    testImplementation.extendsFrom testutilImplementation
+    testRuntimeOnly.extendsFrom(testImplementation, testutilRuntimeOnly)
 }
 
 dependencies {
-    compile 'commons-lang:commons-lang:2.6'
-    compile 'com.aerofs:sqlite-jdbc:3.21.0'
-    compile 'com.aerofs:jnotify:0.96'
-    compile 'com.aerofs:aerofsd:0.3.6'
-    compile name: 'guice-aerofs'
-    compile name: 'netty-native-socket'
-    compile name: 'junixsocket-1.3'
-    compile project(':src/lib')
-    testutilCompile project(path:':src/lib', configuration:'testutil')
+    api 'commons-lang:commons-lang:2.6'
+    api 'com.aerofs:sqlite-jdbc:3.21.0'
+    api 'com.aerofs:jnotify:0.96'
+    api 'com.aerofs:aerofsd:0.3.6'
+    api name: 'guice-aerofs'
+    api name: 'netty-native-socket'
+    api name: 'junixsocket-1.3'
+    api project(':src:lib')
+    testutilImplementation project(path:':src:lib', configuration:'testutil')
 }
 
 task testutilJar(type: Jar) {
-    baseName 'aerofs-lib-testutil'
+    archiveBaseName = 'aerofs-lib-testutil'
     from sourceSets.testutil.output
 }
 

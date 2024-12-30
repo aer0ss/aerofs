@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-gui'
+base {
+    archivesName = 'aero-gui'
+}
 
 sourceSets {
     main {
@@ -13,16 +15,16 @@ sourceSets {
 }
 
 dependencies {
-    compile 'commons-cli:commons-cli:1.2'
-    compile 'com.aerofs:jline:2.13'
-    compile 'org.javaswift:joss:0.9.8'
-    compile 'com.amazonaws:aws-java-sdk-s3:1.9.32'
-    compile name: 'org.eclipse.jface_3.5.1.M20090826-0800'
-    compile name: 'org.eclipse.core.commands_3.5.0.I20090525-2000'
-    compile name: 'org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100'
-    compile name: 'swt-4'
-    compile name: 'netty-native-socket'
-    compile name: 'junixsocket-1.3'
-    compile project(':src/libclient')
-    testCompile project(path: ':src/libclient', configuration: 'testutil')
+    implementation 'commons-cli:commons-cli:1.2'
+    implementation 'com.aerofs:jline:2.13'
+    implementation 'org.javaswift:joss:0.9.8'
+    implementation 'com.amazonaws:aws-java-sdk-s3:1.9.32'
+    implementation name: 'org.eclipse.jface_3.5.1.M20090826-0800'
+    implementation name: 'org.eclipse.core.commands_3.5.0.I20090525-2000'
+    implementation name: 'org.eclipse.equinox.common_3.5.1.R35x_v20090807-1100'
+    implementation name: 'swt-4'
+    implementation name: 'netty-native-socket'
+    implementation name: 'junixsocket-1.3'
+    api project(':src:libclient')
+    testImplementation project(path: ':src:libclient', configuration: 'testutil')
 }

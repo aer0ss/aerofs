@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-dryad'
+base {
+    archivesName = 'aero-dryad'
+}
 
 sourceSets {
     main {
@@ -17,14 +19,14 @@ sourceSets {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-core:1.1.10'
-    compile 'ch.qos.logback:logback-classic:1.1.10'
-    compile project(':src/restless')
+    implementation 'ch.qos.logback:logback-core:1.1.10'
+    implementation 'ch.qos.logback:logback-classic:1.1.10'
+    implementation project(':src:restless')
 }
 
 jar {
     manifest.attributes(
         'Main-Class': 'com.aerofs.dryad.DryadServer',
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }

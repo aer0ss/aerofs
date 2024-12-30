@@ -2,20 +2,22 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-spdb'
+base {
+    archivesName = 'aero-spdb'
+}
 
 dependencies {
-    compile 'org.flywaydb:flyway-core:3.2.1'
-    compile 'org.apache.tomcat:tomcat-jdbc:7.0.61'
+    implementation 'org.flywaydb:flyway-core:3.2.1'
+    implementation 'org.apache.tomcat:tomcat-jdbc:7.0.61'
     // For properties
-    compile project(':src/base')
+    api project(':src:base')
     // For LibParam
-    compile project(':src/lib')
+    api project(':src:lib')
 }
 
 
 jar {
     manifest.attributes(
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }

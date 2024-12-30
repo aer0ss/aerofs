@@ -2,11 +2,13 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-tunnel'
+base {
+    archivesName = 'aero-tunnel'
+}
 
 dependencies {
-    compile project(':src/base')
-    testCompile project(path: ':src/base', configuration: 'testutil')
-    testRuntime 'ch.qos.logback:logback-core:1.1.10'
-    testRuntime 'ch.qos.logback:logback-classic:1.1.10'
+    api project(':src:base')
+    testImplementation project(path: ':src:base', configuration: 'testutil')
+    testRuntimeOnly 'ch.qos.logback:logback-core:1.1.10'
+    testRuntimeOnly 'ch.qos.logback:logback-classic:1.1.10'
 }

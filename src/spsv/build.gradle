@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-sp'
+base {
+    archivesName = 'aero-sp'
+}
 
 test {
     // unit tests fail if we don't fork due to bad isolation
@@ -12,26 +14,26 @@ test {
 //evaluationDependsOn(':src/libservlet')
 
 dependencies {
-    compile 'com.googlecode.json-simple:json-simple:1.1'
-    compile 'commons-codec:commons-codec:1.6'
-    compile 'org.mortbay.jetty:jetty-util:6.1.26'
-    compile group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
-    compile 'org.opensaml:xmltooling:1.4.4'
-    compile 'org.opensaml:openws:1.5.4'
-    compile 'org.opensaml:opensaml:2.6.0'
-    compile name:'dyuproject-util-1.1'
-    compile project(':src/libservlet')
+    implementation 'com.googlecode.json-simple:json-simple:1.1'
+    implementation 'commons-codec:commons-codec:1.6'
+    implementation 'org.mortbay.jetty:jetty-util:6.1.26'
+    implementation group: 'xml-apis', name: 'xml-apis', version: '1.4.01'
+    implementation 'org.opensaml:xmltooling:1.4.4'
+    implementation 'org.opensaml:openws:1.5.4'
+    implementation 'org.opensaml:opensaml:2.6.0'
+    implementation name:'dyuproject-util-1.1'
+    implementation project(':src:libservlet')
     compileOnly 'javax.servlet:javax.servlet-api:3.0.1'
-    testCompile 'com.jayway.restassured:rest-assured:2.8.0'
-    testCompile 'org.mortbay.jetty:jetty:6.1.26'
-    testCompile project(path: ':src/lib', configuration: 'testutil')
-    testCompile project(path: ':src/libservlet', configuration: 'testutil')
-    runtime project(':src/spdb')
+    testImplementation 'com.jayway.restassured:rest-assured:2.8.0'
+    testImplementation 'org.mortbay.jetty:jetty:6.1.26'
+    testImplementation project(path: ':src:lib', configuration: 'testutil')
+    testImplementation project(path: ':src:libservlet', configuration: 'testutil')
+    runtimeOnly project(':src:spdb')
 }
 
 jar {
     from('resources') { include('logback.xml') }
     manifest.attributes(
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }
