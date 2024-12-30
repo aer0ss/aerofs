@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 This script is a first version/proof-of-concept build script to build MSI
 installers on OS-X.
@@ -22,7 +22,6 @@ associative maps and let bash execute all the actual tasks.
 """
 import argparse
 import os
-import string
 import sys
 import uuid
 
@@ -69,7 +68,7 @@ def parse_input(args):
 
 
 def apply_transforms():
-    for f in [f for f in files.values() if f['name'] in transforms]:
+    for f in [f for f in list(files.values()) if f['name'] in transforms]:
         f['id'] = transforms[f['name']]
 
 
@@ -78,23 +77,23 @@ def apply_transforms():
 # poor build script.
 def generate_script(args):
     def print_query(query):
-        print 'msibuild {} -q "{}"'.format(wip_msi, query)
+        print(('msibuild {} -q "{}"'.format(wip_msi, query)))
 
     def guid_gen():
         return '{{{}}}'.format(str(uuid.uuid4()).upper())
 
     wip_msi = '{}/{}'.format(args.workspace, 'wip.msi')
 
-    print '#!/bin/bash'
-    print 'set -e'
-    print 'rm -rf {}'.format(args.workspace)
-    print 'mkdir -p {}'.format(args.workspace)
-    print 'cp {} {}'.format(args.base_msi, wip_msi)
+    print('#!/bin/bash')
+    print('set -ex')
+    print('rm -rf {}'.format(args.workspace))
+    print('mkdir -p {}'.format(args.workspace))
+    print('cp {} {}'.format(args.base_msi, wip_msi))
 
     # update the database tables related to files
     for seq, f, comp in [(seq + 1, f, 'cmp{}'.format(f['id'][3:]))
                          for (seq, f) in enumerate(files.values())]:
-        if f['id'] in transforms.values():
+        if f['id'] in list(transforms.values()):
             print_query(
                 "update Component set Directory_='{}' "
                 "where Component='{}';".format(
@@ -118,7 +117,7 @@ def generate_script(args):
                     f['id'], comp, f['name'], f['size'], seq))
 
     # update the database tables related to directories
-    for directory in dirs.values():
+    for directory in list(dirs.values()):
         print_query(
             "insert into Directory(Directory, Directory_Parent, DefaultDir) "
             "values('{}', '{}', '{}');".format(
@@ -137,14 +136,14 @@ def generate_script(args):
         print_query('delete from MsiFileHash;')
 
     # building cab archive
-    for f in files.values():
-        print 'cp {} {}/{}'.format(f['source'], args.workspace, f['id'])
+    for f in list(files.values()):
+        print('cp {} {}/{}'.format(f['source'], args.workspace, f['id']))
 
-    print 'pushd {} > /dev/null'.format(args.workspace)
-    print 'gcab -zc cab1.cab {}'.format(
-        string.join([f['id'] for f in files.values()], ' \\\n'))
-    print 'popd > /dev/null'
-    print 'msibuild {} -a cab1.cab {}/cab1.cab'.format(wip_msi, args.workspace)
+    print('pushd {} > /dev/null'.format(args.workspace))
+    print('gcab -zc cab1.cab {}'.format(
+        ' '.join(f['id'] for f in list(files.values()))))
+    print('popd > /dev/null')
+    print('msibuild {} -a cab1.cab {}/cab1.cab'.format(wip_msi, args.workspace))
     print_query('update Media set LastSequence={} '
                 'where DiskId=1;'.format(len(files)))
 
@@ -153,8 +152,8 @@ def generate_script(args):
     #
     # note that Windows shell do cache those icons so changes will probably not
     # be observed until the user exit and log in to the shell.
-    print 'msibuild {} -a Icon.logo.ico {}/filAeroFSIcon'.format(
-        wip_msi, args.workspace)
+    print('msibuild {} -a Icon.logo.ico {}/filAeroFSIcon'.format(
+        wip_msi, args.workspace))
 
     # update product version
     print_query("update Property set Value='{}' "
@@ -165,19 +164,19 @@ def generate_script(args):
                 "where Property='ProductCode';".format(guid_gen()))
 
     # update upgrade versions
-    print "msiinfo export {} Upgrade | sed 's/1\.0\.0/{}/g' > {}/Upgrade.idt".format(
-        wip_msi, args.set_version, args.workspace)
-    print 'msibuild {} -i {}/Upgrade.idt'.format(wip_msi, args.workspace)
+    print("msiinfo export {} Upgrade | sed 's/1\\.0\\.0/{}/g' > {}/Upgrade.idt".format(
+        wip_msi, args.set_version, args.workspace))
+    print('msibuild {} -i {}/Upgrade.idt'.format(wip_msi, args.workspace))
 
     # update package code
-    print 'msiinfo export {} _SummaryInformation | grep -v "^9\t" > {}/_SummaryInfo.idt'.format(
-        wip_msi, args.workspace)
-    print 'echo -e "9\t{}" >> {}/_SummaryInfo.idt'.format(
-        guid_gen(), args.workspace)
-    print 'msibuild {} -i {}/_SummaryInfo.idt'.format(wip_msi, args.workspace)
+    print('msiinfo export {} _SummaryInformation | grep -v "^9\t" > {}/_SummaryInfo.idt'.format(
+        wip_msi, args.workspace))
+    print('echo -e "9\t{}" >> {}/_SummaryInfo.idt'.format(
+        guid_gen(), args.workspace))
+    print('msibuild {} -i {}/_SummaryInfo.idt'.format(wip_msi, args.workspace))
 
     # finalize
-    print 'cp {} {}'.format(wip_msi, args.output_msi)
+    print('cp {} {}'.format(wip_msi, args.output_msi))
 
 
 def main():

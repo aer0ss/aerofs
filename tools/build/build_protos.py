@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import shutil
 import subprocess
@@ -240,17 +240,17 @@ def proto_java(output_dir, includes, protos):
                     line = line.replace("builder", "bd")
 
                     # Write the new line out to the replacement file
-                    g.write(line)
+                    g.write(line.encode('utf-8'))
 
                     # detect package name and add import statements for minification
                     if not pkg and line.startswith("package ") and line.endswith(";\n"):
                         pkg = line[8:-2] + "."
-                        g.write("import com.google.protobuf.*;\n")
-                        g.write("import com.google.common.util.concurrent.*;\n")
-                        g.write("import static com.google.common.util.concurrent.Futures.*;\n")
-                        g.write("import java.util.*;\n")
-                        g.write("import java.util.concurrent.*;\n")
-                        g.write("import java.io.IOException;\n")
+                        g.write(b"import com.google.protobuf.*;\n")
+                        g.write(b"import com.google.common.util.concurrent.*;\n")
+                        g.write(b"import static com.google.common.util.concurrent.Futures.*;\n")
+                        g.write(b"import java.util.*;\n")
+                        g.write(b"import java.util.concurrent.*;\n")
+                        g.write(b"import java.io.IOException;\n")
 
                 # Commit g over f
                 os.rename(g.name, path)
@@ -303,7 +303,7 @@ def clean():
 
 
 def build():
-    for folder, opts in PROTO_MAPPINGS.iteritems():
+    for folder, opts in PROTO_MAPPINGS.items():
         _mkdir_p(folder)
         if opts['lang'] not in LANG_MAPPINGS:
             raise NotImplementedError(
