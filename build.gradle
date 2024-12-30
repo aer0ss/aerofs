@@ -51,16 +51,20 @@ if (os.contains('windows')) {
 //-----------------------------------------------------------------------------
 
 subprojects {
-    apply plugin: 'java'
+    apply plugin: 'java-library'
 
-    // Default to Java 8 for everything.
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    compileJava {
+        // Default to Java 8 for everything.
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    def args = ['-Xlint:all'] //+ ['serial', 'this-escape', 'dangling-doc-comments'].collect { '-Xlint:-' + it }
 
     compileJava.options.compilerArgs << '-Werror'
-    compileJava.options.compilerArgs << '-Xlint:all'
+    compileJava.options.compilerArgs += args
     compileTestJava.options.compilerArgs << '-Werror'
-    compileTestJava.options.compilerArgs << '-Xlint:all'
+    compileTestJava.options.compilerArgs += args
 
     //-------------------------------------------------------------------------
     // dependency configuration
@@ -119,7 +123,7 @@ subprojects {
         environment sharedLibrarySearchPathVariable, "${libraryPath}"
         systemProperties.put "java.library.path", "${libraryPath}"
         systemProperties.put "junit.mysqlSpSchemaPath", "${rootDir}/src/spdb/src/main/resources/db/migration"
-        maxHeapSize '512m'
+        maxHeapSize = '512m'
         exclude '**/Abstract*Test*'
         testLogging.showStandardStreams = true
         outputs.upToDateWhen { false }
@@ -153,7 +157,7 @@ subprojects {
     }
 
     task dist(type: Copy, dependsOn:cleanDist, description: "Assemble all runtime dependencies for ${name}") {
-        from configurations.runtime
+        from configurations.runtimeClasspath
         from jar
         into "${buildDir}/dist"
     }

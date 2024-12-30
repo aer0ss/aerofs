@@ -2,23 +2,25 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-daemon'
+base {
+    archivesName = 'aero-daemon'
+}
 
 dependencies {
-    compile name: 'netty-native-socket'
-    compile name: 'junixsocket-1.3'
-    compile project(':src/libclient')
-    compile project(':src/oauth-verify')
-    compile project(':src/aero-api-lib')
-    compile project(':src/rest-api')
-    compile project(':src/restless')
-    compile project(':src/sync')
-    compile project(path: ':src/zephyr', configuration: 'client')
-    testCompile 'com.jayway.restassured:rest-assured:2.8.0'
-    testCompile 'org.hibernate:hibernate-core:4.1.9.Final'
-    testCompile 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
-    testCompile 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
-    testCompile 'javax.mail:mail:1.4.2'
-    testCompile project(path: ':src/libclient', configuration: 'testutil')
-    testCompile project(path: ':src/sync', configuration: 'testutil')
+    implementation name: 'netty-native-socket'
+    implementation name: 'junixsocket-1.3'
+    api project(':src:libclient')
+    api project(':src:oauth-verify')
+    api project(':src:aero-api-lib')
+    api project(':src:rest-api')
+    api project(':src:restless')
+    api project(':src:sync')
+    api project(path: ':src:zephyr', configuration: 'client')
+    testImplementation 'com.jayway.restassured:rest-assured:2.8.0'
+    testImplementation 'org.hibernate:hibernate-core:4.1.9.Final'
+    testImplementation 'org.hibernate.common:hibernate-commons-annotations:4.0.1.Final'
+    testImplementation 'org.hibernate.javax.persistence:hibernate-jpa-2.0-api:1.0.1.Final'
+    testImplementation 'javax.mail:mail:1.4.2'
+    testImplementation project(path: ':src:libclient', configuration: 'testutil')
+    testImplementation project(path: ':src:sync', configuration: 'testutil')
 }

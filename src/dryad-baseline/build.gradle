@@ -2,17 +2,19 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-dryad-baseline'
+base {
+    archivesName = 'aerofs-dryad-baseline'
+}
 
 dependencies {
-    compile project(':src/baseline-service')
-    runtime 'ch.qos.logback:logback-core:1.1.10'
-    runtime 'ch.qos.logback:logback-classic:1.1.10'
+    implementation project(':src:baseline-service')
+    runtimeOnly 'ch.qos.logback:logback-core:1.1.10'
+    runtimeOnly 'ch.qos.logback:logback-classic:1.1.10'
 }
 
 jar {
     manifest.attributes(
         'Main-Class': 'com.aerofs.dryad.Dryad',
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }

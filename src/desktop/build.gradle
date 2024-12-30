@@ -2,14 +2,16 @@
 // Copyright (c) Air Computing Inc., 2013.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aero-desktop'
-
-dependencies {
-    compile project(':src/daemon')
-    compile project(':src/gui')
+base {
+    archivesName = 'aero-desktop'
 }
 
 dependencies {
-    testCompile project(path: ':src/lib', configuration: 'testutil')
-    testCompile project(path: ':src/sync', configuration: 'testutil')
+    api project(':src:daemon')
+    api project(':src:gui')
+}
+
+dependencies {
+    testImplementation project(path: ':src:lib', configuration: 'testutil')
+    testImplementation project(path: ':src:sync', configuration: 'testutil')
 }

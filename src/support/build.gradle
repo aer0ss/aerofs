@@ -2,7 +2,9 @@
 // Copyright (c) Air Computing Inc., 2014.
 //-----------------------------------------------------------------------------
 
-archivesBaseName = 'aerofs-support'
+base {
+    archivesName = 'aerofs-support'
+}
 
 sourceSets {
     main {
@@ -13,13 +15,13 @@ sourceSets {
 }
 
 dependencies {
-    compile project(':src/base')
-    compile project(':src/libclient')
-    compile project(':src/libservlet')
+    implementation project(':src:base')
+    implementation project(':src:libclient')
+    implementation project(':src:libservlet')
 }
 
 jar {
     manifest.attributes(
-        'Class-Path': configurations.runtime.files.collect { it.name }.join(' '),
+        'Class-Path': configurations.runtimeClasspath.files.collect { it.name }.join(' '),
     )
 }
