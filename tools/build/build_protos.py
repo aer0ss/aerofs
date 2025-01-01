@@ -182,7 +182,7 @@ def proto_java(output_dir, includes, protos):
     def _fixup_gen_java_file(path):
         with open(path) as f:
             with tempfile.NamedTemporaryFile(dir=os.path.dirname(path),
-                                             delete=False) as g:
+                                             delete=True) as g:
                 pkg = None
                 while True:
                     line = f.readline()

@@ -1,5 +1,4 @@
 *.pyc
-gen
 *.egg-info
 .idea
 MANIFEST

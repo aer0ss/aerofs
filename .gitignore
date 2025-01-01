@@ -76,7 +76,6 @@ local.properties
 *.dex
 *.class
 bin/
-gen/
 out/
 .gradle/
 build
