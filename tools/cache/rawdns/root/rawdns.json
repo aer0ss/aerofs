@@ -30,7 +30,7 @@
     },
     ".": {
         "type": "forwarding",
-        "nameservers": [ "172.16.0.83" ]
+        "nameservers": [ "8.8.8.8" ]
     }
 }
 

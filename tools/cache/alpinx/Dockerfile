@@ -1,7 +1,7 @@
-FROM alpine:3.5
+FROM alpine:3.21
 
 RUN apk --update add \
-        nginx && \
+        nginx nginx-mod-stream && \
     rm -rf /var/cache/apk/*
 
 CMD ["nginx", "-g", "daemon off;"]

@@ -32,4 +32,4 @@ ENTRYPOINT [ "python", "-u", "/main.py" ]
 
 COPY root /
 
-RUN pip install --index-url http://devpi/root/pypi/+simple/ --trusted-host devpi -r /requirements.txt
+RUN pip install --index-url http://devpi.docker/root/pypi/+simple/ --trusted-host devpi.docker -r /requirements.txt

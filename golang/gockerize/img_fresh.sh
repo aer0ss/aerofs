@@ -12,5 +12,5 @@ function img_fresh() {
 
     # find first file in build context newer than image, if any
     # NB: docker gives UTC timestamps, make sure find does not compare it to local time
-    [[ -n "$created" ]] && [[ -e "$2" ]] && [[ -z "$(TZ=UTC find "$2" -type f -newermt "$created" | head -n 1)" ]]
+    [[ -n "$created" ]] && [[ -e "$2" ]] && [[ -z "$(find "$2" -type f -newermt "$created" | head -n 1)" ]]
 }

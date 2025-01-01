@@ -3,6 +3,8 @@ FROM alpine:3.21
 RUN apk --update add \
         python3 \
         py3-pip \
+        py3-wheel \
+        py3-ruamel.yaml \
         && \
     rm -rf /var/cache/apk/*
 
