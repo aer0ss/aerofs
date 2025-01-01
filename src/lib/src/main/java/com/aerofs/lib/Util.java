@@ -49,6 +49,8 @@ public abstract class Util
         return builder.toString();
     }
 
+    // Thread.getId becomes Thread.threadId in Java 21
+    @SuppressWarnings("deprecation")
     private static String getAllThreadStackTraces(Thread[] threads)
     {
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();

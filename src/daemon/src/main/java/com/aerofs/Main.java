@@ -142,6 +142,6 @@ public class Main
         else cls = Class.forName("com.aerofs.Program"); // fail over to UI programs
 
         // launch the program
-        ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);
+        ((IProgram) cls.getDeclaredConstructor().newInstance()).launch_(rtRoot, prog, progArgs);
     }
 }

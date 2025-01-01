@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.DataInputStream;
+import java.net.URI;
 import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -96,8 +97,8 @@ public class CharlieClient
     {
         l.debug("beg check in with charlie");
 
-        URL url = new URL(getStringProperty("base.charlie.url",
-                "https://charlie.aerofs.com/checkin"));
+        URL url = URI.create(getStringProperty("base.charlie.url",
+                "https://charlie.aerofs.com/checkin")).toURL();
 
         // create and set up the connection
         HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();

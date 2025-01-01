@@ -9,6 +9,7 @@ import com.aerofs.base.C;
 import com.aerofs.base.config.ConfigurationProperties;
 
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URL;
 
 import static com.aerofs.base.config.ConfigurationProperties.*;
@@ -39,7 +40,7 @@ public class LibParam extends BaseParam
 
         private static URL getURL(String url) {
             try {
-                return new URL(url);
+                return URI.create(url).toURL();
             } catch (java.net.MalformedURLException e) {
                 throw com.google.common.base.Throwables.propagate(e);
             }

@@ -94,7 +94,7 @@ public class GZippingInputStream extends InputStream
             if (_trailer == null) {
                 _trailer = new byte[TRAILER_SIZE];
                 putInt32LE((int)_crc.getValue(), _trailer, 0);
-                putInt32LE(_def.getTotalIn(), _trailer, 4);
+                putInt32LE((int)_def.getBytesRead(), _trailer, 4);
             }
             if (_trailerOffset < _trailer.length) {
                 int n = Math.min(_trailer.length - _trailerOffset, len);

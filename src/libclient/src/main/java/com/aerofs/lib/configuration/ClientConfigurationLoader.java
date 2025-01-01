@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
-import java.net.URL;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 
@@ -235,7 +235,7 @@ public class ClientConfigurationLoader
     protected HttpsURLConnection createConnection(String url, ICertificateProvider provider)
             throws GeneralSecurityException, IOException
     {
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+        HttpsURLConnection conn = (HttpsURLConnection) URI.create(url).toURL().openConnection();
 
         conn.setSSLSocketFactory(new SSLEngineFactory(Mode.Client, Platform.Desktop, null,
                 provider, null).getSSLContext().getSocketFactory());

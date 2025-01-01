@@ -133,10 +133,4 @@ public class ConcurrentlyModifiableListeners<T>
     protected void afterRemoveLastListener_()
     {
     }
-
-    @Override
-    protected void finalize()
-    {
-        assert _iterators == 0;
-    }
 }

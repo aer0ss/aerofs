@@ -45,8 +45,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
     {
         assert bs.length == LENGTH;
         assert value >= 0 && value < 16;
-        bs[VERSION_BYTE] &= ~VERSION_MASK;
-        bs[VERSION_BYTE] |= value << VERSION_SHIFT;
+        bs[VERSION_BYTE] = (byte)((bs[VERSION_BYTE] & ~VERSION_MASK) | (value << VERSION_SHIFT));
     }
 
     protected int getVersionNibble()

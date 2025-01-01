@@ -19,7 +19,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 
 public class RockLog
@@ -56,7 +56,7 @@ public class RockLog
     private HttpURLConnection getRockLogConnection(String url)
             throws IOException, GeneralSecurityException
     {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
 
         // FIXME (AT): we need to support http connection for TestRockLog
         if (conn instanceof HttpsURLConnection) {

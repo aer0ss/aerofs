@@ -33,13 +33,6 @@ public abstract class AbstractDBIterator<E> implements IDBIterator<E>
     }
 
     @Override
-    public void finalize() throws Throwable
-    {
-        assert _closed;
-        super.finalize();
-    }
-
-    @Override
     public boolean closed_()
     {
         return _closed;

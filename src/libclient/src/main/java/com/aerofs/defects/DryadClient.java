@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
@@ -75,7 +76,7 @@ public class DryadClient
     private HttpURLConnection openConnection(String url, SSLContext ssl)
             throws IOException
     {
-        HttpsURLConnection conn = (HttpsURLConnection) new URL(url).openConnection();
+        HttpsURLConnection conn = (HttpsURLConnection) URI.create(url).toURL().openConnection();
 
         conn.setSSLSocketFactory(ssl.getSocketFactory());
         conn.setDoOutput(true);

@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
@@ -272,7 +273,7 @@ public abstract class Updater
         try {
             l.debug("Reading version from {}", versionURL);
 
-            final URL url = new URL(versionURL);
+            final URL url = URI.create(versionURL).toURL();
             final URLConnection conn = newUpdaterConnection(url);
             final BufferedInputStream in = new BufferedInputStream(conn.getInputStream());
 
@@ -311,7 +312,7 @@ public abstract class Updater
             //   we need to add a trailing slash.
             // This affected private deployment where installerURL is "https://*/path_to_installers"
             URLConnection conn = newUpdaterConnection(
-                    new URL(new URL(installerUrl + '/'), filename));
+                    URI.create(installerUrl + '/' + filename).toURL());
             conn.setReadTimeout((int) Cfg.timeout());
 
             int updateFileExpectedSize = conn.getContentLength();
