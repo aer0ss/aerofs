@@ -10,7 +10,7 @@ function dk-create-vm()
 {
     if [[ $# -eq 0 ]]
     then
-        ${DEV_DIR}/dk-create-vm.sh ${VM} && dk-host-ip
+        ${DEV_DIR}/dk-create-vm.sh ${VM}
     else
         echo "dk-create-vm takes no arguments"
         return 1

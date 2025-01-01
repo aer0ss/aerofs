@@ -85,7 +85,7 @@ def generate_script(args):
     wip_msi = '{}/{}'.format(args.workspace, 'wip.msi')
 
     print('#!/bin/bash')
-    print('set -ex')
+    print('set -e')
     print('rm -rf {}'.format(args.workspace))
     print('mkdir -p {}'.format(args.workspace))
     print('cp {} {}'.format(args.base_msi, wip_msi))
