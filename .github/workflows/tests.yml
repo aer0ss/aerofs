@@ -23,7 +23,7 @@ jobs:
           set -e
           host=$(./tools/integration/db.sh | tee -a /dev/stderr | grep -F JUNIT_mysqlHost | cut -d= -f2)
           export JUNIT_mysqlHost="${host}"
-          ./gradlew --no-daemon \
+          ./gradlew --no-daemon --stacktrace \
              src/aero-auth:test \
              src/baseline-service:test \
              src/bifrost:test \
@@ -44,7 +44,7 @@ jobs:
       - run: ./gradlew dist --no-daemon
       - name: gradle tests
         run: |
-          ./gradlew --no-daemon \
+          ./gradlew --no-daemon --stacktrace \
             src/base:test \
             src/daemon:test \
             src/desktop:test \
@@ -69,7 +69,7 @@ jobs:
       - run: ./gradlew dist --no-daemon
       - name: gradle tests
         run: |
-          ./gradlew --no-daemon \
+          ./gradlew --no-daemon --stacktrace \
             src/base:test \
             src/daemon:test \
             src/desktop:test \
