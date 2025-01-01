@@ -99,11 +99,11 @@ public class TestTimeouts extends AbstractTest {
         _expectedEventCount = 2;
         T t0 = new T(), t1 = new T();
         _timeouts.add_(t0, 200);
-        _timeouts.add_(t1, 400);
-        Thread.sleep(300);
+        _timeouts.add_(t1, 600);
+        Thread.sleep(250);
         assertTrue(t0._timedout);
         assertFalse(t1._timedout);
-        Thread.sleep(200);
+        Thread.sleep(400);
         assertTrue(t1._timedout);
     }
 
