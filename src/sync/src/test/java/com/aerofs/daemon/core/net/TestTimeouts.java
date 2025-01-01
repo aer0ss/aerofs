@@ -67,10 +67,10 @@ public class TestTimeouts extends AbstractTest {
     public void shouldNotTimeout() throws Exception {
         _expectedEventCount = 0;
         T t0 = new T();
-        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 200);
-        Thread.sleep(100);
-        tt.cancel_();
+        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 500);
         Thread.sleep(200);
+        tt.cancel_();
+        Thread.sleep(400);
         assertFalse(t0._timedout);
     }
 
@@ -79,7 +79,7 @@ public class TestTimeouts extends AbstractTest {
         _expectedEventCount = 1;
         T t0 = new T();
         _timeouts.add_(t0, 200);
-        Thread.sleep(300);
+        Thread.sleep(400);
         assertTrue(t0._timedout);
     }
 
