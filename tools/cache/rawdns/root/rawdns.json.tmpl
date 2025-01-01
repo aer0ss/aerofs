@@ -28,6 +28,10 @@
         "type": "containers",
         "socket": "unix:///var/run/docker.sock"
     },
+    "share.syncfs.com.": {
+        "type": "static",
+        "addrs": ["COLIMA_IP"]
+    },
     ".": {
         "type": "forwarding",
         "nameservers": [ "8.8.8.8" ]

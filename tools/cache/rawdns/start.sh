@@ -17,12 +17,15 @@ BRIDGE=$(docker run --rm alpine:3.5 ip route | grep default | cut -d ' ' -f 3)
 # check if rawdns config was modified since the image was created
 config=$PWD/root/rawdns.json
 
-if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] && "$PWD/../img_fresh.sh" rawdns "$config"; then
+if [[ -n "$(docker ps -q -f 'name=rawdns')" ]] && "$PWD/../img_fresh.sh" rawdns "${config}.tmpl"; then
     echo "rawdns already running"
 else
     echo "build rawdns configured image"
     curl -o $PWD/root/rawdns -sSL "https://github.com/tianon/rawdns/releases/download/1.10/rawdns-amd64"
     chmod +x $PWD/root/rawdns
+
+    ip=$(colima status docker-dev --json | jq -r .ip_address)
+    sed "s/COLIMA_IP/$ip/" "${config}.tmpl" > "${config}"
 
     # ensure we get a fresh timestamp or img_fresh will cause repeated rebuild
     docker build --no-cache=true -t rawdns $PWD
