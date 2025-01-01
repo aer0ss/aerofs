@@ -109,10 +109,10 @@ public class BigArrow
                 double amplitude = (double) BOUNCE_AMPLITUDE * getEasing(time);
 
                 switch (pos.orientation) {
-                case Top:    y += amplitude; break;
-                case Right:  x -= amplitude; break;
-                case Bottom: y -= amplitude; break;
-                case Left:   x += amplitude; break;
+                case Top:    y += (int)amplitude; break;
+                case Right:  x -= (int)amplitude; break;
+                case Bottom: y -= (int)amplitude; break;
+                case Left:   x += (int)amplitude; break;
                 default: throw new IllegalArgumentException();
                 }
 

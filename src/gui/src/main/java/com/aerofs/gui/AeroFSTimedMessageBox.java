@@ -19,9 +19,9 @@ import org.eclipse.swt.widgets.Shell;
 public class AeroFSTimedMessageBox extends AeroFSMessageBox
 {
     private String _format;
-    private volatile long _countdown;    ///< Number of seconds remaining until dialog closes.
+    private volatile long _countdown;    // < Number of seconds remaining until dialog closes.
 
-    private final long refreshDelay = 1* C.SEC; ///< refresh the dialog every second.
+    private final long refreshDelay = 1* C.SEC; // < refresh the dialog every second.
 
     /**
      * Creates a Timed Dialog that will be open for {@code duration} seconds and then will

@@ -19,9 +19,7 @@ import org.slf4j.LoggerFactory;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.security.GeneralSecurityException;
 
 /**
@@ -30,7 +28,7 @@ import java.security.GeneralSecurityException;
  */
 public class AuditorFactory
 {
-    private static Logger l = LoggerFactory.getLogger(AuditorFactory.class);
+    private final static Logger l = LoggerFactory.getLogger(AuditorFactory.class);
 
     /**
      * Create an unauthenticated client - can only be used by trusted server-side processes (SP).
@@ -42,7 +40,8 @@ public class AuditorFactory
         AuditParam params = AuditParam.fromConfiguration();
         if (params._enabled) {
             try {
-                URL url = new URL("http", host, params._servicePort, params._servicePath);
+                URL url = new URI("http", null, host, params._servicePort, params._servicePath,
+                        null, null).toURL();
                 l.info("Unauthenticated connection to private audit endpoint {}", url);
 
                 return new AuditHttpClient(url) {
@@ -61,7 +60,7 @@ public class AuditorFactory
                         return conn;
                     }
                 };
-            } catch (MalformedURLException mue) {
+            } catch (URISyntaxException | MalformedURLException mue) {
                 l.error("Misconfigured audit service URL. Auditing is DISABLED.");
             }
         }
@@ -82,7 +81,7 @@ public class AuditorFactory
             l.info("Secure connection to public audit server at {}", param._publicUrl);
 
             try {
-                URL url = new URL(param._publicUrl);
+                URL url = URI.create(param._publicUrl).toURL();
                 return new AuditHttpClient(url) {
                     @Override
                     HttpURLConnection getConnection(URL url) throws IOException {

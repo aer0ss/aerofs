@@ -13,7 +13,7 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.common.base.Throwables;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 
 /**
  * This is a synchronous interface
@@ -73,7 +73,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
         {
             try {
                 return new SPBlockingClient(
-                        new SPClientHandler(new URL(_url), MUTUAL_AUTH != null ? MUTUAL_AUTH : ONE_WAY_AUTH),
+                        new SPClientHandler(URI.create(_url).toURL(), MUTUAL_AUTH != null ? MUTUAL_AUTH : ONE_WAY_AUTH),
                         this);
             } catch (final MalformedURLException e) {
                 throw Throwables.propagate(e);
