@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 name=${1:-external_mysql_1}
 port=${2:-3306}
@@ -15,7 +16,7 @@ elif [[ -n "$running" ]] ; then
 else
     # remove any previous instance
     docker rm -fv $name >/dev/null
-    docker rmi aerofs/mysql >/dev/null
+    #docker rmi aerofs/mysql >/dev/null
 
     # start mysql container
     make -C $THIS_DIR/../../docker/base/base 1>&2 || exit 1
@@ -46,12 +47,22 @@ EOF
 
 done
 
-VM=$(docker-machine active 2>/dev/null || echo "docker-dev")
-if docker-machine ls "$VM" &>/dev/null ; then
-    host=$(docker-machine ip "$VM")
+if [ $(uname -s) == "Darwin" ]; then
+    if [ ! -f "$HOME/Library/LaunchAgents/homebrew.mxcl.redis.plist" ]; then
+        echo adding redis to launchctl 1>&2
+        redis_dir=$(dirname $(dirname $(realpath $(which redis-cli))))
+        if [ -z "$redis_dir" ]; then
+            echo could not find redis directory, is it installed through homebrew? 1>&2
+            exit 1
+        fi
+        ln -s "$redis_dir/homebrew.mxcl.redis.plist" "$HOME/Library/LaunchAgents/"
+        launchctl load "$HOME/Library/LaunchAgents/homebrew.mxcl.redis.plist"
+    fi
+
+    VM="docker-dev"
+    host=$(colima status -p "$VM" --json | jq -r .ip_address)
 else
     host=$(docker inspect $name | jq -r '.[0].NetworkSettings.IPAddress')
 fi
 
 echo export JUNIT_mysqlHost="$host:$port"
-
