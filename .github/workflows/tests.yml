@@ -1,0 +1,108 @@
+name: Basic test harness
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  java-db-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: shogo82148/actions-setup-redis@v1
+        with:
+          redis-version: "7.x"
+      - name: gradle tests (w/ mysql and redis)
+        run: |
+          set -e
+          host=$(./tools/integration/db.sh | tee -a /dev/stderr | grep -F JUNIT_mysqlHost | cut -d= -f2)
+          export JUNIT_mysqlHost="${host}"
+          ./gradlew --no-daemon \
+             src/aero-auth:test \
+             src/baseline-service:test \
+             src/bifrost:test \
+             src/libservlet:test \
+             src/polaris:test \
+             src/sparta:test \
+             src/spsv:test
+
+  java-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew dist --no-daemon
+      - name: gradle tests
+        run: |
+          ./gradlew --no-daemon \
+            src/base:test \
+            src/daemon:test \
+            src/desktop:test \
+            src/gui:test \
+            src/havre:test \
+            src/lib:test \
+            src/libclient:test \
+            src/oauth-verify:test \
+            src/sync:test \
+            src/tunnel:test \
+            src/zephyr:test
+
+  java-mac:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew dist --no-daemon
+      - name: gradle tests
+        run: |
+          ./gradlew --no-daemon \
+            src/base:test \
+            src/daemon:test \
+            src/desktop:test \
+            src/gui:test \
+            src/havre:test \
+            src/lib:test \
+            src/libclient:test \
+            src/oauth-verify:test \
+            src/sync:test \
+            src/tunnel:test \
+            src/zephyr:test
+
+#  java-win:
+#    runs-on: windows-latest
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-java@v4
+#        with:
+#          distribution: 'zulu'
+#          java-version: '8'
+#          cache: 'gradle'
+#      - run: ./gradlew dist --no-daemon
+#      - name: gradle tests
+#        run: |
+#          ./gradlew --no-daemon `
+#            src/base:test `
+#            src/daemon:test `
+#            src/desktop:test `
+#            src/gui:test `
+#            src/havre:test `
+#            src/lib:test `
+#            src/libclient:test `
+#            src/oauth-verify:test `
+#            src/sync:test `
+#            src/tunnel:test `
+#            src/zephyr:test

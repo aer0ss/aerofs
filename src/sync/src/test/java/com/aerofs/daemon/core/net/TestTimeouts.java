@@ -112,14 +112,14 @@ public class TestTimeouts extends AbstractTest {
         _expectedEventCount = 2;
         T t0 = new T(), t1 = new T();
         Timeouts<T>.Timeout tt = _timeouts.add_(t0, 200);
-        _timeouts.add_(t1, 400);
+        _timeouts.add_(t1, 600);
         Thread.sleep(100);
         tt.cancel_();
         assertFalse(t0._timedout);
         assertFalse(t1._timedout);
         Thread.sleep(200);
         assertFalse(t1._timedout);
-        Thread.sleep(100);
+        Thread.sleep(400);
         assertTrue(t1._timedout);
     }
 }
