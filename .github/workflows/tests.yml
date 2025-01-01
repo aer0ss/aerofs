@@ -24,13 +24,13 @@ jobs:
           host=$(./tools/integration/db.sh | tee -a /dev/stderr | grep -F JUNIT_mysqlHost | cut -d= -f2)
           export JUNIT_mysqlHost="${host}"
           ./gradlew --no-daemon --stacktrace \
-             src/aero-auth:test \
-             src/baseline-service:test \
-             src/bifrost:test \
-             src/libservlet:test \
-             src/polaris:test \
-             src/sparta:test \
-             src/spsv:test
+             src:aero-auth:test \
+             src:baseline-service:test \
+             src:bifrost:test \
+             src:libservlet:test \
+             src:polaris:test \
+             src:sparta:test \
+             src:spsv:test
 
   java-linux:
     runs-on: ubuntu-latest
@@ -45,17 +45,17 @@ jobs:
       - name: gradle tests
         run: |
           ./gradlew --no-daemon --stacktrace \
-            src/base:test \
-            src/daemon:test \
-            src/desktop:test \
-            src/gui:test \
-            src/havre:test \
-            src/lib:test \
-            src/libclient:test \
-            src/oauth-verify:test \
-            src/sync:test \
-            src/tunnel:test \
-            src/zephyr:test
+            src:base:test \
+            src:daemon:test \
+            src:desktop:test \
+            src:gui:test \
+            src:havre:test \
+            src:lib:test \
+            src:libclient:test \
+            src:oauth-verify:test \
+            src:sync:test \
+            src:tunnel:test \
+            src:zephyr:test
 
   java-mac:
     runs-on: macos-13
@@ -70,17 +70,17 @@ jobs:
       - name: gradle tests
         run: |
           ./gradlew --no-daemon --stacktrace \
-            src/base:test \
-            src/daemon:test \
-            src/desktop:test \
-            src/gui:test \
-            src/havre:test \
-            src/lib:test \
-            src/libclient:test \
-            src/oauth-verify:test \
-            src/sync:test \
-            src/tunnel:test \
-            src/zephyr:test
+            src:base:test \
+            src:daemon:test \
+            src:desktop:test \
+            src:gui:test \
+            src:havre:test \
+            src:lib:test \
+            src:libclient:test \
+            src:oauth-verify:test \
+            src:sync:test \
+            src:tunnel:test \
+            src:zephyr:test
 
 #  java-win:
 #    runs-on: windows-latest
@@ -95,14 +95,14 @@ jobs:
 #      - name: gradle tests
 #        run: |
 #          ./gradlew --no-daemon `
-#            src/base:test `
-#            src/daemon:test `
-#            src/desktop:test `
-#            src/gui:test `
-#            src/havre:test `
-#            src/lib:test `
-#            src/libclient:test `
-#            src/oauth-verify:test `
-#            src/sync:test `
-#            src/tunnel:test `
-#            src/zephyr:test
+#            src:base:test `
+#            src:daemon:test `
+#            src:desktop:test `
+#            src:gui:test `
+#            src:havre:test `
+#            src:lib:test `
+#            src:libclient:test `
+#            src:oauth-verify:test `
+#            src:sync:test `
+#            src:tunnel:test `
+#            src:zephyr:test
