@@ -6,6 +6,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;
@@ -51,8 +52,12 @@ public class TestTimeouts extends AbstractTest {
 
     private Timeouts<T> _timeouts = new Timeouts<>(sched);
 
+    private long scaleFactor = 1;
+
     @Before
     public void setUp() {
+        // the github action mac runner needs some extra buffer for these tests...
+        this.scaleFactor = OSUtil.isOSX() ? 5 : 1;
         t.start();
     }
 
@@ -67,10 +72,10 @@ public class TestTimeouts extends AbstractTest {
     public void shouldNotTimeout() throws Exception {
         _expectedEventCount = 0;
         T t0 = new T();
-        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 500);
-        Thread.sleep(200);
+        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 500 * this.scaleFactor);
+        Thread.sleep(200 * this.scaleFactor);
         tt.cancel_();
-        Thread.sleep(400);
+        Thread.sleep(400 * this.scaleFactor);
         assertFalse(t0._timedout);
     }
 
@@ -78,8 +83,8 @@ public class TestTimeouts extends AbstractTest {
     public void shouldTimeout() throws Exception {
         _expectedEventCount = 1;
         T t0 = new T();
-        _timeouts.add_(t0, 200);
-        Thread.sleep(400);
+        _timeouts.add_(t0, 200 * this.scaleFactor);
+        Thread.sleep(400 * this.scaleFactor);
         assertTrue(t0._timedout);
     }
 
@@ -87,9 +92,9 @@ public class TestTimeouts extends AbstractTest {
     public void shouldGroupTimeouts() throws Exception {
         _expectedEventCount = 1;
         T t0 = new T(), t1 = new T();
-        _timeouts.add_(t0, 200);
-        _timeouts.add_(t1, 200);
-        Thread.sleep(300);
+        _timeouts.add_(t0, 200 * this.scaleFactor);
+        _timeouts.add_(t1, 200 * this.scaleFactor);
+        Thread.sleep(300 * this.scaleFactor);
         assertTrue(t0._timedout);
         assertTrue(t1._timedout);
     }
@@ -98,12 +103,12 @@ public class TestTimeouts extends AbstractTest {
     public void shouldTimeoutSubsequently() throws Exception {
         _expectedEventCount = 2;
         T t0 = new T(), t1 = new T();
-        _timeouts.add_(t0, 200);
-        _timeouts.add_(t1, 600);
-        Thread.sleep(250);
+        _timeouts.add_(t0, 200 * this.scaleFactor);
+        _timeouts.add_(t1, 600 * this.scaleFactor);
+        Thread.sleep(250 * this.scaleFactor);
         assertTrue(t0._timedout);
         assertFalse(t1._timedout);
-        Thread.sleep(400);
+        Thread.sleep(400 * this.scaleFactor);
         assertTrue(t1._timedout);
     }
 
@@ -111,15 +116,15 @@ public class TestTimeouts extends AbstractTest {
     public void shouldTimeoutAfterCancel() throws Exception {
         _expectedEventCount = 2;
         T t0 = new T(), t1 = new T();
-        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 200);
-        _timeouts.add_(t1, 600);
-        Thread.sleep(100);
+        Timeouts<T>.Timeout tt = _timeouts.add_(t0, 200 * this.scaleFactor);
+        _timeouts.add_(t1, 600 * this.scaleFactor);
+        Thread.sleep(100 * this.scaleFactor);
         tt.cancel_();
         assertFalse(t0._timedout);
         assertFalse(t1._timedout);
-        Thread.sleep(200);
+        Thread.sleep(200 * this.scaleFactor);
         assertFalse(t1._timedout);
-        Thread.sleep(400);
+        Thread.sleep(400 * this.scaleFactor);
         assertTrue(t1._timedout);
     }
 }
