@@ -118,6 +118,10 @@ subprojects {
     //-------------------------------------------------------------------------
 
     test {
+        testLogging {
+            exceptionFormat = 'full'
+        }
+
         def libraryPath = clientOSDependentResourcesDirs.join(System.getProperty("path.separator"))
 
         environment sharedLibrarySearchPathVariable, "${libraryPath}"
